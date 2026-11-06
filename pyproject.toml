@@ -1,7 +1,7 @@
 [project]
 name = "hilt"
 version = "0.0.1"
-description = "React-for-hardware HIL testing framework — Python port"
+description = "Python HIL testing with a pit of success: composable test components, guardrails that make a bad test hard to write, and an engine that won't let an unhandled failure pass silently."
 readme = "README.md"
 license = "Apache-2.0"
 license-files = ["LICENSE", "NOTICE"]

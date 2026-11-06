@@ -1,21 +1,25 @@
 ![HILT hero image](hero.png)
 # HILT
 
-**Hardware-in-the-loop tests that can't quietly lie, and failures a technician can
-triage at 2am without calling you.**
+**Python HIL testing with a pit of success: composable test components, guardrails
+that make a bad test hard to write, and an engine that won't let an unhandled
+failure pass silently.**
 
-HILT (Hardware-In-the-Loop Testing) is an opinionated test framework for Python. You write what you claim
-about the hardware. HILT enforces the verdict, records the evidence as the test
-runs, and gives the floor a terminal Inspector for reading it. The same building
-block scales from one bench DUT to a rack of seventy running concurrently.
+HILT (Hardware-In-the-Loop Testing) is a test framework for Python. A test is a
+component and a rack is a tree of them, built from the same unit you test one bench
+DUT with. You write what you claim about the hardware; HILT enforces the verdict,
+records the evidence as the test runs, and gives the floor a terminal Inspector for
+reading it, so a technician can triage a failure at 2am without calling you.
 
 > *The act of executing the test is the act of producing irrefutable evidence*
 
 ## Why
 
 Most test scripts have one way to fail: something raises. A bad unit, a bug in the
-test, and a database timeout all raise, and all show up as the same red FAIL. The
-technician on shift guesses or escalates, and the line waits for an engineer.
+test, and a database timeout all raise, and all show up as the same red FAIL. A
+failure that doesn't raise doesn't show up at all; it passes. In the former case
+the technician on shift guesses or escalates and the line waits for an engineer;
+in the latter, a bad unit ships to the customer.
 
 HILT sets one bar and builds everything around it:
 
