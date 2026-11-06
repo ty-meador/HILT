@@ -1,14 +1,14 @@
-"""``litmus/unannotated-interface`` keeps authored suite signatures explicit."""
+"""``hilt/unannotated-interface`` keeps authored suite signatures explicit."""
 
 import io
 from pathlib import Path
 from textwrap import dedent
 
-from litmus_check import SuiteModule, Violation
-from litmus_check.cli import EXIT_VIOLATIONS, LitmusCheckCommand
-from litmus_check.rules.unannotated_interface import UnannotatedInterfaceRule
+from hilt_check import SuiteModule, Violation
+from hilt_check.cli import EXIT_VIOLATIONS, HiltCheckCommand
+from hilt_check.rules.unannotated_interface import UnannotatedInterfaceRule
 
-CODE = "litmus/unannotated-interface"
+CODE = "hilt/unannotated-interface"
 
 
 def _check(source: str) -> list[Violation]:
@@ -23,7 +23,7 @@ def _lines(source: str) -> list[int]:
 class TestUnannotatedInterfaceFire:
     def test_every_parameter_shape_requires_an_annotation(self) -> None:
         source = """
-            class Suite(LitmusTest):
+            class Suite(TestComponent):
                 def helper(self, left, /, right, *items, named, **options) -> None:
                     pass
         """
@@ -46,7 +46,7 @@ class TestUnannotatedInterfaceFire:
 
     def test_missing_return_annotation(self) -> None:
         source = """
-            class Suite(LitmusTest):
+            class Suite(TestComponent):
                 async def configure(self, utils: TestUtils):
                     return {}
         """
@@ -59,7 +59,7 @@ class TestUnannotatedInterfaceFire:
 
     def test_nested_function_inside_a_suite_is_authored_code(self) -> None:
         source = """
-            class Suite(LitmusTest):
+            class Suite(TestComponent):
                 async def configure(self, utils: TestUtils) -> dict[str, object]:
                     async def ready(attempt):
                         return True
@@ -69,8 +69,8 @@ class TestUnannotatedInterfaceFire:
 
     def test_test_method_without_return_annotation_names_verdict_contract(self) -> None:
         source = """
-            class Suite(LitmusTest):
-                def build_suite(self) -> LitmusTest:
+            class Suite(TestComponent):
+                def build_suite(self) -> TestComponent:
                     return self.test("probe", self._probe)
                 async def _probe(self, utils: TestUtils):
                     return PASS
@@ -82,8 +82,8 @@ class TestUnannotatedInterfaceFire:
 
     def test_test_method_with_a_different_return_type_is_rejected(self) -> None:
         source = """
-            class Suite(LitmusTest):
-                def build_suite(this) -> LitmusTest:
+            class Suite(TestComponent):
+                def build_suite(this) -> TestComponent:
                     return this.test(name="probe", fn=this._probe)
                 async def _probe(this, utils: TestUtils) -> object:
                     return PASS
@@ -92,7 +92,7 @@ class TestUnannotatedInterfaceFire:
 
     def test_static_method_first_parameter_is_not_an_implicit_receiver(self) -> None:
         source = """
-            class Suite(LitmusTest):
+            class Suite(TestComponent):
                 @staticmethod
                 def normalize(value) -> str:
                     return str(value)
@@ -103,14 +103,14 @@ class TestUnannotatedInterfaceFire:
 class TestUnannotatedInterfaceStayQuiet:
     def test_fully_annotated_suite_and_test_method(self) -> None:
         source = """
-            class Suite(LitmusTest):
+            class Suite(TestComponent):
                 def __init__(self, *, name: str) -> None:
                     super().__init__(name=name)
                 async def configure(self, utils: TestUtils) -> dict[str, object]:
                     async def ready(attempt: int) -> bool:
                         return attempt > 0
                     return {"ready": await ready(1)}
-                def build_suite(self) -> LitmusTest:
+                def build_suite(self) -> TestComponent:
                     return self.test("probe", self._probe)
                 async def _probe(self, utils: TestUtils) -> Verdict:
                     if utils.ctx["ready"]:
@@ -126,11 +126,11 @@ class TestUnannotatedInterfaceStayQuiet:
             class Plain:
                 def method(self, value):
                     return value
-            class Suite(LitmusTest):
+            class Suite(TestComponent):
                 class Detail:
                     def render(self, value):
                         return value
-                def build_suite(self) -> LitmusTest:
+                def build_suite(self) -> TestComponent:
                     return self.test("probe", self._probe)
                 async def _probe(self, utils: TestUtils) -> Verdict:
                     return PASS
@@ -139,8 +139,8 @@ class TestUnannotatedInterfaceStayQuiet:
 
     def test_bare_qualified_and_forward_verdict_annotations_are_accepted(self) -> None:
         source = """
-            class Suite(LitmusTest):
-                def build_suite(self) -> LitmusTest:
+            class Suite(TestComponent):
+                def build_suite(self) -> TestComponent:
                     return self.parallel("claims", [
                         self.test("bare", self._bare),
                         self.test("qualified", self._qualified),
@@ -148,7 +148,7 @@ class TestUnannotatedInterfaceStayQuiet:
                     ])
                 async def _bare(self, utils: TestUtils) -> Verdict:
                     return PASS
-                async def _qualified(self, utils: TestUtils) -> litmus.Verdict:
+                async def _qualified(self, utils: TestUtils) -> hilt.Verdict:
                     return PASS
                 async def _forward(self, utils: TestUtils) -> "Verdict":
                     return PASS
@@ -158,10 +158,10 @@ class TestUnannotatedInterfaceStayQuiet:
 
 class TestUnannotatedInterfaceAtTheCommandLine:
     def test_seeded_fixture_is_caught_and_clean_fixture_is_not(self) -> None:
-        fixtures = Path(__file__).parent / "fixtures" / "litmus_check"
+        fixtures = Path(__file__).parent / "fixtures" / "hilt_check"
         out = io.StringIO()
 
-        status = LitmusCheckCommand(stdout=out, stderr=io.StringIO()).run(
+        status = HiltCheckCommand(stdout=out, stderr=io.StringIO()).run(
             ["--select", CODE, str(fixtures)]
         )
 

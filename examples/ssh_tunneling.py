@@ -26,15 +26,15 @@ A constructor argument wins when given (the self-tests pass the loopback sshd). 
 `configure()` naming the variable to set.
 
 A station run puts `JUMP_HOST`, `JUMP_USER`, `TARGET_HOST`, and `TARGET_USER` in
-front of `litmus run examples/ssh_tunneling.py`.
+front of `hilt run examples/ssh_tunneling.py`.
 """
 
 from typing import Any
 
-from litmus import PASS, LitmusTest, TestFailure, TestUtils, Verdict
+from hilt import PASS, TestComponent, TestFailure, TestUtils, Verdict
 
 
-class TunneledDevice(LitmusTest):
+class TunneledDevice(TestComponent):
     """Reach a DUT through a jump host without rebinding this node's `utils.exec`."""
 
     def __init__(
@@ -136,7 +136,7 @@ class TunneledDevice(LitmusTest):
         # the log carry the provenance instead.
         return {"target": target}
 
-    def build_suite(self) -> LitmusTest:
+    def build_suite(self) -> TestComponent:
         """Build one leaf that reads the DUT kernel through the tunneled handle."""
         return self.test("kernel-version", self._check_kernel)
 

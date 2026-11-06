@@ -4,28 +4,28 @@ import asyncio
 
 import pytest
 
-from litmus import (
+from hilt import (
     PASS,
     ContractViolation,
     ExternalIntegrationFailure,
-    LitmusTest,
+    TestComponent,
     TestFailure,
     TestUtils,
     Verdict,
 )
-from litmus.lifecycle import State
+from hilt.lifecycle import State
 
 
 class TestLifecycleOrder:
     async def test_configure_context_reaches_suite_and_cleanup_in_order(self) -> None:
         calls: list[tuple[str, dict[str, object]]] = []
 
-        class Suite(LitmusTest):
+        class Suite(TestComponent):
             async def configure(self, utils: TestUtils) -> dict[str, object]:
                 calls.append(("configure", dict(utils.ctx)))
                 return {"serial": "SN-0042", "station": "west"}
 
-            def build_suite(self) -> LitmusTest:
+            def build_suite(self) -> TestComponent:
                 calls.append(("build_suite", {}))
                 return self.test("claim", self._claim)
 
@@ -53,12 +53,12 @@ class TestLifecycleOrder:
         calls: list[str] = []
         readiness = TestFailure("device did not reach a testable state")
 
-        class Suite(LitmusTest):
+        class Suite(TestComponent):
             async def configure(self, utils: TestUtils) -> dict[str, object]:
                 calls.append("configure")
                 raise readiness
 
-            def build_suite(self) -> LitmusTest:
+            def build_suite(self) -> TestComponent:
                 calls.append("build_suite")
                 return self.test("claim", self._claim)
 
@@ -78,11 +78,11 @@ class TestLifecycleOrder:
     async def test_plain_configure_error_is_a_contract_violation_failure(self) -> None:
         calls: list[str] = []
 
-        class Suite(LitmusTest):
+        class Suite(TestComponent):
             async def configure(self, utils: TestUtils) -> dict[str, object]:
                 raise ValueError("malformed readiness probe")
 
-            def build_suite(self) -> LitmusTest:
+            def build_suite(self) -> TestComponent:
                 raise AssertionError("configure failure must skip the suite")
 
             async def cleanup(self, utils: TestUtils) -> None:
@@ -101,8 +101,8 @@ class TestCleanupGuarantee:
         calls: list[str] = []
         failed_check = TestFailure("firmware revision mismatch")
 
-        class Suite(LitmusTest):
-            def build_suite(self) -> LitmusTest:
+        class Suite(TestComponent):
+            def build_suite(self) -> TestComponent:
                 return self.test("claim", self._claim)
 
             async def _claim(self, utils: TestUtils) -> Verdict:
@@ -123,8 +123,8 @@ class TestCleanupGuarantee:
             "before_each", RuntimeError("shop-floor database refused the record")
         )
 
-        class Suite(LitmusTest):
-            def build_suite(self) -> LitmusTest:
+        class Suite(TestComponent):
+            def build_suite(self) -> TestComponent:
                 return self.test("claim", self._claim)
 
             async def _claim(self, utils: TestUtils) -> Verdict:
@@ -143,8 +143,8 @@ class TestCleanupGuarantee:
     async def test_cleanup_error_is_logged_and_does_not_mask_the_verdict(
         self, caplog: pytest.LogCaptureFixture
     ) -> None:
-        class Suite(LitmusTest):
-            def build_suite(self) -> LitmusTest:
+        class Suite(TestComponent):
+            def build_suite(self) -> TestComponent:
                 return self.test("claim", self._claim)
 
             async def _claim(self, utils: TestUtils) -> Verdict:
@@ -153,7 +153,7 @@ class TestCleanupGuarantee:
             async def cleanup(self, utils: TestUtils) -> None:
                 raise RuntimeError("relay refused neutral state")
 
-        with caplog.at_level("ERROR", logger="litmus"):
+        with caplog.at_level("ERROR", logger="hilt"):
             outcome = await Suite(name="rack").main(TestUtils())
 
         assert outcome.state is State.PASS
@@ -166,8 +166,8 @@ class TestCleanupGuarantee:
         cleanup_release = asyncio.Event()
         calls: list[str] = []
 
-        class Suite(LitmusTest):
-            def build_suite(self) -> LitmusTest:
+        class Suite(TestComponent):
+            def build_suite(self) -> TestComponent:
                 return self.test("claim", self._claim)
 
             async def _claim(self, utils: TestUtils) -> Verdict:
@@ -198,8 +198,8 @@ class TestCleanupGuarantee:
         cleanup_release = asyncio.Event()
         calls: list[str] = []
 
-        class Suite(LitmusTest):
-            def build_suite(self) -> LitmusTest:
+        class Suite(TestComponent):
+            def build_suite(self) -> TestComponent:
                 return self.test("claim", self._claim)
 
             async def _claim(self, utils: TestUtils) -> Verdict:
@@ -239,8 +239,8 @@ class TestCleanupGuarantee:
         cleanup_started = asyncio.Event()
         cleanup_cancelled = asyncio.Event()
 
-        class Suite(LitmusTest):
-            def build_suite(self) -> LitmusTest:
+        class Suite(TestComponent):
+            def build_suite(self) -> TestComponent:
                 return self.test("claim", self._claim)
 
             async def _claim(self, utils: TestUtils) -> Verdict:
@@ -253,13 +253,13 @@ class TestCleanupGuarantee:
                 finally:
                     cleanup_cancelled.set()
 
-        monkeypatch.setattr("litmus.base._FINALIZATION_TIMEOUT_SECONDS", 0.01)
+        monkeypatch.setattr("hilt.base._FINALIZATION_TIMEOUT_SECONDS", 0.01)
         running = asyncio.create_task(Suite(name="rack").main(TestUtils()))
         await cleanup_started.wait()
         running.cancel()
 
         with (
-            caplog.at_level("ERROR", logger="litmus"),
+            caplog.at_level("ERROR", logger="hilt"),
             pytest.raises(asyncio.CancelledError),
         ):
             await running
@@ -285,8 +285,8 @@ class TestBuildSuiteClassification:
     async def test_plain_build_suite_error_escapes_raw_but_still_cleans_up(self) -> None:
         calls: list[str] = []
 
-        class Suite(LitmusTest):
-            def build_suite(self) -> LitmusTest:
+        class Suite(TestComponent):
+            def build_suite(self) -> TestComponent:
                 raise ValueError("composition table is malformed")
 
             async def cleanup(self, utils: TestUtils) -> None:

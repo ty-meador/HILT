@@ -1,9 +1,9 @@
-"""Context ownership across independently composable LitmusTest instances."""
+"""Context ownership across independently composable TestComponent instances."""
 
 import asyncio
 
-from litmus import PASS, LitmusTest, TestUtils, Verdict
-from litmus.lifecycle import State
+from hilt import PASS, TestComponent, TestUtils, Verdict
+from hilt.lifecycle import State
 
 
 class TestContextLocality:
@@ -11,23 +11,23 @@ class TestContextLocality:
         child_seen: list[dict[str, object]] = []
         parent_cleanup_seen: list[dict[str, object]] = []
 
-        class Child(LitmusTest):
+        class Child(TestComponent):
             async def configure(self, utils: TestUtils) -> dict[str, object]:
                 child_seen.append(dict(utils.ctx))
                 return {"child": "configured"}
 
-            def build_suite(self) -> LitmusTest:
+            def build_suite(self) -> TestComponent:
                 return self.test("child claim", self._claim)
 
             async def _claim(self, utils: TestUtils) -> Verdict:
                 child_seen.append(dict(utils.ctx))
                 return PASS
 
-        class Parent(LitmusTest):
+        class Parent(TestComponent):
             async def configure(self, utils: TestUtils) -> dict[str, object]:
                 return {"parent": "configured"}
 
-            def build_suite(self) -> LitmusTest:
+            def build_suite(self) -> TestComponent:
                 return Child(name="child")
 
             async def cleanup(self, utils: TestUtils) -> None:
@@ -47,7 +47,7 @@ class TestContextLocality:
         right_configured = asyncio.Event()
         seen: dict[str, dict[str, object]] = {}
 
-        class Child(LitmusTest):
+        class Child(TestComponent):
             def __init__(
                 self,
                 *,
@@ -65,7 +65,7 @@ class TestContextLocality:
                 self.configured.set()
                 return {self.own_key: True}
 
-            def build_suite(self) -> LitmusTest:
+            def build_suite(self) -> TestComponent:
                 return self.test(f"{self.name} claim", self._claim)
 
             async def _claim(self, utils: TestUtils) -> Verdict:
@@ -73,11 +73,11 @@ class TestContextLocality:
                 seen[self.name] = dict(utils.ctx)
                 return PASS
 
-        class Parent(LitmusTest):
+        class Parent(TestComponent):
             async def configure(self, utils: TestUtils) -> dict[str, object]:
                 return {"parent": True}
 
-            def build_suite(self) -> LitmusTest:
+            def build_suite(self) -> TestComponent:
                 return self.parallel(
                     "siblings",
                     [
@@ -104,23 +104,23 @@ class TestContextLocality:
     async def test_child_observes_the_same_context_nested_or_standalone(self) -> None:
         seen: list[dict[str, object]] = []
 
-        class Child(LitmusTest):
+        class Child(TestComponent):
             async def configure(self, utils: TestUtils) -> dict[str, object]:
                 seen.append(dict(utils.ctx))
                 return {"serial": "SN-0042"}
 
-            def build_suite(self) -> LitmusTest:
+            def build_suite(self) -> TestComponent:
                 return self.test("claim", self._claim)
 
             async def _claim(self, utils: TestUtils) -> Verdict:
                 seen.append(dict(utils.ctx))
                 return PASS
 
-        class Parent(LitmusTest):
+        class Parent(TestComponent):
             async def configure(self, utils: TestUtils) -> dict[str, object]:
                 return {"parent-only": True}
 
-            def build_suite(self) -> LitmusTest:
+            def build_suite(self) -> TestComponent:
                 return Child(name="nested child")
 
         nested = await Parent(name="parent").main(TestUtils())

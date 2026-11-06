@@ -1,4 +1,4 @@
-"""``litmus/no-swallowed-cancel``: cancellation is the abort signal and suite code lets it pass.
+"""``hilt/no-swallowed-cancel``: cancellation is the abort signal and suite code lets it pass.
 
 A run-abort, a deadline, and an operator interrupt all arrive as
 ``asyncio.CancelledError`` at an ``await``. A handler that keeps it converts the abort
@@ -9,11 +9,11 @@ import io
 from pathlib import Path
 from textwrap import dedent
 
-from litmus_check import SuiteModule, Violation
-from litmus_check.cli import EXIT_VIOLATIONS, LitmusCheckCommand
-from litmus_check.rules.no_swallowed_cancel import NoSwallowedCancelRule
+from hilt_check import SuiteModule, Violation
+from hilt_check.cli import EXIT_VIOLATIONS, HiltCheckCommand
+from hilt_check.rules.no_swallowed_cancel import NoSwallowedCancelRule
 
-CODE = "litmus/no-swallowed-cancel"
+CODE = "hilt/no-swallowed-cancel"
 
 
 def _check(source: str) -> list[Violation]:
@@ -28,7 +28,7 @@ def _lines(source: str) -> list[int]:
 class TestNoSwallowedCancelFire:
     def test_bare_except_around_an_await_names_the_fix(self) -> None:
         source = """
-            class Suite(LitmusTest):
+            class Suite(TestComponent):
                 async def _leaf(self, utils: TestUtils) -> Verdict:
                     try:
                         result = await utils.exec("true")
@@ -46,7 +46,7 @@ class TestNoSwallowedCancelFire:
 
     def test_base_exception_and_both_cancelled_error_spellings_are_caught(self) -> None:
         source = """
-            class Suite(LitmusTest):
+            class Suite(TestComponent):
                 async def _a(self, utils: TestUtils) -> Verdict:
                     try:
                         await utils.exec("true")
@@ -70,7 +70,7 @@ class TestNoSwallowedCancelFire:
 
     def test_contextlib_suppress_of_cancellation_is_caught(self) -> None:
         source = """
-            class Suite(LitmusTest):
+            class Suite(TestComponent):
                 async def cleanup(self, utils: TestUtils) -> None:
                     with contextlib.suppress(asyncio.CancelledError):
                         await utils.exec("poweroff")
@@ -83,7 +83,7 @@ class TestNoSwallowedCancelFire:
 class TestNoSwallowedCancelStaySilent:
     def test_catching_exception_lets_cancellation_through(self) -> None:
         source = """
-            class Suite(LitmusTest):
+            class Suite(TestComponent):
                 async def _leaf(self, utils: TestUtils) -> Verdict:
                     try:
                         result = await utils.exec("true")
@@ -97,7 +97,7 @@ class TestNoSwallowedCancelStaySilent:
 
     def test_a_handler_that_reraises_after_cleanup_is_fine(self) -> None:
         source = """
-            class Suite(LitmusTest):
+            class Suite(TestComponent):
                 async def _leaf(self, utils: TestUtils) -> Verdict:
                     try:
                         await utils.exec("start")
@@ -110,7 +110,7 @@ class TestNoSwallowedCancelStaySilent:
 
     def test_a_try_with_no_await_cannot_be_cancelled_there(self) -> None:
         source = """
-            class Suite(LitmusTest):
+            class Suite(TestComponent):
                 async def _leaf(self, utils: TestUtils) -> Verdict:
                     try:
                         value = float(utils.ctx["reading"])
@@ -124,7 +124,7 @@ class TestNoSwallowedCancelStaySilent:
 
     def test_synchronous_methods_and_other_classes_are_ignored(self) -> None:
         source = """
-            class Suite(LitmusTest):
+            class Suite(TestComponent):
                 def _parse(self, text: str) -> float:
                     try:
                         return float(text)
@@ -143,10 +143,10 @@ class TestNoSwallowedCancelStaySilent:
 
 class TestNoSwallowedCancelAtTheCommandLine:
     def test_seeded_fixture_is_caught_and_clean_fixture_is_not(self) -> None:
-        fixtures = Path(__file__).parent / "fixtures" / "litmus_check"
+        fixtures = Path(__file__).parent / "fixtures" / "hilt_check"
         out = io.StringIO()
 
-        status = LitmusCheckCommand(stdout=out, stderr=io.StringIO()).run(
+        status = HiltCheckCommand(stdout=out, stderr=io.StringIO()).run(
             ["--select", CODE, str(fixtures)]
         )
 

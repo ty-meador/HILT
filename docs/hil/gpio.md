@@ -20,7 +20,7 @@ and impossible to debounce cleanly) or smuggling a pin controller inside a
 `RemoteInterface` subclass that answers `_exec` with a fake shell dialect —
 exactly the parallel-lifecycle-in-disguise ruling 1 forbids. `GpioInterface` is
 its own ABC, structurally parallel to `RemoteInterface`
-(`src/litmus/remote.py`) but not a subclass of it: it owns `connect`/
+(`src/hilt/remote.py`) but not a subclass of it: it owns `connect`/
 `disconnect`/`cancel_in_flight` in the same shape, and adds pin-shaped
 operations in place of `exec`.
 
@@ -107,7 +107,7 @@ regardless of backend:
   every signal" — a mechanical relay and a solid-state one settle on different
   timescales, and a noisy line often needs a strict window with a generous
   deadline. The author who knows the hardware states both numbers.
-- Catch `PinSettleFailure` and decide what it means. It is a `LitmusError`,
+- Catch `PinSettleFailure` and decide what it means. It is a `HiltError`,
   not a `TestFailure`, and that ancestry is the whole point: a pin that will
   not stop moving does not by itself say whether the DUT is faulty, the
   harness is noisy, or the probe is loose. The author models it into a verdict
@@ -159,7 +159,7 @@ lifecycle.
 
 | Situation | Raised as | Terminal state |
 |---|---|---|
-| A pin never settles within its acquisition deadline | `PinSettleFailure` (provisional; a `LitmusError`, deliberately **not** a `TestFailure` — the exact posture `ArpResolutionFailure` holds, `src/litmus/errors.py`) | Fail when the author catches it and states the verdict; a `ContractViolation`-wrapped Fail (`bug: true`) when it escapes, because the suite never modeled the mode |
+| A pin never settles within its acquisition deadline | `PinSettleFailure` (provisional; a `HiltError`, deliberately **not** a `TestFailure` — the exact posture `ArpResolutionFailure` holds, `src/hilt/errors.py`) | Fail when the author catches it and states the verdict; a `ContractViolation`-wrapped Fail (`bug: true`) when it escapes, because the suite never modeled the mode |
 | A pin call exceeds the backend's declared latency ceiling | `PinSettleFailure`, naming the backend operation | As above. Never recorded as a node time-budget expiry |
 | Direction/level operation misused (write to an input, read an output-only pin) | `TypeError` at the call site | `ContractViolation` (Fail, `bug: true`) — same posture as `ExecRouting`'s connection-pair `TypeError`s |
 | Backend cannot reach the controller during a read | No exception: `read_level` returns `PinLevel.UNAVAILABLE` | Whatever verdict the author writes for that state. An unhandled third member is not a framework error — it is a reading the suite declined to judge |
@@ -171,7 +171,7 @@ lifecycle.
 
 No new terminal state is introduced, and no new exception root.
 `PinSettleFailure` is an operational condition rather than a verdict, which is
-why it takes `LitmusError` and not `TestFailure`: "this pin will not stop
+why it takes `HiltError` and not `TestFailure`: "this pin will not stop
 moving" does not tell anyone whether the DUT is faulty, the harness is noisy,
 or the probe is loose, and the framework must not choose among those on the
 author's behalf. That is the epistemic position `ArpResolutionFailure` already

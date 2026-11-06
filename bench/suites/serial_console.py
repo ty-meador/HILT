@@ -17,7 +17,7 @@ The console on the far end is the self-test ``FakeConsole`` served by the surrog
 replies with N bytes, ``sleep N`` parks until Ctrl-C. A pty drops BREAK, so the cancel
 lands on the Ctrl-C fallback and the port is closed afterwards, as the contract says.
 
-Run it: ``SERIAL_DEVICE=/dev/pts/N PYTHONPATH=. litmus run bench/suites/serial_console.py``.
+Run it: ``SERIAL_DEVICE=/dev/pts/N PYTHONPATH=. hilt run bench/suites/serial_console.py``.
 ``SERIAL_BAUD`` overrides the constructor baud when it is set.
 """
 
@@ -27,10 +27,10 @@ import asyncio
 import time
 from typing import Any
 
-from litmus import PASS, LitmusTest, TestFailure, TestUtils, Verdict, evidence
+from hilt import PASS, TestComponent, TestFailure, TestUtils, Verdict, evidence
 
 
-class SerialConsole(LitmusTest):
+class SerialConsole(TestComponent):
     """Open a console by path and prove the exec contract end to end over the wire."""
 
     def __init__(
@@ -78,7 +78,7 @@ class SerialConsole(LitmusTest):
             "exec_latency_limit_ms": self._exec_latency_limit_ms,
         }
 
-    def build_suite(self) -> LitmusTest:
+    def build_suite(self) -> TestComponent:
         """Prompt sync first; every later claim assumes the console answers."""
         return self.sequence(
             self.name,

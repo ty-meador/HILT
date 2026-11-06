@@ -27,7 +27,7 @@ RACK = "tests/test_rack_scale.py"
 BENCH_ENV: Mapping[str, str] = {
     "GITLAB_API_V4_URL": "https://gitlab.example/api/v4",
     "GITLAB_PROJECT_ID": "85833370",
-    "LITMUS_BOT_TOKEN": "glpat-test",
+    "HILT_BOT_TOKEN": "glpat-test",
     "DISCORD_WEBHOOK_URL": "https://discord.example/hook",
     "SOAK_RUNS": "2",
     "RACK_REPEATS": "3",
@@ -125,7 +125,7 @@ class TestSoakRun:
 
 class TestNightReport:
     def _report(self, *runs: SoakRun) -> NightReport:
-        return NightReport(runs, sha=SHA, record="bench-01:/srv/litmus/.soak", date="2026-09-05")
+        return NightReport(runs, sha=SHA, record="bench-01:/srv/hilt/.soak", date="2026-09-05")
 
     def test_tally_counts_green_over_total_per_series_in_order(self) -> None:
         report = self._report(
@@ -143,7 +143,7 @@ class TestNightReport:
 
         assert f"Green night 5 of {GREEN_STREAK_TARGET} consecutive" in note
         assert "<!-- nightly-soak verdict=green sha=abc1234 -->" in note
-        assert "Record: bench-01:/srv/litmus/.soak" in note
+        assert "Record: bench-01:/srv/hilt/.soak" in note
 
     def test_red_note_names_every_failing_run_and_resets_the_streak(self) -> None:
         report = self._report(
@@ -311,15 +311,13 @@ class TestNightlySoak:
         runner = _FakeRunner({(RACK, 1): RACK_FAILURE})
         http = _FakeHttp()
         env = {
-            k: v
-            for k, v in BENCH_ENV.items()
-            if k not in {"LITMUS_BOT_TOKEN", "DISCORD_WEBHOOK_URL"}
+            k: v for k, v in BENCH_ENV.items() if k not in {"HILT_BOT_TOKEN", "DISCORD_WEBHOOK_URL"}
         }
         soak, out = _soak(runner, http, tmp_path, env)
 
         assert soak.run() == 1
         assert http.calls == []
-        assert f"LITMUS_BOT_TOKEN unset; night not recorded on #{ISSUE_IID}" in out.getvalue()
+        assert f"HILT_BOT_TOKEN unset; night not recorded on #{ISSUE_IID}" in out.getvalue()
         assert "DISCORD_WEBHOOK_URL unset; red night not posted to #general" in out.getvalue()
 
     def test_no_post_at_the_bench_runs_everything_and_touches_nothing(self, tmp_path: Path) -> None:

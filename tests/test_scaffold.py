@@ -1,7 +1,7 @@
-"""``litmus new``: the gated-PASS template, the files it writes, and example shape.
+"""``hilt new``: the gated-PASS template, the files it writes, and example shape.
 
 The generator is the single source for the scaffolding shape (issue #79). Teaching
-examples keep their own details; each ``LitmusTest`` subclass in ``examples/`` still
+examples keep their own details; each ``TestComponent`` subclass in ``examples/`` still
 has an annotated ``__init__``, a ``build_suite``, and a gated ``return PASS``.
 """
 
@@ -19,10 +19,10 @@ from pathlib import Path
 
 import pytest
 
-from litmus import State
-from litmus.cli import EXIT_PASS, EXIT_USAGE, LitmusCommand
-from litmus.scaffold import SuiteScaffolder
-from litmus_check.cli import EXIT_CLEAN, LitmusCheckCommand
+from hilt import State
+from hilt.cli import EXIT_PASS, EXIT_USAGE, HiltCommand
+from hilt.scaffold import SuiteScaffolder
+from hilt_check.cli import EXIT_CLEAN, HiltCheckCommand
 
 ROOT = Path(__file__).resolve().parents[1]
 EXAMPLES = ROOT / "examples"
@@ -32,7 +32,7 @@ _REQUIRED_FULL = frozenset(SuiteScaffolder.required_suite_methods())
 
 def _run(*argv: str) -> tuple[int, str, str]:
     out, err = io.StringIO(), io.StringIO()
-    status = LitmusCommand(stdout=out, stderr=err).run(argv)
+    status = HiltCommand(stdout=out, stderr=err).run(argv)
     return status, out.getvalue(), err.getvalue()
 
 
@@ -47,7 +47,7 @@ def _generated(tmp_path: Path, class_name: str = "WidgetSuite") -> tuple[Path, P
     return suite, test
 
 
-class TestLitmusNewWritesTheTemplate:
+class TestHiltNewWritesTheTemplate:
     def test_default_cwd_write_prints_both_paths(self, tmp_path: Path) -> None:
         # conftest chdirs into tmp_path, so the default directory is this test's tmp.
         status, out, err = _run("new", "WidgetSuite")
@@ -117,11 +117,11 @@ class TestLitmusNewWritesTheTemplate:
 
 
 class TestGeneratedSuiteClearsTheGates:
-    def test_generated_suite_passes_litmus_check(self, tmp_path: Path) -> None:
+    def test_generated_suite_passes_hilt_check(self, tmp_path: Path) -> None:
         suite, _ = _generated(tmp_path)
         out = io.StringIO()
 
-        status = LitmusCheckCommand(stdout=out, stderr=io.StringIO()).run([str(suite)])
+        status = HiltCheckCommand(stdout=out, stderr=io.StringIO()).run([str(suite)])
 
         assert status == EXIT_CLEAN, out.getvalue()
 
@@ -174,7 +174,7 @@ class TestGeneratedSuiteClearsTheGates:
 
         assert result.returncode == 0, result.stdout + result.stderr
 
-    def test_generated_suite_runs_pass_under_litmus_run(self, tmp_path: Path) -> None:
+    def test_generated_suite_runs_pass_under_hilt_run(self, tmp_path: Path) -> None:
         suite, _ = _generated(tmp_path)
 
         status, _, err = _run("run", str(suite))
@@ -193,7 +193,7 @@ class TestGeneratedSuiteClearsTheGates:
             text=True,
             env={
                 **os.environ,
-                "LITMUS_ARTIFACT_ROOT": str(tmp_path / "artifacts"),
+                "HILT_ARTIFACT_ROOT": str(tmp_path / "artifacts"),
                 "PYTHONPATH": str(ROOT / "src"),
             },
         )
@@ -255,7 +255,7 @@ class TestTemplateIsTheSingleSource:
 def _suite_methods(tree: ast.Module) -> set[str]:
     methods: set[str] = set()
     for node in tree.body:
-        if isinstance(node, ast.ClassDef) and _extends_litmus_test(node):
+        if isinstance(node, ast.ClassDef) and _extends_test_component(node):
             for item in node.body:
                 if isinstance(item, ast.FunctionDef | ast.AsyncFunctionDef):
                     methods.add(item.name)
@@ -265,7 +265,7 @@ def _suite_methods(tree: ast.Module) -> set[str]:
 def _example_suites(tree: ast.Module) -> list[tuple[str, set[str], bool]]:
     found: list[tuple[str, set[str], bool]] = []
     for node in tree.body:
-        if not isinstance(node, ast.ClassDef) or not _extends_litmus_test(node):
+        if not isinstance(node, ast.ClassDef) or not _extends_test_component(node):
             continue
         methods = {
             item.name
@@ -276,15 +276,15 @@ def _example_suites(tree: ast.Module) -> list[tuple[str, set[str], bool]]:
     return found
 
 
-def _extends_litmus_test(node: ast.ClassDef) -> bool:
-    return any(isinstance(base, ast.Name) and base.id == "LitmusTest" for base in node.bases)
+def _extends_test_component(node: ast.ClassDef) -> bool:
+    return any(isinstance(base, ast.Name) and base.id == "TestComponent" for base in node.bases)
 
 
 def _has_gated_pass(tree: ast.Module) -> bool:
     return any(
         _class_has_gated_pass(node)
         for node in tree.body
-        if isinstance(node, ast.ClassDef) and _extends_litmus_test(node)
+        if isinstance(node, ast.ClassDef) and _extends_test_component(node)
     )
 
 

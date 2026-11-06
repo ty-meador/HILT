@@ -21,8 +21,8 @@ once, so each note can cite them instead of repeating them.
    ownership, the idempotent `cancel_in_flight` halt, `before_each`/`after_each`
    dispatch and the pair invariant, `use_survey`/`use_audit` asymmetry (survey
    swallows, audit does not), and the In-Flight Termination Contract belong to
-   `src/litmus/lifecycle.py`, `src/litmus/hooks.py`, and the transport base in
-   `src/litmus/remote.py`. A new interface contract governs transfer, error
+   `src/hilt/lifecycle.py`, `src/hilt/hooks.py`, and the transport base in
+   `src/hilt/remote.py`. A new interface contract governs transfer, error
    taxonomy, timing, and safe-state for its own protocol — it does not reopen how
    the framework sequences `configure` → `build_suite` → `cleanup`, how a hook
    pair fires, or how a hard abort reaches a resource. Hardware whose behavior
@@ -48,7 +48,7 @@ once, so each note can cite them instead of repeating them.
 Every note this page introduces is now signed and on `main`. Each landed as an
 independent MR carrying its note and the required `mkdocs.yml` navigation entry,
 so the docs checks passed standalone on that branch, following the
-[scope ruling on #94](https://gitlab.com/Tyler-Meador/litmus_test/-/issues/94#note_3799932288).
+[scope ruling on #94](https://gitlab.com/Tyler-Meador/HILT/-/issues/94#note_3799932288).
 A filename here becomes a link only after the file exists on `main`, so a note
 still in flight would otherwise carry a broken link on every branch but the one
 that adds the target.
@@ -70,7 +70,7 @@ this page introduces.
   that hardware — not a restatement of ruling 2 in the abstract, but what it
   means for *this* protocol's bring-up, teardown, and abort path.
 - A failure-vocabulary mapping onto the taxonomy already in `docs/contracts.md`
-  and `src/litmus/errors.py` (`TestFailure`, `ContractViolation`,
+  and `src/hilt/errors.py` (`TestFailure`, `ContractViolation`,
   `ExternalIntegrationFailure`, `OperatorInterrupt`, `MissingVerdict`). No note
   invents a new terminal state or a new exception root; Aborted and Fail keep
   their existing meanings.
@@ -84,6 +84,6 @@ this page introduces.
 - A description of what the Floor Technician sees in the timeline when the
   framework takes a safe-state action on that interface.
 
-None of these notes changes `litmus.__all__`. Every name in them is provisional
+None of these notes changes `hilt.__all__`. Every name in them is provisional
 until an implementation issue is raised and signed off in its own right, per
 `docs/api-stability.md`.

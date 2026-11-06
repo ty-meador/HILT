@@ -8,7 +8,7 @@ Contract below changes the transport's concurrency contract (one command on the
 wire at a time, queued in call order). Ty ruled "queue", not "refuse".
 
 Ty ruled **both** placements on 2026-09-05: `SerialInterface` as a local peer of
-`SshInterface` (console header on the litmus host), and the same transport reached
+`SshInterface` (console header on the HILT host), and the same transport reached
 through the existing `via` hop (a console server, or a Pi with a USB-UART, driven
 over SSH). One transport, two placements. This note specifies the transport's
 contract once — prompt detection, timeouts, line discipline, exit-status recovery,
@@ -100,10 +100,10 @@ equivalent of asyncssh's `process.exit_status`. The transport appends a sentinel
 to what it sends and parses it back out of the reply:
 
 ```
-<command>; echo "__LITMUS_RC__=$?"
+<command>; echo "__HILT_RC__=$?"
 ```
 
-Once the prompt reappears, the transport scans for `__LITMUS_RC__=<digits>`,
+Once the prompt reappears, the transport scans for `__HILT_RC__=<digits>`,
 strips that one line from `ExecResult.stdout`, and parses the digits as
 `exit_code`. A sentinel that never appears — echo suppression failed, the shell
 died mid-command — settles as `exit_code == -1` via `ExecResult.settled(...,
@@ -111,7 +111,7 @@ None)`, the same "no real status exists" path every transport shares, with the
 raw captured text kept as evidence rather than discarded: the documented `-1`
 case ("killed by a signal, or aborted before an exit status existed") with a lost
 sentinel standing in for the signal-kill. Stdout and the sentinel-bearing reply
-together are bounded by `litmus.executor.BoundedCapture` and
+together are bounded by `hilt.executor.BoundedCapture` and
 `DEFAULT_EXEC_OUTPUT_BUDGET` unmodified — the same named ceiling `LocalExec` and
 `SshInterface` already share. Hitting the budget sets `truncated=True`, stops
 accepting bytes, and triggers the Serial Abort Contract below (there is no
@@ -214,16 +214,16 @@ The transport raises nothing shaped like a verdict — only `ConnectionError`
 - **`cancel_in_flight` / abort** → parked `exec` settles `-1`,
   `stderr="transport closed"` — framework-decided, never a suite choice.
 - **A suite bug** (bad regex type, wrong argument) → propagates uncaught into
-  `LitmusTest`'s existing bug boundary: unmodeled exception → `ContractViolation`,
+  `TestComponent`'s existing bug boundary: unmodeled exception → `ContractViolation`,
   "CONTRACT VIOLATION IN `<name>`".
 
-Nothing here adds a new type to `litmus.errors`. The transport speaks the two
+Nothing here adds a new type to `hilt.errors`. The transport speaks the two
 vocabularies every `RemoteInterface` already speaks — `ConnectionError` at the
 protocol layer, `ExecResult` at the command layer.
 
 ## Via composition (placement 2)
 
-The device path names a node on the *remote* box, not the litmus host, so
+The device path names a node on the *remote* box, not the HILT host, so
 `SerialInterface` cannot open it as a local file descriptor the way placement 1
 does. The resolution reuses the seam `RemoteInterface` already has for this:
 `hop` and `endpoint` let a transport name its place in the topology independent
@@ -272,8 +272,8 @@ Two shapes, not four: `use_serial(device=...)` opens and binds; `use_serial()` w
 no arguments reads the active route. The policy-only shapes (`inherit=False`,
 `propagate=False`) stay with `use_shell`, and `use_serial` refuses them with a
 `TypeError` that says so. The declaring form is admitted only while `configure()`
-runs, under the same `ContractViolation` as `use_shell`, and `litmus-check`'s
-`litmus/shell-in-configure` reads `use_serial(...)` with arguments the same way.
+runs, under the same `ContractViolation` as `use_shell`, and `hilt-check`'s
+`hilt/shell-in-configure` reads `use_serial(...)` with arguments the same way.
 `via` must resolve to an SSH hop (a `Shell` from `use_shell` or `get_shell`): a
 console has no other tunnel to borrow, and the connector names `use_serial` in the
 `TypeError` when handed anything else — naming the hop it was handed and the
@@ -288,11 +288,11 @@ for `use_shell`. The route is shared by the node and its descendants, so
 ## Packaging
 
 `pyserial-asyncio` is checked for Apache-2.0 compatibility at implementation time and
-lands as an optional extra: `pip install litmus[serial]`. Core `litmus` gains no
-new dependency and `import litmus` never imports `litmus.serial`: the default
+lands as an optional extra: `pip install hilt[serial]`. Core `hilt` gains no
+new dependency and `import hilt` never imports `hilt.serial`: the default
 connector imports it on the first `use_serial` / `get_serial`, and a local open
 without the extra raises `ModuleNotFoundError` naming the install. `SerialInterface`
-stays off `litmus.__all__`, same policy as `RemoteInterface`, `SshInterface`, and
+stays off `hilt.__all__`, same policy as `RemoteInterface`, `SshInterface`, and
 `JunitXml` today ("stay private by test-pinned ruling") — the promised way to a
 console is `use_serial` / `get_serial`; self-tests and the transport-contract suite
 import the module directly.
@@ -306,7 +306,7 @@ the suite's own docstring. A `serial_peer` fixture joins `mock_peer` and
 master/slave pair, and a small in-process script on the slave end plays a
 login-and-shell console — echoing input, answering `success`/`fail`/`block`
 (parked until cancelled) the same way the other two fixtures do, and emitting the
-`__LITMUS_RC__=` sentinel itself so the suite exercises real parsing rather than a
+`__HILT_RC__=` sentinel itself so the suite exercises real parsing rather than a
 stub. This keeps the suite honest about actual line discipline (real CRLF, a real
 echo) while staying fully in-process — no UART hardware required for `make
 check`. `wait_in_flight` follows the existing `_wait_ssh_in_flight` shape (a short

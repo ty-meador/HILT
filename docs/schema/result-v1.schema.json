@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://gitlab.com/Tyler-Meador/litmus_test/-/raw/main/docs/schema/result-v1.schema.json",
-  "title": "litmus result record, format_version 1",
+  "$id": "https://gitlab.com/Tyler-Meador/HILT/-/raw/main/docs/schema/result-v1.schema.json",
+  "title": "hilt result record, format_version 1",
   "description": "The root RunResult.to_json() payload written to result.json in a run directory. The structural view of a run: the summary tree with a per-node link into the temporal view (timeline.jsonl). Framework-owned objects stay open so a consumer accepts fields added within version 1 by a later release; docs/inspector-json.md carries the policy.",
   "type": "object",
   "required": [
@@ -80,7 +80,7 @@
     },
     "suite_target": {
       "type": ["string", "null"],
-      "description": "The loader target that produced the run, as litmus run resolved it: an absolute suite file or module name, '::', and the suite class name. Null when the run was started without one, in which case litmus inspect cannot offer the Re-Run tab unless --suite names the suite. Added within version 1; a consumer written before it treats the field as additive."
+      "description": "The loader target that produced the run, as hilt run resolved it: an absolute suite file or module name, '::', and the suite class name. Null when the run was started without one, in which case hilt inspect cannot offer the Re-Run tab unless --suite names the suite. Added within version 1; a consumer written before it treats the field as additive."
     }
   },
   "$defs": {

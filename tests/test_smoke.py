@@ -2,12 +2,12 @@
 
 import asyncio
 
-import litmus
+import hilt
 
 
 class TestScaffold:
     def test_package_imports(self) -> None:
-        assert litmus.__name__ == "litmus"
+        assert hilt.__name__ == "hilt"
 
     async def test_async_rig_runs(self) -> None:
         await asyncio.sleep(0)

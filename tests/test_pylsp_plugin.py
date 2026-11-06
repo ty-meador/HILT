@@ -1,4 +1,4 @@
-"""The python-lsp-server hooks are a thin translation of :class:`LitmusLsp`."""
+"""The python-lsp-server hooks are a thin translation of :class:`HiltLsp`."""
 
 from __future__ import annotations
 
@@ -6,16 +6,16 @@ from pathlib import Path
 from textwrap import dedent
 from types import SimpleNamespace
 
-from litmus_check.lsp import LspObject
-from litmus_check.pylsp_plugin import (
+from hilt_check.lsp import LspObject
+from hilt_check.pylsp_plugin import (
     PylspAdapter,
     pylsp_code_actions,
     pylsp_lint,
     pylsp_settings,
 )
-from litmus_check.registry import RuleRegistry
+from hilt_check.registry import RuleRegistry
 
-_FIXTURES = Path(__file__).parent / "fixtures" / "litmus_check"
+_FIXTURES = Path(__file__).parent / "fixtures" / "hilt_check"
 # Two seed files between them carry one seed per rule (seeded_seams.py says why).
 SEEDED = (_FIXTURES / "seeded_suite.py", _FIXTURES / "seeded_seams.py")
 
@@ -35,7 +35,7 @@ def _document(source: str, path: str = "suite.py") -> SimpleNamespace:
 
 class TestPylspHooks:
     def test_settings_enable_the_plugin(self) -> None:
-        plugin = LspObject.mapping(LspObject.mapping(pylsp_settings()["plugins"])["litmus_check"])
+        plugin = LspObject.mapping(LspObject.mapping(pylsp_settings()["plugins"])["hilt_check"])
         assert plugin["enabled"] is True
 
     def test_lint_publishes_every_catalogue_rule_on_the_seeded_fixture(self) -> None:
@@ -49,7 +49,7 @@ class TestPylspHooks:
         found = {item["code"] for item in diagnostics}
 
         assert found == set(RuleRegistry.discover().codes())
-        assert all(item["source"] == "litmus-check" for item in diagnostics)
+        assert all(item["source"] == "hilt-check" for item in diagnostics)
 
     def test_lint_respects_enabled_false(self) -> None:
         document = _document("async def claim(utils):\n    return PASS\n")
@@ -60,7 +60,7 @@ class TestPylspHooks:
     def test_code_actions_wrap_gated_pass(self) -> None:
         source = dedent(
             """
-            from litmus import PASS, TestFailure
+            from hilt import PASS, TestFailure
 
             async def claim(utils):
                 return PASS
@@ -68,7 +68,7 @@ class TestPylspHooks:
         )
         document = _document(source)
         diagnostics = pylsp_lint(_Config(), None, document, False)
-        gated = next(item for item in diagnostics if item["code"] == "litmus/gated-pass")
+        gated = next(item for item in diagnostics if item["code"] == "hilt/gated-pass")
         actions = pylsp_code_actions(
             _Config(),
             None,
@@ -100,7 +100,7 @@ class TestPylspHooks:
         document = _document("async def claim(utils):\n    return PASS\n")
         diagnostics = adapter.lint(_Config(), document)
 
-        assert any(item["code"] == "litmus/gated-pass" for item in diagnostics)
+        assert any(item["code"] == "hilt/gated-pass" for item in diagnostics)
 
     def test_code_actions_respect_enabled_false(self) -> None:
         document = _document("async def claim(utils):\n    return PASS\n")
@@ -124,7 +124,7 @@ class TestPylspHooks:
         source = "async def claim(utils):\n    return PASS\n"
         document = _document(source)
         diagnostics = pylsp_lint(_Config(), None, document, False)
-        gated = next(item for item in diagnostics if item["code"] == "litmus/gated-pass")
+        gated = next(item for item in diagnostics if item["code"] == "hilt/gated-pass")
         actions = pylsp_code_actions(
             _Config(),
             None,
@@ -139,7 +139,7 @@ class TestPylspHooks:
         source = "async def claim(utils):\n    return PASS\n"
         document = _document(source)
         diagnostics = pylsp_lint(_Config(), None, document, False)
-        gated = next(item for item in diagnostics if item["code"] == "litmus/gated-pass")
+        gated = next(item for item in diagnostics if item["code"] == "hilt/gated-pass")
         actions = pylsp_code_actions(
             _Config(), None, document, gated["range"], {"only": "quickfix"}
         )
@@ -150,7 +150,7 @@ class TestPylspHooks:
         source = "async def claim(utils):\n    return PASS\n"
         document = _document(source)
         diagnostics = pylsp_lint(_Config(), None, document, False)
-        gated = next(item for item in diagnostics if item["code"] == "litmus/gated-pass")
+        gated = next(item for item in diagnostics if item["code"] == "hilt/gated-pass")
         actions = pylsp_code_actions(_Config(), None, document, gated["range"], ["not-an-object"])
 
         assert len(actions) == 1
@@ -159,7 +159,7 @@ class TestPylspHooks:
         document = _document("async def claim(utils):\n    return PASS\n")
         diagnostics = pylsp_lint(SimpleNamespace(), None, document, False)
 
-        assert any(item["code"] == "litmus/gated-pass" for item in diagnostics)
+        assert any(item["code"] == "hilt/gated-pass" for item in diagnostics)
 
     def test_plugin_settings_that_are_not_a_mapping_stay_enabled(self) -> None:
         class WeirdConfig:
@@ -170,7 +170,7 @@ class TestPylspHooks:
         document = _document("async def claim(utils):\n    return PASS\n")
         diagnostics = pylsp_lint(WeirdConfig(), None, document, False)
 
-        assert any(item["code"] == "litmus/gated-pass" for item in diagnostics)
+        assert any(item["code"] == "hilt/gated-pass" for item in diagnostics)
 
     def test_path_object_and_missing_uri_still_lint(self) -> None:
         path = Path("suite.py")

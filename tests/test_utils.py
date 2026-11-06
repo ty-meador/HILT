@@ -19,27 +19,27 @@ import pytest
 from tests.fake_console import open_pty_console
 from tests.mock_connector import ConnectorInstaller
 
-import litmus
-from litmus import (
+import hilt
+from hilt import (
     PASS,
     ContractViolation,
     ExecResult,
-    LitmusTest,
     RunResult,
+    TestComponent,
     TestFailure,
     TestUtils,
     Verdict,
 )
-from litmus.lifecycle import Outcome, State
-from litmus.mock import MockTransport
-from litmus.remote import RemoteInterface
-from litmus.routing import ExecRouter, RouterRunParams
-from litmus.utils import node_runtime
+from hilt.lifecycle import Outcome, State
+from hilt.mock import MockTransport
+from hilt.remote import RemoteInterface
+from hilt.routing import ExecRouter, RouterRunParams
+from hilt.utils import node_runtime
 
 
 class _ScopedLogRecord(Protocol):
-    litmus_node: str
-    litmus_scope: tuple[str, ...]
+    hilt_node: str
+    hilt_scope: tuple[str, ...]
     measurement: int
 
 
@@ -81,11 +81,11 @@ class TestExecRoute:
 
 class TestTestUtilsPublicSurface:
     def test_test_utils_is_the_exported_lifecycle_surface(self) -> None:
-        assert litmus.TestUtils is TestUtils
-        assert "TestUtils" in litmus.__all__
-        assert litmus.ExecResult is ExecResult
-        assert "ExecResult" in litmus.__all__
-        assert not hasattr(litmus, "LocalExec")
+        assert hilt.TestUtils is TestUtils
+        assert "TestUtils" in hilt.__all__
+        assert hilt.ExecResult is ExecResult
+        assert "ExecResult" in hilt.__all__
+        assert not hasattr(hilt, "LocalExec")
 
         utils = TestUtils()
 
@@ -101,8 +101,8 @@ class TestTestUtilsInjection:
     async def test_run_constructs_the_root_utility_seed(self) -> None:
         received: list[TestUtils] = []
 
-        class Suite(LitmusTest):
-            def build_suite(self) -> LitmusTest:
+        class Suite(TestComponent):
+            def build_suite(self) -> TestComponent:
                 return self.test("claim", self._claim)
 
             async def _claim(self, utils: TestUtils) -> Verdict:
@@ -120,12 +120,12 @@ class TestTestUtilsInjection:
     ) -> None:
         seen: dict[str, TestUtils] = {}
 
-        class Suite(LitmusTest):
+        class Suite(TestComponent):
             async def configure(self, utils: TestUtils) -> dict[str, object]:
                 seen["configure"] = utils
                 return {"serial": "SN-0042"}
 
-            def build_suite(self) -> LitmusTest:
+            def build_suite(self) -> TestComponent:
                 return self.sequence(
                     "claims",
                     [
@@ -151,7 +151,7 @@ class TestTestUtilsInjection:
         seed = TestUtils(ctx={"injected": True}, env=source_env)
         source_env["STATION"] = "changed after snapshot"
 
-        with caplog.at_level("INFO", logger="litmus"):
+        with caplog.at_level("INFO", logger="hilt"):
             outcome = await Suite(name="rack").main(seed)
 
         assert outcome.state is State.PASS
@@ -170,8 +170,8 @@ class TestTestUtilsInjection:
             for record in caplog.records
             if "observation" in record.message
         ]
-        assert [record.litmus_node for record in records] == ["first", "second"]
-        assert [record.litmus_scope for record in records] == [
+        assert [record.hilt_node for record in records] == ["first", "second"]
+        assert [record.hilt_scope for record in records] == [
             ("rack", "claims", "first"),
             ("rack", "claims", "second"),
         ]
@@ -202,7 +202,7 @@ class TestWaitForContract:
         looking_for = "UUT boot flag present"
         built: list[str] = []
 
-        class Suite(LitmusTest):
+        class Suite(TestComponent):
             async def configure(self, utils: TestUtils) -> dict[str, object]:
                 await utils.wait_for(
                     lambda: False,
@@ -211,7 +211,7 @@ class TestWaitForContract:
                 )
                 return {}
 
-            def build_suite(self) -> LitmusTest:
+            def build_suite(self) -> TestComponent:
                 built.append("built")
                 return self.test("unreachable", self._unreachable)
 
@@ -226,8 +226,8 @@ class TestWaitForContract:
     async def test_test_method_timeout_is_a_failure_artifact(self) -> None:
         looking_for = "stress test log present on UUT"
 
-        class Suite(LitmusTest):
-            def build_suite(self) -> LitmusTest:
+        class Suite(TestComponent):
+            def build_suite(self) -> TestComponent:
                 return self.test("wait for stress test", self._wait_for_stress_test)
 
             async def _wait_for_stress_test(self, utils: TestUtils) -> Verdict:
@@ -299,7 +299,7 @@ class TestWaitForContract:
 
 class TestFrameworkLoggingDiscipline:
     def test_framework_code_never_calls_print(self) -> None:
-        source_root = Path(__file__).parents[1] / "src" / "litmus"
+        source_root = Path(__file__).parents[1] / "src" / "hilt"
         violations: list[str] = []
 
         for source_path in source_root.rglob("*.py"):
@@ -315,10 +315,10 @@ class TestFrameworkLoggingDiscipline:
 
         assert violations == []
 
-    def test_module_loggers_use_getlogger_dunder_name_not_a_shared_litmus_literal(
+    def test_module_loggers_use_getlogger_dunder_name_not_a_shared_hilt_literal(
         self,
     ) -> None:
-        source_root = Path(__file__).parents[1] / "src" / "litmus"
+        source_root = Path(__file__).parents[1] / "src" / "hilt"
         violations: list[str] = []
 
         for source_path in source_root.rglob("*.py"):
@@ -391,7 +391,7 @@ class TestUtilsExecNeverThrows:
         assert result.stderr.strip() == "err"
 
     async def test_a_missing_command_is_still_a_result(self) -> None:
-        result = await TestUtils().exec("litmus-no-such-command-on-purpose")
+        result = await TestUtils().exec("hilt-no-such-command-on-purpose")
 
         assert result.exit_code != 0
         assert result.exit_code != -1
@@ -426,8 +426,8 @@ class TestUtilsExecNeverThrows:
             await task
 
     async def test_a_suite_method_inspects_failure_and_decides_the_verdict(self) -> None:
-        class Suite(LitmusTest):
-            def build_suite(self) -> LitmusTest:
+        class Suite(TestComponent):
+            def build_suite(self) -> TestComponent:
                 return self.test("service", self._service)
 
             async def _service(self, utils: TestUtils) -> Verdict:
@@ -444,15 +444,15 @@ class TestUtilsExecNeverThrows:
         assert outcome.failure.received == "1"
 
     async def test_exec_logs_land_on_the_leaf(self, caplog: pytest.LogCaptureFixture) -> None:
-        class Suite(LitmusTest):
-            def build_suite(self) -> LitmusTest:
+        class Suite(TestComponent):
+            def build_suite(self) -> TestComponent:
                 return self.test("probe", self._probe)
 
             async def _probe(self, utils: TestUtils) -> Verdict:
                 await utils.exec("echo observed")
                 return PASS
 
-        with caplog.at_level("INFO", logger="litmus"):
+        with caplog.at_level("INFO", logger="hilt"):
             outcome = await Suite(name="rack").run()
 
         assert outcome.state is State.PASS
@@ -463,7 +463,7 @@ class TestUtilsExecNeverThrows:
             or "exit code:" in record.message
             or "stdout:" in record.message
         ]
-        assert [cast("_ScopedLogRecord", record).litmus_node for record in records] == [
+        assert [cast("_ScopedLogRecord", record).hilt_node for record in records] == [
             "probe",
             "probe",
             "probe",
@@ -569,7 +569,7 @@ class TestUseSerial:
     ) -> None:
         opened: list[RemoteInterface] = []
 
-        class Suite(LitmusTest):
+        class Suite(TestComponent):
             def __init__(self, *, name: str, device: str) -> None:
                 super().__init__(name=name)
                 self._device = device
@@ -580,7 +580,7 @@ class TestUseSerial:
                 opened.append(shell.ssh)
                 return {}
 
-            def build_suite(self) -> LitmusTest:
+            def build_suite(self) -> TestComponent:
                 return self.test("console", self._claim)
 
             async def _claim(self, utils: TestUtils) -> Verdict:
@@ -600,7 +600,7 @@ class TestUseSerial:
     async def test_parallel_leaves_take_turns_on_the_routed_console(self) -> None:
         """Issue #150: the F13 shape on a console. One use_serial, independent leaves."""
 
-        class Suite(LitmusTest):
+        class Suite(TestComponent):
             def __init__(self, *, name: str, device: str) -> None:
                 super().__init__(name=name)
                 self._device = device
@@ -609,7 +609,7 @@ class TestUseSerial:
                 await utils.use_serial(device=self._device, prompt_timeout=3.0)
                 return {}
 
-            def build_suite(self) -> LitmusTest:
+            def build_suite(self) -> TestComponent:
                 return self.parallel(
                     "claims",
                     [
@@ -642,8 +642,8 @@ class TestUseSerial:
         assert console.received == ["delay 0.3", "fail", "uname"]
 
     async def test_declaring_outside_configure_is_a_contract_violation(self) -> None:
-        class Suite(LitmusTest):
-            def build_suite(self) -> LitmusTest:
+        class Suite(TestComponent):
+            def build_suite(self) -> TestComponent:
                 return self.test("console", self._claim)
 
             async def _claim(self, utils: TestUtils) -> Verdict:
@@ -690,8 +690,8 @@ class TestUseSerial:
             assert (await utils.exec("uname")).exit_code == -1
 
 
-class _EnvSuite(LitmusTest):
-    def build_suite(self) -> LitmusTest:
+class _EnvSuite(TestComponent):
+    def build_suite(self) -> TestComponent:
         return self.parallel("claims", [self.test("probe", self._probe)])
 
     async def _probe(self, _utils: TestUtils) -> Verdict:
@@ -756,7 +756,7 @@ class TestEnvSnapshotFilter:
     ) -> None:
         source = {**self._SOURCE, "environment": "DEBUG"}
 
-        with caplog.at_level("WARNING", logger="litmus"):
+        with caplog.at_level("WARNING", logger="hilt"):
             utils = TestUtils(env=source, env_deny=["TOKEN", "SECRET"])
 
         assert dict(utils.env) == source
@@ -768,7 +768,7 @@ class TestEnvSnapshotFilter:
     def test_debug_mode_names_the_list_it_ignored(self, caplog: pytest.LogCaptureFixture) -> None:
         source = {**self._SOURCE, "environment": "DEBUG"}
 
-        with caplog.at_level("WARNING", logger="litmus"):
+        with caplog.at_level("WARNING", logger="hilt"):
             TestUtils(env=source, env_allow=["^HOME$"])
 
         assert "ignoring provided allow list" in caplog.records[0].message
@@ -776,14 +776,14 @@ class TestEnvSnapshotFilter:
     def test_debug_mode_is_the_exact_key_and_value(self, caplog: pytest.LogCaptureFixture) -> None:
         source = {**self._SOURCE, "environment": "debug", "ENVIRONMENT": "DEBUG"}
 
-        with caplog.at_level("WARNING", logger="litmus"):
+        with caplog.at_level("WARNING", logger="hilt"):
             utils = TestUtils(env=source, env_deny=["TOKEN"])
 
         assert "GITLAB_TOKEN" not in utils.env
         assert caplog.records == []
 
     def test_no_list_never_logs_even_in_debug_mode(self, caplog: pytest.LogCaptureFixture) -> None:
-        with caplog.at_level("WARNING", logger="litmus"):
+        with caplog.at_level("WARNING", logger="hilt"):
             TestUtils(env={**self._SOURCE, "environment": "DEBUG"})
 
         assert caplog.records == []
@@ -814,10 +814,10 @@ _OVERFLOW_MEMORY_ROUNDS = 4
 _OVERFLOW_RETAINED_LIMIT_BYTES = 256 * 1024
 
 
-class _OverflowDut(LitmusTest):
+class _OverflowDut(TestComponent):
     """One DUT whose probe dumps past the run's exec output budget."""
 
-    def build_suite(self) -> LitmusTest:
+    def build_suite(self) -> TestComponent:
         return self.test("overflow", self._overflow)
 
     async def _overflow(self, utils: TestUtils) -> Verdict:
@@ -831,7 +831,7 @@ class _OverflowDut(LitmusTest):
         return PASS
 
 
-class _OverflowRack(LitmusTest):
+class _OverflowRack(TestComponent):
     """Seventy overflowing DUT lifecycles under one run seed."""
 
     def __init__(self) -> None:
@@ -840,7 +840,7 @@ class _OverflowRack(LitmusTest):
             _OverflowDut(name=f"dut-{index:02d}") for index in range(_OVERFLOW_DUT_COUNT)
         )
 
-    def build_suite(self) -> LitmusTest:
+    def build_suite(self) -> TestComponent:
         return self.parallel("rack DUTs", self._duts)
 
 
@@ -851,9 +851,9 @@ async def _run_overflow_rack() -> None:
     del result
 
 
-def _retained_litmus_bytes() -> int:
+def _retained_hilt_bytes() -> int:
     snapshot = tracemalloc.take_snapshot().filter_traces(
-        (tracemalloc.Filter(True, "*/src/litmus/*"),)
+        (tracemalloc.Filter(True, "*/src/hilt/*"),)
     )
     return sum(stat.size for stat in snapshot.statistics("filename"))
 
@@ -868,21 +868,21 @@ class TestUtilsOutputBudget:
         assert result.captured_bytes == 32
 
     async def test_the_scoped_log_names_truncation(self, caplog: pytest.LogCaptureFixture) -> None:
-        class Suite(LitmusTest):
-            def build_suite(self) -> LitmusTest:
+        class Suite(TestComponent):
+            def build_suite(self) -> TestComponent:
                 return self.test("probe", self._probe)
 
             async def _probe(self, utils: TestUtils) -> Verdict:
                 await utils.exec("head -c 4096 /dev/zero")
                 return PASS
 
-        with caplog.at_level("WARNING", logger="litmus"):
+        with caplog.at_level("WARNING", logger="hilt"):
             outcome = await Suite(name="rack").run(output_budget=32)
 
         assert outcome.state is State.PASS
         records = [record for record in caplog.records if "exec output truncated" in record.message]
         assert len(records) == 1
-        assert cast("_ScopedLogRecord", records[0]).litmus_node == "probe"
+        assert cast("_ScopedLogRecord", records[0]).hilt_node == "probe"
         assert "captured 32 bytes" in records[0].message
         assert "budget 32" in records[0].message
 
@@ -896,17 +896,17 @@ class TestUtilsOutputBudget:
         try:
             await _run_overflow_rack()
             gc.collect()
-            baseline = _retained_litmus_bytes()
+            baseline = _retained_hilt_bytes()
             samples: list[int] = []
             for _ in range(_OVERFLOW_MEMORY_ROUNDS):
                 await _run_overflow_rack()
                 gc.collect()
-                samples.append(_retained_litmus_bytes())
+                samples.append(_retained_hilt_bytes())
         finally:
             tracemalloc.stop()
 
         retained_growth = max(samples) - baseline
         assert retained_growth <= _OVERFLOW_RETAINED_LIMIT_BYTES, (
-            f"retained Litmus memory grew by {retained_growth} bytes; "
+            f"retained HILT memory grew by {retained_growth} bytes; "
             f"limit is {_OVERFLOW_RETAINED_LIMIT_BYTES} bytes"
         )

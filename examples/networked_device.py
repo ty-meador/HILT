@@ -26,14 +26,14 @@ A gateway that cannot be reached is a Fail in the gateway's own `configure()`. T
 DUT beneath it is left pending, which is the truthful record: the bench was not
 ready, and the device was never asked.
 
-Under `litmus run`, `DutDevice.configure()` reads `DUT_MAC` from `utils.env`, and
+Under `hilt run`, `DutDevice.configure()` reads `DUT_MAC` from `utils.env`, and
 `Gateway.configure()` reads `GATEWAY_HOST` / `GATEWAY_USER` (optional
 `GATEWAY_PASSWORD` / `GATEWAY_PORT`). A variable still missing Fails naming it.
 
 Run it locally:
-`DUT_MAC=aa:bb:cc:dd:ee:ff litmus run examples/networked_device.py::DutDevice`.
+`DUT_MAC=aa:bb:cc:dd:ee:ff hilt run examples/networked_device.py::DutDevice`.
 Run the same bytes through the hop:
-`DUT_MAC=... GATEWAY_HOST=10.0.0.1 GATEWAY_USER=ops litmus run \
+`DUT_MAC=... GATEWAY_HOST=10.0.0.1 GATEWAY_USER=ops hilt run \
 examples/networked_device.py::Gateway` (the `Gateway` target composes a `DutDevice`
 behind its hop).
 """
@@ -42,18 +42,18 @@ from __future__ import annotations
 
 from typing import Any, cast
 
-from litmus import (
+from hilt import (
     PASS,
     ArpResolutionFailure,
     ArpResolver,
-    LitmusTest,
+    TestComponent,
     TestFailure,
     TestUtils,
     Verdict,
 )
 
 
-class DutDevice(LitmusTest):
+class DutDevice(TestComponent):
     """Resolve a MAC in `configure` and claim reachability plus firmware.
 
     The same class runs on the bench laptop or behind a `Gateway`. It has no
@@ -108,7 +108,7 @@ class DutDevice(LitmusTest):
         # handle for the reachability claim and is stripped from the record.
         return {**resolved, "arp": arp}
 
-    def build_suite(self) -> LitmusTest:
+    def build_suite(self) -> TestComponent:
         """Reachability first: firmware is meaningless if the device is gone."""
         return self.sequence(
             self.name,
@@ -141,10 +141,10 @@ class DutDevice(LitmusTest):
         )
 
 
-class Gateway(LitmusTest):
+class Gateway(TestComponent):
     """The parent that owns the hop and composes the devices behind it.
 
-    A gateway is an ordinary `LitmusTest`. What makes it a gateway is where its
+    A gateway is an ordinary `TestComponent`. What makes it a gateway is where its
     two halves sit: `configure()` opens the SSH hop with `utils.use_shell`, so the
     framework routes this node's `utils.exec` through it and hands that route to
     every composed child; `build_suite()` names the devices behind the hop. The
@@ -160,7 +160,7 @@ class Gateway(LitmusTest):
         password: str | None = None,
         port: int | None = None,
         skip_host_verification: bool = False,
-        behind: LitmusTest | None = None,
+        behind: TestComponent | None = None,
     ) -> None:
         """Capture the hop this gateway owns, or leave it for `configure()` to resolve.
 
@@ -172,7 +172,7 @@ class Gateway(LitmusTest):
             port: SSH port. `None` reads `GATEWAY_PORT`, then 22.
             skip_host_verification: Lab-only `known_hosts=None`. Default verifies.
             behind: The device on the far side of the hop. `None` composes a
-                `DutDevice` that reads `DUT_MAC`, which is what `litmus run` gets.
+                `DutDevice` that reads `DUT_MAC`, which is what `hilt run` gets.
         """
         super().__init__(name=name)
         self._host = host
@@ -212,7 +212,7 @@ class Gateway(LitmusTest):
         # configure, and the framework carries it, not ctx.
         return {}
 
-    def build_suite(self) -> LitmusTest:
+    def build_suite(self) -> TestComponent:
         """Prove the hop executes, then run the device behind it through the hop."""
         return self.sequence(
             self.name,

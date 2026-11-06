@@ -1,4 +1,4 @@
-"""``litmus/model-resolution-failure``: a resolver or device-API miss is a verdict, not a bug.
+"""``hilt/model-resolution-failure``: a resolver or device-API miss is a verdict, not a bug.
 
 ``ArpResolutionFailure`` and ``DeviceApiOperationFailure`` are not ``TestFailure``.
 Uncaught, the taxonomy files them as developer bugs; the suite must model the miss.
@@ -8,12 +8,12 @@ import io
 from pathlib import Path
 from textwrap import dedent
 
-from litmus_check import SuiteModule, Violation
-from litmus_check.cli import EXIT_VIOLATIONS, LitmusCheckCommand
-from litmus_check.rules.model_resolution_failure import ModelResolutionFailureRule
-from litmus_check.rules.no_verdict_in_cleanup import NoVerdictInCleanupRule
+from hilt_check import SuiteModule, Violation
+from hilt_check.cli import EXIT_VIOLATIONS, HiltCheckCommand
+from hilt_check.rules.model_resolution_failure import ModelResolutionFailureRule
+from hilt_check.rules.no_verdict_in_cleanup import NoVerdictInCleanupRule
 
-CODE = "litmus/model-resolution-failure"
+CODE = "hilt/model-resolution-failure"
 
 
 def _check(source: str) -> list[Violation]:
@@ -28,7 +28,7 @@ def _lines(source: str) -> list[int]:
 class TestModelResolutionFailureFire:
     def test_unguarded_resolve_names_the_exception(self) -> None:
         source = """
-            class Suite(LitmusTest):
+            class Suite(TestComponent):
                 async def configure(self, utils: TestUtils) -> dict[str, Any]:
                     arp = utils.get_arp_resolver(mac=self._mac)
                     resolved = await arp.resolve()
@@ -42,7 +42,7 @@ class TestModelResolutionFailureFire:
 
     def test_reacquire_and_request_are_covered(self) -> None:
         source = """
-            class Suite(LitmusTest):
+            class Suite(TestComponent):
                 async def _after_reboot(self, utils: TestUtils) -> Verdict:
                     ip = await utils.ctx["arp"].reacquire(utils)
                     response = await utils.ctx["api"].request(DeviceRequest(method="GET", path="/"))
@@ -58,7 +58,7 @@ class TestModelResolutionFailureFire:
 
     def test_a_try_whose_handler_does_not_raise_test_failure_is_not_a_guard(self) -> None:
         source = """
-            class Suite(LitmusTest):
+            class Suite(TestComponent):
                 async def configure(self, utils: TestUtils) -> dict[str, Any]:
                     try:
                         resolved = await arp.resolve()
@@ -70,7 +70,7 @@ class TestModelResolutionFailureFire:
 
     def test_a_call_in_the_handler_or_finally_is_not_in_the_guarded_body(self) -> None:
         source = """
-            class Suite(LitmusTest):
+            class Suite(TestComponent):
                 async def configure(self, utils: TestUtils) -> dict[str, Any]:
                     try:
                         first = await arp.resolve()
@@ -83,7 +83,7 @@ class TestModelResolutionFailureFire:
 
     def test_an_unguarded_request_in_cleanup_asks_for_a_log_not_a_verdict(self) -> None:
         source = """
-            class Suite(LitmusTest):
+            class Suite(TestComponent):
                 async def cleanup(self, utils: TestUtils) -> None:
                     await utils.ctx["api"].request(DeviceRequest(method="DELETE", path="/"))
         """
@@ -98,7 +98,7 @@ class TestModelResolutionFailureFire:
         # A TestFailure is the verdict cleanup cannot give; a bare raise is the throw the
         # Lifecycle Contract forbids. Either way the teardown after the call is skipped.
         source = """
-            class Suite(LitmusTest):
+            class Suite(TestComponent):
                 async def cleanup(self, utils: TestUtils) -> None:
                     try:
                         await utils.ctx["api"].request(request)
@@ -116,7 +116,7 @@ class TestModelResolutionFailureFire:
 class TestModelResolutionFailureStaySilent:
     def test_the_documented_shape_is_clean(self) -> None:
         source = """
-            class Suite(LitmusTest):
+            class Suite(TestComponent):
                 async def configure(self, utils: TestUtils) -> dict[str, Any]:
                     arp = utils.get_arp_resolver(mac=self._mac)
                     try:
@@ -133,14 +133,14 @@ class TestModelResolutionFailureStaySilent:
 
     def test_the_raise_may_sit_anywhere_in_the_handler(self) -> None:
         source = """
-            class Suite(LitmusTest):
+            class Suite(TestComponent):
                 async def _whoami(self, utils: TestUtils) -> Verdict:
                     try:
                         response = await utils.ctx["api"].request(request)
                     except DeviceApiOperationFailure as error:
                         utils.logger.warning("transfer failed: %s", error)
                         if error.retryable:
-                            raise litmus.TestFailure("retry later", "a reply", "none") from error
+                            raise hilt.TestFailure("retry later", "a reply", "none") from error
                         raise TestFailure("transfer failed", "a reply", repr(error)) from error
                     if response.status == 200:
                         return PASS
@@ -150,9 +150,9 @@ class TestModelResolutionFailureStaySilent:
 
     def test_a_cleanup_that_logs_the_miss_is_clean_under_both_rules(self) -> None:
         # Issue #153: before the cleanup guard, this rule demanded the TestFailure that
-        # litmus/no-verdict-in-cleanup forbids, and no cleanup could satisfy both.
+        # hilt/no-verdict-in-cleanup forbids, and no cleanup could satisfy both.
         source = """
-            class Suite(LitmusTest):
+            class Suite(TestComponent):
                 async def cleanup(self, utils: TestUtils) -> None:
                     try:
                         await utils.ctx["api"].request(DeviceRequest(method="DELETE", path="/"))
@@ -172,7 +172,7 @@ class TestModelResolutionFailureStaySilent:
 
     def test_a_nested_helper_inside_cleanup_is_held_to_the_cleanup_guard(self) -> None:
         source = """
-            class Suite(LitmusTest):
+            class Suite(TestComponent):
                 async def cleanup(self, utils: TestUtils) -> None:
                     async def settle() -> None:
                         await utils.ctx["arp"].reacquire(utils)
@@ -185,7 +185,7 @@ class TestModelResolutionFailureStaySilent:
 
     def test_an_unawaited_call_is_left_for_the_caller_to_guard(self) -> None:
         source = """
-            class Suite(LitmusTest):
+            class Suite(TestComponent):
                 def _lookup(self, arp: ArpResolver) -> Awaitable[dict[str, str]]:
                     return arp.resolve()
         """
@@ -202,10 +202,10 @@ class TestModelResolutionFailureStaySilent:
 
 class TestModelResolutionFailureAtTheCommandLine:
     def test_seeded_fixture_is_caught_and_clean_fixture_is_not(self) -> None:
-        fixtures = Path(__file__).parent / "fixtures" / "litmus_check"
+        fixtures = Path(__file__).parent / "fixtures" / "hilt_check"
         out = io.StringIO()
 
-        status = LitmusCheckCommand(stdout=out, stderr=io.StringIO()).run(
+        status = HiltCheckCommand(stdout=out, stderr=io.StringIO()).run(
             ["--select", CODE, str(fixtures)]
         )
 

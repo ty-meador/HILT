@@ -14,20 +14,20 @@ import pytest
 from asyncssh import connection as asyncssh_connection
 from tests.loopback_sshd import LoopbackSshd as _LoopbackSshd
 
-from litmus import PASS, LitmusTest, TestUtils, Verdict
-from litmus.executor import ExecResult
-from litmus.lifecycle import State
-from litmus.remote import RemoteInterface
-from litmus.routing import ExecRouter, ExecRouting, ShellOpenRequest, SshConnector
-from litmus.ssh import SshInterface
+from hilt import PASS, TestComponent, TestUtils, Verdict
+from hilt.executor import ExecResult
+from hilt.lifecycle import State
+from hilt.remote import RemoteInterface
+from hilt.routing import ExecRouter, ExecRouting, ShellOpenRequest, SshConnector
+from hilt.ssh import SshInterface
 
 
 class TestPublicSurface:
     def test_ssh_interface_is_not_on_the_public_surface(self) -> None:
-        import litmus
+        import hilt
 
-        assert not hasattr(litmus, "SshInterface")
-        assert "SshInterface" not in litmus.__all__
+        assert not hasattr(hilt, "SshInterface")
+        assert "SshInterface" not in hilt.__all__
 
     def test_is_a_remote_interface(self) -> None:
         transport = SshInterface(
@@ -931,7 +931,7 @@ class TestTopologyFromArtifacts:
         dut_port = dut_peer.port
         opened: list[RemoteInterface] = []
 
-        class Suite(LitmusTest):
+        class Suite(TestComponent):
             async def configure(self, utils: TestUtils) -> dict[str, object]:
                 jump = await utils.use_shell(
                     host="127.0.0.1",
@@ -951,7 +951,7 @@ class TestTopologyFromArtifacts:
                 opened.extend(shell.ssh for shell in (dut, jump) if shell.ssh is not None)
                 return {}
 
-            def build_suite(self) -> LitmusTest:
+            def build_suite(self) -> TestComponent:
                 return self.test("claim", self._claim)
 
             async def _claim(self, utils: TestUtils) -> Verdict:
@@ -959,7 +959,7 @@ class TestTopologyFromArtifacts:
                 return PASS
 
         try:
-            with caplog.at_level("INFO", logger="litmus"):
+            with caplog.at_level("INFO", logger="hilt"):
                 outcome = await Suite(name="dut").run()
         finally:
             for remote in opened:

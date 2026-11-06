@@ -48,7 +48,7 @@ reconnects after a cancel.
 **Wanted:** `await utils.use_serial(device=...)` in `configure()`, then `utils.exec`
 in every claim, as `use_shell` lets an SSH suite do.
 
-**Got:** `SerialInterface` is importable from `litmus.serial`, which `docs/api-stability.md`
+**Got:** `SerialInterface` is importable from `hilt.serial`, which `docs/api-stability.md`
 says is not a promise, and nothing on `TestUtils` takes it. The suite constructs the
 transport, carries the handle in ctx (stripped from the record as non-JSON), calls
 `console.exec` instead of `utils.exec`, and closes it in `cleanup()`. The run-level
@@ -68,7 +68,7 @@ SSH session, so the post-cleanup sweep and the run-level abort sweep close the p
 Behind a hop the console borrows the router's live SSH session
 (`SerialInterface(tunnel=...)`) rather than owning one; the policy-only shapes
 (`inherit=False`, `propagate=False`, a bare `via`) stay with `use_shell`.
-`litmus/shell-in-configure` and `litmus/no-input-fallback` know the new names. The
+`hilt/shell-in-configure` and `hilt/no-input-fallback` know the new names. The
 suite now has no transport import, no handle in ctx, and no `cleanup()`;
 `make bench-suite-serial` is green against the pty pair.
 
@@ -78,7 +78,7 @@ suite now has no transport import, no handle in ctx, and no `cleanup()`;
 
 **Got:** when `configure()` raised, `cleanup()` still ran and the `[]` read was a
 `ContractViolation` ("context insufficient"), logged beside the real Fail. The tier-3
-rule `litmus/ctx-provenance` is happy because `configure()` *does* return the key; the
+rule `hilt/ctx-provenance` is happy because `configure()` *does* return the key; the
 tier-1 guard fires because it never got to. Fixed in the suite with `ctx.get`, which the
 rule documents as the escape; nothing in `docs/idioms.md` says cleanup must use it.
 
@@ -99,17 +99,17 @@ session waits out FTL's own timeout.
 
 **Wanted:** `cleanup()` that `DELETE`s the deny-list entry it added.
 
-**Got:** `litmus/model-resolution-failure` wants every awaited `request()` inside a
-`try` with a handler that raises `TestFailure`; `litmus/no-verdict-in-cleanup` forbids
+**Got:** `hilt/model-resolution-failure` wants every awaited `request()` inside a
+`try` with a handler that raises `TestFailure`; `hilt/no-verdict-in-cleanup` forbids
 raising `TestFailure` in `cleanup()`. No `cleanup()` can satisfy both. Dodged with a
 module-level `_settle()` helper, which the rule does not look inside.
 
 **Close it:** the resolution rule accepts a handler that logs when the enclosing
 method is `cleanup`, or a survey/audit hook.
 
-**Closed:** in `cleanup()`, and helpers nested in it, `litmus/model-resolution-failure`
+**Closed:** in `cleanup()`, and helpers nested in it, `hilt/model-resolution-failure`
 asks for a handler that raises nothing and logs the miss, the shape
-`litmus/no-verdict-in-cleanup` also accepts (issue #153). `_settle()` stays as the
+`hilt/no-verdict-in-cleanup` also accepts (issue #153). `_settle()` stays as the
 helper both teardown requests share. It no longer needs to sit outside the class to
 get past the rule.
 
@@ -193,15 +193,15 @@ audit keeps its own, because audits cannot measure.
 ## F11. The gateway shape needs `::Class` on the command line (observation, low) — closed 2026-10-21
 
 `pihole_rack.py` holds the gateway and the device behind it, which is the shape
-`examples/networked_device.py` recommends; `litmus run bench/suites/pihole_rack.py`
+`examples/networked_device.py` recommends; `hilt run bench/suites/pihole_rack.py`
 refuses a module with two suites. The Makefile says `::PiHole`. A module-level
 `__suite__ = PiHole` the runner honours would let the file name the default.
 
-**Closed:** `litmus run` honours a module-level `__suite__` bound to a `LitmusTest`
+**Closed:** `hilt run` honours a module-level `__suite__` bound to a `TestComponent`
 subclass when the target carries no `::SuiteClass` (issue #160). `pihole_rack.py` says
 `__suite__ = PiHole` and `make bench-suite-pihole` runs it by path. `::SuiteClass`
 still overrides; a module with two suites and no `__suite__` is refused with the same
-message; `docs/litmus-run.md` names the rule and its order.
+message; `docs/hilt-run.md` names the rule and its order.
 
 ## F13. One in-flight request per `DeviceApi` handle, and `parallel` does not know (gap, high) — closed 2026-10-17
 
@@ -228,7 +228,7 @@ returning `PASS`.
 `configure()` opened queue in call order; a queued request logs the depth, its `timeout`
 bounds only its own transfer, and one still waiting when the handle is cancelled or
 closed is never sent and fails with `DeviceApiOperationFailure`, which
-`litmus/model-resolution-failure` already covers. The one-request `ValueError` survives
+`hilt/model-resolution-failure` already covers. The one-request `ValueError` survives
 only for re-entrancy (a backend calling `request` on its own handle mid-attempt), where
 waiting would deadlock. The banner for a non-`TestFailure` exception that escapes a node
 now names it (`ValueError escaped the node: ...; a developer bug — catch it and raise
@@ -241,14 +241,14 @@ idioms page say what a shared handle does to a latency measurement.
 Two of five suites hit `evidence shadows a ctx key or reserved slot` on their first run
 (`kernel` in the guest, `probe` and `domain` in the Pi-hole child): the natural name
 for a reading is the natural name for the limit or target it was judged against.
-`docs/contracts.md` states the rule; `docs/idioms.md` does not, and `litmus-check` has
+`docs/contracts.md` states the rule; `docs/idioms.md` does not, and `hilt-check` has
 no rule for it although both sides are literals in the same class. Fixed by renaming
 the evidence keys.
 
-**Close it:** a tier-3 rule (`litmus/evidence-shadows-ctx`), and a line in the idioms
+**Close it:** a tier-3 rule (`hilt/evidence-shadows-ctx`), and a line in the idioms
 page next to `@evidence`.
 
-**Closed:** `litmus/evidence-shadows-ctx` flags an `@evidence` key that `configure()` is
+**Closed:** `hilt/evidence-shadows-ctx` flags an `@evidence` key that `configure()` is
 statically known to return, or that is the `measurements` slot, on the declaring literal
 (issue #161). Its self-test reverts the three renames above against the bench files and
 gets exactly `kernel`, `probe`, and `domain` back; the renamed bench is clean. The

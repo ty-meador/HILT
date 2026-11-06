@@ -7,10 +7,10 @@ from typing import cast
 
 import pytest
 
-from litmus import PASS, Artifact, LitmusTest, TestFailure, TestUtils, Verdict
-from litmus.inspector_timeline import TimelineDiagnostic, TimelineReader, TimelineRecord
-from litmus.inspector_tree import InspectorTree, TreeReader
-from litmus.run_data import JsonObject, JsonValue
+from hilt import PASS, Artifact, TestComponent, TestFailure, TestUtils, Verdict
+from hilt.inspector_timeline import TimelineDiagnostic, TimelineReader, TimelineRecord
+from hilt.inspector_tree import InspectorTree, TreeReader
+from hilt.run_data import JsonObject, JsonValue
 
 
 def _record(**changes: JsonValue) -> JsonObject:
@@ -31,7 +31,7 @@ def _line(record: JsonObject) -> bytes:
 class TestTimelineReader:
     def test_installed_schema_is_the_published_contract(self) -> None:
         published = Path(__file__).resolve().parents[1] / "docs/schema/timeline-v1.schema.json"
-        installed = distribution("litmus").locate_file("litmus_data/timeline-v1.schema.json")
+        installed = distribution("hilt").locate_file("hilt_data/timeline-v1.schema.json")
         assert installed.read_bytes() == published.read_bytes()
 
     async def test_keeps_order_scope_pointer_and_additive_fields(self, tmp_path: Path) -> None:
@@ -176,8 +176,8 @@ class TestTimelineReader:
     async def test_reads_every_timeline_from_a_moved_seventy_dut_saved_result(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        class Dut(LitmusTest):
-            def build_suite(self) -> LitmusTest:
+        class Dut(TestComponent):
+            def build_suite(self) -> TestComponent:
                 return self.test("voltage", self._voltage)
 
             async def _voltage(self, utils: TestUtils) -> Verdict:
@@ -189,12 +189,12 @@ class TestTimelineReader:
                     return PASS
                 raise TestFailure("voltage capture unavailable")
 
-        class Rack(LitmusTest):
-            def build_suite(self) -> LitmusTest:
+        class Rack(TestComponent):
+            def build_suite(self) -> TestComponent:
                 return self.parallel("devices", [Dut(name=f"dut-{i:02d}") for i in range(70)])
 
         suite = Rack(name="rack")
-        await suite.run(env={"LITMUS_ARTIFACT_ROOT": str(tmp_path / "original")})
+        await suite.run(env={"HILT_ARTIFACT_ROOT": str(tmp_path / "original")})
         assert suite.log_path is not None
         original = suite.log_path.parent.parent
         moved = tmp_path / "moved"
@@ -203,7 +203,7 @@ class TestTimelineReader:
         def refuse_run(*args: object, **kwargs: object) -> None:
             pytest.fail("saved timeline inspection must not execute suite code")
 
-        monkeypatch.setattr(LitmusTest, "run", refuse_run)
+        monkeypatch.setattr(TestComponent, "run", refuse_run)
         tree = await TreeReader().read(moved / "result.json")
         assert isinstance(tree, InspectorTree)
         references = [

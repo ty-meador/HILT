@@ -6,11 +6,11 @@ from typing import cast
 
 import pytest
 
-from litmus import PASS, Artifact, LitmusTest, TestUtils, Verdict
-from litmus.inspector_artifacts import ArtifactContent, ArtifactDiagnostic
-from litmus.inspector_run import OriginDiagnostic, SavedRun, SavedRunReader
-from litmus.inspector_timeline import TimelineDiagnostic, TimelineReader, TimelineRecord
-from litmus.run_data import JsonObject, JsonValue
+from hilt import PASS, Artifact, TestComponent, TestUtils, Verdict
+from hilt.inspector_artifacts import ArtifactContent, ArtifactDiagnostic
+from hilt.inspector_run import OriginDiagnostic, SavedRun, SavedRunReader
+from hilt.inspector_timeline import TimelineDiagnostic, TimelineReader, TimelineRecord
+from hilt.run_data import JsonObject, JsonValue
 
 
 def _publication(**changes: JsonValue) -> JsonObject:
@@ -297,8 +297,8 @@ class TestSavedRunReader:
     async def test_discovers_mapping_from_a_moved_seventy_dut_run_without_live_objects(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        class Device(LitmusTest):
-            def build_suite(self) -> LitmusTest:
+        class Device(TestComponent):
+            def build_suite(self) -> TestComponent:
                 return self.test("snapshot", self._snapshot)
 
             async def _snapshot(self, utils: TestUtils) -> Verdict:
@@ -309,22 +309,22 @@ class TestSavedRunReader:
                     return PASS
                 raise AssertionError("capture did not settle")
 
-        class Rack(LitmusTest):
-            def build_suite(self) -> LitmusTest:
+        class Rack(TestComponent):
+            def build_suite(self) -> TestComponent:
                 return self.parallel("devices", [Device(name=f"dut-{i:02d}") for i in range(70)])
 
         rack = Rack(name="rack")
-        result = await rack.run(env={"LITMUS_ARTIFACT_ROOT": str(tmp_path / "station")})
+        result = await rack.run(env={"HILT_ARTIFACT_ROOT": str(tmp_path / "station")})
         assert rack.log_path is not None
         original = rack.log_path.parent.parent
         moved = tmp_path / "moved"
         original.rename(moved)
         before = {p.relative_to(moved): p.read_bytes() for p in moved.rglob("*") if p.is_file()}
 
-        async def forbidden(self: LitmusTest) -> None:
+        async def forbidden(self: TestComponent) -> None:
             pytest.fail("saved inspection cannot execute a suite")
 
-        monkeypatch.setattr(LitmusTest, "run", forbidden)
+        monkeypatch.setattr(TestComponent, "run", forbidden)
         saved = await SavedRunReader().read(moved / "result.json")
         assert isinstance(saved, SavedRun)
         assert saved.origin == PurePosixPath(original)

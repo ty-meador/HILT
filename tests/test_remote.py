@@ -11,8 +11,8 @@ import asyncio
 
 import pytest
 
-from litmus.executor import ExecResult
-from litmus.remote import RemoteInterface
+from hilt.executor import ExecResult
+from hilt.remote import RemoteInterface
 
 
 class _UartStub(RemoteInterface):
@@ -78,10 +78,10 @@ class _HardClose(RemoteInterface):
 
 class TestPublicSurface:
     def test_remote_interface_is_not_on_the_public_surface(self) -> None:
-        import litmus
+        import hilt
 
-        assert not hasattr(litmus, "RemoteInterface")
-        assert "RemoteInterface" not in litmus.__all__
+        assert not hasattr(hilt, "RemoteInterface")
+        assert "RemoteInterface" not in hilt.__all__
 
     def test_the_protocol_cannot_be_constructed(self) -> None:
         with pytest.raises(TypeError, match="abstract"):

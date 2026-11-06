@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from litmus import RunEnv, TestFailure, TestUtils
+from hilt import RunEnv, TestFailure, TestUtils
 
 _UNSET = "did not reach a testable state: TARGET_ADDRESS env var not set; set TARGET_ADDRESS"
 _BAD_PORT = (
@@ -40,7 +40,7 @@ class TestRunEnvMapping:
         assert dict(env) == {"A": "1"}
 
     def test_utils_env_is_a_run_env(self, tmp_path: Path) -> None:
-        utils = TestUtils(env={"LITMUS_ARTIFACT_ROOT": str(tmp_path), "TARGET_PORT": "2222"})
+        utils = TestUtils(env={"HILT_ARTIFACT_ROOT": str(tmp_path), "TARGET_PORT": "2222"})
 
         assert isinstance(utils.env, RunEnv)
         assert utils.env.port("TARGET_PORT") == 2222

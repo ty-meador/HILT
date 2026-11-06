@@ -1,14 +1,14 @@
-# Litmus Inspector — target specification
+# HILT Inspector — target specification
 
-This is the first deliverable of [#89](https://gitlab.com/Tyler-Meador/litmus_test/-/issues/89).
+This is the first deliverable of [#89](https://gitlab.com/Tyler-Meador/HILT/-/issues/89).
 It carries the legacy Floor Technician guide into the Python port, adjusted for the
-signed decisions on [#88](https://gitlab.com/Tyler-Meador/litmus_test/-/issues/88),
-[#106](https://gitlab.com/Tyler-Meador/litmus_test/-/issues/106), and
-[#107](https://gitlab.com/Tyler-Meador/litmus_test/-/issues/107).
-It specifies the terminal UI, which `litmus inspect` now opens. The
+signed decisions on [#88](https://gitlab.com/Tyler-Meador/HILT/-/issues/88),
+[#106](https://gitlab.com/Tyler-Meador/HILT/-/issues/106), and
+[#107](https://gitlab.com/Tyler-Meador/HILT/-/issues/107).
+It specifies the terminal UI, which `hilt inspect` now opens. The
 [Floor Technician guide](floor-technician.md) remains the station page for reading the
 evidence by hand. The
-[review rulings on !119](https://gitlab.com/Tyler-Meador/litmus_test/-/merge_requests/119#note_3796094775)
+[review rulings on !119](https://gitlab.com/Tyler-Meador/HILT/-/merge_requests/119#note_3796094775)
 set the implementation order: Inspect first, Run as a separate increment behind its
 own decision. Ty ruled on that increment on 2026-09-10: the Re-Run tab ships, the
 Failures list is folded into Inspect as a key that hides passing rows, and the cut
@@ -16,7 +16,7 @@ between the two tabs is the one the legacy tool drew. Inspect is the archive of 
 production run and executes nothing. Re-Run is the bench, where a node is executed
 again with the code that ran in production and nothing it produces persists.
 
-The internal timeline reader (`litmus.inspector_timeline.TimelineReader`) is implemented
+The internal timeline reader (`hilt.inspector_timeline.TimelineReader`) is implemented
 as a foundation for the log pane. It asynchronously reads a selected timeline path,
 validates each version-1 object against the packaged published schema, and returns
 records and line-numbered diagnostics in physical order. Additive fields and recorded
@@ -36,7 +36,7 @@ and capture readers share one checked, cached loader for the packaged schemas; e
 is read afresh on every call. The operator's selected run directory may itself use
 symlinks or `..`; the reader resolves that directory before containing recorded links.
 
-The internal capture reader (`litmus.inspector_artifacts.ArtifactReader`) now reads
+The internal capture reader (`hilt.inspector_artifacts.ArtifactReader`) now reads
 absolute pointers beneath an opened run root. An explicit, established original root
 enables relocation while preserving the full relative tail; without that mapping a
 pointer outside the opened root is unavailable. The reader checks resolved containment,
@@ -48,7 +48,7 @@ is shared with the timeline reader, so duplicate keys and non-finite values are 
 consistently. The original-root mapping remains an input to this internal component;
 the saved-run loader establishes it from publication evidence.
 
-The internal tree reader (`litmus.inspector_tree.TreeReader`) now opens a selected
+The internal tree reader (`hilt.inspector_tree.TreeReader`) now opens a selected
 result through that validated result boundary. It resolves the operator's selection
 before deriving the run root, so a symlink such as `latest/result.json` or a path with
 `..` opens the same saved evidence as its direct path. References inside saved records
@@ -69,7 +69,7 @@ timeline link. A pending selection has no owner and must render **not run**. An 
 identifies a recorded link, not proof the file is available: the model opens no timeline,
 and its caller must still enforce run-root containment and report unavailable files.
 
-The internal selection model (`litmus.inspector_selection.InspectorSelection`) joins
+The internal selection model (`hilt.inspector_selection.InspectorSelection`) joins
 that tree to contained timeline loading for both Inspect and Failures. Its caller supplies
 the validated tree and the opened directory containing that same result, then navigates
 through the selection model. Selection clears the previous chronology before I/O, keeps
@@ -81,7 +81,7 @@ their scopes, partial reads, and decoding diagnostics remain intact. Reselection
 evidence afresh. Cancellation and reader defects propagate to the caller and return only
 the affected current load to idle; they never restore an earlier log or become verdicts.
 
-The internal saved-run loader (`litmus.inspector_run.SavedRunReader`) now opens a
+The internal saved-run loader (`hilt.inspector_run.SavedRunReader`) now opens a
 validated result, its contained root timeline, and a capture reader for that same run.
 It uses `TreeReader.read_selected()` so selection errors and the resolved run boundary
 have one owner. The tree's chronology ownership also governs this opening: a pending
@@ -98,7 +98,7 @@ or timestamp, reads the original station, or edits saved pointers. Reopening rea
 evidence afresh. Without a mapping, captures already beneath the opened root remain
 readable, but pointers outside it cannot relocate.
 
-The internal timeline presentation model (`litmus.inspector_timeline_view.TimelineView`)
+The internal timeline presentation model (`hilt.inspector_timeline_view.TimelineView`)
 pages a completed selection's chronology without changing its recorded data. It opens
 at the tail with filtering off; toggling errors returns to the first page. The filter
 retains Python `error` and `critical` records (case-insensitively) and every reader
@@ -119,7 +119,7 @@ owned by `InspectorSelection`. The moved 70-DUT test exercises this composition 
 executing suite code or changing saved bytes.
 
 The internal artifact navigation model
-(`litmus.inspector_artifact_navigation.ArtifactNavigation`) now groups the complete
+(`hilt.inspector_artifact_navigation.ArtifactNavigation`) now groups the complete
 timeline's numbered pointers by recorded type. Types follow first appearance; captures
 within a type retain chronology order. Opening selects exactly the requested number,
 including one above nine or hidden by a filter; an invalid number is rejected instead
@@ -136,7 +136,7 @@ kind for the existing contained capture reader. Empty paths remain selectable an
 produce that reader's unavailable diagnostic. A moved 70-DUT test opens null and named
 captures and the root result without suite execution or saved-byte changes.
 
-The internal artifact modal model (`litmus.inspector_artifact_view.ArtifactModal`)
+The internal artifact modal model (`hilt.inspector_artifact_view.ArtifactModal`)
 joins that selection to the saved run's capture reader and pages what it reads. A
 capture is printed in its recorded key order, so two captures of one type line up; an
 unavailable or undecodable capture shows the reader's diagnostic with the recorded
@@ -148,7 +148,7 @@ A delayed read never replaces a newer selection, in the pattern of the selection
 The shared 70-DUT recording in `tests/inspector_rack.py` proves the composition without
 suite execution or saved-byte changes.
 
-The main view (`litmus.inspector_app.InspectorApp`) is the first terminal screen,
+The main view (`hilt.inspector_app.InspectorApp`) is the first terminal screen,
 built on Textual by Ty's ruling of 2026-09-09. It renders the tab row, the tree, and
 the chronology pane from the models above and forwards the quick-reference keys, one
 model call per key: Inspect and Re-Run share one cursor, the chronology loads on
@@ -161,11 +161,11 @@ last visible child. The plain text of every redraw is kept on the app so the
 self-tests drive it against the recorded runs in `tests/inspector_rack.py` and a
 screenshot can be read back against this guide.
 
-The re-run session (`litmus.inspector_rerun.RerunSession`) is the adapter behind the
+The re-run session (`hilt.inspector_rerun.RerunSession`) is the adapter behind the
 Re-Run tab. It receives a suite factory from the command line, never a suite derived
 from evidence; loads it on the tab's first opening, off the event loop; refuses a
 suite whose declared tree differs from the saved one, naming the first row that
-differs; executes the pressed node through `LitmusTest.run(subtree=...)`, the sealed
+differs; executes the pressed node through `TestComponent.run(subtree=...)`, the sealed
 lifecycle with every leaf outside that subtree left pending; reads the result back
 through the same saved-run reader the archive uses, so the tab shows a re-run's
 states and chronology with the same code paths; and keeps that evidence under a
@@ -173,7 +173,7 @@ scratch directory emptied per node on each re-run and removed when the Inspector
 closes. Interrupting a live re-run raises the operator signal, so the framework's own
 termination contract settles the node Aborted with bounded cleanup.
 
-The artifact modal screen (`litmus.inspector_app.ArtifactScreen`) opens from a digit
+The artifact modal screen (`hilt.inspector_app.ArtifactScreen`) opens from a digit
 in the log pane over the capture carrying that number and owns the artifact keys until
 `b` closes it: `[` and `]` move between types or the left side of a comparison, the
 arrows between captures of the type or the right side, `n` and `p` page both sides
@@ -181,13 +181,13 @@ together, `d` enters and leaves the comparison. It renders the modal model only:
 capture as its lines, a comparison as two aligned columns with differing rows
 highlighted, a diagnostic as the reader's words with the recorded reference.
 
-The entry point is `litmus inspect [PATH]` (`litmus.cli`): PATH is a run directory or
+The entry point is `hilt inspect [PATH]` (`hilt.cli`): PATH is a run directory or
 its `result.json`; without PATH the most recently modified `result.json` under the
-artifact root opens (`LITMUS_ARTIFACT_ROOT`, default `artifacts/`; `--artifact-root DIR`
+artifact root opens (`HILT_ARTIFACT_ROOT`, default `artifacts/`; `--artifact-root DIR`
 overrides), the legacy discovery rule carried over. Nothing under the root, or a
 selection that is not a saved version-1 run, is refused with the reader's diagnostic on
 stderr and exit status 3. Opening runs no suite code. `--suite TARGET` names the suite
-the Re-Run tab executes, in the form `litmus run` accepts, and is loaded at the prompt
+the Re-Run tab executes, in the form `hilt run` accepts, and is loaded at the prompt
 so a wrong target is exit 3 there; without it the tab uses the `suite_target` the run
 recorded, loaded only when the tab is first opened.
 
@@ -203,7 +203,7 @@ or comparing two captures never touches the DUT and never executes suite code.
 The input is a run directory containing `result.json`, its per-node `timeline.jsonl`
 files, and the point-in-time artifacts referenced by those timelines. The structural tree
 comes entirely from `summary_tree`; the temporal view comes entirely from the linked
-JSON Lines records. A saved 70-DUT rack must be inspectable without live `LitmusTest`
+JSON Lines records. A saved 70-DUT rack must be inspectable without live `TestComponent`
 objects, source discovery, an SSH connection, or the test station that produced it.
 
 The [Inspector JSON contract](inspector-json.md) owns the field definitions and version
@@ -214,15 +214,15 @@ unsupported versions explicitly rather than guessing their meaning.
 
 ## Opening a run
 
-`litmus inspect PATH` opens a selected `result.json`, or the `result.json` inside a
-selected run directory, and treats its containing directory as the run root. `litmus
+`hilt inspect PATH` opens a selected `result.json`, or the `result.json` inside a
+selected run directory, and treats its containing directory as the run root. `hilt
 inspect` alone opens the most recently modified `result.json` under the artifact root
-(`LITMUS_ARTIFACT_ROOT`, default `artifacts/`; `--artifact-root DIR` overrides), the
+(`HILT_ARTIFACT_ROOT`, default `artifacts/`; `--artifact-root DIR` overrides), the
 legacy convenience carried over by Ty's ruling of 2026-09-09 on #89. The legacy
 `npm run inspect` command and `summary-tree.artifact` input are not Python interfaces.
 
 If no result is available, explain that there is no saved tree to inspect. Do not start
-a test to manufacture one: `litmus inspect` with nothing under the root exits 3 saying
+a test to manufacture one: `hilt inspect` with nothing under the root exits 3 saying
 so, and a selection that is not a saved version-1 run exits 3 with the reader's
 diagnostic, never another file opened in its place. Absence of `result.json` is not a
 verdict: an invocation may have failed before a run, or a process may have ended before
@@ -309,7 +309,7 @@ check: the ping failed, the cable is reseated, the one claim is re-run with the
 production code, and only then is the whole suite restarted through the station's
 normal procedure.
 
-**What executes is the sealed lifecycle, confined to one subtree.** `LitmusTest.run`
+**What executes is the sealed lifecycle, confined to one subtree.** `TestComponent.run`
 takes `subtree=`, the child positions from the root to the pressed node. Every node on
 the path to it runs its own configure and cleanup, because that is their lifecycle and
 the only way the pressed node meets the hop its ancestors own; every leaf outside the
@@ -319,9 +319,9 @@ prohibited: no parent's configure is replayed outside the lifecycle to make a de
 runnable, and the
 [instance-local context idiom](idioms.md#immutable-self-convention) is untouched.
 
-**The suite is supplied, never derived.** `litmus run` records the loader target it
+**The suite is supplied, never derived.** `hilt run` records the loader target it
 used in `result.json` as `suite_target` (absolute file or module name, `::`, class),
-and `litmus inspect` loads that suite the first time the tab is opened; `--suite
+and `hilt inspect` loads that suite the first time the tab is opened; `--suite
 TARGET` names another, and is loaded at the prompt. Nothing is reconstructed from
 `result.json`, artifact contents, or source found beside the run directory. Before any
 node runs, the supplied suite's declared tree is compared with the saved one, name and
@@ -490,7 +490,7 @@ recorded differences, not an automatic diagnosis of hardware truth.
 
 ## Implementation acceptance
 
-The screen implementation (`litmus.inspector_app`) and the entry point (`litmus
+The screen implementation (`hilt.inspector_app`) and the entry point (`hilt
 inspect`) follow this document. The view model is testable independently of the
 terminal and driven by a recorded 70-DUT rack:
 
@@ -512,7 +512,7 @@ terminal and driven by a recorded 70-DUT rack:
 - Hold Re-Run to its ruling. Its adapter accepts only an operator-supplied suite
   through the command line (`suite_target` or `--suite`), never reconstruction from
   evidence or neighboring source, and refuses a suite whose declared tree differs from
-  the saved one. Execution is `LitmusTest.run(subtree=...)`: ancestors' own lifecycle,
+  the saved one. Execution is `TestComponent.run(subtree=...)`: ancestors' own lifecycle,
   the pressed subtree, every other leaf pending. Ancestor-configure replay stays
   prohibited. A node above the pressed one shows **partly re-run**, never the state it
   rolled up over the one child the bench ran. Scratch evidence is replaced per node and
@@ -526,7 +526,7 @@ uncertainty visible. Evidence earns a conclusion; the screen cannot supply one f
 
 ## Migration references
 
-The behavioral reference is the read-only `litmus-test-legacy/docs/inspector.md`, with
+The behavioral reference is the read-only `hilt-test-legacy/docs/inspector.md`, with
 navigation checked against `src/inspector/InspectTab.mts`, `RunTab.mts`,
 `TreePanel.mts`, `DebugView.mts`, and `ArtifactModal.mts` in that repository. The
 guide's workflow, split panes, Run tab, tree glyphs, owner arrow, failure navigation,

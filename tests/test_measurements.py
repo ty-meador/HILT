@@ -18,30 +18,30 @@ from typing import Any, cast
 import pytest
 from jsonschema import Draft202012Validator, ValidationError
 
-from litmus import (
+from hilt import (
     PASS,
     EvidenceViolation,
     JsonObject,
-    LitmusTest,
     Measurement,
     NodeType,
     Phase,
     State,
+    TestComponent,
     TestFailure,
     TestUtils,
     Verdict,
     evidence,
     measure,
 )
-from litmus.errors import (
+from hilt.errors import (
     MeasurementDuplicate,
     MeasurementInvalid,
     MeasurementSealed,
     MeasurementUnbound,
     MeasurementViolation,
 )
-from litmus.results import SummaryTreeNode
-from litmus.run_data import JsonValue
+from hilt.results import SummaryTreeNode
+from hilt.run_data import JsonValue
 
 type Recorder = Callable[[TestUtils], object]
 """A scripted call made from inside a lifecycle slot; what it does is the test."""
@@ -67,11 +67,11 @@ def _via_root(utils: TestUtils, **call: Any) -> Measurement:
 
 
 SPELLINGS = pytest.mark.parametrize(
-    "spelling", [_via_utils, _via_root], ids=["utils.measure", "litmus.measure"]
+    "spelling", [_via_utils, _via_root], ids=["utils.measure", "hilt.measure"]
 )
 
 
-class _Bench(LitmusTest):
+class _Bench(TestComponent):
     """One authored node with one claim; each slot runs the recorder it was given."""
 
     def __init__(
@@ -92,7 +92,7 @@ class _Bench(LitmusTest):
             self._during_configure(utils)
         return {"station": "bench-1"}
 
-    def build_suite(self) -> LitmusTest:
+    def build_suite(self) -> TestComponent:
         return self.test("claim", self._claim)
 
     async def _claim(self, utils: TestUtils) -> Verdict:
@@ -294,8 +294,8 @@ class TestNotTaken:
         assert entry["limits"] is None
 
     async def test_a_claim_gated_on_the_window_fails_through_its_own_gate(self) -> None:
-        class Gated(LitmusTest):
-            def build_suite(self) -> LitmusTest:
+        class Gated(TestComponent):
+            def build_suite(self) -> TestComponent:
                 return self.test("claim", self._claim)
 
             async def _claim(self, utils: TestUtils) -> Verdict:
@@ -461,7 +461,7 @@ class TestGuards:
         refused: list[MeasurementViolation] = []
 
         def late(utils: TestUtils) -> None:
-            # A cleanup exception never changes the verdict (litmus/no-verdict-in-cleanup),
+            # A cleanup exception never changes the verdict (hilt/no-verdict-in-cleanup),
             # so the guard is proven by catching it, not by the run's state.
             try:
                 spelling(utils, name="late", value=1)
@@ -500,12 +500,12 @@ class TestGuards:
     async def test_an_audit_cannot_measure_even_while_the_test_method_runs(self) -> None:
         refused: list[type[BaseException]] = []
 
-        class Audited(LitmusTest):
+        class Audited(TestComponent):
             def __init__(self, *, name: str) -> None:
                 super().__init__(name=name)
                 self.use_audit(interval=0.001, fn=self._audit)
 
-            def build_suite(self) -> LitmusTest:
+            def build_suite(self) -> TestComponent:
                 return self.test("claim", self._claim)
 
             async def _audit(self, utils: TestUtils) -> object:
@@ -551,14 +551,14 @@ class TestGuards:
         with pytest.raises(MeasurementUnbound) as caught:
             measure("bench", 1)
 
-        assert caught.value.node == "litmus.measure"
+        assert caught.value.node == "hilt.measure"
         assert caught.value.measurement == "bench"
         assert "call utils.measure inside configure() or a test method" in str(caught.value)
         assert caught.value.to_json()["measurement"] == "bench"
 
     async def test_parallel_children_do_not_see_each_other_s_binding(self) -> None:
-        class Pair(LitmusTest):
-            def build_suite(self) -> LitmusTest:
+        class Pair(TestComponent):
+            def build_suite(self) -> TestComponent:
                 return self.parallel(
                     "pair", [self.test("left", self._left), self.test("right", self._right)]
                 )
@@ -585,8 +585,8 @@ class TestGuards:
 
 class TestPublication:
     async def test_a_node_that_never_ran_publishes_null(self) -> None:
-        class Sequenced(LitmusTest):
-            def build_suite(self) -> LitmusTest:
+        class Sequenced(TestComponent):
+            def build_suite(self) -> TestComponent:
                 return self.sequence(
                     "steps", [self.test("first", self._first), self.test("later", self._later)]
                 )
@@ -609,8 +609,8 @@ class TestPublication:
         assert payload["summary_tree"]["children"][0]["children"][1]["measurements"] is None
 
     async def test_an_aborted_node_still_publishes_what_it_measured(self) -> None:
-        class Slow(LitmusTest):
-            def build_suite(self) -> LitmusTest:
+        class Slow(TestComponent):
+            def build_suite(self) -> TestComponent:
                 return self.test("claim", self._claim, abort_after=0.05)
 
             async def _claim(self, utils: TestUtils) -> Verdict:
@@ -641,8 +641,8 @@ class TestPublication:
         assert [entry["name"] for entry in measurements] == ["ambient_c"]
 
     async def test_a_measurement_does_not_satisfy_an_evidence_declaration(self) -> None:
-        class Declared(LitmusTest):
-            def build_suite(self) -> LitmusTest:
+        class Declared(TestComponent):
+            def build_suite(self) -> TestComponent:
                 return self.test("claim", self._claim)
 
             @evidence("rail_v")

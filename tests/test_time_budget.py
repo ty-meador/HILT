@@ -11,26 +11,26 @@ import pytest
 from tests.loopback_sshd import LoopbackSshd
 from tests.mock_connector import ConnectorInstaller
 
-from litmus import (
+from hilt import (
     PASS,
     AfterEachContext,
     BeforeEachContext,
     ContractViolation,
     ExternalIntegrationFailure,
-    LitmusTest,
+    TestComponent,
     TestFailure,
     TestUtils,
     Verdict,
 )
-from litmus.base import (
+from hilt.base import (
     _DEADLINE_CANCELLATION,  # pyright: ignore[reportPrivateUsage]
     _cancel_for_deadline,  # pyright: ignore[reportPrivateUsage]
     _consume_deadline_cancellation,  # pyright: ignore[reportPrivateUsage]
 )
-from litmus.executor import ExecResult
-from litmus.lifecycle import RunAbort, Slot, State, TimeBudget, TimeBudgetClock
-from litmus.mock import MockTransport
-from litmus.remote import RemoteInterface
+from hilt.executor import ExecResult
+from hilt.lifecycle import RunAbort, Slot, State, TimeBudget, TimeBudgetClock
+from hilt.mock import MockTransport
+from hilt.remote import RemoteInterface
 
 _BUDGET = 0.03
 _PROMPT = 1.0
@@ -64,7 +64,7 @@ class _BlockingCancelTransport(RemoteInterface):
         await self._disconnect()
 
 
-class _OneClaim(LitmusTest):
+class _OneClaim(TestComponent):
     def __init__(
         self,
         *,
@@ -84,7 +84,7 @@ class _OneClaim(LitmusTest):
         self._claim_abort_after = claim_abort_after
         self._claim_override = claim
 
-    def build_suite(self) -> LitmusTest:
+    def build_suite(self) -> TestComponent:
         return self.test(
             "claim",
             self._claim,
@@ -103,7 +103,7 @@ class TestTimeBudgetValidation:
     @pytest.mark.parametrize("value", [True, 0, -1, math.inf, -math.inf, math.nan, "1"])
     def test_duration_must_be_a_positive_finite_number(self, value: object) -> None:
         with pytest.raises(ContractViolation, match="positive finite") as raised:
-            LitmusTest(name="invalid", fail_after=value)  # pyright: ignore[reportArgumentType]
+            TestComponent(name="invalid", fail_after=value)  # pyright: ignore[reportArgumentType]
         # A violation raised at composition names the node it was declared on; a rack
         # of seventy declarations is otherwise a search.
         assert raised.value.node == "invalid"
@@ -115,9 +115,9 @@ class TestTimeBudgetValidation:
     ) -> None:
         huge = 10**1000
         construct = (
-            (lambda: LitmusTest(name="invalid", fail_after=huge))
+            (lambda: TestComponent(name="invalid", fail_after=huge))
             if declared == "fail_after"
-            else (lambda: LitmusTest(name="invalid", abort_after=huge))
+            else (lambda: TestComponent(name="invalid", abort_after=huge))
         )
 
         with pytest.raises(ContractViolation, match="positive finite") as raised:
@@ -131,7 +131,7 @@ class TestTimeBudgetValidation:
         self,
         declared: str,
     ) -> None:
-        root = LitmusTest(name="root")
+        root = TestComponent(name="root")
 
         async def claim(utils: TestUtils) -> Verdict:
             del utils
@@ -165,7 +165,7 @@ class TestTimeBudgetValidation:
         assert result.state is State.ABORTED
 
     def test_exactly_one_name_is_accepted_at_every_composition_factory(self) -> None:
-        root = LitmusTest(name="root")
+        root = TestComponent(name="root")
 
         async def claim(utils: TestUtils) -> Verdict:
             del utils
@@ -301,8 +301,8 @@ class TestTimeBudgetStatesAndEvidence:
     async def test_abort_after_is_node_local_and_forges_no_failure(self) -> None:
         sibling_finished = asyncio.Event()
 
-        class Suite(LitmusTest):
-            def build_suite(self) -> LitmusTest:
+        class Suite(TestComponent):
+            def build_suite(self) -> TestComponent:
                 return self.parallel(
                     "claims",
                     [
@@ -389,8 +389,8 @@ class TestTimeBudgetWindowsAndComposition:
         both_started = asyncio.Event()
         started = 0
 
-        class Suite(LitmusTest):
-            def build_suite(self) -> LitmusTest:
+        class Suite(TestComponent):
+            def build_suite(self) -> TestComponent:
                 return self.parallel(
                     "group",
                     [self.test("one", self._park), self.test("two", self._park)],
@@ -442,13 +442,13 @@ class TestTimeBudgetWindowsAndComposition:
     async def test_configure_is_inside_but_cleanup_is_outside_the_window(self) -> None:
         cleaned = asyncio.Event()
 
-        class ConfigureParks(LitmusTest):
+        class ConfigureParks(TestComponent):
             async def configure(self, utils: TestUtils) -> dict[str, object]:
                 del utils
                 await asyncio.Event().wait()
                 return {}
 
-            def build_suite(self) -> LitmusTest:
+            def build_suite(self) -> TestComponent:
                 return self.test("unreached", self._claim)
 
             async def _claim(self, utils: TestUtils) -> Verdict:
@@ -471,8 +471,8 @@ class TestTimeBudgetWindowsAndComposition:
         assert cleaned.is_set()
 
     async def test_cleanup_and_all_root_owned_integration_hooks_are_excluded(self) -> None:
-        class Suite(LitmusTest):
-            def build_suite(self) -> LitmusTest:
+        class Suite(TestComponent):
+            def build_suite(self) -> TestComponent:
                 return self.test("claim", self._claim)
 
             async def _claim(self, utils: TestUtils) -> Verdict:
@@ -506,8 +506,8 @@ class TestTimeBudgetWindowsAndComposition:
     async def test_sibling_before_hook_cannot_pause_an_active_ancestor_lineage(self) -> None:
         parked_cut = asyncio.Event()
 
-        class Suite(LitmusTest):
-            def build_suite(self) -> LitmusTest:
+        class Suite(TestComponent):
+            def build_suite(self) -> TestComponent:
                 return self.parallel(
                     "bounded group",
                     [
@@ -552,8 +552,8 @@ class TestTimeBudgetWindowsAndComposition:
         cleanup_started = asyncio.Event()
         parked_cut = asyncio.Event()
 
-        class FinishesThenCleans(LitmusTest):
-            def build_suite(self) -> LitmusTest:
+        class FinishesThenCleans(TestComponent):
+            def build_suite(self) -> TestComponent:
                 return self.test("passes", self._pass)
 
             async def _pass(self, utils: TestUtils) -> Verdict:
@@ -565,8 +565,8 @@ class TestTimeBudgetWindowsAndComposition:
                 cleanup_started.set()
                 await asyncio.sleep(0.3)
 
-        class Suite(LitmusTest):
-            def build_suite(self) -> LitmusTest:
+        class Suite(TestComponent):
+            def build_suite(self) -> TestComponent:
                 return self.parallel(
                     "bounded group",
                     [FinishesThenCleans(name="cleaner"), self.test("parked", self._park)],
@@ -595,8 +595,8 @@ class TestTimeBudgetWindowsAndComposition:
     async def test_parallel_cut_preserves_settled_sibling_and_sequence_leaves_pending_tail(
         self,
     ) -> None:
-        class Suite(LitmusTest):
-            def build_suite(self) -> LitmusTest:
+        class Suite(TestComponent):
+            def build_suite(self) -> TestComponent:
                 group = self.parallel(
                     "bounded group",
                     [self.test("settled", self._pass), self.test("parked", self._park)],
@@ -627,7 +627,7 @@ class TestTimeBudgetWindowsAndComposition:
         assert group.children[1].state is State.FAIL
 
         class SequenceOnly(Suite):
-            def build_suite(self) -> LitmusTest:
+            def build_suite(self) -> TestComponent:
                 return self.sequence(
                     "bounded sequence",
                     [self.test("parked first", self._park), self.test("never", self._pass)],
@@ -641,8 +641,8 @@ class TestTimeBudgetWindowsAndComposition:
         assert sequence.children[1].state is None
 
     async def test_settled_aborted_child_outranks_later_parent_fail_cut(self) -> None:
-        class Suite(LitmusTest):
-            def build_suite(self) -> LitmusTest:
+        class Suite(TestComponent):
+            def build_suite(self) -> TestComponent:
                 return self.parallel(
                     "bounded group",
                     [
@@ -676,13 +676,13 @@ class TestTimeBudgetResourceCancellation:
     ) -> None:
         transport = _BlockingCancelTransport()
 
-        class Suite(LitmusTest):
+        class Suite(TestComponent):
             async def configure(self, utils: TestUtils) -> dict[str, object]:
                 install_mock_connector(utils, transport)
                 await utils.use_shell(host="dut", username="root")
                 return {}
 
-            def build_suite(self) -> LitmusTest:
+            def build_suite(self) -> TestComponent:
                 return self.test("parked", self._park)
 
             async def _park(self, utils: TestUtils) -> Verdict:
@@ -710,13 +710,13 @@ class TestTimeBudgetResourceCancellation:
         transport = MockTransport()
         transport.park("park")
 
-        class Suite(LitmusTest):
+        class Suite(TestComponent):
             async def configure(self, utils: TestUtils) -> dict[str, object]:
                 install_mock_connector(utils, transport)
                 await utils.use_shell(host="dut", username="root")
                 return {}
 
-            def build_suite(self) -> LitmusTest:
+            def build_suite(self) -> TestComponent:
                 return self.test("parked", self._park)
 
             async def _park(self, utils: TestUtils) -> Verdict:
@@ -738,28 +738,28 @@ class TestTimeBudgetResourceCancellation:
         cleaned = asyncio.Event()
         child_ran = False
 
-        class Child(LitmusTest):
+        class Child(TestComponent):
             async def configure(self, utils: TestUtils) -> dict[str, object]:
                 nonlocal child_ran
                 del utils
                 child_ran = True
                 return {}
 
-            def build_suite(self) -> LitmusTest:
+            def build_suite(self) -> TestComponent:
                 return self.test("unreached", self._pass)
 
             async def _pass(self, utils: TestUtils) -> Verdict:
                 del utils
                 return PASS
 
-        class Gateway(LitmusTest):
+        class Gateway(TestComponent):
             async def configure(self, utils: TestUtils) -> dict[str, object]:
                 install_mock_connector(utils, transport)
                 await utils.use_shell(host="gateway", username="root")
                 await asyncio.Event().wait()
                 return {}
 
-            def build_suite(self) -> LitmusTest:
+            def build_suite(self) -> TestComponent:
                 return Child(name="child")
 
             async def cleanup(self, utils: TestUtils) -> None:
@@ -792,35 +792,35 @@ class TestTimeBudgetResourceCancellation:
         target = MockTransport()
         cleanup_topology: list[tuple[bool, bool]] = []
 
-        class Consumer(LitmusTest):
-            def build_suite(self) -> LitmusTest:
+        class Consumer(TestComponent):
+            def build_suite(self) -> TestComponent:
                 return self.test("unreached", self._pass)
 
             async def _pass(self, utils: TestUtils) -> Verdict:
                 del utils
                 return PASS
 
-        class Timed(LitmusTest):
+        class Timed(TestComponent):
             async def configure(self, utils: TestUtils) -> dict[str, object]:
                 install_mock_connector(utils, {"target": target})
                 await utils.use_shell(host="target", username="root")
                 await asyncio.Event().wait()
                 return {}
 
-            def build_suite(self) -> LitmusTest:
+            def build_suite(self) -> TestComponent:
                 return Consumer(name="consumer")
 
             async def cleanup(self, utils: TestUtils) -> None:
                 del utils
                 cleanup_topology.append((target.connected, hop.connected))
 
-        class Gateway(LitmusTest):
+        class Gateway(TestComponent):
             async def configure(self, utils: TestUtils) -> dict[str, object]:
                 install_mock_connector(utils, {"gateway": hop})
                 await utils.use_shell(host="gateway", username="root")
                 return {}
 
-            def build_suite(self) -> LitmusTest:
+            def build_suite(self) -> TestComponent:
                 return Timed(name="timed", abort_after=_BUDGET)
 
         result = await asyncio.wait_for(Gateway(name="gateway").run(), _PROMPT)
@@ -841,26 +841,26 @@ class TestTimeBudgetResourceCancellation:
         target = MockTransport()
         target.park("park")
 
-        class Consumer(LitmusTest):
+        class Consumer(TestComponent):
             async def configure(self, utils: TestUtils) -> dict[str, object]:
                 install_mock_connector(utils, {"target": target})
                 await utils.use_shell(host="target", username="root")
                 return {}
 
-            def build_suite(self) -> LitmusTest:
+            def build_suite(self) -> TestComponent:
                 return self.test("parked", self._park)
 
             async def _park(self, utils: TestUtils) -> Verdict:
                 await utils.exec("park")
                 return PASS
 
-        class Rack(LitmusTest):
+        class Rack(TestComponent):
             async def configure(self, utils: TestUtils) -> dict[str, object]:
                 install_mock_connector(utils, {"gateway": hop})
                 await utils.use_shell(host="gateway", username="root")
                 return {}
 
-            def build_suite(self) -> LitmusTest:
+            def build_suite(self) -> TestComponent:
                 return Consumer(name="consumer", abort_after=_BUDGET)
 
         result = await asyncio.wait_for(Rack(name="rack").run(), _PROMPT)
@@ -885,7 +885,7 @@ class TestTimeBudgetResourceCancellation:
 
         monkeypatch.setattr(asyncssh.SSHClientConnection, "abort", tracked_abort)
 
-        class Suite(LitmusTest):
+        class Suite(TestComponent):
             async def configure(self, utils: TestUtils) -> dict[str, object]:
                 await utils.use_shell(
                     host="127.0.0.1",
@@ -896,7 +896,7 @@ class TestTimeBudgetResourceCancellation:
                 )
                 return {}
 
-            def build_suite(self) -> LitmusTest:
+            def build_suite(self) -> TestComponent:
                 return self.test("parked", self._park)
 
             async def _park(self, utils: TestUtils) -> Verdict:

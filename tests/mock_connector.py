@@ -5,11 +5,11 @@ from __future__ import annotations
 from collections.abc import Callable, Mapping
 from typing import TYPE_CHECKING
 
-from litmus.remote import RemoteInterface
+from hilt.remote import RemoteInterface
 
 if TYPE_CHECKING:
-    from litmus import TestUtils
-    from litmus.routing import ShellOpenRequest
+    from hilt import TestUtils
+    from hilt.routing import ShellOpenRequest
 
 
 class MockConnector:

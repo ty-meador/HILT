@@ -15,11 +15,11 @@ import pytest
 from tests.fake_console import open_pty_console
 from tests.loopback_sshd import LoopbackSshd
 
-from litmus.executor import ExecResult
-from litmus.mock import MockTransport
-from litmus.remote import RemoteInterface
-from litmus.serial import SerialInterface
-from litmus.ssh import SshInterface
+from hilt.executor import ExecResult
+from hilt.mock import MockTransport
+from hilt.remote import RemoteInterface
+from hilt.serial import SerialInterface
+from hilt.ssh import SshInterface
 
 type InFlightWaiter = Callable[[RemoteInterface], Awaitable[None]]
 

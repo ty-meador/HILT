@@ -23,7 +23,7 @@ from pathlib import Path
 from typing import TextIO
 
 ROOT = Path(__file__).resolve().parents[1]
-PACKAGE = ROOT / "src" / "litmus"
+PACKAGE = ROOT / "src" / "hilt"
 
 EXIT_CLEAN = 0
 EXIT_CYCLE = 1
@@ -174,11 +174,11 @@ class _ImportWalker:
                 yield module
             return
         if names is None:
-            # ``import litmus`` runs the package root, which is a module like any other.
+            # ``import hilt`` runs the package root, which is a module like any other.
             yield _INIT
             return
         for alias in names:
-            # ``from litmus import x`` reaches a submodule, or a name the root re-exports.
+            # ``from hilt import x`` reaches a submodule, or a name the root re-exports.
             yield alias.name if alias.name in self._modules else _INIT
 
     def _relative(self, statement: ast.ImportFrom) -> Iterator[str]:
@@ -244,7 +244,7 @@ def _cycles(edges: Mapping[str, frozenset[str]]) -> tuple[tuple[str, ...], ...]:
 
 
 def main(argv: list[str] | None = None) -> int:
-    """Entry point: optional package directory, default ``src/litmus``."""
+    """Entry point: optional package directory, default ``src/hilt``."""
     args = sys.argv[1:] if argv is None else argv
     package = Path(args[0]) if args else PACKAGE
     return ImportGraph.from_package(package).report()

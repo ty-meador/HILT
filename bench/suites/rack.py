@@ -17,10 +17,10 @@ from bench.suites.coap_device import CoapDevice
 from bench.suites.guest_acceptance import DebianGuest
 from bench.suites.pihole_rack import PiHole
 from bench.suites.serial_console import SerialConsole
-from litmus import LitmusTest
+from hilt import TestComponent
 
 
-class Rack(LitmusTest):
+class Rack(TestComponent):
     """Four devices, four transports, one verdict."""
 
     def __init__(self, *, name: str = "rack") -> None:
@@ -31,6 +31,6 @@ class Rack(LitmusTest):
         self._coap = CoapDevice(name="coap")
         self._serial = SerialConsole(name="serial")
 
-    def build_suite(self) -> LitmusTest:
+    def build_suite(self) -> TestComponent:
         """Independent devices, so independent verdicts."""
         return self.parallel(self.name, [self._guest, self._pihole, self._coap, self._serial])

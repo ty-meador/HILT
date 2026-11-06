@@ -10,20 +10,20 @@ from typing import Any, TypedDict
 
 import pytest
 
-from litmus import (
+from hilt import (
     PASS,
     ContractViolation,
     EvidenceViolation,
-    LitmusTest,
     State,
+    TestComponent,
     TestFailure,
     TestUtils,
     Verdict,
     evidence,
 )
-from litmus.evidence import declared_evidence
-from litmus.lifecycle import ChildBoundary, EvidenceContract, Slot
-from litmus.results import SummaryTreeNode
+from hilt.evidence import declared_evidence
+from hilt.lifecycle import ChildBoundary, EvidenceContract, Slot
+from hilt.results import SummaryTreeNode
 
 
 class _Handle:
@@ -38,7 +38,7 @@ class _VoltageEvidence(TypedDict):
     output_voltage_v: float
 
 
-class _Rail(LitmusTest):
+class _Rail(TestComponent):
     """One authored instance; the leaf's verdict is scripted by the constructor."""
 
     def __init__(self, *, name: str, verdict: Verdict[Any] | BaseException) -> None:
@@ -48,7 +48,7 @@ class _Rail(LitmusTest):
     async def configure(self, utils: TestUtils) -> dict[str, Any]:
         return {"limit_v": 12.5, "transport": _Handle()}
 
-    def build_suite(self) -> LitmusTest:
+    def build_suite(self) -> TestComponent:
         return self.test("voltage", self._check_voltage)
 
     @evidence("output_voltage_v")
@@ -122,8 +122,8 @@ class TestEvidenceOnPass:
             assert "shadows a ctx key or reserved slot" in failure.fail_message
 
     async def test_the_typed_dict_form_declares_its_required_keys(self) -> None:
-        class Suite(LitmusTest):
-            def build_suite(self) -> LitmusTest:
+        class Suite(TestComponent):
+            def build_suite(self) -> TestComponent:
                 return self.test("voltage", self._check_voltage)
 
             @evidence(_VoltageEvidence)
@@ -140,8 +140,8 @@ class TestEvidenceOnPass:
         assert leaf.evidence_declared == ("output_voltage_v",)
 
     async def test_an_undeclared_method_records_its_payload_unchecked(self) -> None:
-        class Suite(LitmusTest):
-            def build_suite(self) -> LitmusTest:
+        class Suite(TestComponent):
+            def build_suite(self) -> TestComponent:
                 return self.test("claim", self._claim)
 
             async def _claim(self, utils: TestUtils) -> Verdict:
@@ -155,11 +155,11 @@ class TestEvidenceOnPass:
         assert leaf.evidence_declared is None
 
     async def test_parallel_leaves_each_carry_their_own_evidence(self) -> None:
-        class Suite(LitmusTest):
+        class Suite(TestComponent):
             async def configure(self, utils: TestUtils) -> dict[str, Any]:
                 return {"serial": "SN-1"}
 
-            def build_suite(self) -> LitmusTest:
+            def build_suite(self) -> TestComponent:
                 return self.parallel(
                     "rails",
                     [self.test("a", self._a), self.test("b", self._b)],
@@ -254,8 +254,8 @@ class TestTheDeclaration:
         assert declared_evidence(claim) is None
 
     def test_the_declaration_survives_argument_binding(self) -> None:
-        class Suite(LitmusTest):
-            def build_suite(self) -> LitmusTest:
+        class Suite(TestComponent):
+            def build_suite(self) -> TestComponent:
                 return self.test("claim", self._claim, 3)
 
             @evidence("reading")
@@ -355,8 +355,8 @@ class TestTheBoundaryContract:
 
 class TestAbortLeavesNoEvidence:
     async def test_a_leaf_that_never_ran_shows_its_declaration_and_no_readings(self) -> None:
-        class Suite(LitmusTest):
-            def build_suite(self) -> LitmusTest:
+        class Suite(TestComponent):
+            def build_suite(self) -> TestComponent:
                 return self.sequence(
                     "steps", [self.test("first", self._first), self.test("second", self._second)]
                 )

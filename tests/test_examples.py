@@ -20,12 +20,12 @@ from examples.test_composition import ParallelDevice, SequencedDevice
 from examples.wait_for_patterns import ConfigureGatedDevice, MainAssertionDevice
 from tests.loopback_sshd import LoopbackSshd
 
-from litmus import AfterEachContext, ExecResult, RunResult, TestFailure, TestUtils
-from litmus.executor import LocalExec
-from litmus.lifecycle import Outcome, State
-from litmus.mock import MockTransport
-from litmus.remote import RemoteInterface
-from litmus.routing import ShellOpenRequest, SshConnector
+from hilt import AfterEachContext, ExecResult, RunResult, TestFailure, TestUtils
+from hilt.executor import LocalExec
+from hilt.lifecycle import Outcome, State
+from hilt.mock import MockTransport
+from hilt.remote import RemoteInterface
+from hilt.routing import ShellOpenRequest, SshConnector
 
 # PLAN §5.6 / docs/contracts.md Evidence Contract — the legacy provenance shape.
 # Python words (`use_shell`) replace TS `useShell`; the line grammar is the same.
@@ -168,7 +168,7 @@ class TestWaitForPatternsExample:
         tmp_path: Path,
         caplog: pytest.LogCaptureFixture,
     ) -> None:
-        with caplog.at_level(logging.INFO, logger="litmus"):
+        with caplog.at_level(logging.INFO, logger="hilt"):
             result = await ConfigureGatedDevice(
                 name="polling device",
                 service_states=("inactive", "activating", "active"),
@@ -177,7 +177,7 @@ class TestWaitForPatternsExample:
                 timeout_seconds=0.1,
             ).run(
                 env={
-                    "LITMUS_ARTIFACT_ROOT": str(tmp_path),
+                    "HILT_ARTIFACT_ROOT": str(tmp_path),
                     "PHYSICAL_LOCATION": "bench-7",
                 }
             )
@@ -242,7 +242,7 @@ class TestWaitForPatternsExample:
             record for record in caplog.records if "service readiness poll" in record.getMessage()
         ]
         assert len(poll_records) == 3
-        assert {getattr(record, "litmus_scope", ()) for record in poll_records} == {
+        assert {getattr(record, "hilt_scope", ()) for record in poll_records} == {
             ("polling device",)
         }
         pointer_records = [
@@ -252,7 +252,7 @@ class TestWaitForPatternsExample:
         ]
         assert len(pointer_records) == len(artifacts)
         assert ("polling device", "service-health") in {
-            getattr(record, "litmus_scope", ()) for record in pointer_records
+            getattr(record, "hilt_scope", ()) for record in pointer_records
         }
 
     async def test_test_method_polling_produces_the_hardware_verdict(self) -> None:
@@ -283,7 +283,7 @@ class TestRemoteDeviceSshExample:
         peer = await LoopbackSshd.start(username="root", password="ssh-secret")
         port = peer.port
         try:
-            with caplog.at_level("INFO", logger="litmus"):
+            with caplog.at_level("INFO", logger="hilt"):
                 outcome = await SshDevice(
                     name="ssh device",
                     host="127.0.0.1",
@@ -307,7 +307,7 @@ class TestRemoteDeviceSshExample:
         ]
 
     async def test_missing_host_from_env_fails_in_configure(self, tmp_path: Path) -> None:
-        result = await SshDevice(name="ssh device").run(env={"LITMUS_ARTIFACT_ROOT": str(tmp_path)})
+        result = await SshDevice(name="ssh device").run(env={"HILT_ARTIFACT_ROOT": str(tmp_path)})
 
         assert result.state is State.FAIL
         assert isinstance(result.failure, TestFailure)
@@ -317,7 +317,7 @@ class TestRemoteDeviceSshExample:
     async def test_garbage_port_from_env_fails_in_configure(self, tmp_path: Path) -> None:
         result = await SshDevice(name="ssh device").run(
             env={
-                "LITMUS_ARTIFACT_ROOT": str(tmp_path),
+                "HILT_ARTIFACT_ROOT": str(tmp_path),
                 "SSH_HOST": "127.0.0.1",
                 "SSH_USER": "root",
                 "SSH_PORT": "nope",
@@ -341,7 +341,7 @@ class TestSshTunnelingExample:
         jump_port = jump_peer.port
         dut_port = dut_peer.port
         try:
-            with caplog.at_level("INFO", logger="litmus"):
+            with caplog.at_level("INFO", logger="hilt"):
                 outcome = await TunneledDevice(
                     name="tunneled device",
                     jump_host="127.0.0.1",
@@ -422,7 +422,7 @@ async def _run_pihole(
     _patch_ssh_connector(monkeypatch, transport)
     env: dict[str, str] = {
         "PHYSICAL_LOCATION": "bench-pihole",
-        "LITMUS_ARTIFACT_ROOT": str(artifact_root),
+        "HILT_ARTIFACT_ROOT": str(artifact_root),
     }
     utils = TestUtils(env=env)
     return await PiHoleServer(
@@ -445,7 +445,7 @@ class TestPiHoleServerExample:
         transport = MockTransport()
         _script_healthy_pihole(transport)
 
-        with caplog.at_level(logging.INFO, logger="litmus"):
+        with caplog.at_level(logging.INFO, logger="hilt"):
             result = await _run_pihole(transport, monkeypatch, artifact_root=tmp_path)
 
         assert result.state is State.PASS
@@ -722,7 +722,7 @@ class TestNetworkedDeviceExample:
     ) -> None:
         monkeypatch.setattr(LocalExec, "run", _scripted_local_exec)
         result = await DutDevice(name="networked device", mac="aa:bb:cc:dd:ee:ff").run(
-            env={"LITMUS_ARTIFACT_ROOT": str(tmp_path)}
+            env={"HILT_ARTIFACT_ROOT": str(tmp_path)}
         )
 
         assert result.state is State.PASS
@@ -738,7 +738,7 @@ class TestNetworkedDeviceExample:
     ) -> None:
         monkeypatch.setattr(LocalExec, "run", _scripted_local_exec)
         result = await DutDevice(name="networked device").run(
-            env={"LITMUS_ARTIFACT_ROOT": str(tmp_path), "DUT_MAC": "aa:bb:cc:dd:ee:ff"}
+            env={"HILT_ARTIFACT_ROOT": str(tmp_path), "DUT_MAC": "aa:bb:cc:dd:ee:ff"}
         )
 
         assert result.state is State.PASS
@@ -746,7 +746,7 @@ class TestNetworkedDeviceExample:
 
     async def test_missing_mac_from_env_fails_in_configure(self, tmp_path: Path) -> None:
         result = await DutDevice(name="networked device").run(
-            env={"LITMUS_ARTIFACT_ROOT": str(tmp_path)}
+            env={"HILT_ARTIFACT_ROOT": str(tmp_path)}
         )
 
         assert result.state is State.FAIL
@@ -757,7 +757,7 @@ class TestNetworkedDeviceExample:
     async def test_half_set_gateway_env_fails_naming_the_missing_var(self, tmp_path: Path) -> None:
         result = await Gateway(name="gateway").run(
             env={
-                "LITMUS_ARTIFACT_ROOT": str(tmp_path),
+                "HILT_ARTIFACT_ROOT": str(tmp_path),
                 "DUT_MAC": "aa:bb:cc:dd:ee:ff",
                 "GATEWAY_HOST": "10.0.0.1",
             }
@@ -771,7 +771,7 @@ class TestNetworkedDeviceExample:
     async def test_garbage_gateway_port_from_env_fails_in_configure(self, tmp_path: Path) -> None:
         result = await Gateway(name="gateway").run(
             env={
-                "LITMUS_ARTIFACT_ROOT": str(tmp_path),
+                "HILT_ARTIFACT_ROOT": str(tmp_path),
                 "DUT_MAC": "aa:bb:cc:dd:ee:ff",
                 "GATEWAY_HOST": "10.0.0.1",
                 "GATEWAY_USER": "ops",
@@ -800,7 +800,7 @@ class TestNetworkedDeviceExample:
 
         monkeypatch.setattr(LocalExec, "run", empty_arp)
         result = await DutDevice(name="missing dut", mac="aa:bb:cc:dd:ee:ff").run(
-            env={"LITMUS_ARTIFACT_ROOT": str(tmp_path)}
+            env={"HILT_ARTIFACT_ROOT": str(tmp_path)}
         )
 
         assert result.state is State.FAIL
@@ -822,7 +822,7 @@ class TestNetworkedDeviceExample:
             username="ops",
             password="gateway-secret",
             behind=DutDevice(name="networked device", mac="aa:bb:cc:dd:ee:ff"),
-        ).run(env={"LITMUS_ARTIFACT_ROOT": str(tmp_path)})
+        ).run(env={"HILT_ARTIFACT_ROOT": str(tmp_path)})
 
         assert result.state is State.PASS
         assert transport.commands[0] == "true"
@@ -845,7 +845,7 @@ class TestNetworkedDeviceExample:
         _patch_ssh_connector(monkeypatch, transport)
         result = await Gateway(name="gateway").run(
             env={
-                "LITMUS_ARTIFACT_ROOT": str(tmp_path),
+                "HILT_ARTIFACT_ROOT": str(tmp_path),
                 "DUT_MAC": "aa:bb:cc:dd:ee:ff",
                 "GATEWAY_HOST": "10.0.0.1",
                 "GATEWAY_USER": "ops",
@@ -870,7 +870,7 @@ class TestNetworkedDeviceExample:
             host="10.0.0.1",
             username="ops",
             behind=DutDevice(name="networked device", mac="aa:bb:cc:dd:ee:ff"),
-        ).run(env={"LITMUS_ARTIFACT_ROOT": str(tmp_path)})
+        ).run(env={"HILT_ARTIFACT_ROOT": str(tmp_path)})
 
         assert result.state is State.FAIL
         assert isinstance(result.failure, TestFailure)
@@ -892,7 +892,7 @@ class TestHardwareDeviceLifecycleExample:
             timeout_seconds=0.1,
             audit_interval=0.001,
             claim_seconds=0.02,
-        ).run(env={"LITMUS_ARTIFACT_ROOT": str(tmp_path)})
+        ).run(env={"HILT_ARTIFACT_ROOT": str(tmp_path)})
 
         assert result.state is State.PASS
         # Handles are not JSON, so the ctx view carries only the limit; the claim's
@@ -918,7 +918,7 @@ class TestHardwareDeviceLifecycleExample:
             timeout_seconds=0.1,
             audit_interval=0.001,
             claim_seconds=0.03,
-        ).run(env={"LITMUS_ARTIFACT_ROOT": str(tmp_path)})
+        ).run(env={"HILT_ARTIFACT_ROOT": str(tmp_path)})
 
         assert result.state is State.FAIL
         assert isinstance(result.failure, TestFailure)

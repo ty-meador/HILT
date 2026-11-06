@@ -1,4 +1,4 @@
-"""The bench: a sibling of ``examples/`` that models real-world use of litmus. Not shipped.
+"""The bench: a sibling of ``examples/`` that models real-world use of hilt. Not shipped.
 
 Its surrogates are virtual devices the bench suites run against.
 

@@ -5,14 +5,14 @@ from __future__ import annotations
 from pathlib import Path
 from textwrap import dedent
 
-from litmus_check.lsp import LitmusLsp, LspCodeAction, LspRange
+from hilt_check.lsp import HiltLsp, LspCodeAction, LspRange
 
 _SUITE = Path("suite.py")
 
 
 def _action(source: str, code: str) -> tuple[str, LspCodeAction]:
     text = dedent(source)
-    adapter = LitmusLsp()
+    adapter = HiltLsp()
     diagnostics = [item for item in adapter.diagnostics(_SUITE, text) if item.code == code]
     assert diagnostics, f"expected a {code} diagnostic"
     diagnostic = diagnostics[0]
@@ -25,22 +25,20 @@ class TestGatedPassWrapsTheReturn:
     def test_inverts_a_single_not_equal_guard(self) -> None:
         source, action = _action(
             """
-            from litmus import PASS, TestFailure
+            from hilt import PASS, TestFailure
 
             async def claim(utils):
                 if utils.ctx["exit_code"] != 0:
                     raise TestFailure("non-zero exit")
                 return PASS
             """,
-            "litmus/gated-pass",
+            "hilt/gated-pass",
         )
 
         assert "Derive pass predicate" in action.title
         result = action.apply(source)
         leftover = [
-            item
-            for item in LitmusLsp().diagnostics(_SUITE, result)
-            if item.code == "litmus/gated-pass"
+            item for item in HiltLsp().diagnostics(_SUITE, result) if item.code == "hilt/gated-pass"
         ]
         assert leftover == []
         assert "if utils.ctx['exit_code'] == 0: return PASS" in result
@@ -50,7 +48,7 @@ class TestGatedPassWrapsTheReturn:
     def test_ands_multiple_guards_in_source_order(self) -> None:
         source, action = _action(
             """
-            from litmus import PASS, TestFailure
+            from hilt import PASS, TestFailure
 
             async def claim(utils):
                 if utils.ctx["exit_code"] != 0:
@@ -59,7 +57,7 @@ class TestGatedPassWrapsTheReturn:
                     raise TestFailure("b")
                 return PASS
             """,
-            "litmus/gated-pass",
+            "hilt/gated-pass",
         )
 
         result = action.apply(source)
@@ -68,14 +66,14 @@ class TestGatedPassWrapsTheReturn:
     def test_cancels_a_not_guard(self) -> None:
         source, action = _action(
             """
-            from litmus import PASS, TestFailure
+            from hilt import PASS, TestFailure
 
             async def claim(utils):
                 if not utils.ctx["ready"]:
                     raise TestFailure("not ready")
                 return PASS
             """,
-            "litmus/gated-pass",
+            "hilt/gated-pass",
         )
 
         assert "if utils.ctx['ready']: return PASS" in action.apply(source)
@@ -83,14 +81,14 @@ class TestGatedPassWrapsTheReturn:
     def test_flips_a_relational_operator(self) -> None:
         source, action = _action(
             """
-            from litmus import PASS, TestFailure
+            from hilt import PASS, TestFailure
 
             async def claim(utils):
                 if utils.ctx["temperature"] < 0:
                     raise TestFailure("too cold")
                 return PASS
             """,
-            "litmus/gated-pass",
+            "hilt/gated-pass",
         )
 
         assert "if utils.ctx['temperature'] >= 0: return PASS" in action.apply(source)
@@ -98,14 +96,14 @@ class TestGatedPassWrapsTheReturn:
     def test_wraps_or_in_not_parens(self) -> None:
         source, action = _action(
             """
-            from litmus import PASS, TestFailure
+            from hilt import PASS, TestFailure
 
             async def claim(utils):
                 if utils.ctx["a"] or utils.ctx["b"]:
                     raise TestFailure("either")
                 return PASS
             """,
-            "litmus/gated-pass",
+            "hilt/gated-pass",
         )
 
         assert "if not (utils.ctx['a'] or utils.ctx['b']): return PASS" in action.apply(source)
@@ -113,13 +111,13 @@ class TestGatedPassWrapsTheReturn:
     def test_fallback_wraps_a_bare_return_when_there_are_no_guards(self) -> None:
         source, action = _action(
             """
-            from litmus import PASS, TestFailure
+            from hilt import PASS, TestFailure
 
             async def claim(utils):
                 await utils.wait_for(lambda: True, looking_for="ready")
                 return PASS
             """,
-            "litmus/gated-pass",
+            "hilt/gated-pass",
         )
 
         assert action.title.startswith("Wrap return PASS")
@@ -132,32 +130,30 @@ class TestGatedPassWrapsTheReturn:
     def test_adds_the_testfailure_import_when_missing(self) -> None:
         source, action = _action(
             """
-            from litmus import PASS
+            from hilt import PASS
 
             async def claim(utils):
                 return PASS
             """,
-            "litmus/gated-pass",
+            "hilt/gated-pass",
         )
 
         result = action.apply(source)
-        assert "from litmus import PASS, TestFailure" in result
+        assert "from hilt import PASS, TestFailure" in result
 
     def test_fallback_cannot_return_pass_unconditionally(self) -> None:
         source, action = _action(
             """
-            from litmus import PASS, TestFailure
+            from hilt import PASS, TestFailure
 
             async def claim(utils):
                 return PASS
             """,
-            "litmus/gated-pass",
+            "hilt/gated-pass",
         )
         result = action.apply(source)
         leftover = [
-            item
-            for item in LitmusLsp().diagnostics(_SUITE, result)
-            if item.code == "litmus/gated-pass"
+            item for item in HiltLsp().diagnostics(_SUITE, result) if item.code == "hilt/gated-pass"
         ]
 
         assert "if False:" in result
@@ -168,7 +164,7 @@ class TestGatedPassWrapsTheReturn:
     def test_binding_between_guard_and_return_falls_back(self) -> None:
         source, action = _action(
             """
-            from litmus import PASS, TestFailure
+            from hilt import PASS, TestFailure
 
             async def claim(utils):
                 if not utils.ctx["ready"]:
@@ -178,7 +174,7 @@ class TestGatedPassWrapsTheReturn:
                     raise TestFailure("bad status", "0", "nonzero")
                 return PASS
             """,
-            "litmus/gated-pass",
+            "hilt/gated-pass",
         )
         result = action.apply(source)
         assign_at = result.index("result = utils.exec")
@@ -191,7 +187,7 @@ class TestGatedPassWrapsTheReturn:
     def test_walrus_in_a_guard_test_falls_back(self) -> None:
         source, action = _action(
             """
-            from litmus import PASS, TestFailure
+            from hilt import PASS, TestFailure
 
             async def claim(utils):
                 if (code := utils.ctx["exit_code"]) != 0:
@@ -200,7 +196,7 @@ class TestGatedPassWrapsTheReturn:
                     raise TestFailure("too high")
                 return PASS
             """,
-            "litmus/gated-pass",
+            "hilt/gated-pass",
         )
         result = action.apply(source)
 
@@ -211,14 +207,14 @@ class TestGatedPassWrapsTheReturn:
     def test_call_in_a_guard_test_falls_back(self) -> None:
         source, action = _action(
             """
-            from litmus import PASS, TestFailure
+            from hilt import PASS, TestFailure
 
             async def claim(utils):
                 if utils.exec("reset").exit_code != 0:
                     raise TestFailure("reset failed", "0", "nonzero")
                 return PASS
             """,
-            "litmus/gated-pass",
+            "hilt/gated-pass",
         )
         result = action.apply(source)
 
@@ -229,7 +225,7 @@ class TestGatedPassWrapsTheReturn:
     def test_loop_else_return_does_not_lift_the_pass_into_the_loop(self) -> None:
         source, action = _action(
             """
-            from litmus import PASS, TestFailure
+            from hilt import PASS, TestFailure
 
             async def claim(utils):
                 for line in utils.ctx["lines"]:
@@ -238,13 +234,11 @@ class TestGatedPassWrapsTheReturn:
                 else:
                     return PASS
             """,
-            "litmus/gated-pass",
+            "hilt/gated-pass",
         )
         result = action.apply(source)
         leftover = [
-            item
-            for item in LitmusLsp().diagnostics(_SUITE, result)
-            if item.code == "litmus/gated-pass"
+            item for item in HiltLsp().diagnostics(_SUITE, result) if item.code == "hilt/gated-pass"
         ]
 
         # The body's guard is a sibling of the else block, not of the return: inverting
@@ -258,7 +252,7 @@ class TestGatedPassWrapsTheReturn:
     def test_finally_return_does_not_derive_from_the_try_body(self) -> None:
         source, action = _action(
             """
-            from litmus import PASS, TestFailure
+            from hilt import PASS, TestFailure
 
             async def claim(utils):
                 try:
@@ -267,13 +261,11 @@ class TestGatedPassWrapsTheReturn:
                 finally:
                     return PASS
             """,
-            "litmus/gated-pass",
+            "hilt/gated-pass",
         )
         result = action.apply(source)
         leftover = [
-            item
-            for item in LitmusLsp().diagnostics(_SUITE, result)
-            if item.code == "litmus/gated-pass"
+            item for item in HiltLsp().diagnostics(_SUITE, result) if item.code == "hilt/gated-pass"
         ]
 
         assert action.title.startswith("Wrap return PASS")
@@ -285,7 +277,7 @@ class TestGatedPassWrapsTheReturn:
     def test_try_else_return_derives_from_the_guards_in_its_own_block(self) -> None:
         source, action = _action(
             """
-            from litmus import PASS, TestFailure
+            from hilt import PASS, TestFailure
 
             async def claim(utils):
                 try:
@@ -297,13 +289,11 @@ class TestGatedPassWrapsTheReturn:
                         raise TestFailure("non-zero exit", "0", "nonzero")
                     return PASS
             """,
-            "litmus/gated-pass",
+            "hilt/gated-pass",
         )
         result = action.apply(source)
         leftover = [
-            item
-            for item in LitmusLsp().diagnostics(_SUITE, result)
-            if item.code == "litmus/gated-pass"
+            item for item in HiltLsp().diagnostics(_SUITE, result) if item.code == "hilt/gated-pass"
         ]
 
         assert "Derive pass predicate" in action.title
@@ -317,11 +307,11 @@ class TestMethodReferenceLiftsTheLambda:
     def test_rewrites_a_zero_arg_lambda(self) -> None:
         source, action = _action(
             """
-            class Suite(LitmusTest):
-                def build_suite(self) -> LitmusTest:
+            class Suite(TestComponent):
+                def build_suite(self) -> TestComponent:
                     return self.test("x", lambda: self._run())
             """,
-            "litmus/method-reference",
+            "hilt/method-reference",
         )
 
         assert action.title == "Replace with `self._run`"
@@ -331,11 +321,11 @@ class TestMethodReferenceLiftsTheLambda:
     def test_rewrites_a_forwarding_lambda(self) -> None:
         source, action = _action(
             """
-            class Suite(LitmusTest):
-                def build_suite(self) -> LitmusTest:
+            class Suite(TestComponent):
+                def build_suite(self) -> TestComponent:
                     return self.test("x", lambda u: self._run(u))
             """,
-            "litmus/method-reference",
+            "hilt/method-reference",
         )
 
         assert 'self.test("x", self._run)' in action.apply(source)
@@ -343,11 +333,11 @@ class TestMethodReferenceLiftsTheLambda:
     def test_keyword_fn_argument(self) -> None:
         source, action = _action(
             """
-            class Suite(LitmusTest):
-                def build_suite(self) -> LitmusTest:
+            class Suite(TestComponent):
+                def build_suite(self) -> TestComponent:
                     return self.test("x", fn=lambda u: self._run(u))
             """,
-            "litmus/method-reference",
+            "hilt/method-reference",
         )
 
         assert 'self.test("x", fn=self._run)' in action.apply(source)
@@ -355,16 +345,16 @@ class TestMethodReferenceLiftsTheLambda:
     def test_extra_logic_is_not_rewritten(self) -> None:
         text = dedent(
             """
-            class Suite(LitmusTest):
-                def build_suite(self) -> LitmusTest:
+            class Suite(TestComponent):
+                def build_suite(self) -> TestComponent:
                     return self.test("x", lambda u: self._run(u, 42))
             """
         )
-        adapter = LitmusLsp()
+        adapter = HiltLsp()
         diagnostics = [
             item
             for item in adapter.diagnostics(_SUITE, text)
-            if item.code == "litmus/method-reference"
+            if item.code == "hilt/method-reference"
         ]
         assert diagnostics
         actions = adapter.code_actions(_SUITE, text, diagnostics[0].range)
@@ -374,8 +364,8 @@ class TestMethodReferenceLiftsTheLambda:
     def test_nested_def_is_not_rewritten(self) -> None:
         text = dedent(
             """
-            class Suite(LitmusTest):
-                def build_suite(self) -> LitmusTest:
+            class Suite(TestComponent):
+                def build_suite(self) -> TestComponent:
                     async def _inner(utils: TestUtils) -> Verdict:
                         if True:
                             return PASS
@@ -383,11 +373,11 @@ class TestMethodReferenceLiftsTheLambda:
                     return self.test("x", _inner)
             """
         )
-        adapter = LitmusLsp()
+        adapter = HiltLsp()
         diagnostics = [
             item
             for item in adapter.diagnostics(_SUITE, text)
-            if item.code == "litmus/method-reference"
+            if item.code == "hilt/method-reference"
         ]
         assert diagnostics
         actions = adapter.code_actions(_SUITE, text, diagnostics[0].range)
@@ -399,13 +389,13 @@ class TestActionsStayOnTheSelection:
     def test_a_disjoint_caret_gets_no_action(self) -> None:
         text = dedent(
             """
-            from litmus import PASS
+            from hilt import PASS
 
             async def claim(utils):
                 return PASS
             """
         )
-        actions = LitmusLsp().code_actions(_SUITE, text, LspRange(0, 0, 0, 0))
+        actions = HiltLsp().code_actions(_SUITE, text, LspRange(0, 0, 0, 0))
 
         assert actions == ()
 
@@ -414,14 +404,14 @@ class TestActionsAreNotPreferred:
     def test_gated_pass_is_not_preferred(self) -> None:
         _source, action = _action(
             """
-            from litmus import PASS, TestFailure
+            from hilt import PASS, TestFailure
 
             async def claim(utils):
                 if utils.ctx["exit_code"] != 0:
                     raise TestFailure("non-zero exit")
                 return PASS
             """,
-            "litmus/gated-pass",
+            "hilt/gated-pass",
         )
 
         assert action.is_preferred is False
@@ -430,11 +420,11 @@ class TestActionsAreNotPreferred:
     def test_method_reference_is_not_preferred(self) -> None:
         _source, action = _action(
             """
-            class Suite(LitmusTest):
-                def build_suite(self) -> LitmusTest:
+            class Suite(TestComponent):
+                def build_suite(self) -> TestComponent:
                     return self.test("x", lambda: self._run())
             """,
-            "litmus/method-reference",
+            "hilt/method-reference",
         )
 
         assert action.is_preferred is False

@@ -1,23 +1,23 @@
 """The self-test suite may not write evidence into the checkout (#57).
 
 ``tests/conftest.py`` guards this two ways: the working directory and
-``LITMUS_ARTIFACT_ROOT`` both point at ``tmp_path`` for every test, and a
+``HILT_ARTIFACT_ROOT`` both point at ``tmp_path`` for every test, and a
 before/after snapshot of the checkout's ``artifacts/`` fails the test that leaks.
 """
 
 from collections.abc import Callable
 from pathlib import Path
 
-from litmus import PASS, Artifact, LitmusTest, TestUtils, Verdict
-from litmus.lifecycle import State
+from hilt import PASS, Artifact, TestComponent, TestUtils, Verdict
+from hilt.lifecycle import State
 
 CHECKOUT_ARTIFACTS = Path(__file__).resolve().parents[1] / "artifacts"
 
 
-class SurveyingSuite(LitmusTest):
+class SurveyingSuite(TestComponent):
     """One case, one captured artifact, no explicit artifact root anywhere."""
 
-    def build_suite(self) -> LitmusTest:
+    def build_suite(self) -> TestComponent:
         return self.test("snapshot", self._snapshot)
 
     async def _snapshot(self, utils: TestUtils) -> Verdict:

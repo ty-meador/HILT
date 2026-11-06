@@ -1,4 +1,4 @@
-"""``litmus/method-reference``: ``case()`` takes a method reference, not a wrapper.
+"""``hilt/method-reference``: ``case()`` takes a method reference, not a wrapper.
 
 The cases mirror the legacy language server's ``arrow-mandate`` suite, translated to
 Python (``lambda`` and nested ``def`` in place of arrow functions). The port flags
@@ -10,11 +10,11 @@ import io
 from pathlib import Path
 from textwrap import dedent
 
-from litmus_check import SuiteModule, Violation
-from litmus_check.cli import EXIT_VIOLATIONS, LitmusCheckCommand
-from litmus_check.rules.method_reference import MethodReferenceRule
+from hilt_check import SuiteModule, Violation
+from hilt_check.cli import EXIT_VIOLATIONS, HiltCheckCommand
+from hilt_check.rules.method_reference import MethodReferenceRule
 
-CODE = "litmus/method-reference"
+CODE = "hilt/method-reference"
 
 
 def _check(source: str) -> list[Violation]:
@@ -29,8 +29,8 @@ def _lines(source: str) -> list[int]:
 class TestMethodReferenceFires:
     def test_lambda_with_no_params(self) -> None:
         source = """
-            class Suite(LitmusTest):
-                def build_suite(self) -> LitmusTest:
+            class Suite(TestComponent):
+                def build_suite(self) -> TestComponent:
                     return self.test("x", lambda: self._run())
         """
         violations = _check(source)
@@ -40,32 +40,32 @@ class TestMethodReferenceFires:
 
     def test_lambda_that_forwards_the_parameter(self) -> None:
         source = """
-            class Suite(LitmusTest):
-                def build_suite(self) -> LitmusTest:
+            class Suite(TestComponent):
+                def build_suite(self) -> TestComponent:
                     return self.test("x", lambda u: self._run(u))
         """
         assert _lines(source) == [4]
 
     def test_lambda_with_extra_logic_still_fires(self) -> None:
         source = """
-            class Suite(LitmusTest):
-                def build_suite(self) -> LitmusTest:
+            class Suite(TestComponent):
+                def build_suite(self) -> TestComponent:
                     return self.test("x", lambda u: self._run(u, 42))
         """
         assert _lines(source) == [4]
 
     def test_keyword_test_argument(self) -> None:
         source = """
-            class Suite(LitmusTest):
-                def build_suite(self) -> LitmusTest:
+            class Suite(TestComponent):
+                def build_suite(self) -> TestComponent:
                     return self.test("x", fn=lambda u: self._run(u))
         """
         assert _lines(source) == [4]
 
     def test_nested_def_passed_by_name(self) -> None:
         source = """
-            class Suite(LitmusTest):
-                def build_suite(self) -> LitmusTest:
+            class Suite(TestComponent):
+                def build_suite(self) -> TestComponent:
                     async def _inner(utils: TestUtils) -> Verdict:
                         if True:
                             return PASS
@@ -78,8 +78,8 @@ class TestMethodReferenceFires:
 class TestMethodReferenceStaysQuiet:
     def test_method_reference(self) -> None:
         source = """
-            class Suite(LitmusTest):
-                def build_suite(self) -> LitmusTest:
+            class Suite(TestComponent):
+                def build_suite(self) -> TestComponent:
                     return self.test("x", self._run)
                 async def _run(self, utils: TestUtils) -> Verdict:
                     if True:
@@ -94,8 +94,8 @@ class TestMethodReferenceStaysQuiet:
                 if True:
                     return PASS
                 raise TestFailure("no")
-            class Suite(LitmusTest):
-                def build_suite(self) -> LitmusTest:
+            class Suite(TestComponent):
+                def build_suite(self) -> TestComponent:
                     def other() -> None:
                         return None
                     del other
@@ -103,7 +103,7 @@ class TestMethodReferenceStaysQuiet:
         """
         assert _lines(source) == []
 
-    def test_non_litmus_classes_are_ignored(self) -> None:
+    def test_non_hilt_classes_are_ignored(self) -> None:
         source = """
             class Plain:
                 def build_suite(self):
@@ -113,14 +113,14 @@ class TestMethodReferenceStaysQuiet:
 
     def test_missing_fn_starargs_and_class_body_calls_are_ignored(self) -> None:
         source = """
-            class Suite(LitmusTest):
+            class Suite(TestComponent):
                 dangling = object.test("x", lambda: None)
-                def build_suite(self) -> LitmusTest:
+                def build_suite(self) -> TestComponent:
                     def other() -> None:
                         return None
                     return self.test("x")
                     return self.test("y", extra=other)
-                def factory(*args) -> LitmusTest:
+                def factory(*args) -> TestComponent:
                     return args[0].test("z", lambda: None)
         """
         assert _lines(source) == []
@@ -128,10 +128,10 @@ class TestMethodReferenceStaysQuiet:
 
 class TestMethodReferenceAtTheCommandLine:
     def test_seeded_fixture_is_caught_and_clean_fixture_is_not(self) -> None:
-        fixtures = Path(__file__).parent / "fixtures" / "litmus_check"
+        fixtures = Path(__file__).parent / "fixtures" / "hilt_check"
         out = io.StringIO()
 
-        status = LitmusCheckCommand(stdout=out, stderr=io.StringIO()).run(
+        status = HiltCheckCommand(stdout=out, stderr=io.StringIO()).run(
             ["--select", CODE, str(fixtures)]
         )
 

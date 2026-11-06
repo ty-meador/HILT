@@ -41,7 +41,7 @@ The legacy `_dmesgClean` returned PASS before reading stdout. This port keeps th
 the method was written to make (no emerg/alert/crit lines) and adds the check the
 legacy suite lacked: an unreadable kernel log is not a clean one.
 
-Run it: `TARGET_ADDRESS=pihole TARGET_USER=root litmus run examples/pi_hole_server.py`.
+Run it: `TARGET_ADDRESS=pihole TARGET_USER=root hilt run examples/pi_hole_server.py`.
 """
 
 from __future__ import annotations
@@ -51,7 +51,7 @@ import re
 import time
 from typing import Any, ClassVar
 
-from litmus import PASS, LitmusTest, Phase, TestFailure, TestUtils, Verdict, evidence
+from hilt import PASS, Phase, TestComponent, TestFailure, TestUtils, Verdict, evidence
 
 # --- What the survey reads ---------------------------------------------------------
 #
@@ -67,7 +67,7 @@ _LOG_TAILS: tuple[tuple[str, str], ...] = (
 )
 
 
-class PiHoleServer(LitmusTest):
+class PiHoleServer(TestComponent):
     """Claim a pi-hole is reachable, running, and not screaming in the kernel log."""
 
     # `pihole -v` prints one line per component, "Core version is v6.0.4 (Latest:
@@ -171,7 +171,7 @@ class PiHoleServer(LitmusTest):
         return {"versions": self._parse_versions(result.stdout)}
 
     # Build the pi hole server test sequence
-    def build_suite(self) -> LitmusTest:
+    def build_suite(self) -> TestComponent:
         """Sanity, then FTL, then independent kernel and status claims.
 
         The order is the dependency graph. A dead FTL makes `pihole status` and the

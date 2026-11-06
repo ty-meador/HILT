@@ -7,85 +7,85 @@ warning a change carries. Suites written for 1.0 keep running on every 1.x, so t
 Floor Technician's stations do not break on an upgrade.
 
 The self-tests hold the framework to this document (`tests/test_public_surface.py`):
-the reference table below and `litmus.__all__` must name the same set, every example
+the reference table below and `hilt.__all__` must name the same set, every example
 and every documented code block imports only that set from the package root, and
-`litmus.__version__` reports the installed distribution.
+`hilt.__version__` reports the installed distribution.
 
 ## The public surface
 
-**`litmus.__all__` is the public surface. Everything else is private.**
+**`hilt.__all__` is the public surface. Everything else is private.**
 
-- A name is public if and only if it appears in `litmus.__all__`. Import it from
-  `litmus`; the module a name is defined in is an implementation detail and may move
-  without notice. `from litmus import LitmusTest` is a promise; `from litmus.base
-  import LitmusTest` is not.
+- A name is public if and only if it appears in `hilt.__all__`. Import it from
+  `hilt`; the module a name is defined in is an implementation detail and may move
+  without notice. `from hilt import TestComponent` is a promise; `from hilt.base
+  import TestComponent` is not.
 - The documented attributes, methods, parameters, and raised exceptions of a public
   name are part of the promise. "Documented" means named in this document, in
   `docs/contracts.md`, `docs/idioms.md`, `docs/inspector-json.md`,
-  `docs/junit-xml.md`, or `docs/litmus-check.md`, or in the name's own docstring.
+  `docs/junit-xml.md`, or `docs/hilt-check.md`, or in the name's own docstring.
 - A public object has no attribute of a private type. Every value a suite can read
   from a public object carries a public type, so the reader can follow every name back
   to its meaning. `ScopedLogger` is promised as its `logging.LoggerAdapter` base plus
   the documented `scope` and `bread_crumbs` additions.
-- `litmus.__version__` is public: the installed distribution's version string.
+- `hilt.__version__` is public: the installed distribution's version string.
 - The invariants in `docs/contracts.md` are promises in their own right. A change that
   weakens one is a breaking change even when no name moves.
 - The records the framework emits (`result.json`, `timeline.jsonl`, the point-in-time
   artifact envelope) are promised through their published JSON Schemas and
   `format_version`, under the policy in `docs/inspector-json.md`.
 - Three environment variables are public configuration, and the framework reads no
-  others: `LITMUS_ARTIFACT_ROOT`, the artifact root when `TestUtils` is given none;
+  others: `HILT_ARTIFACT_ROOT`, the artifact root when `TestUtils` is given none;
   `environment=DEBUG`, which publishes every variable despite an `env_allow` or
   `env_deny` list and logs a warning saying so (`docs/inspector-json.md`); and
   `SSH_AUTH_SOCK`, the SSH agent `get_shell` and `use_shell` fall back to when no
   credential is given. The run environment as a whole is published as evidence under
   `env_allow` / `env_deny`, not read as configuration.
-- The `litmus run` command line is public in two respects: its exit status contract
+- The `hilt run` command line is public in two respects: its exit status contract
   (`0` Pass, `1` Fail, `2` Aborted, `3` usage error) and its `--json` record, which is
   the `result.json` record under the same `format_version` policy
-  (`docs/litmus-run.md`). The `litmus.cli` module behind it is not.
-- The `litmus new` command line is public in two respects: the files it writes (a
+  (`docs/hilt-run.md`). The `hilt.cli` module behind it is not.
+- The `hilt new` command line is public in two respects: the files it writes (a
   gated-PASS suite and a matching self-test stub) and its exit status (`0` wrote the
-  files, `3` usage error). The `litmus.scaffold` module behind it is not
-  (`docs/litmus-new.md`).
-- The `litmus inspect` command line is public in three respects: its selection rule
+  files, `3` usage error). The `hilt.scaffold` module behind it is not
+  (`docs/hilt-new.md`).
+- The `hilt inspect` command line is public in three respects: its selection rule
   (PATH is a run directory or its `result.json`; no PATH opens the most recently
-  modified `result.json` under `LITMUS_ARTIFACT_ROOT`, default `artifacts/`), its
+  modified `result.json` under `HILT_ARTIFACT_ROOT`, default `artifacts/`), its
   exit status (`0` the Inspector was closed, `3` nothing to inspect, not a saved
   version-1 run, or a `--suite` that cannot be loaded), and the rule that the Re-Run
   tab executes only the suite the run recorded as `suite_target` or the one `--suite`
   names, never one derived from evidence. The screen behind it,
-  `litmus.inspector_app`, and the re-run adapter, `litmus.inspector_rerun`, are not
+  `hilt.inspector_app`, and the re-run adapter, `hilt.inspector_rerun`, are not
   (`docs/inspector.md`).
-- The `litmus-check` command line is public in two respects: its exit status contract
-  and the rule codes it ships (`docs/litmus-check.md`). The Python API of the
-  `litmus_check` package is not.
+- The `hilt-check` command line is public in two respects: its exit status contract
+  and the rule codes it ships (`docs/hilt-check.md`). The Python API of the
+  `hilt_check` package is not.
 
 Private, with no promise attached:
 
 - Any name beginning with an underscore, at any depth.
-- Every submodule path. `litmus.lifecycle`, `litmus.routing`, `litmus.executor`,
-  `litmus.timeline`, `litmus.mock`, and the rest are the framework's organs; the
+- Every submodule path. `hilt.lifecycle`, `hilt.routing`, `hilt.executor`,
+  `hilt.timeline`, `hilt.mock`, and the rest are the framework's organs; the
   self-tests import from them, suites do not.
 - Annotation-only aliases that appear in signatures but are not exported
   (`WaitPredicate`, `HaltReason`, `ExecFn`). They are documented by their expansion.
-- Directory and file names beneath the artifact root. `LitmusTest.log_path` and the
+- Directory and file names beneath the artifact root. `TestComponent.log_path` and the
   `result` pointer in the timeline are the API; the layout that produces them is not.
 - The transports, `RemoteInterface`, `SshInterface`, and `SerialInterface`. A suite
   author never constructs a transport: `TestUtils.use_shell` and `TestUtils.get_shell`
   open an SSH connection and hand back a `Shell`; `TestUtils.use_serial` and
   `TestUtils.get_serial` do the same for a console by device path, and their
   documented parameters are the promise the serial transport is reached through.
-  Transport authors and the self-tests import `litmus.remote`, `litmus.ssh`, and
-  `litmus.serial` directly; a transport contract for third parties is a design note
+  Transport authors and the self-tests import `hilt.remote`, `hilt.ssh`, and
+  `hilt.serial` directly; a transport contract for third parties is a design note
   of its own (issues #91, #93–#97).
 - The Device API backends, `DeviceApiInterface`, `HttpInterface`, `CoapInterface`,
   and `MockDeviceApi`. A suite author never constructs one: `TestUtils.get_http`
   and `TestUtils.get_coap` open the session and hand back a `DeviceApi`. Self-tests
-  import `litmus.device_api` directly.
-- `litmus.junit.JunitXml`. The runner owns the reporter: `litmus run --junit PATH`
+  import `hilt.device_api` directly.
+- `hilt.junit.JunitXml`. The runner owns the reporter: `hilt run --junit PATH`
   is the promised way to a JUnit report. A harness adapter that imports
-  `litmus.junit` directly does so without the promise, as `docs/junit-xml.md` says.
+  `hilt.junit` directly does so without the promise, as `docs/junit-xml.md` says.
 - The self-test fixtures, the loopback sshd, and `MockTransport`. A transport double
   for suite authors is a feature to be designed, not a side door into the test kit.
 
@@ -96,7 +96,7 @@ The distribution version follows [Semantic Versioning 2.0.0](https://semver.org)
 
 **Before 1.0.0 (`0.y.z`)** nothing is promised. A name may be renamed or removed in any
 release, without a deprecation period; the composition vocabulary ruling on issue #110
-(`case` and `group` removed outright, a `litmus-check` rule naming the replacement) is
+(`case` and `group` removed outright, a `hilt-check` rule naming the replacement) is
 the precedent. Every such change still lands in `CHANGELOG.md` under the release that
 makes it, so the trail exists before the promise does.
 
@@ -104,8 +104,8 @@ makes it, so the trail exists before the promise does.
 
 | Component | Bumped when | Examples |
 |---|---|---|
-| **MAJOR** | A promise is broken. | A name leaves `__all__`; a documented parameter, attribute, or return type changes incompatibly; a contract in `docs/contracts.md` weakens; a `format_version` bumps; `requires-python` rises; a `litmus-check` rule code is removed or renamed. |
-| **MINOR** | The surface grows or a deprecation is announced. | A new name in `__all__`; a new optional keyword parameter; a new field on a record within its `format_version`; a new `litmus-check` rule; a name marked deprecated. |
+| **MAJOR** | A promise is broken. | A name leaves `__all__`; a documented parameter, attribute, or return type changes incompatibly; a contract in `docs/contracts.md` weakens; a `format_version` bumps; `requires-python` rises; a `hilt-check` rule code is removed or renamed. |
+| **MINOR** | The surface grows or a deprecation is announced. | A new name in `__all__`; a new optional keyword parameter; a new field on a record within its `format_version`; a new `hilt-check` rule; a name marked deprecated. |
 | **PATCH** | Behaviour is corrected without changing the surface. | A bug fix that brings behaviour in line with a documented contract; a dependency bump that changes nothing a suite can observe; documentation. |
 
 Two consequences the developer can rely on:
@@ -139,12 +139,12 @@ Announcing a deprecation is one MR that does all of the following:
    replacement, and the section that documents the name says the same.
 4. **`CHANGELOG.md` records it** under *Deprecated* for the release that announces it,
    and under *Removed* for the release that removes it.
-5. **`litmus-check` gains a rule** that flags the deprecated spelling and names the
-   replacement, in the pattern of `litmus/retired-names`, so the finding reaches the
+5. **`hilt-check` gains a rule** that flags the deprecated spelling and names the
+   replacement, in the pattern of `hilt/retired-names`, so the finding reaches the
    developer's CI before it reaches a station log.
 
 The developer sees the warning in the self-tests of their own suite (pytest surfaces
-`DeprecationWarning` by default) and in `litmus-check` output; `litmus run` routes
+`DeprecationWarning` by default) and in `hilt-check` output; `hilt run` routes
 Python warnings through the run log so the station's console carries the notice as
 well.
 
@@ -160,7 +160,7 @@ the top, one section per release below it, entries grouped under *Added*, *Chang
 *Deprecated*, *Removed*, *Fixed*, and *Security*.
 
 Every MR that changes a public name, a documented contract, a record format, or a
-`litmus-check` rule adds its line to *Unreleased* in the same MR. A release renames
+`hilt-check` rule adds its line to *Unreleased* in the same MR. A release renames
 *Unreleased* to the version and date and opens a fresh *Unreleased* above it. The
 changelog is the announcement; the GitLab issue is the ruling behind it.
 
@@ -169,29 +169,29 @@ changelog is the announcement; the GitLab issue is the ruling behind it.
 A change to the public surface is a change to a promise, and the workflow in
 `STANDARDS.md` section 7 applies: it is raised as an issue for Ty's sign-off before
 its MR opens, stating how the change helps the developer help the Floor Technician.
-The MR then updates `litmus.__all__`, the reference table below, the section that
+The MR then updates `hilt.__all__`, the reference table below, the section that
 documents the name, and `CHANGELOG.md` together. The public-surface self-test refuses
 an MR that updates one without the others.
 
 ## Reference
 
-Every name in `litmus.__all__`, what it is, and where its contract is written. *Kind*
+Every name in `hilt.__all__`, what it is, and where its contract is written. *Kind*
 is checked against the object by the self-tests.
 
 | Name | Kind | What it is | Described in |
 |---|---|---|---|
-| `PASS` | constant | The verdict. `return PASS` passes with no evidence; `return PASS({...})` passes and carries the readings that prove it. | `docs/overview.md` (Why Litmus Rejects "Pass by Default"), `docs/idioms.md` (Evidence Travels With the Verdict), `docs/contracts.md` (Terminal State Contract) |
+| `PASS` | constant | The verdict. `return PASS` passes with no evidence; `return PASS({...})` passes and carries the readings that prove it. | `docs/overview.md` (Why HILT Rejects "Pass by Default"), `docs/idioms.md` (Evidence Travels With the Verdict), `docs/contracts.md` (Terminal State Contract) |
 | `AfterEachContext` | class | The narrow integration-hook context after a node settles: `BeforeEachContext` plus `result`. | `docs/idioms.md` (Integration Hooks), `docs/contracts.md` (Integration Hook Contract) |
-| `AfterEachHook` | type alias | `Callable[[AfterEachContext], Awaitable[None]]`; the `after_each` parameter of `LitmusTest.run`. | `docs/idioms.md` (Integration Hooks) |
+| `AfterEachHook` | type alias | `Callable[[AfterEachContext], Awaitable[None]]`; the `after_each` parameter of `TestComponent.run`. | `docs/idioms.md` (Integration Hooks) |
 | `ArpResolutionFailure` | class | `TestFailure` raised when the resolver cannot map a MAC address to an IP. | `docs/idioms.md` (ArpResolver — MAC to IP) |
 | `ArpResolver` | class | Resolve a MAC address to an IP through the node's current exec route; `mac`, `resolve`, `reacquire`, `ping`. | `docs/idioms.md` (ArpResolver — MAC to IP, ArpResolver with Via-Routing) |
 | `Artifact` | class | Immutable point-in-time evidence (`name`, `type`, `data`, `timestamp`) for `TestUtils.capture_artifact`. | `docs/idioms.md` (Point-in-Time Artifacts), `docs/inspector-json.md` |
 | `BeforeEachContext` | class | The narrow integration-hook context before a node runs: `name`, `ancestor_names`, `bread_crumbs`, `logger`, `env`. | `docs/idioms.md` (Integration Hooks), `docs/contracts.md` (Integration Hook Contract) |
-| `BeforeEachHook` | type alias | `Callable[[BeforeEachContext], Awaitable[None]]`; the `before_each` parameter of `LitmusTest.run`. | `docs/idioms.md` (Integration Hooks) |
+| `BeforeEachHook` | type alias | `Callable[[BeforeEachContext], Awaitable[None]]`; the `before_each` parameter of `TestComponent.run`. | `docs/idioms.md` (Integration Hooks) |
 | `CoapCode` | class | Named CoAP response codes as dotted strings (`CONTENT` is `2.05`, `CHANGED` is `2.04`, `NOT_FOUND` is `4.04`). A CoAP `DeviceResponse.status` is one of these strings; `from_wire` renders a code byte the same way. | `docs/idioms.md` (Device API — CoAP/HTTP), signed `docs/hil/device-api.md` |
 | `ContractViolation` | class | A developer bug: suite code did something the verdict contract forbids. Records as Fail with `bug: true`. | `docs/overview.md` (Failure Taxonomy), `docs/contracts.md` (Failure Taxonomy Contract) |
 | `DeviceApi` | class | The session handle returned by `TestUtils.get_http` and `TestUtils.get_coap`; `request`, `scheme`, `base_url`. | `docs/idioms.md` (Device API — CoAP/HTTP), signed `docs/hil/device-api.md` |
-| `DeviceApiOperationFailure` | class | `LitmusError` raised when a device-API transfer does not complete. Not a DUT verdict; HTTP 4xx/5xx is data on `DeviceResponse`. | `docs/idioms.md` (Device API — CoAP/HTTP), signed `docs/hil/device-api.md` |
+| `DeviceApiOperationFailure` | class | `HiltError` raised when a device-API transfer does not complete. Not a DUT verdict; HTTP 4xx/5xx is data on `DeviceResponse`. | `docs/idioms.md` (Device API — CoAP/HTTP), signed `docs/hil/device-api.md` |
 | `DeviceRequest` | class | One resource operation: `method`, `path`, `payload` bytes or keyword-only `json=`, `headers`, retry declaration, `evidence_headers`. | `docs/contracts.md` (Device API Contract), `docs/idioms.md` (Device API — CoAP/HTTP), signed `docs/hil/device-api.md` |
 | `DeviceResponse` | class | What a transfer returned: `status`, `body` bytes, `headers`; `json()` and `parse(response_type="json" or "yaml")` decode explicitly. Status is data: an HTTP integer, or a CoAP dotted code (`2.05`). | `docs/contracts.md` (Device API Contract), `docs/idioms.md` (Device API — CoAP/HTTP), signed `docs/hil/device-api.md` |
 | `EvidenceViolation` | class | `ContractViolation` raised by the child boundary when a verdict's evidence is not JSON, shadows a ctx key, or lacks a key `@evidence` declared; `key`. | `docs/idioms.md` (Evidence Travels With the Verdict), `docs/contracts.md` (Evidence Contract) |
@@ -199,15 +199,14 @@ is checked against the object by the self-tests.
 | `ExternalIntegrationFailure` | class | A harness-level halt: an integration hook threw. Aborts the run. | `docs/overview.md` (Failure Taxonomy), `docs/contracts.md` (Integration Hook Contract) |
 | `Failure` | type alias | The union of `TestFailure`, `ExternalIntegrationFailure`, `OperatorInterrupt`, and `MissingVerdict`; the type of `RunResult.failure`. | `docs/contracts.md` (Failure Taxonomy Contract) |
 | `FrameworkContractViolation` | class | A framework bug: the second layer of the guard, unreachable by design. Exported so a log line can be followed. | `docs/contracts.md` (Failure Taxonomy Contract) |
+| `HiltError` | class | Root of the framework's exception taxonomy. | `docs/contracts.md` (Failure Taxonomy Contract) |
 | `JsonObject` | type alias | `dict[str, JsonValue]`; the shape of `run_data`, of a node's `evidence`, and of `Artifact.data`. | `docs/idioms.md` (run_data — Automatic Structured Evidence) |
-| `LitmusError` | class | Root of the framework's exception taxonomy. | `docs/contracts.md` (Failure Taxonomy Contract) |
-| `LitmusTest` | class | The atom: a claim about hardware and the procedure that produces its evidence. `configure`, `build_suite`, `cleanup`, `run`, `main`, `test`, `sequence`, `parallel`, `use_survey`, `use_audit`, `name`, `log_path`, `run_data`, and the `redact_ctx` class attribute. Optionally parameterized as `LitmusTest[CtxT]` to type the suite's own context; the bare name keeps today's meaning. | `docs/overview.md` (The Atom), `docs/idioms.md`, `docs/contracts.md` (Lifecycle Contract) |
 | `Measurement` | class | One `utils.measure` call as recorded: `name`, `value`, `unit`, `limits`, `in_limits`, `timestamp`. Frozen; `in_limits` is evidence, never a verdict. `value` is `None` for a reading not taken, and such a reading is never inside its window. | `docs/measurements.md` (The call) |
 | `MissingVerdict` | class | No verdict was produced: the test method returned something other than `PASS`. | `docs/overview.md` (Failure Taxonomy), `docs/contracts.md` (Terminal State Contract) |
 | `NodeType` | class | `StrEnum` discriminator on `RunResult.type` and `SummaryTreeNode.type`: `SUITE`, `TEST`, `PARALLEL`, `SEQUENCE`; the wire values are fixed by the result schema. | `docs/inspector-json.md` (Version 1 result) |
 | `OperatorInterrupt` | class | A harness-level halt: the operator interrupted the run. Aborts the run. | `docs/overview.md` (Failure Taxonomy), `docs/contracts.md` (Failure Taxonomy Contract) |
 | `Phase` | class | Ordered `StrEnum` of the six survey dispatch points, `PRE_CONFIGURE` through `POST_CLEANUP`; the `phases=` selection of `use_survey` and the artifact-name prefix. | `docs/idioms.md` (Constructor-Only Hooks), `docs/contracts.md` (Evidence Contract) |
-| `RunEnv` | class | The run environment on `TestUtils.env`: a read-only `Mapping[str, str]` plus `text`, `require`, `port`, `int`, and `float`, readers that Fail the run naming the bench variable to set. | `docs/idioms.md` (TestUtils Injection), `docs/litmus-run.md` (Selecting the suite) |
+| `RunEnv` | class | The run environment on `TestUtils.env`: a read-only `Mapping[str, str]` plus `text`, `require`, `port`, `int`, and `float`, readers that Fail the run naming the bench variable to set. | `docs/idioms.md` (TestUtils Injection), `docs/hilt-run.md` (Selecting the suite) |
 | `RunResult` | class | Self-contained evidence for one settled node: `state`, `failure`, `timeout`, `ancestor_names`, `bread_crumbs`, `summary_tree`, `env`, `run_data`, `to_json`. | `docs/idioms.md` (RunResult Navigation), `docs/inspector-json.md`, `docs/contracts.md` (Evidence Contract) |
 | `RunSignal` | class | Read-only view of the halt signals affecting a node: `fired`, `reason`. `TestUtils.signal`. | `docs/idioms.md` (TestUtils Injection) |
 | `ScopedLogger` | class | The per-node logger on `TestUtils.logger` and the hook contexts; a `logging.LoggerAdapter` with `scope` and `bread_crumbs`. | `docs/idioms.md` (Logging), `docs/contracts.md` (Evidence Contract) |
@@ -215,9 +214,10 @@ is checked against the object by the self-tests.
 | `Slot` | class | `StrEnum` of the lifecycle positions the framework calls suite code from; `RunResult.slot`. | `docs/inspector-json.md` (Version 1 result), `docs/contracts.md` (Lifecycle Contract) |
 | `State` | class | `StrEnum` of the three terminal states, `PASS`, `FAIL`, `ABORTED`; `RunResult.state`. There is no fourth. | `docs/overview.md` (The Three Terminal States), `docs/contracts.md` (Terminal State Contract) |
 | `SummaryTreeNode` | class | Plain recursive snapshot of the run tree on `RunResult.summary_tree`; `evidence`, `evidence_declared`, `to_json`. | `docs/inspector-json.md` (Summary tree) |
+| `TestComponent` | class | The atom: a claim about hardware and the procedure that produces its evidence. `configure`, `build_suite`, `cleanup`, `run`, `main`, `test`, `sequence`, `parallel`, `use_survey`, `use_audit`, `name`, `log_path`, `run_data`, and the `redact_ctx` class attribute. Optionally parameterized as `TestComponent[CtxT]` to type the suite's own context; the bare name keeps today's meaning. | `docs/overview.md` (The Atom), `docs/idioms.md`, `docs/contracts.md` (Lifecycle Contract) |
 | `TestFailure` | class | A verdict of Fail: the hardware did not meet the spec. The exception a test method raises; `evidence=` carries the readings taken before it failed. | `docs/overview.md` (Failure Taxonomy), `docs/contracts.md` (Failure Taxonomy Contract) |
 | `TestUtils` | class | The scoped service object handed to every lifecycle method: `logger`, `ctx`, `env`, `signal`, `artifact_root`, `exec_route`, `exec`, `wait_for`, `capture_artifact`, `get_arp_resolver`, `use_shell`, `get_shell`, `use_serial`, `get_serial`, `get_http`, `get_coap`, `measure`. Optionally parameterized as `TestUtils[CtxT]` so `ctx` returns the suite's declared shape. | `docs/idioms.md` (TestUtils Injection), `docs/utilities.md` (Serial console), `docs/contracts.md` (Utils Contract) |
 | `TimeoutEvidence` | class | Structured evidence when a time budget cut a subtree: `reason`, `declared`, `budget_seconds`, `elapsed_seconds`, `clock`; `RunResult.timeout`. | `docs/idioms.md` (Time Budgets), `docs/contracts.md` (Time Budget Contract) |
-| `Verdict` | class | The return type of a test method: `PASS` or `PASS(evidence)`; `evidence`. Generic in the evidence shape, so `-> Verdict[MyEvidence]` lets pyright check the payload. | `docs/overview.md` (Why Litmus Rejects "Pass by Default"), `docs/idioms.md` (Evidence Travels With the Verdict), `docs/litmus-check.md` (`litmus/unannotated-interface`) |
-| `evidence` | function | Decorator naming the keys a test method's `PASS` must carry: `@evidence("k", ...)` or `@evidence(MyTypedDict)`. Static at class definition. | `docs/idioms.md` (Evidence Travels With the Verdict), `docs/litmus-check.md` (`litmus/evidence-fulfilled`, `litmus/evidence-shadows-ctx`) |
+| `Verdict` | class | The return type of a test method: `PASS` or `PASS(evidence)`; `evidence`. Generic in the evidence shape, so `-> Verdict[MyEvidence]` lets pyright check the payload. | `docs/overview.md` (Why HILT Rejects "Pass by Default"), `docs/idioms.md` (Evidence Travels With the Verdict), `docs/hilt-check.md` (`hilt/unannotated-interface`) |
+| `evidence` | function | Decorator naming the keys a test method's `PASS` must carry: `@evidence("k", ...)` or `@evidence(MyTypedDict)`. Static at class definition. | `docs/idioms.md` (Evidence Travels With the Verdict), `docs/hilt-check.md` (`hilt/evidence-fulfilled`, `hilt/evidence-shadows-ctx`) |
 | `measure` | function | Package-root spelling of `utils.measure`, resolved to the node whose `configure()` or test method is running and refused outside one. `utils.measure` is the documented home. | `docs/measurements.md` (The package-root alias) |

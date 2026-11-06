@@ -1,4 +1,4 @@
-# litmus — Coding Standards
+# HILT — Coding Standards
 
 Rules for everyone (human or agent) committing to this repo. The design itself lives in
 the port plan (`../PLAN.md` in the workspace); this doc is only about how we write code.
@@ -22,11 +22,11 @@ source of truth and this doc is the explanation.
   the network; there is no offline pass. A finding is fixed by upgrading the pin; if an
   advisory truly does not apply, `--ignore-vuln` goes in the Makefile with the issue that
   says why. `make deps-update` (`tools/dependency_update.py`, run weekly at the bench
-  with `LITMUS_BOT_TOKEN` exported) refreshes `uv.lock` and opens the update MR itself;
+  with `HILT_BOT_TOKEN` exported) refreshes `uv.lock` and opens the update MR itself;
   `make deps-plan` prints the plan and touches nothing.
 - **The package is built and smoke-installed by the gate.** `make check` runs
   `make smoke`: `uv build` into `dist/`, then the wheel installed into a clean venv under
-  `.smoke/` where `litmus-check --list-rules` and `litmus run examples/hello_world.py`
+  `.smoke/` where `hilt-check --list-rules` and `hilt run examples/hello_world.py`
   must start. A wheel that cannot build, or that imports from `src/` instead of itself,
   is red before it is tagged, so the developer's `pip install` never delivers a package
   that cannot import on the floor. Publishing waits on the name decision (#9) and is a
@@ -52,12 +52,12 @@ rules and pyright strict — an unannotated def fails `make check`.
   narrow that return type to a local `TypedDict` under pyright strict; returning a plain
   `dict[str, Any]` remains the default. The framework copies the return into the dict
   it owns, so the one runtime shape is `utils.ctx`, not the return value. The generic
-  `LitmusTest[CtxT]` / `TestUtils[CtxT]` carries that same annotation into the test
+  `TestComponent[CtxT]` / `TestUtils[CtxT]` carries that same annotation into the test
   methods as opt-in sugar (issue #75); both parameters default to `Mapping[str, Any]`,
   so a bare `TestUtils` annotation means exactly what it always did, and the object
   exposed at runtime is still the framework-owned dict. Composition — `test`,
   `sequence`, `parallel` — stays shape-agnostic. Do not introduce a context
-  dataclass or require every suite to parameterize `LitmusTest`.
+  dataclass or require every suite to parameterize `TestComponent`.
 - Public packages ship `py.typed`.
 
 ## 3. Shape of the code
@@ -68,12 +68,12 @@ rules and pyright strict — an unannotated def fails `make check`.
   and stateless helper functions — a pure predicate does not earn a class-as-namespace.
   A module-level function is one of three things, and its name says which:
   - **On the public surface by ruling.** A decorator or registrar the developer calls
-    by name (`evidence`, #118; `measure`, #86; `cli.main`) sits in `litmus.__all__`
+    by name (`evidence`, #118; `measure`, #86; `cli.main`) sits in `hilt.__all__`
     because a signed ruling put it there. Nothing reaches the surface as a function
     without one; the ruling, not this list, is the authority.
-  - **Package-internal, read by a sibling module.** A name outside `litmus.__all__` is
+  - **Package-internal, read by a sibling module.** A name outside `hilt.__all__` is
     package-internal. When a sibling imports it, it keeps a plain name: a
-    `from litmus.x import _helper` line silences the type checker to say what the
+    `from hilt.x import _helper` line silences the type checker to say what the
     plain name already says.
   - **Private to its module.** A helper only its own module calls is `_helper`, so the
     reader knows without a search that nothing else depends on it.
@@ -129,7 +129,7 @@ that reader is soon a stranger.
   every public module, class, function, and method under `src/` and `tools/` carries a
   docstring, shaped as above. `pyproject.toml` is the source of truth for the exact set;
   the exemptions there say why each exists (magic methods, `__init__`, the D1 coverage
-  rules for test modules, `tests/` and the stub `litmus new` writes). The gate checks presence and shape; whether the words state the
+  rules for test modules, `tests/` and the stub `hilt new` writes). The gate checks presence and shape; whether the words state the
   contract is still the reviewer's call.
 
 ## 6. Tests
@@ -137,7 +137,7 @@ that reader is soon a stranger.
 - **Test-first is the methodology of this port** — the legacy framework shipped with
   zero self-tests; we do not repeat that. New behavior lands with its tests in the same
   commit.
-- Tests live in `tests/`, mirror the `src/litmus/` module layout, and are written as
+- Tests live in `tests/`, mirror the `src/hilt/` module layout, and are written as
   classes (`class TestX:` with test methods), consistent with §3.
 - Async tests are plain `async def` methods — pytest-asyncio auto mode picks them up.
 - `make check` green is the definition of done. No skipped/xfail tests without a linked
@@ -145,7 +145,7 @@ that reader is soon a stranger.
 - **Coverage is a floor that only rises.** The gate runs the suite under branch coverage.
   The global floor is `[tool.coverage.report] fail_under`; the per-file floors on the
   kernel of trust (`verdict.py`, `base.py`, `lifecycle.py`, `executor.py`) are
-  `[tool.litmus.coverage.floors]`, enforced by `tools/coverage_floor.py`. Measured below
+  `[tool.hilt.coverage.floors]`, enforced by `tools/coverage_floor.py`. Measured below
   a floor is red. When a change lifts coverage, raise the floor to the new measurement in
   the same MR — the gate prints the hint. A floor never moves down: an MR that lowers one
   is not merged, whatever else it carries. The report lives under `.coverage/`, ignored
@@ -158,7 +158,7 @@ that reader is soon a stranger.
   no second machine unless a person runs one. The nightly soak is a bench run of the
   full suite and the rack suite many times over on `main`
   (`tools/nightly_soak.py`: `make nightly` runs and prints, `make nightly-record`
-  also records the night on issue #68 with `LITMUS_BOT_TOKEN` exported); a red night
+  also records the night on issue #68 with `HILT_BOT_TOKEN` exported); a red night
   names the failing case and run in #general before an MR meets it. There is no
   pipeline to run it instead: the dormant `nightly-soak` schedule of 2026-09-11 left
   with `.gitlab-ci.yml`, which Ty removed on 2026-10-11. A night counts only once it
@@ -196,7 +196,7 @@ that reader is soon a stranger.
 - Design reviews apply the [Golden Rule](docs/idioms.md#the-golden-rule): when authoring
   feels awkward, identify the idiom or problem-domain boundary being fought before proposing
   a new framework feature.
-- A change that adds, removes, renames, or re-types a name in `litmus.__all__`, weakens
+- A change that adds, removes, renames, or re-types a name in `hilt.__all__`, weakens
   a contract in `docs/contracts.md`, or bumps a record `format_version` is a change to a
   promise. It is raised as a `needs-sign-off` issue for Ty before its MR opens, and the MR
   updates `__all__`, the reference table in `docs/api-stability.md`, the documenting

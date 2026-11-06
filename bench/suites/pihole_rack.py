@@ -11,7 +11,7 @@ Environment: ``PIHOLE_HOST`` / ``PIHOLE_USER`` / optional ``PIHOLE_PASSWORD`` /
 API. The bench container (``make bench-pihole``) sets all six in the Makefile.
 
 Run it: ``make bench-suite-pihole``. The module holds two suites, so ``__suite__`` at
-the bottom names ``PiHole`` as the one ``litmus run`` picks when the target carries no
+the bottom names ``PiHole`` as the one ``hilt run`` picks when the target carries no
 ``::SuiteClass``; ``::BlocklistRoundTrip`` runs the child on its own, without the hop.
 """
 
@@ -21,13 +21,13 @@ import ipaddress
 import re
 from typing import Any
 
-from litmus import (
+from hilt import (
     PASS,
     DeviceApi,
     DeviceApiOperationFailure,
     DeviceRequest,
-    LitmusTest,
     Phase,
+    TestComponent,
     TestFailure,
     TestUtils,
     Verdict,
@@ -38,14 +38,14 @@ _BLOCKED_ANSWERS = frozenset({"0.0.0.0", "::"})
 _QUERY_TIME = re.compile(r";; Query time: (\d+) msec")
 
 
-class PiHole(LitmusTest):
+class PiHole(TestComponent):
     """The appliance: an SSH hop every claim and every composed child runs through."""
 
     def __init__(
         self,
         *,
         name: str = "pihole",
-        behind: LitmusTest | None = None,
+        behind: TestComponent | None = None,
         skip_host_verification: bool = True,
     ) -> None:
         """Capture what sits behind the hop; the hop itself is resolved in ``configure``.
@@ -53,7 +53,7 @@ class PiHole(LitmusTest):
         Args:
             name: Node name used by logs, artifacts, and failures.
             behind: The suite that runs through this hop. ``None`` composes a
-                `BlocklistRoundTrip`, which is what ``litmus run`` gets.
+                `BlocklistRoundTrip`, which is what ``hilt run`` gets.
             skip_host_verification: Lab-only ``known_hosts=None``; the bench container
                 sits on a loopback port no ``known_hosts`` entry covers.
         """
@@ -80,7 +80,7 @@ class PiHole(LitmusTest):
         versions = await utils.exec("pihole -v")
         return {"versions": versions.stdout.strip().splitlines()}
 
-    def build_suite(self) -> LitmusTest:
+    def build_suite(self) -> TestComponent:
         """FTL must be listening before anything behind the hop is worth asking."""
         return self.sequence(
             self.name,
@@ -113,7 +113,7 @@ class PiHole(LitmusTest):
         return {"ftl_log": result.stdout.strip() or result.stderr.strip() or "(empty)"}
 
 
-class BlocklistRoundTrip(LitmusTest):
+class BlocklistRoundTrip(TestComponent):
     """Add a domain to the deny list over the API and watch DNS refuse it."""
 
     redact_ctx = ("sid",)
@@ -124,7 +124,7 @@ class BlocklistRoundTrip(LitmusTest):
         self,
         *,
         name: str = "blocklist",
-        domain: str = "blocked.litmus.bench",
+        domain: str = "blocked.hilt.bench",
         probe: str = "pi.hole",
         query_latency_limit_ms: float = 100.0,
         log_timeout_s: float = 15.0,
@@ -170,7 +170,7 @@ class BlocklistRoundTrip(LitmusTest):
                 DeviceRequest(
                     method="POST",
                     path="/api/domains/deny/exact",
-                    json={"domain": self._domain, "comment": "litmus bench"},
+                    json={"domain": self._domain, "comment": "hilt bench"},
                     headers={"sid": sid},
                 )
             )
@@ -219,7 +219,7 @@ class BlocklistRoundTrip(LitmusTest):
         )
         utils.logger.info("API session ended: %s", ended)
 
-    def build_suite(self) -> LitmusTest:
+    def build_suite(self) -> TestComponent:
         """Resolver works, then the block is visible on the wire, then in the log."""
         return self.sequence(
             self.name,
@@ -337,6 +337,6 @@ async def _settle(api: DeviceApi, request: DeviceRequest) -> str:
 
 
 __suite__ = PiHole
-"""The default for ``litmus run bench/suites/pihole_rack.py``: the gateway, which
+"""The default for ``hilt run bench/suites/pihole_rack.py``: the gateway, which
 composes the round trip behind its hop. ``::BlocklistRoundTrip`` still selects the
 child alone (issue #160)."""

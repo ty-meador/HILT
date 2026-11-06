@@ -22,14 +22,14 @@ import sys
 import time
 
 from bench._common import cache_dir, report, require_tool, run, wait_for_port
-from litmus.device_api import DeviceRequest, HttpInterface
-from litmus.ssh import SshInterface
+from hilt.device_api import DeviceRequest, HttpInterface
+from hilt.ssh import SshInterface
 
-IMAGE = "litmus-bench/pihole-sshd"
-CONTAINER = "litmus-bench-pihole"
+IMAGE = "hilt-bench/pihole-sshd"
+CONTAINER = "hilt-bench-pihole"
 HOST = "127.0.0.1"
-SSH_PORT = int(os.environ.get("LITMUS_BENCH_PIHOLE_SSH_PORT", "2223"))
-HTTP_PORT = int(os.environ.get("LITMUS_BENCH_PIHOLE_HTTP_PORT", "8080"))
+SSH_PORT = int(os.environ.get("HILT_BENCH_PIHOLE_SSH_PORT", "2223"))
+HTTP_PORT = int(os.environ.get("HILT_BENCH_PIHOLE_HTTP_PORT", "8080"))
 USER = "root"
 PASSWORD = "bench"
 
@@ -84,7 +84,7 @@ def up() -> int:
             return 0
         time.sleep(1.0)
     sys.exit(
-        "pihole-FTL's web server did not answer within 90s; see `docker logs litmus-bench-pihole`"
+        "pihole-FTL's web server did not answer within 90s; see `docker logs hilt-bench-pihole`"
     )
 
 

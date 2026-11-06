@@ -3,18 +3,18 @@
 import asyncio
 from typing import cast
 
-from litmus import (
+from hilt import (
     PASS,
     BeforeEachContext,
     ExternalIntegrationFailure,
-    LitmusTest,
     MissingVerdict,
     RunResult,
+    TestComponent,
     TestFailure,
     TestUtils,
     Verdict,
 )
-from litmus.lifecycle import State
+from hilt.lifecycle import State
 
 
 class TestGroupStructuredConcurrency:
@@ -22,8 +22,8 @@ class TestGroupStructuredConcurrency:
         healthy_started = asyncio.Event()
         healthy_completed = asyncio.Event()
 
-        class Suite(LitmusTest):
-            def build_suite(self) -> LitmusTest:
+        class Suite(TestComponent):
+            def build_suite(self) -> TestComponent:
                 return self.parallel(
                     "independent claims",
                     [
@@ -50,8 +50,8 @@ class TestGroupStructuredConcurrency:
         assert [child.state for child in children] == [State.FAIL, State.PASS]
 
     async def test_parallel_passes_when_every_child_passes(self) -> None:
-        class Suite(LitmusTest):
-            def build_suite(self) -> LitmusTest:
+        class Suite(TestComponent):
+            def build_suite(self) -> TestComponent:
                 return self.parallel(
                     "independent claims",
                     [
@@ -70,8 +70,8 @@ class TestGroupStructuredConcurrency:
     async def test_node_local_abort_does_not_cancel_siblings(self) -> None:
         sibling_completed = asyncio.Event()
 
-        class Suite(LitmusTest):
-            def build_suite(self) -> LitmusTest:
+        class Suite(TestComponent):
+            def build_suite(self) -> TestComponent:
                 return self.parallel(
                     "independent claims",
                     [
@@ -105,8 +105,8 @@ class TestGroupStructuredConcurrency:
         later_sequence_node_ran = asyncio.Event()
         cause = RuntimeError("shop-floor database refused the record")
 
-        class Suite(LitmusTest):
-            def build_suite(self) -> LitmusTest:
+        class Suite(TestComponent):
+            def build_suite(self) -> TestComponent:
                 return self.sequence(
                     "dependent stages",
                     [

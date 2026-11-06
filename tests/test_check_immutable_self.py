@@ -1,4 +1,4 @@
-"""``litmus/immutable-self``: ``self.<attr>`` is written only inside ``__init__``.
+"""``hilt/immutable-self``: ``self.<attr>`` is written only inside ``__init__``.
 
 The cases mirror the legacy language server's ``this-mutation`` suite, translated to
 Python's write forms (augmented and annotated assignment, ``del``, loop and context
@@ -9,11 +9,11 @@ import io
 from pathlib import Path
 from textwrap import dedent
 
-from litmus_check import SuiteModule, Violation
-from litmus_check.cli import EXIT_VIOLATIONS, LitmusCheckCommand
-from litmus_check.rules.immutable_self import ImmutableSelfRule
+from hilt_check import SuiteModule, Violation
+from hilt_check.cli import EXIT_VIOLATIONS, HiltCheckCommand
+from hilt_check.rules.immutable_self import ImmutableSelfRule
 
-CODE = "litmus/immutable-self"
+CODE = "hilt/immutable-self"
 
 
 def _check(source: str) -> list[Violation]:
@@ -28,7 +28,7 @@ def _lines(source: str) -> list[int]:
 class TestImmutableSelfFires:
     def test_assignment_inside_configure(self) -> None:
         source = """
-            class Suite(LitmusTest):
+            class Suite(TestComponent):
                 async def configure(self, utils: TestUtils) -> dict[str, Any]:
                     self._ip = "10.0.0.1"
                     return {}
@@ -40,7 +40,7 @@ class TestImmutableSelfFires:
 
     def test_assignment_inside_a_test_method_and_a_private_helper(self) -> None:
         source = """
-            class Suite(LitmusTest):
+            class Suite(TestComponent):
                 async def _claim(self, utils: TestUtils) -> Verdict:
                     self._count = 1
                     if self._count == 1:
@@ -53,7 +53,7 @@ class TestImmutableSelfFires:
 
     def test_augmented_and_annotated_assignment(self) -> None:
         source = """
-            class Suite(LitmusTest):
+            class Suite(TestComponent):
                 async def _claim(self, utils: TestUtils) -> Verdict:
                     self._count += 1
                     self._label: str = "x"
@@ -63,7 +63,7 @@ class TestImmutableSelfFires:
 
     def test_delete(self) -> None:
         source = """
-            class Suite(LitmusTest):
+            class Suite(TestComponent):
                 async def cleanup(self, utils: TestUtils) -> None:
                     del self._handle
         """
@@ -71,7 +71,7 @@ class TestImmutableSelfFires:
 
     def test_tuple_loop_and_context_targets(self) -> None:
         source = """
-            class Suite(LitmusTest):
+            class Suite(TestComponent):
                 async def _claim(self, utils: TestUtils) -> Verdict:
                     self._a, (self._b, *rest) = utils.ctx["pair"], [1, 2]
                     for self._i in range(3):
@@ -84,7 +84,7 @@ class TestImmutableSelfFires:
 
     def test_nested_def_inside_init_is_not_the_constructor(self) -> None:
         source = """
-            class Suite(LitmusTest):
+            class Suite(TestComponent):
                 def __init__(self, *, name: str) -> None:
                     super().__init__(name=name)
                     def later() -> None:
@@ -95,7 +95,7 @@ class TestImmutableSelfFires:
 
     def test_receiver_is_the_first_parameter_whatever_its_name(self) -> None:
         source = """
-            class Suite(LitmusTest):
+            class Suite(TestComponent):
                 async def _claim(this, utils: TestUtils) -> Verdict:
                     this._x = 1
                     self._y = 2
@@ -105,7 +105,7 @@ class TestImmutableSelfFires:
 
     def test_transitive_subclasses_are_covered(self) -> None:
         source = """
-            class Base(LitmusTest): ...
+            class Base(TestComponent): ...
             class Suite(Base):
                 async def configure(self, utils: TestUtils) -> dict[str, Any]:
                     self._x = 1
@@ -117,7 +117,7 @@ class TestImmutableSelfFires:
 class TestImmutableSelfStaysQuiet:
     def test_assignments_in_the_constructor(self) -> None:
         source = """
-            class Suite(LitmusTest):
+            class Suite(TestComponent):
                 def __init__(self, *, name: str, mac: str) -> None:
                     super().__init__(name=name)
                     self._mac = mac
@@ -129,7 +129,7 @@ class TestImmutableSelfStaysQuiet:
 
     def test_nested_object_mutation_and_subscripts(self) -> None:
         source = """
-            class Suite(LitmusTest):
+            class Suite(TestComponent):
                 async def _claim(self, utils: TestUtils) -> Verdict:
                     self._children.append(1)
                     self._config.host = "x"
@@ -142,14 +142,14 @@ class TestImmutableSelfStaysQuiet:
 
     def test_framework_bypass_is_not_a_lint_finding(self) -> None:
         source = """
-            class Suite(LitmusTest):
+            class Suite(TestComponent):
                 async def _claim(self, utils: TestUtils) -> Verdict:
                     object.__setattr__(self, "_x", 1)
                     return PASS
         """
         assert _lines(source) == []
 
-    def test_classes_that_are_not_litmus_tests(self) -> None:
+    def test_classes_that_are_not_test_components(self) -> None:
         source = """
             class Plain:
                 def method(self) -> None:
@@ -162,7 +162,7 @@ class TestImmutableSelfStaysQuiet:
 
     def test_locals_and_static_methods(self) -> None:
         source = """
-            class Suite(LitmusTest):
+            class Suite(TestComponent):
                 async def _claim(self, utils: TestUtils) -> Verdict:
                     result = 1
                     result += 1
@@ -176,10 +176,10 @@ class TestImmutableSelfStaysQuiet:
 
 class TestImmutableSelfAtTheCommandLine:
     def test_seeded_fixture_is_caught_and_clean_fixture_is_not(self) -> None:
-        fixtures = Path(__file__).parent / "fixtures" / "litmus_check"
+        fixtures = Path(__file__).parent / "fixtures" / "hilt_check"
         out = io.StringIO()
 
-        status = LitmusCheckCommand(stdout=out, stderr=io.StringIO()).run(
+        status = HiltCheckCommand(stdout=out, stderr=io.StringIO()).run(
             ["--select", CODE, str(fixtures)]
         )
 

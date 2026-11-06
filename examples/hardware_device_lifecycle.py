@@ -2,7 +2,7 @@
 
 Concept: the lifecycle has boundaries, and hooks are how a suite observes them.
 
-A `LitmusTest` runs `configure` → test phase → `cleanup`. Around those three there
+A `TestComponent` runs `configure` → test phase → `cleanup`. Around those three there
 are six boundaries (`pre-configure`, `post-configure`, `pre-test`, `post-test`,
 `pre-cleanup`, `post-cleanup`), and two kinds of hook attach to the run:
 
@@ -30,7 +30,7 @@ The observations are scripted so the example runs on any development machine.
 Replace the constructor values with `utils.exec()` reads in a real suite; the hook
 registration, the ctx flow, and the evidence shape stay the same.
 
-Run it: `litmus run examples/hardware_device_lifecycle.py`.
+Run it: `hilt run examples/hardware_device_lifecycle.py`.
 """
 
 from __future__ import annotations
@@ -39,7 +39,7 @@ import asyncio
 from collections.abc import Iterator
 from typing import TypedDict, cast
 
-from litmus import PASS, LitmusTest, TestFailure, TestUtils, Verdict, evidence
+from hilt import PASS, TestComponent, TestFailure, TestUtils, Verdict, evidence
 
 
 class _ScriptedRail:
@@ -95,7 +95,7 @@ class _DeviceContext(TypedDict):
     limit_c: float
 
 
-class PoweredDevice(LitmusTest):
+class PoweredDevice(TestComponent):
     """Bring a rail up, watch it, claim enumeration, drop the rail in cleanup."""
 
     def __init__(
@@ -113,7 +113,7 @@ class PoweredDevice(LitmusTest):
     ) -> None:
         """Capture the scripted rail, thermal, and enumeration observations.
 
-        The defaults are a healthy device, so `litmus run` needs no arguments.
+        The defaults are a healthy device, so `hilt run` needs no arguments.
 
         Args:
             name: Node name used by logs, artifacts, and failures.
@@ -175,7 +175,7 @@ class PoweredDevice(LitmusTest):
             "limit_c": self._limit_c,
         }
 
-    def build_suite(self) -> LitmusTest:
+    def build_suite(self) -> TestComponent:
         """Claim the device enumerated only after the rail is up."""
         return self.test("device-enumerates", self._device_enumerates)
 

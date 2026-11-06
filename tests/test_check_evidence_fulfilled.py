@@ -1,4 +1,4 @@
-"""``litmus/evidence-fulfilled``: every ``return PASS({...})`` carries what ``@evidence`` declared.
+"""``hilt/evidence-fulfilled``: every ``return PASS({...})`` carries what ``@evidence`` declared.
 
 Issue #118. The declaration is the method's return signature. A bare ``return PASS`` in a decorated
 method, or a literal payload missing a declared key, is flagged where it is written. A
@@ -9,11 +9,11 @@ import io
 from pathlib import Path
 from textwrap import dedent
 
-from litmus_check import SuiteModule, Violation
-from litmus_check.cli import EXIT_VIOLATIONS, LitmusCheckCommand
-from litmus_check.rules.evidence_fulfilled import EvidenceFulfilledRule
+from hilt_check import SuiteModule, Violation
+from hilt_check.cli import EXIT_VIOLATIONS, HiltCheckCommand
+from hilt_check.rules.evidence_fulfilled import EvidenceFulfilledRule
 
-CODE = "litmus/evidence-fulfilled"
+CODE = "hilt/evidence-fulfilled"
 
 
 def _check(source: str) -> list[Violation]:
@@ -28,7 +28,7 @@ def _lines(source: str) -> list[int]:
 class TestEvidenceFulfilledFires:
     def test_bare_pass_in_a_declared_method(self) -> None:
         source = """
-            class Suite(LitmusTest):
+            class Suite(TestComponent):
                 @evidence("reading_v", "ripple_mv")
                 async def _claim(self, utils: TestUtils) -> Verdict:
                     if utils.ctx["ok"]:
@@ -44,12 +44,12 @@ class TestEvidenceFulfilledFires:
 
     def test_each_missing_key_is_one_violation(self) -> None:
         source = """
-            class Suite(LitmusTest):
+            class Suite(TestComponent):
                 @evidence("a", "b", "c")
                 async def _claim(self, utils: TestUtils) -> Verdict:
                     if utils.ctx["ok"]:
                         return PASS({"b": 1, "extra": 2})
-                    return litmus.PASS(dict(c=3))
+                    return hilt.PASS(dict(c=3))
         """
         violations = _check(source)
 
@@ -67,7 +67,7 @@ class TestEvidenceFulfilledFires:
                 reading_v: float
             class _Shape(_Base):
                 ripple_mv: int
-            class Suite(LitmusTest):
+            class Suite(TestComponent):
                 @evidence(_Shape)
                 async def _claim(self, utils: TestUtils) -> Verdict[_Shape]:
                     if utils.ctx["ok"]:
@@ -81,7 +81,7 @@ class TestEvidenceFulfilledFires:
 
     def test_returns_inside_conditionals_and_loops_are_checked(self) -> None:
         source = """
-            class Suite(LitmusTest):
+            class Suite(TestComponent):
                 @evidence("k")
                 async def _claim(self, utils: TestUtils) -> Verdict:
                     for sample in utils.ctx["samples"]:
@@ -98,13 +98,13 @@ class TestEvidenceFulfilledStaysQuiet:
         source = """
             class _Shape(TypedDict):
                 reading_v: float
-            class Suite(LitmusTest):
+            class Suite(TestComponent):
                 @evidence("reading_v")
                 async def _claim(self, utils: TestUtils) -> Verdict:
                     if utils.ctx["ok"]:
                         return PASS({"reading_v": 1.0, "extra": True})
                     raise TestFailure("no", evidence={"reading_v": 0.0})
-                @litmus.evidence(_Shape)
+                @hilt.evidence(_Shape)
                 async def _typed(self, utils: TestUtils) -> Verdict[_Shape]:
                     if utils.ctx["ok"]:
                         return PASS(dict(reading_v=1.0))
@@ -114,7 +114,7 @@ class TestEvidenceFulfilledStaysQuiet:
 
     def test_undeclared_methods_and_non_suite_classes_are_ignored(self) -> None:
         source = """
-            class Suite(LitmusTest):
+            class Suite(TestComponent):
                 async def _claim(self, utils: TestUtils) -> Verdict:
                     return PASS
                 @other("k")
@@ -133,7 +133,7 @@ class TestEvidenceFulfilledStaysQuiet:
                 k: int
             class _Empty(TypedDict):
                 pass
-            class Suite(LitmusTest):
+            class Suite(TestComponent):
                 @evidence("k")
                 async def _local(self, utils: TestUtils) -> Verdict:
                     payload = {"k": 1}
@@ -176,7 +176,7 @@ class TestEvidenceFulfilledStaysQuiet:
 
     def test_returns_in_nested_functions_belong_to_them(self) -> None:
         source = """
-            class Suite(LitmusTest):
+            class Suite(TestComponent):
                 @evidence("k")
                 async def _claim(self, utils: TestUtils) -> Verdict:
                     async def probe() -> object:
@@ -194,10 +194,10 @@ class TestEvidenceFulfilledStaysQuiet:
 
 class TestEvidenceFulfilledAtTheCommandLine:
     def test_seeded_fixture_is_caught_and_clean_fixture_is_not(self) -> None:
-        fixtures = Path(__file__).parent / "fixtures" / "litmus_check"
+        fixtures = Path(__file__).parent / "fixtures" / "hilt_check"
         out = io.StringIO()
 
-        status = LitmusCheckCommand(stdout=out, stderr=io.StringIO()).run(
+        status = HiltCheckCommand(stdout=out, stderr=io.StringIO()).run(
             ["--select", CODE, str(fixtures)]
         )
 

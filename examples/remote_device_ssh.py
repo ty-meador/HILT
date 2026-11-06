@@ -24,15 +24,15 @@ A constructor argument wins when given (the self-tests pass the loopback sshd). 
 `SSH_PASSWORD` / `SSH_PORT` (default 22). A target still missing is a `TestFailure`
 from `configure()` naming the variable to set.
 
-Run it: `SSH_HOST=dut SSH_USER=root litmus run examples/remote_device_ssh.py`.
+Run it: `SSH_HOST=dut SSH_USER=root hilt run examples/remote_device_ssh.py`.
 """
 
 from typing import Any
 
-from litmus import PASS, LitmusTest, TestFailure, TestUtils, Verdict
+from hilt import PASS, TestComponent, TestFailure, TestUtils, Verdict
 
 
-class SshDevice(LitmusTest):
+class SshDevice(TestComponent):
     """Share one SSH hop across this device's claims by declaring it in configure."""
 
     def __init__(
@@ -100,7 +100,7 @@ class SshDevice(LitmusTest):
         # the route. An empty mapping is the honest ctx.
         return {}
 
-    def build_suite(self) -> LitmusTest:
+    def build_suite(self) -> TestComponent:
         """Check uptime and root disk in order; later claims need the hop live.
 
         A sequence, because a failed uptime means exec is not reaching the device,

@@ -8,16 +8,16 @@ import pytest
 from hypothesis.configuration import set_hypothesis_home_dir
 from tests.mock_connector import ConnectorInstaller, MockConnector
 
-from litmus import TestUtils
-from litmus.arp import ArpResolver
-from litmus.remote import RemoteInterface
-from litmus.utils import node_runtime
+from hilt import TestUtils
+from hilt.arp import ArpResolver
+from hilt.remote import RemoteInterface
+from hilt.utils import node_runtime
 
 CHECKOUT_ARTIFACTS = Path(__file__).resolve().parents[1] / "artifacts"
 
 # Hypothesis caches constants during collection even with its example database
 # disabled. Keep that storage outside the checkout as well as each run's evidence.
-set_hypothesis_home_dir(Path(gettempdir()) / "litmus-hypothesis")
+set_hypothesis_home_dir(Path(gettempdir()) / "hilt-hypothesis")
 
 
 def _checkout_evidence() -> frozenset[Path]:
@@ -46,7 +46,7 @@ def evidence_stays_out_of_the_checkout(
 ) -> Iterator[None]:
     """Keep every run's evidence under ``tmp_path`` and fail the test that leaks.
 
-    ``TestUtils`` resolves its artifact root from ``LITMUS_ARTIFACT_ROOT`` in the
+    ``TestUtils`` resolves its artifact root from ``HILT_ARTIFACT_ROOT`` in the
     environment it was handed, then from ``./artifacts`` of the working directory.
     The variable set here reaches a run that reads the process environment; a test
     that hands ``TestUtils`` its own ``env={...}`` never sees it and falls through
@@ -58,7 +58,7 @@ def evidence_stays_out_of_the_checkout(
     ``git status`` after the gate.
     """
     before = _checkout_evidence()
-    monkeypatch.setenv("LITMUS_ARTIFACT_ROOT", str(tmp_path / "artifacts"))
+    monkeypatch.setenv("HILT_ARTIFACT_ROOT", str(tmp_path / "artifacts"))
     monkeypatch.chdir(tmp_path)
     yield
     leaked = sorted(_checkout_evidence() - before)

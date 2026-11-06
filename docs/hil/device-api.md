@@ -4,9 +4,9 @@ Status: SIGNED — Ty approved this note in !130 on 2026-09-09; recorded on #97
 
 A CoAP or HTTP resource is not a command string. This note states the
 request and response shape, retry-as-evidence, timing, error taxonomy, and
-closed-session obligations that make a device API fit Litmus's existing
+closed-session obligations that make a device API fit HILT's existing
 lifecycle. The [three HIL rulings](index.md#the-three-rulings) govern it.
-[Ty's approval of the actual note](https://gitlab.com/Tyler-Meador/litmus_test/-/merge_requests/130#note_3812484557)
+[Ty's approval of the actual note](https://gitlab.com/Tyler-Meador/HILT/-/merge_requests/130#note_3812484557)
 signs the obligations below. Implementation requires its own approved issue
 and Zavala's review under [API stability](../api-stability.md).
 
@@ -38,7 +38,7 @@ forbids. A URL that has been stringified into `curl -X POST ...` has
 already lost the status as a first-class value, the header set, whether
 the body was truncated, and whether the client retried. `DeviceApiInterface`
 is its own ABC, structurally parallel to `RemoteInterface`
-(`src/litmus/remote.py`) and to the signed [`GpioInterface`](gpio.md) /
+(`src/hilt/remote.py`) and to the signed [`GpioInterface`](gpio.md) /
 [`PwmInterface`](pwm.md): it owns `connect` / `disconnect` /
 `cancel_in_flight` in the same shape, and adds request-shaped operations
 in place of `exec`.
@@ -96,7 +96,7 @@ request.
   in for a missing response.
   Issue #155 adds `json()` and `parse(response_type="json")` to decode those
   bytes explicitly; `parse(response_type="yaml")` uses `yaml.safe_load` and
-  requires the optional `litmus[yaml]` extra. Parser errors propagate unchanged,
+  requires the optional `hilt[yaml]` extra. Parser errors propagate unchanged,
   unsupported formats raise `ValueError`, and a missing YAML extra raises
   `ImportError`. Neither method changes status or bytes or interprets a status
   as a verdict. A malformed body remains a completed transfer.
@@ -344,7 +344,7 @@ a finding for Ty — not a reason to give Device API its own lifecycle.
 ## Failure vocabulary
 
 No new terminal state is introduced, and no new exception root.
-`DeviceApiOperationFailure` derives from `LitmusError`, not
+`DeviceApiOperationFailure` derives from `HiltError`, not
 `TestFailure`, for the same reason GPIO's `PinSettleFailure` and PWM's
 `PwmOperationFailure` do: failure to complete a transfer does not
 identify the DUT as the cause.
@@ -355,7 +355,7 @@ identify the DUT as the cause.
 | A second `request` while one is on the wire | No exception: it waits its turn, logged as queued | Whatever verdict the author writes; the measured latency includes the wait |
 | Handle cancelled or closed while a request waited its turn | `DeviceApiOperationFailure` naming the handle, method, path, and that it was queued, never sent | Fail when the author catches it and states the verdict; a `ContractViolation` Fail (`bug: true`) when it escapes |
 | HTTP 4xx / 5xx or CoAP 4.xx / 5.xx on a well-formed response | No exception: status and body are the result | Whatever verdict the author writes. The interface does not guess Fail |
-| Connection refused, TLS/DTLS handshake failure, protocol violation, request exceeds its ceiling, close cannot be confirmed at bring-up | `DeviceApiOperationFailure` (provisional `LitmusError`) naming the handle, operation, method, path, and ceiling | Fail when the author catches it and states the verdict; a `ContractViolation` Fail (`bug: true`) when it escapes |
+| Connection refused, TLS/DTLS handshake failure, protocol violation, request exceeds its ceiling, close cannot be confirmed at bring-up | `DeviceApiOperationFailure` (provisional `HiltError`) naming the handle, operation, method, path, and ceiling | Fail when the author catches it and states the verdict; a `ContractViolation` Fail (`bug: true`) when it escapes |
 | Backend cannot reach the adapter at bring-up | `ConnectionError` from the interface's own `connect` | Absorbed the way `RemoteInterface` connect failures are absorbed today |
 | Close cannot be confirmed during the safe-state sweep | No exception; the run is already ending | Terminal state unchanged; timeline records the unconfirmed close, naming the handle. Never a success line |
 | Integration hook throws mid-request | Framework raises `ExternalIntegrationFailure` | Aborted; run-level halt closes every open handle |

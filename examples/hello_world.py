@@ -1,8 +1,8 @@
-"""The smallest complete Litmus suite: one authored claim that passes.
+"""The smallest complete HILT suite: one authored claim that passes.
 
 Concept: a suite is a class, a claim is a method, and a verdict is explicit.
 
-Three things make a `LitmusTest` runnable, and this file has exactly those three:
+Three things make a `TestComponent` runnable, and this file has exactly those three:
 
 - `__init__` captures what the suite is about. Nothing is observed here.
 - `build_suite` declares the tree of claims. Here it is a single leaf.
@@ -11,15 +11,15 @@ Three things make a `LitmusTest` runnable, and this file has exactly those three
 
 Even the smallest claim names its pass condition. `return PASS` is syntax; the `if`
 that gates it is the modeling, and it is what the next reader looks for first. The
-framework's tier-3 linter (`litmus-check`) flags an ungated `PASS` for that reason.
+framework's tier-3 linter (`hilt-check`) flags an ungated `PASS` for that reason.
 
-Run it: `litmus run examples/hello_world.py`.
+Run it: `hilt run examples/hello_world.py`.
 """
 
-from litmus import PASS, LitmusTest, TestFailure, TestUtils, Verdict
+from hilt import PASS, TestComponent, TestFailure, TestUtils, Verdict
 
 
-class HelloWorld(LitmusTest):
+class HelloWorld(TestComponent):
     """Demonstrate the minimum composition needed for a passing suite."""
 
     def __init__(self, *, name: str, greeting: str = "hello world") -> None:
@@ -35,7 +35,7 @@ class HelloWorld(LitmusTest):
         # tries to set an attribute at run time is a contract violation.
         self._greeting = greeting
 
-    def build_suite(self) -> LitmusTest:
+    def build_suite(self) -> TestComponent:
         """Build one leaf whose explicit verdict is Pass.
 
         `self.test(name, method)` is the whole composition vocabulary at this size.

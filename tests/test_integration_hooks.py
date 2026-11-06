@@ -6,27 +6,27 @@ from typing import Any
 import pytest
 from tests.mock_connector import ConnectorInstaller
 
-from litmus import (
+from hilt import (
     PASS,
     AfterEachContext,
     AfterEachHook,
     BeforeEachContext,
     BeforeEachHook,
     ExternalIntegrationFailure,
-    LitmusTest,
+    TestComponent,
     TestUtils,
     Verdict,
 )
-from litmus.executor import ExecResult
-from litmus.lifecycle import State
-from litmus.remote import RemoteInterface
-from litmus.results import SummaryTreeNode
+from hilt.executor import ExecResult
+from hilt.lifecycle import State
+from hilt.remote import RemoteInterface
+from hilt.results import SummaryTreeNode
 
 
-class HookedSuite(LitmusTest):
+class HookedSuite(TestComponent):
     """A small authored tree whose structure makes fractal dispatch visible."""
 
-    def build_suite(self) -> LitmusTest:
+    def build_suite(self) -> TestComponent:
         return self.sequence(
             "claims",
             [
@@ -46,10 +46,10 @@ class HookedSuite(LitmusTest):
         raise AssertionError("health case received the wrong scope")
 
 
-class ParallelHookedSuite(LitmusTest):
+class ParallelHookedSuite(TestComponent):
     """The same visible tree under a parallel parent, where a halt races its siblings."""
 
-    def build_suite(self) -> LitmusTest:
+    def build_suite(self) -> TestComponent:
         return self.parallel(
             "claims",
             [
@@ -183,7 +183,7 @@ class TestNarrowContexts:
             assert not hasattr(ctx, "capture_artifact")
             assert ctx.env["STATION_ID"] == "west-04"
             assert ctx.logger.extra is not None
-            assert ctx.logger.extra.get("litmus_scope") == ctx.ancestor_names
+            assert ctx.logger.extra.get("hilt_scope") == ctx.ancestor_names
         after_contexts = [ctx for ctx in observed if isinstance(ctx, AfterEachContext)]
         assert after_contexts[-1].result is result
 
@@ -214,7 +214,7 @@ class TestRegistration:
             hook_name: hook,
             "allow_unpaired_hooks": allow_unpaired_hooks,
         }
-        with caplog.at_level("WARNING", logger="litmus"):
+        with caplog.at_level("WARNING", logger="hilt"):
             result = await HookedSuite(name="rack").run(**kwargs)
 
         assert result.state is State.PASS
@@ -388,8 +388,8 @@ class TestFailurePropagation:
         slow_started = asyncio.Event()
         never_release = asyncio.Event()
 
-        class GroupedSuite(LitmusTest):
-            def build_suite(self) -> LitmusTest:
+        class GroupedSuite(TestComponent):
+            def build_suite(self) -> TestComponent:
                 return self.parallel(
                     "parallel",
                     [
@@ -437,8 +437,8 @@ class TestFailurePropagation:
         caught_cancellation = asyncio.Event()
         cause = RuntimeError("shop-floor database refused the record")
 
-        class GroupedSuite(LitmusTest):
-            def build_suite(self) -> LitmusTest:
+        class GroupedSuite(TestComponent):
+            def build_suite(self) -> TestComponent:
                 return self.parallel(
                     "parallel",
                     [
@@ -491,13 +491,13 @@ class TestAbortTeardown:
     ) -> None:
         transport = _ParkedTransport()
 
-        class FlashSuite(LitmusTest):
+        class FlashSuite(TestComponent):
             async def configure(self, utils: TestUtils) -> dict[str, object]:
                 install_mock_connector(utils, transport)
                 await utils.use_shell(host="dut", username="root")
                 return {}
 
-            def build_suite(self) -> LitmusTest:
+            def build_suite(self) -> TestComponent:
                 return self.parallel(
                     "parallel",
                     [
@@ -536,13 +536,13 @@ class TestAbortTeardown:
         transport = _ParkedTransport()
         seen: dict[str, ExecResult] = {}
 
-        class FlashSuite(LitmusTest):
+        class FlashSuite(TestComponent):
             async def configure(self, utils: TestUtils) -> dict[str, object]:
                 install_mock_connector(utils, transport)
                 await utils.use_shell(host="dut", username="root")
                 return {}
 
-            def build_suite(self) -> LitmusTest:
+            def build_suite(self) -> TestComponent:
                 return self.parallel(
                     "parallel",
                     [
@@ -566,7 +566,7 @@ class TestAbortTeardown:
                 await transport.in_flight.wait()
                 raise RuntimeError("audit database unavailable")
 
-        with caplog.at_level("ERROR", logger="litmus"):
+        with caplog.at_level("ERROR", logger="hilt"):
             result = await FlashSuite(name="rack").run(
                 before_each=before_each,
                 allow_unpaired_hooks=True,
@@ -593,14 +593,14 @@ class TestAbortTeardown:
         hop = _ParkedTransport()
         dut = _ParkedTransport()
 
-        class FlashSuite(LitmusTest):
+        class FlashSuite(TestComponent):
             async def configure(self, utils: TestUtils) -> dict[str, object]:
                 install_mock_connector(utils, {"jump": hop, "dut": dut})
                 await utils.get_shell(host="jump", username="ops")
                 await utils.use_shell(host="dut", username="root")
                 return {}
 
-            def build_suite(self) -> LitmusTest:
+            def build_suite(self) -> TestComponent:
                 return self.parallel(
                     "parallel",
                     [

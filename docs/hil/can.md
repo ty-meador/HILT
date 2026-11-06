@@ -3,9 +3,9 @@
 Status: SIGNED — Ty approved this note in !128 on 2026-09-09; recorded on #95
 
 A CAN frame is not a command string. This note states the transfer, filter,
-bus-off, timing, and silent-bus obligations that make a controller fit Litmus's
+bus-off, timing, and silent-bus obligations that make a controller fit HILT's
 existing lifecycle. The [three HIL rulings](index.md#the-three-rulings) govern
-it. [Ty's approval of the actual note](https://gitlab.com/Tyler-Meador/litmus_test/-/merge_requests/128#note_3812483371)
+it. [Ty's approval of the actual note](https://gitlab.com/Tyler-Meador/HILT/-/merge_requests/128#note_3812483371)
 signs the obligations below. Implementation requires its own approved issue
 and Zavala's review under [API stability](../api-stability.md).
 
@@ -26,7 +26,7 @@ racy, and blind to bus-off) or smuggling a controller inside a
 the parallel-lifecycle-in-disguise [ruling 1](index.md#the-three-rulings)
 forbids. A frame that has been stringified has already lost the identifier
 width, the ACK, and the error counters. `CanInterface` is its own ABC,
-structurally parallel to `RemoteInterface` (`src/litmus/remote.py`) and to the
+structurally parallel to `RemoteInterface` (`src/hilt/remote.py`) and to the
 signed [`GpioInterface`](gpio.md): it owns `connect` / `disconnect` /
 `cancel_in_flight` in the same shape, and adds frame-shaped operations in
 place of `exec`.
@@ -120,7 +120,7 @@ not reconstructable from the artifacts.
 **Framework obligation:** Bus-off is a controller state, not a DUT verdict.
 When the transmit error counter crosses the bus-off threshold the
 controller stops driving the bus. That event is reported as an operational
-failure (`CanBusOff`, a `LitmusError`) naming the handle and the last
+failure (`CanBusOff`, a `HiltError`) naming the handle and the last
 confirmed error counters if the backend can read them.
 
 - Automatic recovery that resumes transmitting during the same run is
@@ -229,7 +229,7 @@ finding for Ty — not a reason to give CAN its own lifecycle.
 ## Failure vocabulary
 
 No new terminal state is introduced, and no new exception root.
-`CanOperationFailure` and `CanBusOff` derive from `LitmusError`, not
+`CanOperationFailure` and `CanBusOff` derive from `HiltError`, not
 `TestFailure`, for the same reason GPIO's `PinSettleFailure` and PWM's
 `PwmOperationFailure` do: failure to put a frame on the wire, or a
 controller that has gone bus-off, does not identify the DUT as the cause.
@@ -237,8 +237,8 @@ controller that has gone bus-off, does not identify the DUT as the cause.
 | Situation | Raised as | Terminal state |
 |---|---|---|
 | Invalid frame, filter, deadline, or conflicting in-flight use | `TypeError` / `ValueError` at the call site | `ContractViolation` (Fail, `bug: true`) if it escapes |
-| Bus does not ACK a send within the transmit ceiling; receive deadline expires with no matching frame; silence cannot be confirmed at bring-up | `CanOperationFailure` (provisional `LitmusError`) naming the handle, operation, requested frame or filter, and ceiling | Fail when the author catches it and states the verdict; a `ContractViolation` Fail (`bug: true`) when it escapes |
-| Controller enters bus-off | `CanBusOff` (provisional `LitmusError`) | As above. Never an automatic DUT Fail |
+| Bus does not ACK a send within the transmit ceiling; receive deadline expires with no matching frame; silence cannot be confirmed at bring-up | `CanOperationFailure` (provisional `HiltError`) naming the handle, operation, requested frame or filter, and ceiling | Fail when the author catches it and states the verdict; a `ContractViolation` Fail (`bug: true`) when it escapes |
+| Controller enters bus-off | `CanBusOff` (provisional `HiltError`) | As above. Never an automatic DUT Fail |
 | Backend cannot reach the adapter at bring-up | `ConnectionError` from the interface's own `connect` | Absorbed the way `RemoteInterface` connect failures are absorbed today |
 | Silence cannot be confirmed during the safe-state sweep | No exception; the run is already ending | Terminal state unchanged; timeline records the unconfirmed silence, naming the handle. Never a success line |
 | Integration hook throws while frames are in flight | Framework raises `ExternalIntegrationFailure` | Aborted; run-level halt silences every open `CanInterface` |
@@ -325,7 +325,7 @@ implementation:
    `receive`. No silent retry.
 3. Filters declared in `configure()`, immutable for the handle's lifetime;
    the no-filter default is receive-nothing, not subscribe-everything.
-4. Bus-off is a `LitmusError` operational condition; no automatic TX
+4. Bus-off is a `HiltError` operational condition; no automatic TX
    resume during the run; `recover()` is an explicit later operation.
 5. Abort safe-state is silence, not a framework-invented shutdown frame.
    Authored `cleanup()` may send a last frame; the hard cut does not wait

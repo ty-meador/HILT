@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to litmus are recorded here. The format follows
+All notable changes to HILT are recorded here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the version numbers follow
 the policy in `docs/api-stability.md`. Before 1.0.0 nothing is promised; the trail is
 kept so that it exists before the promise does. Add a notable change in the MR that
@@ -13,18 +13,30 @@ leave a fresh Unreleased section above it. Use the
 The initial Python migration is unreleased. The six foundation phases below summarize
 merged behavior using today's API names, with links to the MRs that established it;
 they are not six published versions. Subsequent entries include the hardening and
-refinement merged through [!108](https://gitlab.com/Tyler-Meador/litmus_test/-/merge_requests/108)
+refinement merged through [!108](https://gitlab.com/Tyler-Meador/HILT/-/merge_requests/108)
 on 2026-09-06. The TypeScript repositories remain behavioral references, not a promise
 of feature parity: the Python Inspector is still separate work.
 
+### Changed
+
+- The framework is now **HILT** (Hardware-In-the-Loop Testing); the GitLab project moved
+  to `Tyler-Meador/HILT`. The import package is `hilt`, the console entry points are
+  `hilt` and `hilt-check`, the rule codes are `hilt/...`, and every `LITMUS_*`
+  environment variable is `HILT_*` (`HILT_ARTIFACT_ROOT`, `HILT_RC__*`,
+  `HILT_BOT_TOKEN`, `HILT_BENCH_*`). The atom `LitmusTest` is `TestComponent`;
+  `LitmusError` is `HiltError`; `LitmusCheckCommand` and `LitmusLsp` carry the `Hilt`
+  prefix. The bench cache moved from `~/.cache/litmus-bench/` to `~/.cache/hilt-bench/`.
+  No behaviour changed; a suite ports with the import and class rename alone. Earlier
+  entries below use today's names.
+
 ### Added
 
-- A module-level `__suite__` names the suite `litmus run` picks when the target has no
+- A module-level `__suite__` names the suite `hilt run` picks when the target has no
   `::SuiteClass` (bench finding F11, issue #160). The gateway shape keeps the appliance
   and the device behind it in one file; that file now says `__suite__ = PiHole` and
   runs by path alone, where it used to need `::PiHole` on every command line. The
   selector still overrides it, a module with several suites and no `__suite__` is
-  refused as before, and a `__suite__` bound to anything but a `LitmusTest` subclass is
+  refused as before, and a `__suite__` bound to anything but a `TestComponent` subclass is
   a usage error naming the fix. The run record names the class either way.
 - CoAP `DeviceResponse.status` is the dotted code (`"2.05"`), not the wire
   integer `69` (bench finding F7, issue #156). `CoapCode.CONTENT`, `CHANGED`,
@@ -36,7 +48,7 @@ of feature parity: the Python Inspector is still separate work.
   and otherwise Fails naming the variable. A value that is not a base-10 integer,
   or not a finite float, Fails naming the variable and the value. The serial bench
   suite reads `SERIAL_BAUD` this way.
-- `litmus-check` rule `litmus/evidence-shadows-ctx` (bench finding F14, issue #161): a
+- `hilt-check` rule `hilt/evidence-shadows-ctx` (bench finding F14, issue #161): a
   key `@evidence` declares that the class's `configure()` is statically known to return,
   or that is the framework-owned `measurements` slot, is a finding on the declaring
   literal at check time rather than a `ContractViolation` on the first run. Ctx and
@@ -57,7 +69,7 @@ of feature parity: the Python Inspector is still separate work.
 - `DeviceRequest(..., json=value)` encodes a JSON body and defaults its content type;
   `DeviceResponse.json()` and `parse(response_type="json" or "yaml")` decode the
   returned bytes explicitly (bench finding F6, issue #155). YAML uses the optional
-  `litmus[yaml]` extra. Status and raw bytes stay available; parsing supplies no verdict.
+  `hilt[yaml]` extra. Status and raw bytes stay available; parsing supplies no verdict.
   The Pi-hole child suite no longer imports `json` or writes content-type boilerplate.
 - `utils.measure(name, None, ...)` records a reading not taken (bench finding F10, issue
   #159). The entry sits in `measurements` in call order with `value: null`; against a
@@ -66,7 +78,7 @@ of feature parity: the Python Inspector is still separate work.
   `<name> not taken ...` at `warning`. `NaN` stays a `ContractViolation`. The
   `measurement.value` field of `result-v1.schema.json` became nullable in place, under
   the versioning policy's pre-1.0.0 clause, by Ty's ruling on the issue; `Measurement`,
-  `TestUtils.measure` and `litmus.measure` widen `value` to `int | float | None`. The
+  `TestUtils.measure` and `hilt.measure` widen `value` to `int | float | None`. The
   bench's guest suite drops its five `try` blocks for one parsing helper.
 - `TestUtils.use_serial` and `TestUtils.get_serial`, `use_shell` / `get_shell` for a console
   reached by its device path (bench finding F2, issue #139). `use_serial(device=...)` in
@@ -74,8 +86,8 @@ of feature parity: the Python Inspector is still separate work.
   descendants; `use_serial()` reads the active route; `get_serial(device=...)` opens an
   auxiliary console. The port joins the node's opened set, so the post-cleanup sweep and
   the run-level abort sweep close it. Behind a hop the console borrows the router's live
-  SSH session (`SerialInterface(tunnel=...)`). `litmus/shell-in-configure` and
-  `litmus/no-input-fallback` recognise the new names.
+  SSH session (`SerialInterface(tunnel=...)`). `hilt/shell-in-configure` and
+  `hilt/no-input-fallback` recognise the new names.
 - `DeviceApi` serialises requests per handle (bench finding F13, issue #139): `parallel`
   leaves sharing the session `configure()` opened queue in call order instead of dying on
   `ValueError: one in-flight request per handle`. A queued request's `timeout` bounds only
@@ -87,8 +99,8 @@ of feature parity: the Python Inspector is still separate work.
   that credits an assistant is refused at commit time, and `make check` scans
   `origin/main..HEAD` for one that got past the hook. STANDARDS.md section 7 records the
   tenet. The trailers that reached `main` before this were stripped from the record.
-- `litmus/no-input-fallback`, the tier-3 rule the #142 ruling named and Ty ruled into
-  1.0.0 on issue #144 (issue #147). Inside `configure()` of a `LitmusTest`, a `self`
+- `hilt/no-input-fallback`, the tier-3 rule the #142 ruling named and Ty ruled into
+  1.0.0 on issue #144 (issue #147). Inside `configure()` of a `TestComponent`, a `self`
   attribute and a discovery utility (`get_arp_resolver`, `use_shell`, `get_shell`,
   `get_http`, `get_coap`) may not stand as alternatives for one value: an `or` chain, a
   conditional expression, or a local name bound from each by a different assignment
@@ -96,17 +108,17 @@ of feature parity: the Python Inspector is still separate work.
   the attribute and the utility named. Identity fed into discovery and identity read
   from `utils.env` are the blessed shapes and stay quiet, as are the same shapes outside
   `configure()`. The rule guards a style, not a verdict; its row in
-  `docs/litmus-check.md` says so rather than inventing a runtime counterpart.
+  `docs/hilt-check.md` says so rather than inventing a runtime counterpart.
 - Four tier-3 rules, recorded here after the fact (issue #149): they reached `main` on
-  2026-10-11 without an entry. `litmus/env-via-utils` reports suite code that reads
+  2026-10-11 without an entry. `hilt/env-via-utils` reports suite code that reads
   `os.environ` or `os.getenv` under any alias instead of `utils.env`, the run's
-  recorded snapshot. `litmus/logger-not-print` reports a builtin `print` inside a
-  `LitmusTest` subclass, whose output never reaches the timeline. `litmus/no-swallowed-cancel`
+  recorded snapshot. `hilt/logger-not-print` reports a builtin `print` inside a
+  `TestComponent` subclass, whose output never reaches the timeline. `hilt/no-swallowed-cancel`
   reports a bare `except`, `except BaseException`, or `except CancelledError` around an
   await that does not re-raise, and any `contextlib.suppress` naming either, because
-  `CancelledError` is the abort signal. `litmus/model-resolution-failure` reports an
+  `CancelledError` is the abort signal. `hilt/model-resolution-failure` reports an
   awaited `.resolve()`, `.reacquire(...)` or `.request(...)` that is not inside a `try`
-  whose handler raises `TestFailure`. Each rule has a row in `docs/litmus-check.md`
+  whose handler raises `TestFailure`. Each rule has a row in `docs/hilt-check.md`
   naming the tier that already holds the guarantee, or saying that none can.
 - Doctrine: the node names what it needs, the framework decides where it comes from
   (issue #142, Ty's ruling of 2026-09-12; recorded under issue #143). A constructor
@@ -124,20 +136,20 @@ of feature parity: the Python Inspector is still separate work.
   previous re-run is deleted when it is re-run again and the directory goes when the
   Inspector closes. Tab is held during a live re-run; `q` takes the operator-interrupt
   path and quits once the node settles Aborted. The suite comes from the new
-  `suite_target` field `litmus run` records in `result.json` (absolute file or module,
-  `::`, class) or from `litmus inspect --suite`; a suite whose declared tree differs from
-  the saved one is refused by path. Behind it, `LitmusTest.run(subtree=...)` runs one
+  `suite_target` field `hilt run` records in `result.json` (absolute file or module,
+  `::`, class) or from `hilt inspect --suite`; a suite whose declared tree differs from
+  the saved one is refused by path. Behind it, `TestComponent.run(subtree=...)` runs one
   declared node through the sealed lifecycle with every leaf outside it left pending,
   and `run(suite_target=...)` records the provenance. The Failures tab is folded into
   Inspect as `h`, which hides passing rows; the legacy tree glyphs (`├─`, `└─`, `│`) and
   the cyan owner arrow on the row whose timeline the highlighted node rolled into are
   back on both tabs.
 - `SerialInterface`, a `RemoteInterface` peer for a serial/UART console (issue #91).
-  A local device node via `pyserial-asyncio` (`litmus[serial]` extra; core install
+  A local device node via `pyserial-asyncio` (`hilt[serial]` extra; core install
   unchanged) or the same transport through an owned SSH `via` hop. Prompt
   detection, optional login sequence, CRLF/echo/ANSI line discipline, a
-  `__LITMUS_RC__` exit-status sentinel, `BoundedCapture` output bounding, and
-  BREAK/Ctrl-C/close abort. Off `litmus.__all__`. The shared transport-contract
+  `__HILT_RC__` exit-status sentinel, `BoundedCapture` output bounding, and
+  BREAK/Ctrl-C/close abort. Off `hilt.__all__`. The shared transport-contract
   suite gains a pty-backed `serial_peer`.
 - Package metadata for discovery (issue #103): keywords, trove classifiers, and project
   URLs (docs site, source, issue tracker, changelog) in `pyproject.toml`, with the README
@@ -146,18 +158,18 @@ of feature parity: the Python Inspector is still separate work.
   with `uv build`, installs the wheel into a clean venv under `.smoke/`, and starts both
   console entry points from there. A package that cannot build or import is red before
   it is tagged. The publish job stays out until the name decision (#9) and CI return.
-- `litmus-check` rule `litmus/measurement-name-unique` (issue #132, raised by the #109
+- `hilt-check` rule `hilt/measurement-name-unique` (issue #132, raised by the #109
   sweep): two `measure(...)` calls, either spelling, with the same literal name inside one
   `configure` or test method are reported at the second call. The tier-1 duplicate-name
   guard is unchanged; the rule moves that finding from the first run to the editor.
-- `litmus-check` rule `litmus/measurement-in-node` (issue #133, raised by the #109 sweep):
+- `hilt-check` rule `hilt/measurement-in-node` (issue #133, raised by the #109 sweep):
   a `measure(...)` call, either spelling, inside `cleanup`, a registered survey or audit,
   a `before_each`/`after_each` hook, or outside any function is reported with the slot it
   sits in. The tier-1 outside-a-node guard is unchanged. `SuiteModule.registered_methods`
   now carries the registrar lookup the ctx-provenance rule kept privately.
-- `litmus inspect [PATH]` (issue #89, Ty's ruling of 2026-09-09): opens a saved run in
+- `hilt inspect [PATH]` (issue #89, Ty's ruling of 2026-09-09): opens a saved run in
   the Inspector. PATH is a run directory or its `result.json`; without PATH the most
-  recently modified `result.json` under `LITMUS_ARTIFACT_ROOT` (default `artifacts/`;
+  recently modified `result.json` under `HILT_ARTIFACT_ROOT` (default `artifacts/`;
   `--artifact-root DIR` overrides) opens, the legacy discovery rule carried over.
   Nothing under the root, or a selection that is not a saved version-1 run, is exit 3
   with the reader's diagnostic on stderr and nothing opened in its place; no suite code
@@ -165,7 +177,7 @@ of feature parity: the Python Inspector is still separate work.
   stays behind its own decision.
 - Parametric measurements (issue #86, signed note #85): `utils.measure` records a
   number with a unit and an inclusive window beside the verdict and returns a frozen
-  `Measurement`; `litmus.measure` is the same call resolved to the running node. The
+  `Measurement`; `hilt.measure` is the same call resolved to the running node. The
   node's own `run_data["measurements"]` fills, and every `summary_tree` node carries
   `measurements` (`null` when it never ran), under result `format_version` 1 unbumped;
   `docs/schema/result-v1.schema.json` gains `$defs/measurement`. A limit is evidence,
@@ -174,7 +186,7 @@ of feature parity: the Python Inspector is still separate work.
   reading, a duplicate name, a call outside `configure()` or the test method, and the
   alias outside a running node. The pi-hole dogfood records `ssh_round_trip_ms` with
   an upper limit and gates on it in plain sight.
-- Inspector main view (issue #89): `litmus.inspector_app.InspectorApp`, a Textual
+- Inspector main view (issue #89): `hilt.inspector_app.InspectorApp`, a Textual
   screen over one saved run. A tab row (Inspect, Failures), the structural tree above
   with Pass, Fail, Aborted, and Pending rendered as distinct states and readings not
   taken named on the row, and the highlighted node's chronology below, loaded on
@@ -186,7 +198,7 @@ of feature parity: the Python Inspector is still separate work.
   redraw is kept on the app so the self-tests and a screenshot can be read back.
   `textual` becomes a runtime dependency by Ty's ruling of 2026-09-09 (MIT; the tree is
   GPL-2.0 compatible). The Run tab stays behind its own decision.
-- Inspector artifact modal screen (issue #89): `litmus.inspector_app.ArtifactScreen`.
+- Inspector artifact modal screen (issue #89): `hilt.inspector_app.ArtifactScreen`.
   A digit in the log pane opens the capture carrying that number; the modal owns the
   guide's artifact keys until `b` closes it (`[` `]` types or the left side, arrows
   captures or the right side, `n` `p` page both sides together, `d` compare). One
@@ -276,19 +288,19 @@ of feature parity: the Python Inspector is still separate work.
   substituting captures from the original run. Publishes the existing version-1
   artifact envelope schema; shared strict JSON parsing keeps both Inspector readers
   consistent. The screens are now implemented as described above.
-- `litmus[pylsp]` extra: a `python-lsp-server` plugin over the `litmus_check`
+- `hilt[pylsp]` extra: a `python-lsp-server` plugin over the `hilt_check`
   registry. Every `--list-rules` finding is a diagnostic on the open buffer;
-  `litmus/gated-pass` wraps an unconditional `return PASS` (derived from
+  `hilt/gated-pass` wraps an unconditional `return PASS` (derived from
   contiguous, call-free guards, otherwise an `if False:` scaffold that cannot
-  pass) and `litmus/method-reference` lifts a trivial lambda to the method
+  pass) and `hilt/method-reference` lifts a trivial lambda to the method
   reference. Core install unchanged (issue #78).
 - PWM interface design note (issue #94), signed by Ty in
-  [!125](https://gitlab.com/Tyler-Meador/litmus_test/-/merge_requests/125#note_3800005090)
+  [!125](https://gitlab.com/Tyler-Meador/HILT/-/merge_requests/125#note_3800005090)
   on 2026-09-08: representable frequency/duty transfers, bounded linear duty
   ramps, exclusive channel ownership, and disabled-output termination with
   explicit unconfirmed outcomes. Design only; no PWM implementation or public
   Python name is introduced.
-- Optional context typing: `LitmusTest[CtxT]` and `TestUtils[CtxT]` carry a suite's own
+- Optional context typing: `TestComponent[CtxT]` and `TestUtils[CtxT]` carry a suite's own
   `TypedDict` into `utils.ctx`, so a misspelled key is a pyright error at the author's
   desk instead of a contract-violation Fail on the floor (issue #75). Opt-in and
   defaulted: the
@@ -311,7 +323,7 @@ of feature parity: the Python Inspector is still separate work.
   a written equivalence reason in the MR that ran the audit. The first audit closed its
   survivors with tests on deadline-cancellation ownership, deferred and parameterized
   `Verdict` annotations, and the node named by composition-time violations (issue #69).
-- `litmus/shell-in-configure`, the tier-3 rule that flags `utils.use_shell(...)` with
+- `hilt/shell-in-configure`, the tier-3 rule that flags `utils.use_shell(...)` with
   arguments outside `configure()`, seeded in the fixture and listed in the rule table
   with its tier-1 counterpart (issue #76).
 - `docs/hil/serial.md`: the design note for a serial/UART console transport as a
@@ -325,7 +337,7 @@ of feature parity: the Python Inspector is still separate work.
   pin driven to its idle level), and a pin-settle error taxonomy. Debounce
   names a stability window and an acquisition deadline separately; a node
   deadline idles only the pins its own subtree opened, never the whole bench;
-  `PinSettleFailure` is a `LitmusError`, not a `TestFailure`; and `PinLevel`
+  `PinSettleFailure` is a `HiltError`, not a `TestFailure`; and `PinLevel`
   carries `UNAVAILABLE` for a controller that could not be reached. Signed by
   Ty on 2026-09-07. Design-only; no code and no public-surface change.
 - `RunEnv`, the type of `utils.env`: still a read-only mapping, now with `require`,
@@ -335,131 +347,131 @@ of feature parity: the Python Inspector is still separate work.
   strict, and pytest; the identity-checked `PASS` sentinel, structured failure taxonomy,
   and runtime child boundary. A non-PASS return is node-local Aborted, never an implicit
   pass. The Python overview, contracts, and idioms carry the migration's requirements
-  ([!1](https://gitlab.com/Tyler-Meador/litmus_test/-/merge_requests/1),
-  [!5](https://gitlab.com/Tyler-Meador/litmus_test/-/merge_requests/5),
-  [!9](https://gitlab.com/Tyler-Meador/litmus_test/-/merge_requests/9)).
-- **Phase 1 — The test atom.** `LitmusTest` owns configure → build_suite → cleanup,
+  ([!1](https://gitlab.com/Tyler-Meador/HILT/-/merge_requests/1),
+  [!5](https://gitlab.com/Tyler-Meador/HILT/-/merge_requests/5),
+  [!9](https://gitlab.com/Tyler-Meador/HILT/-/merge_requests/9)).
+- **Phase 1 — The test atom.** `TestComponent` owns configure → build_suite → cleanup,
   freezes authored instance state after construction, and checks subclass structure
   before execution. Bound methods compose as tests, sequences, and parallel nodes;
   `asyncio.TaskGroup` preserves sibling verdict isolation. Context stays local to its
   authored instance, and cleanup survives abort and repeated cancellation
-  ([!13](https://gitlab.com/Tyler-Meador/litmus_test/-/merge_requests/13),
-  [!17](https://gitlab.com/Tyler-Meador/litmus_test/-/merge_requests/17),
-  [!19](https://gitlab.com/Tyler-Meador/litmus_test/-/merge_requests/19),
-  [!21](https://gitlab.com/Tyler-Meador/litmus_test/-/merge_requests/21),
-  [!23](https://gitlab.com/Tyler-Meador/litmus_test/-/merge_requests/23),
-  [!24](https://gitlab.com/Tyler-Meador/litmus_test/-/merge_requests/24),
-  [!25](https://gitlab.com/Tyler-Meador/litmus_test/-/merge_requests/25)).
+  ([!13](https://gitlab.com/Tyler-Meador/HILT/-/merge_requests/13),
+  [!17](https://gitlab.com/Tyler-Meador/HILT/-/merge_requests/17),
+  [!19](https://gitlab.com/Tyler-Meador/HILT/-/merge_requests/19),
+  [!21](https://gitlab.com/Tyler-Meador/HILT/-/merge_requests/21),
+  [!23](https://gitlab.com/Tyler-Meador/HILT/-/merge_requests/23),
+  [!24](https://gitlab.com/Tyler-Meador/HILT/-/merge_requests/24),
+  [!25](https://gitlab.com/Tyler-Meador/HILT/-/merge_requests/25)).
 - **Phase 2 — Utilities and evidence.** Per-node `TestUtils` and scoped logging,
   `wait_for(looking_for=...)`, passive surveys, active audits, and point-in-time
   artifacts with chronological pointers. Detached `run_data` and recursive
   `summary_tree` snapshots preserve evidence without live suite objects. The polling
   example demonstrates the complete trail
-  ([!33](https://gitlab.com/Tyler-Meador/litmus_test/-/merge_requests/33),
-  [!34](https://gitlab.com/Tyler-Meador/litmus_test/-/merge_requests/34),
-  [!37](https://gitlab.com/Tyler-Meador/litmus_test/-/merge_requests/37),
-  [!38](https://gitlab.com/Tyler-Meador/litmus_test/-/merge_requests/38),
-  [!41](https://gitlab.com/Tyler-Meador/litmus_test/-/merge_requests/41),
-  [!42](https://gitlab.com/Tyler-Meador/litmus_test/-/merge_requests/42),
-  [!65](https://gitlab.com/Tyler-Meador/litmus_test/-/merge_requests/65)).
+  ([!33](https://gitlab.com/Tyler-Meador/HILT/-/merge_requests/33),
+  [!34](https://gitlab.com/Tyler-Meador/HILT/-/merge_requests/34),
+  [!37](https://gitlab.com/Tyler-Meador/HILT/-/merge_requests/37),
+  [!38](https://gitlab.com/Tyler-Meador/HILT/-/merge_requests/38),
+  [!41](https://gitlab.com/Tyler-Meador/HILT/-/merge_requests/41),
+  [!42](https://gitlab.com/Tyler-Meador/HILT/-/merge_requests/42),
+  [!65](https://gitlab.com/Tyler-Meador/HILT/-/merge_requests/65)).
 - **Phase 3 — Transports and routing.** Framework-managed local execution and
   asyncssh connections, borrowed SSH tunnels, inherited routes, and via-device
   lifecycles. Routing and authentication provenance identify where a command ran;
   `utils.exec` returns command outcomes as data while cancellation propagates.
   Remote-device and tunneling examples exercise the authoring surface
-  ([!12](https://gitlab.com/Tyler-Meador/litmus_test/-/merge_requests/12),
-  [!14](https://gitlab.com/Tyler-Meador/litmus_test/-/merge_requests/14),
-  [!20](https://gitlab.com/Tyler-Meador/litmus_test/-/merge_requests/20),
-  [!22](https://gitlab.com/Tyler-Meador/litmus_test/-/merge_requests/22),
-  [!28](https://gitlab.com/Tyler-Meador/litmus_test/-/merge_requests/28),
-  [!36](https://gitlab.com/Tyler-Meador/litmus_test/-/merge_requests/36),
-  [!39](https://gitlab.com/Tyler-Meador/litmus_test/-/merge_requests/39),
-  [!44](https://gitlab.com/Tyler-Meador/litmus_test/-/merge_requests/44),
-  [!64](https://gitlab.com/Tyler-Meador/litmus_test/-/merge_requests/64)).
+  ([!12](https://gitlab.com/Tyler-Meador/HILT/-/merge_requests/12),
+  [!14](https://gitlab.com/Tyler-Meador/HILT/-/merge_requests/14),
+  [!20](https://gitlab.com/Tyler-Meador/HILT/-/merge_requests/20),
+  [!22](https://gitlab.com/Tyler-Meador/HILT/-/merge_requests/22),
+  [!28](https://gitlab.com/Tyler-Meador/HILT/-/merge_requests/28),
+  [!36](https://gitlab.com/Tyler-Meador/HILT/-/merge_requests/36),
+  [!39](https://gitlab.com/Tyler-Meador/HILT/-/merge_requests/39),
+  [!44](https://gitlab.com/Tyler-Meador/HILT/-/merge_requests/44),
+  [!64](https://gitlab.com/Tyler-Meador/HILT/-/merge_requests/64)).
 - **Phase 4 — Integration hooks and run abort.** Root `before_each` and `after_each`
   dispatch around every executed node through narrow contexts. Hook failure preserves
   the pair, propagates `ExternalIntegrationFailure` class-intact, and hard-closes
   in-flight transports across the tree. Tests cover all main/audit/halt race orderings
   and a transport command stopped during abort
-  ([!46](https://gitlab.com/Tyler-Meador/litmus_test/-/merge_requests/46),
-  [!48](https://gitlab.com/Tyler-Meador/litmus_test/-/merge_requests/48),
-  [!49](https://gitlab.com/Tyler-Meador/litmus_test/-/merge_requests/49),
-  [!63](https://gitlab.com/Tyler-Meador/litmus_test/-/merge_requests/63),
-  [!69](https://gitlab.com/Tyler-Meador/litmus_test/-/merge_requests/69)).
+  ([!46](https://gitlab.com/Tyler-Meador/HILT/-/merge_requests/46),
+  [!48](https://gitlab.com/Tyler-Meador/HILT/-/merge_requests/48),
+  [!49](https://gitlab.com/Tyler-Meador/HILT/-/merge_requests/49),
+  [!63](https://gitlab.com/Tyler-Meador/HILT/-/merge_requests/63),
+  [!69](https://gitlab.com/Tyler-Meador/HILT/-/merge_requests/69)).
 - **Phase 5 — Rack validation and static analysis.** A 70-DUT mock rack checks
-  concurrency, isolation, and abort behavior. The `litmus-check` registry and CLI add
+  concurrency, isolation, and abort behavior. The `hilt-check` registry and CLI add
   gated-PASS, pure-composition, immutable-self, constructor-hook, and interface
   annotation rules as defense in depth over the runtime contracts. The pi-hole
   dogfood suite carries the end-to-end authoring example
-  ([!55](https://gitlab.com/Tyler-Meador/litmus_test/-/merge_requests/55),
-  [!56](https://gitlab.com/Tyler-Meador/litmus_test/-/merge_requests/56),
-  [!57](https://gitlab.com/Tyler-Meador/litmus_test/-/merge_requests/57),
-  [!58](https://gitlab.com/Tyler-Meador/litmus_test/-/merge_requests/58),
-  [!59](https://gitlab.com/Tyler-Meador/litmus_test/-/merge_requests/59),
-  [!66](https://gitlab.com/Tyler-Meador/litmus_test/-/merge_requests/66),
-  [!71](https://gitlab.com/Tyler-Meador/litmus_test/-/merge_requests/71),
-  [!72](https://gitlab.com/Tyler-Meador/litmus_test/-/merge_requests/72)).
+  ([!55](https://gitlab.com/Tyler-Meador/HILT/-/merge_requests/55),
+  [!56](https://gitlab.com/Tyler-Meador/HILT/-/merge_requests/56),
+  [!57](https://gitlab.com/Tyler-Meador/HILT/-/merge_requests/57),
+  [!58](https://gitlab.com/Tyler-Meador/HILT/-/merge_requests/58),
+  [!59](https://gitlab.com/Tyler-Meador/HILT/-/merge_requests/59),
+  [!66](https://gitlab.com/Tyler-Meador/HILT/-/merge_requests/66),
+  [!71](https://gitlab.com/Tyler-Meador/HILT/-/merge_requests/71),
+  [!72](https://gitlab.com/Tyler-Meador/HILT/-/merge_requests/72)).
 - Durable per-run `timeline.log` and versioned `timeline.jsonl`, per-node log links
   in the summary tree, and atomic root `result.json` publication for Pass, Fail,
   and Aborted. The final root timeline entry points to the published result
-  ([!77](https://gitlab.com/Tyler-Meador/litmus_test/-/merge_requests/77),
-  [!79](https://gitlab.com/Tyler-Meador/litmus_test/-/merge_requests/79),
-  [!86](https://gitlab.com/Tyler-Meador/litmus_test/-/merge_requests/86)).
+  ([!77](https://gitlab.com/Tyler-Meador/HILT/-/merge_requests/77),
+  [!79](https://gitlab.com/Tyler-Meador/HILT/-/merge_requests/79),
+  [!86](https://gitlab.com/Tyler-Meador/HILT/-/merge_requests/86)).
 - SIGINT/SIGTERM produce an operator-named Aborted result and hard-close transports;
   a second signal during finalization exits immediately. Combined stdout/stderr
   capture has a per-run byte budget and records truncation as evidence
-  ([!84](https://gitlab.com/Tyler-Meador/litmus_test/-/merge_requests/84),
-  [!85](https://gitlab.com/Tyler-Meador/litmus_test/-/merge_requests/85)).
+  ([!84](https://gitlab.com/Tyler-Meador/HILT/-/merge_requests/84),
+  [!85](https://gitlab.com/Tyler-Meador/HILT/-/merge_requests/85)).
 - Verification gates: repeated full-suite soak, ratcheting branch coverage floors,
   locked-dependency audit and refresh tooling, and nightly soak/rack reporting.
   Transport fault injection, shared transport contracts, the abort-phase matrix,
   and generated composition properties strengthen the self-tests. The nightly
   reporting implementation does not itself establish fourteen green nights
-  ([!45](https://gitlab.com/Tyler-Meador/litmus_test/-/merge_requests/45),
-  [!74](https://gitlab.com/Tyler-Meador/litmus_test/-/merge_requests/74),
-  [!75](https://gitlab.com/Tyler-Meador/litmus_test/-/merge_requests/75),
-  [!83](https://gitlab.com/Tyler-Meador/litmus_test/-/merge_requests/83),
-  [!87](https://gitlab.com/Tyler-Meador/litmus_test/-/merge_requests/87),
-  [!88](https://gitlab.com/Tyler-Meador/litmus_test/-/merge_requests/88),
-  [!93](https://gitlab.com/Tyler-Meador/litmus_test/-/merge_requests/93),
-  [!102](https://gitlab.com/Tyler-Meador/litmus_test/-/merge_requests/102)).
-- Additional language-server rule migrations: `litmus/raise-test-failure`,
-  `litmus/no-verdict-in-cleanup`, and `litmus/method-reference`; runnable network
+  ([!45](https://gitlab.com/Tyler-Meador/HILT/-/merge_requests/45),
+  [!74](https://gitlab.com/Tyler-Meador/HILT/-/merge_requests/74),
+  [!75](https://gitlab.com/Tyler-Meador/HILT/-/merge_requests/75),
+  [!83](https://gitlab.com/Tyler-Meador/HILT/-/merge_requests/83),
+  [!87](https://gitlab.com/Tyler-Meador/HILT/-/merge_requests/87),
+  [!88](https://gitlab.com/Tyler-Meador/HILT/-/merge_requests/88),
+  [!93](https://gitlab.com/Tyler-Meador/HILT/-/merge_requests/93),
+  [!102](https://gitlab.com/Tyler-Meador/HILT/-/merge_requests/102)).
+- Additional language-server rule migrations: `hilt/raise-test-failure`,
+  `hilt/no-verdict-in-cleanup`, and `hilt/method-reference`; runnable network
   resolution, hardware lifecycle, and computed run-data examples
-  ([!90](https://gitlab.com/Tyler-Meador/litmus_test/-/merge_requests/90),
-  [!91](https://gitlab.com/Tyler-Meador/litmus_test/-/merge_requests/91)).
+  ([!90](https://gitlab.com/Tyler-Meador/HILT/-/merge_requests/90),
+  [!91](https://gitlab.com/Tyler-Meador/HILT/-/merge_requests/91)).
 - GPL-2.0-only license and notice
-  ([!78](https://gitlab.com/Tyler-Meador/litmus_test/-/merge_requests/78)).
+  ([!78](https://gitlab.com/Tyler-Meador/HILT/-/merge_requests/78)).
 - Release MR checklist with validation evidence, unresolved distribution prerequisites,
   changelog cut, and the handoff to Zavala for merge and release review (issue #101).
 - Docs site: `make docs` builds `docs/` with mkdocs and an API reference from
   the public surface's docstrings. The gate fails on a broken cross-reference.
   A version tag publishes the site to GitLab Pages
-  (`https://tyler-meador.gitlab.io/litmus_test/`); the Floor Technician guide
+  (`https://tyler-meador.gitlab.io/HILT/`); the Floor Technician guide
   there is the URL that belongs on a station label (issue #82,
-  [!108](https://gitlab.com/Tyler-Meador/litmus_test/-/merge_requests/108)).
-- `litmus new SuiteName`: writes a gated-PASS suite and a matching self-test stub
+  [!108](https://gitlab.com/Tyler-Meador/HILT/-/merge_requests/108)).
+- `hilt new SuiteName`: writes a gated-PASS suite and a matching self-test stub
   (`SuiteName.py` / `test_suite_name.py` derived from the class name). The generated
   suite has an annotated constructor, `configure` returning a narrowed ctx, a pure
   `build_suite`, one gated test method, and `cleanup`. `--directory DIR` selects the
-  destination; `--force` overwrites. The files pass `litmus-check`, ruff, and pyright
+  destination; `--force` overwrites. The files pass `hilt-check`, ruff, and pyright
   strict unmodified. Teaching examples are verified against that core shape rather
-  than regenerated from it. `docs/litmus-new.md` (issue #79).
+  than regenerated from it. `docs/hilt-new.md` (issue #79).
 - `docs/floor-technician.md`, the station page: how to read `result.json` without
   reading suite source, the Fail / Aborted / bug-signal recovery protocol, and
   every Inspector JSON field explained from the Floor Technician's side. Linked
   from the README and `docs/overview.md`; published on the docs site
   (issue #83, issue #82).
-- `litmus run <path-or-module>[::SuiteClass]`, the runner: loads a suite file or
-  module, selects one `LitmusTest` subclass, runs it, and exits 0 Pass, 1 Fail,
-  2 Aborted, 3 usage error. `--artifact-root DIR` overrides `LITMUS_ARTIFACT_ROOT`,
+- `hilt run <path-or-module>[::SuiteClass]`, the runner: loads a suite file or
+  module, selects one `TestComponent` subclass, runs it, and exits 0 Pass, 1 Fail,
+  2 Aborted, 3 usage error. `--artifact-root DIR` overrides `HILT_ARTIFACT_ROOT`,
   `--json` prints the `format_version` 1 result record, `--junit PATH` writes the
-  JUnit XML report. The exit contract and the record are public; `docs/litmus-run.md`
+  JUnit XML report. The exit contract and the record are public; `docs/hilt-run.md`
   (issue #73).
-- `docs/api-stability.md`: the public surface is `litmus.__all__`, semantic versioning
+- `docs/api-stability.md`: the public surface is `hilt.__all__`, semantic versioning
   from 1.0.0, the deprecation procedure, and a reference row for every public name.
   `tests/test_public_surface.py` holds the code to the document (issue #100).
-- `litmus.__version__`, the installed distribution's version.
+- `hilt.__version__`, the installed distribution's version.
 - Exported from the package root after the `__all__` audit: `JsonObject`, `Shell`,
   `State`, `NodeType`, `Slot`, `TimeoutEvidence`, `RunSignal`, `ScopedLogger`. Each was
   already reachable from a public object or named by the documentation; none is new
@@ -468,7 +480,7 @@ of feature parity: the Python Inspector is still separate work.
 - `docs/schema/result-v1.schema.json` and `docs/schema/timeline-v1.schema.json`, the
   published Inspector record schemas, with the versioning policy in
   `docs/inspector-json.md` (issue #92).
-- `litmus.junit.JunitXml`, the JUnit XML projection of a `RunResult` (issue #87).
+- `hilt.junit.JunitXml`, the JUnit XML projection of a `RunResult` (issue #87).
 - `Phase`, the ordered `StrEnum` of the six survey dispatch points, and
   `use_survey(fn, phases=...)` to schedule a survey at a subset of them; the default
   is all six and an empty selection is a `ValueError` at registration. A skipped
@@ -477,27 +489,27 @@ of feature parity: the Python Inspector is still separate work.
   attaches to. The phase is the schedule and the route is the guard, because after a
   failed `configure` the engine still fires `pre-cleanup` and `post-cleanup` with exec
   on the test host (issue #116).
-- `litmus-check` rule `litmus/ctx-provenance`: every `utils.ctx["k"]` read in a test
+- `hilt-check` rule `hilt/ctx-provenance`: every `utils.ctx["k"]` read in a test
   method, hook, `configure`, or `cleanup` is provided by `configure()`'s return or
   written earlier in the same method; a sibling leaf's write does not count (issue #112).
 - `docs/measurements.md`: the design note for the parametric measurements protocol —
   `utils.measure(name, value, *, unit=None, limits=None)`, the `measurements` array the
   reserved `run_data` slot will carry, the evidence-not-verdict rule for limits, and the
   export contract the downstream SPC/Cpk consumer needs. Barrelled at the package root
-  as `litmus.measure` per Ty's condition on the approval; `utils.measure` stays the
+  as `hilt.measure` per Ty's condition on the approval; `utils.measure` stays the
   documented home. No code changes yet — `#86` implements the note (issue #85).
 
 ### Changed
 
-- Litmus is relicensed from GPL-2.0-only to Apache-2.0. `LICENSE` carries the Apache
+- HILT is relicensed from GPL-2.0-only to Apache-2.0. `LICENSE` carries the Apache
   License 2.0 text, `NOTICE` the Apache-style copyright notice, and `pyproject.toml`
-  the `Apache-2.0` SPDX expression. Suites that import litmus no longer raise a
+  the `Apache-2.0` SPDX expression. Suites that import hilt no longer raise a
   copyleft question when they ship to a contract manufacturer, and the license grants
   patent rights. Copies already obtained under GPL-2.0-only keep that license.
 - The docs no longer describe a "BUG signal" or a "THIS IS A BUG IN <name>" message.
   A non-`TestFailure` exception that escapes suite code is a `ContractViolation`:
   the banner is `CONTRACT VIOLATION IN <name>`, the record is Fail with `bug: true`.
-  `docs/contracts.md`, `docs/idioms.md`, `docs/litmus-check.md`, the HIL pages, the
+  `docs/contracts.md`, `docs/idioms.md`, `docs/hilt-check.md`, the HIL pages, the
   README, and the `ChildBoundary` docstring now say so in those words.
 - `TestUtils.wait_for` returns the predicate's last truthy value (bench finding F9,
   issue #158). `True` is still `True`, and a falsy look keeps polling until the same
@@ -520,7 +532,7 @@ of feature parity: the Python Inspector is still separate work.
   docs-tree and station URLs and the example runs into `docs/getting-started.md`; the
   tests that pinned them follow. `docs/utilities.md` joins the site nav. The catalogue
   tests read both seed files, `seeded_suite.py` and `seeded_seams.py`, and the
-  `no-input-fallback` seed no longer also trips `litmus/model-resolution-failure`,
+  `no-input-fallback` seed no longer also trips `hilt/model-resolution-failure`,
   whose one seed is in `seeded_seams.py`. `uv.lock` takes urllib3 2.8.0, which the
   gate's audit requires for PYSEC-2026-4175/4176/4177; it reaches the tree only through
   `pip-audit`'s `requests` in the dev group.
@@ -528,7 +540,7 @@ of feature parity: the Python Inspector is still separate work.
   ignores SIGTERM is killed once the two-second grace runs out, and a second cancel
   landing inside that grace still kills and reaps it before the cancellation goes on;
   neither branch of `LocalExec._terminate` had executed under the gate before. The
-  `src/litmus/executor.py` floor rises from 92.8 to 98.9. The probe behind these tests
+  `src/hilt/executor.py` floor rises from 92.8 to 98.9. The probe behind these tests
   found the grandchild gap fixed under #146.
 - The gate is the bench run, and the tree now says so (issue #138, Ty's ruling of
   2026-09-10 on #104: no CI, permanently). `STANDARDS.md` §1 and §6, the README, and
@@ -566,7 +578,7 @@ of feature parity: the Python Inspector is still separate work.
   gateway that cannot come up Fails in its own configure slot and the children it
   never composed stay pending. `examples/networked_device.py` is rebuilt on this
   shape: `DutDevice(name, mac, firmware_version)` has no routing surface, and
-  `litmus run ...::Gateway` runs the same DUT class through the hop. The Exec
+  `hilt run ...::Gateway` runs the same DUT class through the hop. The Exec
   Routing Contract, the Time Budget Contract, and the idioms say so; the #115
   ruling (owned hops outlive the post-cleanup survey) now describes the only kind
   of hop there is.
@@ -589,7 +601,7 @@ of feature parity: the Python Inspector is still separate work.
 - The nightly soak draws and records a fresh Hypothesis seed for each pytest run,
   extending generated composition coverage while retaining a replay command in every
   run log. The ordinary gate and eight-run race soak keep their fixed seed
-  (follow-up to [!102](https://gitlab.com/Tyler-Meador/litmus_test/-/merge_requests/102)).
+  (follow-up to [!102](https://gitlab.com/Tyler-Meador/HILT/-/merge_requests/102)).
 - The pi-hole dogfood example reads the Pi-hole v6 log layout (`FTL.log` and
   `webserver.log` under `/var/log/pihole/`), schedules its survey from
   `post-configure` onward behind an `exec_route` guard so no tail runs on the test
@@ -604,8 +616,8 @@ of feature parity: the Python Inspector is still separate work.
   the verdict. A leaf's `run_data` is the ctx view plus its evidence; every summary-tree
   node carries `evidence` and `evidence_declared` (additive under format version 1).
   `Verdict` is a public class, `EvidenceViolation` names the three evidence breaks, the
-  snapshot helpers moved from `litmus.evidence` to `litmus.run_data`, and `litmus-check`
-  gained `litmus/evidence-fulfilled` while `litmus/ctx-provenance` now flags every ctx
+  snapshot helpers moved from `hilt.evidence` to `hilt.run_data`, and `hilt-check`
+  gained `hilt/evidence-fulfilled` while `hilt/ctx-provenance` now flags every ctx
   write. `ArpResolver.reacquire` returns the new address instead of writing ctx.
 
 - A node halted by an integration hook now finishes its abort — hard close, paired
@@ -623,33 +635,33 @@ of feature parity: the Python Inspector is still separate work.
   used to close inside cleanup, so a post-cleanup survey on a self-owned hop settled
   `remote interface is not connected` and recorded an empty artifact while the same
   survey on an inherited via hop read the device (issue #115).
-- The five locally executable examples run through `litmus run`: their constructor
+- The five locally executable examples run through `hilt run`: their constructor
   parameters carry the lesson's values as defaults, and the standalone wrapper classes
   and `__main__` blocks are gone (issue #73). The SSH-backed examples initially kept
   theirs; those targets now resolve from `utils.env` in `configure()`, and the
-  SSH examples also use `litmus run`. Missing target configuration produces a
+  SSH examples also use `hilt run`. Missing target configuration produces a
   modeled Fail naming the variable to set (issue #113,
-  [!105](https://gitlab.com/Tyler-Meador/litmus_test/-/merge_requests/105)).
+  [!105](https://gitlab.com/Tyler-Meador/HILT/-/merge_requests/105)).
 - A `[]` read of a `utils.ctx` key that `configure()` did not provide raises
   `ContractViolation` ("context insufficient") naming the test and the key, instead of a
   bare `KeyError`; `get`, `in`, and `setdefault` are unchanged. `TestUtils(ctx=...)` now
   copies the seed into the run's context rather than adopting the dict (issue #112).
 - Composition vocabulary settled as `self.test`, `self.sequence`, `self.parallel`;
-  `self.case` and `self.group` removed outright, and `litmus-check` gained
-  `litmus/retired-names` to point at the replacement (issue #110).
+  `self.case` and `self.group` removed outright, and `hilt-check` gained
+  `hilt/retired-names` to point at the replacement (issue #110).
 - Per-node time budgets: `fail_after` and `abort_after` on any node, subtree-bound and
   tighten-only (issues #59, #60,
-  [!81](https://gitlab.com/Tyler-Meador/litmus_test/-/merge_requests/81)).
+  [!81](https://gitlab.com/Tyler-Meador/HILT/-/merge_requests/81)).
 - `configure()` accepts a `Mapping[str, Any]` return annotation so suite-local
   `TypedDict` overrides type-check; runtime context remains a mutable dict
-  ([!68](https://gitlab.com/Tyler-Meador/litmus_test/-/merge_requests/68)).
+  ([!68](https://gitlab.com/Tyler-Meador/HILT/-/merge_requests/68)).
 - Author-facing framework errors name the violated contract and the concrete fix,
   including missing verdicts, malformed composition, and finalization timeouts
-  (issue #80, [!103](https://gitlab.com/Tyler-Meador/litmus_test/-/merge_requests/103)).
+  (issue #80, [!103](https://gitlab.com/Tyler-Meador/HILT/-/merge_requests/103)).
 
 ### Fixed
 
-- `litmus/model-resolution-failure` and `litmus/no-verdict-in-cleanup` agree on
+- `hilt/model-resolution-failure` and `hilt/no-verdict-in-cleanup` agree on
   `cleanup()` (bench finding F4, issue #153). The first demanded a `try` whose handler
   raises `TestFailure` around every awaited `request()` / `resolve()` / `reacquire()`; the
   second forbids that raise in `cleanup()`, so no teardown could satisfy both. In
@@ -729,17 +741,17 @@ of feature parity: the Python Inspector is still separate work.
 - Upgrade the locked `filelock` pin to `4.2.4` to clear `CVE-2026-112907`,
   `CVE-2026-112913`, and `CVE-2026-112940`, found by the required dependency audit.
   `filelock` arrives only through `pip-audit`'s own cache (`cachecontrol[filecache]`), so
-  the major-version step touches the audit tool and nothing Litmus ships; the bump landed
+  the major-version step touches the audit tool and nothing HILT ships; the bump landed
   standalone so `main` did not stay red.
 - Optional `env_allow` / `env_deny` filtering of the published environment snapshot;
   SSH credential containment tests pin that password and private-key values do not
   escape into logs, results, or other evidence
-  ([!51](https://gitlab.com/Tyler-Meador/litmus_test/-/merge_requests/51),
-  [!82](https://gitlab.com/Tyler-Meador/litmus_test/-/merge_requests/82)).
+  ([!51](https://gitlab.com/Tyler-Meador/HILT/-/merge_requests/51),
+  [!82](https://gitlab.com/Tyler-Meador/HILT/-/merge_requests/82)).
 
 ### Removed
 
-- `via=` on the `LitmusTest` constructor, with the framework-owned via lifecycle
+- `via=` on the `TestComponent` constructor, with the framework-owned via lifecycle
   behind it: `run_configure_only`, `run_cleanup_only`, the via lease count, and the
   adoption of a via's failure into the consumer's configure slot (issue #137). The
   only `via` left is the tunnel argument to `use_shell` / `get_shell`, declared

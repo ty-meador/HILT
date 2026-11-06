@@ -1,26 +1,26 @@
 ---
-name: litmus project overview
+name: HILT project overview
 description: Comprehensive synthesis of project purpose, domain, architecture, and design philosophy
 type: project
 ---
 
-# litmus — Project Overview
+# HILT — Project Overview
 
-**Philosophy:** "The act of running a Litmus Test is the act of producing irrefutable evidence."
+**Philosophy:** "The act of running a HILT Test is the act of producing irrefutable evidence."
 
-"Happy path" scripts work 99% of the time but cause 100% of the line stoppages because they fail ambiguously. Litmus forces the SE to handle the "Sad Path" (Infra vs. Hardware vs. Integration) at design time.
+"Happy path" scripts work 99% of the time but cause 100% of the line stoppages because they fail ambiguously. HILT forces the SE to handle the "Sad Path" (Infra vs. Hardware vs. Integration) at design time.
 
 ## What It Is
 
 An opinionated manufacturing test framework built in Python (asyncio). It seeks to implement empathetic architecture by addressing SE → tech communication issues upstream via a pit-of-success model.
 
-This is the Python port of the TypeScript original (`../litmus-test-legacy/`, read-only reference). Parity with the original is explicitly not a goal; the contracts are carried forward, the enforcement is stronger.
+This is the Python port of the TypeScript original (`../hilt-test-legacy/`, read-only reference). Parity with the original is explicitly not a goal; the contracts are carried forward, the enforcement is stronger.
 
 ## How it does that
 
-Litmus gives the SEs a framework that allows them to focus on getting the test right and logging meaningful evidence. It does this by reducing cognitive load on the SE as much as it possibly can. The SE declares their intent and Litmus collects and organizes structured evidence. Much like a real litmus test, **the act of executing the test is the act of producing evidence. full stop.** The SEs capture meaningful information, and the litmus inspector guarantees that a tech is able to turn that data into information at 2am.
+HILT gives the SEs a framework that allows them to focus on getting the test right and logging meaningful evidence. It does this by reducing cognitive load on the SE as much as it possibly can. The SE declares their intent and HILT collects and organizes structured evidence. Much like a real hilt test, **the act of executing the test is the act of producing evidence. full stop.** The SEs capture meaningful information, and the hilt inspector guarantees that a tech is able to turn that data into information at 2am.
 
-## The Litmus Success Metric
+## The HILT Success Metric
 
 A Floor Technician (the "FT" of the source docstrings) can accurately categorize a failure and initiate the correct recovery protocol within 60 seconds of opening the Inspector, without needing to Slack the Software Engineer.
 
@@ -43,22 +43,22 @@ what to do next, without opening the suite source.
 
 ## The Atom
 
-**`LitmusTest` is the irreducible unit of the manufacturing test problem domain.**
+**`TestComponent` is the irreducible unit of the manufacturing test problem domain.**
 
 - Does not know or care what the DUT is
 - Does not know what stage it's running at
 - Does not know what surrounds it in the composition
 - Only knows: `configure` → `build_suite` → `cleanup`
 
-A rack-level L11 test is not a different kind of thing — it is more atoms composed together. Leaves, sequences, parallel nodes, and full hardware devices are all instances of `LitmusTest`; the framework is fractal. A `LitmusTest` is simultaneously a claim about hardware and a procedure for verifying that claim: **evidence at scale N−1 becomes a verdict at scale N.** The DUT tree and the test tree are one structure.
+A rack-level L11 test is not a different kind of thing — it is more atoms composed together. Leaves, sequences, parallel nodes, and full hardware devices are all instances of `TestComponent`; the framework is fractal. A `TestComponent` is simultaneously a claim about hardware and a procedure for verifying that claim: **evidence at scale N−1 becomes a verdict at scale N.** The DUT tree and the test tree are one structure.
 
 ## The Chemistry Mental Model
 
 | Level | Framework Construct |
 |---|---|
-| Atom | `LitmusTest` (leaf via `self.test()`) |
+| Atom | `TestComponent` (leaf via `self.test()`) |
 | Molecule | `self.sequence()` (ordered, bails on failure), `self.parallel()` (concurrent, collects all) |
-| Organelle | `LitmusTest` subclass (encapsulates state + lifecycle, produces atoms via `build_suite()`) |
+| Organelle | `TestComponent` subclass (encapsulates state + lifecycle, produces atoms via `build_suite()`) |
 | Organism | Full rack/system-level suite |
 | Emulsion | L10+JBOG/JBOD — two molecules behaving as unified system under test |
 
@@ -66,7 +66,7 @@ A rack-level L11 test is not a different kind of thing — it is more atoms comp
 
 ## The Three Terminal States
 
-Every run of a `LitmusTest` resolves to one of three peer states — no silent exits, no hidden fourth category:
+Every run of a `TestComponent` resolves to one of three peer states — no silent exits, no hidden fourth category:
 
 1. **Pass** — the test method returned `PASS` explicitly, bare or as `PASS(evidence)` carrying its readings. Cannot accidentally pass: the framework checks `isinstance(result, Verdict)`, and a `Verdict` is only obtained by importing `PASS` or calling it, so a string, a truthy value, or a parsed config cannot forge it. A method that declares its evidence with `@evidence(...)` cannot pass without carrying it.
 2. **Fail** — the test method raised a `TestFailure`. Structured articulation of what the hardware did wrong, or (for a plain exception) a loud contract violation signal that the developer didn't model this failure mode.
@@ -117,7 +117,7 @@ final entry points to the file, so the structural and temporal views remain join
 
 ## Integration Hooks: The External-World Contract
 
-`before_each` and `after_each` on the run params are how Litmus composes with the world outside the test framework — shop-floor databases, lab coordinators, audit pipelines, any system that needs a "started" signal before each test and a "finished" signal after.
+`before_each` and `after_each` on the run params are how HILT composes with the world outside the test framework — shop-floor databases, lab coordinators, audit pipelines, any system that needs a "started" signal before each test and a "finished" signal after.
 
 - Registered once at the root `run()` call, fire around every executed test in the tree (fractal dispatch)
 - Throw from either hook → run halts → enclosing node transitions to `Aborted`
@@ -130,9 +130,9 @@ When a hook throws, the required end state is for the framework to close every i
 
 The correct pattern must be the path of least resistance — enforced by API shape, not documentation.
 
-Litmus is deliberately designed so that the _right_ way to write a test is also the _easiest_ way. The framework uses runtime enforcement, import-time structural checks, sensible defaults, and loud signals to guide developers toward honest, evidence-rich tests without requiring them to constantly consult the docs.
+HILT is deliberately designed so that the _right_ way to write a test is also the _easiest_ way. The framework uses runtime enforcement, import-time structural checks, sensible defaults, and loud signals to guide developers toward honest, evidence-rich tests without requiring them to constantly consult the docs.
 
-Here are some of the ways Litmus implements this:
+Here are some of the ways HILT implements this:
 
 - **No pass by default** — test methods must explicitly return `PASS`, or `PASS(evidence)` with the readings that prove it. Reaching the end of the method without doing so is a missing verdict (node-local Aborted); raising a plain exception is a developer contract violation. A method that declares its evidence with `@evidence(...)` cannot pass without carrying it. Even internal implementations like `TestSequence` explicitly model the passing condition as (all tests ran AND all tests passed) — it does not silently pass if nothing threw.
 - **Setup is constrained to `configure()`** — All infrastructure wiring, readiness checks, and context creation must happen in `configure()`. The framework merges the return value into `utils.ctx` for the rest of the lifecycle and all descendants, and ctx is read-only from then on: inputs come in through configure, readings go out with the verdict. This prevents hidden state coupling and makes the data flow explicit.
@@ -142,15 +142,15 @@ Here are some of the ways Litmus implements this:
 - **Sensible defaults reduce boilerplate** — `self.test("name", self._my_method)` defaults to `discrete_log_file=False`, so its logs automatically roll up into the parent. This gives you **one log per logical abstraction instead of one log per screw**.
 - **Survey and audit hooks belong in the constructor** — Registering them only in `__init__` makes them part of the test's stable identity (visible on the class and consistent across runs).
 - **`wait_for()` requires intent** — The `looking_for` parameter is mandatory and becomes the primary diagnostic string when a timeout occurs. This nudges developers to write human-readable failure messages.
-- **Import-time structural enforcement** — a tier the TypeScript original never had. `__init_subclass__` on `LitmusTest` verifies at class *definition* (import time, before any hardware is touched) that the subclass is structurally sound: required lifecycle methods present and async, sealed internals (`main`, `run`, `_run_lifecycle`, the `_safe_*` family) not overridden. A malformed test refuses to import; it can never reach the floor.
+- **Import-time structural enforcement** — a tier the TypeScript original never had. `__init_subclass__` on `TestComponent` verifies at class *definition* (import time, before any hardware is touched) that the subclass is structurally sound: required lifecycle methods present and async, sealed internals (`main`, `run`, `_run_lifecycle`, the `_safe_*` family) not overridden. A malformed test refuses to import; it can never reach the floor.
 
 These constraints are not restrictions — they are guardrails that make it difficult to write ambiguous or incomplete tests while making the correct patterns feel natural.
 
-## Why Litmus Rejects "Pass by Default"
+## Why HILT Rejects "Pass by Default"
 
 Most test frameworks treat "the test reached the end without throwing an error" as a passing result. This is the default mental model the industry has used for decades.
 
-**Litmus rejects it outright.**
+**HILT rejects it outright.**
 
 #### The Quiet Lie
 
@@ -158,11 +158,11 @@ When a test passes by default, it has only proven one thing:
 
 > It did not encounter any of the failure modes the author happened to think of and write explicit checks for.
 
-That is not evidence that the system works. It is a quiet lie — one that accumulates silently until it causes a line stoppage. Litmus provides the guardrails that make it difficult to accidentally ship a test that only _appears_ complete. The same conviction governs what a pass carries: a pass without its declared evidence is not a pass.
+That is not evidence that the system works. It is a quiet lie — one that accumulates silently until it causes a line stoppage. HILT provides the guardrails that make it difficult to accidentally ship a test that only _appears_ complete. The same conviction governs what a pass carries: a pass without its declared evidence is not a pass.
 
 ### Cases Where Explicit Pass Modeling Feels Awkward
 
-Here are the situations where forcing an explicit `PASS` can feel clunky if you are coming from a pass-by-default mentality. In every case below, the job is the same: make the pass condition a readable check the next developer can find and understand. `return PASS` on its own is syntax, not modeling — the conditional that gates it is where your intent lives, and where `litmus-check` (the static-analysis tier) will insist it goes.
+Here are the situations where forcing an explicit `PASS` can feel clunky if you are coming from a pass-by-default mentality. In every case below, the job is the same: make the pass condition a readable check the next developer can find and understand. `return PASS` on its own is syntax, not modeling — the conditional that gates it is where your intent lives, and where `hilt-check` (the static-analysis tier) will insist it goes.
 
 | Situation | Why It Feels Awkward | How to Model the Pass Condition |
 |---|---|---|
@@ -183,19 +183,19 @@ Floor Technicians are the primary consumers of everything you produce. They are 
 
 Pass-by-default tests make all three questions harder. The tech is left guessing at your intent, debugging ambiguous results, and sometimes having to escalate because the evidence is unclear.
 
-Litmus is built so that the evidence a tech needs is produced automatically and presented clearly — without requiring them to read your source code or understand your design intent.
+HILT is built so that the evidence a tech needs is produced automatically and presented clearly — without requiring them to read your source code or understand your design intent.
 
-#### What Litmus Demands
+#### What HILT Demands
 
 #### The three-tier enforcement stack
 
-Litmus does not merely prefer explicit passes — it **rejects** implicit ones at every tier of the enforcement stack:
+HILT does not merely prefer explicit passes — it **rejects** implicit ones at every tier of the enforcement stack:
 
 | Tier | Mechanism | Enforces |
 |---|---|---|
 | 1 | Runtime IoC wrapping (the child-boundary in `lifecycle.py`) | Verdict contract, failure taxonomy, lifecycle order — can never be bypassed |
 | 2 | Import-time structural checks (`__init_subclass__`) | Subclass shape, sealed internals — fires before hardware is touched |
-| 3 | Static analysis (`litmus-check`) | Declarative syntax: pure `build_suite`, gated `PASS`, immutable-self idiom |
+| 3 | Static analysis (`hilt-check`) | Declarative syntax: pure `build_suite`, gated `PASS`, immutable-self idiom |
 
 **Rule: nothing that protects hardware or verdict integrity may live only in tier 3.**
 
@@ -209,14 +209,14 @@ In return, you get tests that mean what they say, clear failure categorization, 
 
 ## Where things live
 
-The concepts above are carried by the modules under `src/litmus`. Each line says what
+The concepts above are carried by the modules under `src/hilt`. Each line says what
 the module is for, not what it contains; the contracts themselves are stated once, in
 [contracts.md](contracts.md) and the pages linked from it.
 
 | Module | What it is for |
 |---|---|
-| `__init__.py` | The public surface: `litmus.__all__` is the documented API ([api.md](api.md)); every other name in the package is internal. |
-| `base.py` | The atom: `LitmusTest`, the one node every suite is composed from, and the framework-owned lifecycle that runs it. |
+| `__init__.py` | The public surface: `hilt.__all__` is the documented API ([api.md](api.md)); every other name in the package is internal. |
+| `base.py` | The atom: `TestComponent`, the one node every suite is composed from, and the framework-owned lifecycle that runs it. |
 | `lifecycle.py` | Tier 1, the kernel of trust: the child boundary that turns what a test method returns into one of the three terminal states. |
 | `verdict.py` | The non-forgeable `PASS` sentinel and the `Verdict` a test method hands back. |
 | `errors.py` | The failure taxonomy: which exception means Fail, which means Aborted, and who is being told. |
@@ -236,6 +236,6 @@ the module is for, not what it contains; the contracts themselves are stated onc
 | `arp.py` | MAC-to-IP resolution over the node's current exec route. |
 | `device_api.py` | The Device API (CoAP/HTTP) contract: resource requests, not an exec subclass ([hil/device-api.md](hil/device-api.md)). |
 | `junit.py` | The JUnit XML reporter over the run record, for CI systems that read that format ([junit-xml.md](junit-xml.md)). |
-| `cli.py` | The `litmus` command line: `run`, `new`, `inspect` ([litmus-run.md](litmus-run.md), [litmus-new.md](litmus-new.md), [inspector.md](inspector.md)). |
+| `cli.py` | The `hilt` command line: `run`, `new`, `inspect` ([hilt-run.md](hilt-run.md), [hilt-new.md](hilt-new.md), [inspector.md](inspector.md)). |
 | `scaffold.py` | Writes a gated-`PASS` suite and its self-test from a class name, so a new suite starts inside the pit of success. |
 | `inspector_*.py` (ten modules) | The Floor Technician's Inspector, split reader / model / view. Readers (`inspector_json`, `inspector_run`, `inspector_timeline`, `inspector_artifacts`) load saved evidence and execute nothing; models (`inspector_tree`, `inspector_selection`, `inspector_artifact_navigation`) turn it into rows and cursors; views (`inspector_timeline_view`, `inspector_artifact_view`, `inspector_app`) render and forward keys, deciding nothing. |

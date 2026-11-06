@@ -30,17 +30,17 @@ The readings are constructor-injected so the example runs on any development
 machine. A real suite would take them with `utils.exec()` inside the test method;
 the declaration, the verdict, and the record stay the same.
 
-Run it: `litmus run examples/run_data_evidence.py`.
+Run it: `hilt run examples/run_data_evidence.py`.
 """
 
 from __future__ import annotations
 
 from typing import Any
 
-from litmus import PASS, LitmusTest, TestFailure, TestUtils, Verdict, evidence
+from hilt import PASS, TestComponent, TestFailure, TestUtils, Verdict, evidence
 
 
-class PowerSupply(LitmusTest):
+class PowerSupply(TestComponent):
     """Judge voltage and temperature against their limits and record both readings."""
 
     def __init__(
@@ -55,7 +55,7 @@ class PowerSupply(LitmusTest):
     ) -> None:
         """Capture the readings this suite will publish as evidence.
 
-        The default readings sit inside the limits, so `litmus run` needs no
+        The default readings sit inside the limits, so `hilt run` needs no
         arguments.
 
         Args:
@@ -87,7 +87,7 @@ class PowerSupply(LitmusTest):
             "temp_limit_c": self._temp_limit_c,
         }
 
-    def build_suite(self) -> LitmusTest:
+    def build_suite(self) -> TestComponent:
         """Independent claims: voltage and temperature do not depend on each other."""
         return self.parallel(
             self.name,

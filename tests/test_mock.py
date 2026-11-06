@@ -6,17 +6,17 @@ import asyncio
 
 import pytest
 
-from litmus.executor import ExecResult
-from litmus.mock import MockTransport
-from litmus.remote import RemoteInterface
+from hilt.executor import ExecResult
+from hilt.mock import MockTransport
+from hilt.remote import RemoteInterface
 
 
 class TestPublicSurface:
     def test_mock_transport_is_not_on_the_public_surface(self) -> None:
-        import litmus
+        import hilt
 
-        assert not hasattr(litmus, "MockTransport")
-        assert "MockTransport" not in litmus.__all__
+        assert not hasattr(hilt, "MockTransport")
+        assert "MockTransport" not in hilt.__all__
 
     def test_is_a_remote_interface(self) -> None:
         transport = MockTransport()

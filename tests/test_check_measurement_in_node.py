@@ -1,4 +1,4 @@
-"""``litmus/measurement-in-node``: a reading is recorded where a node is running.
+"""``hilt/measurement-in-node``: a reading is recorded where a node is running.
 
 The static half of the outside-a-node guard in ``docs/measurements.md`` (*Tiers*): the
 runtime refuses the call; the rule names the slot so the developer moves it first.
@@ -8,11 +8,11 @@ import io
 from pathlib import Path
 from textwrap import dedent
 
-from litmus_check import SuiteModule, Violation
-from litmus_check.cli import EXIT_VIOLATIONS, LitmusCheckCommand
-from litmus_check.rules.measurement_in_node import MeasurementInNodeRule
+from hilt_check import SuiteModule, Violation
+from hilt_check.cli import EXIT_VIOLATIONS, HiltCheckCommand
+from hilt_check.rules.measurement_in_node import MeasurementInNodeRule
 
-CODE = "litmus/measurement-in-node"
+CODE = "hilt/measurement-in-node"
 
 
 def _check(source: str) -> list[Violation]:
@@ -27,7 +27,7 @@ def _lines(source: str) -> list[int]:
 class TestMeasurementInNodeFires:
     def test_inside_cleanup(self) -> None:
         source = """
-            class Suite(LitmusTest):
+            class Suite(TestComponent):
                 async def cleanup(self, utils: TestUtils) -> None:
                     utils.measure("rail_v", 0.0)
         """
@@ -38,7 +38,7 @@ class TestMeasurementInNodeFires:
 
     def test_inside_a_registered_survey_or_audit(self) -> None:
         source = """
-            class Suite(LitmusTest):
+            class Suite(TestComponent):
                 def __init__(self, *, name: str) -> None:
                     super().__init__(name=name)
                     self.use_survey(self._snapshot)
@@ -57,7 +57,7 @@ class TestMeasurementInNodeFires:
         source = """
             async def before_each(context: BeforeEachContext) -> None:
                 measure("hook_ms", 1.0)
-            class Suite(LitmusTest):
+            class Suite(TestComponent):
                 async def after_each(self, context: AfterEachContext) -> None:
                     measure("hook_ms", 1.0)
         """
@@ -81,7 +81,7 @@ class TestMeasurementInNodeFires:
     def test_at_module_and_class_scope(self) -> None:
         source = """
             measure("boot_v", 1.0)
-            class Suite(LitmusTest):
+            class Suite(TestComponent):
                 seeded = measure("boot_v", 1.0)
         """
         violations = _check(source)
@@ -95,7 +95,7 @@ class TestMeasurementInNodeFires:
                 def later() -> None:
                     measure("hook_ms", 1.0)
                 later()
-            class Suite(LitmusTest):
+            class Suite(TestComponent):
                 async def cleanup(self, utils: TestUtils) -> None:
                     def restore() -> None:
                         utils.measure("rail_v", 0.0)
@@ -105,7 +105,7 @@ class TestMeasurementInNodeFires:
 
     def test_receiver_name_does_not_matter(self) -> None:
         source = """
-            class Suite(LitmusTest):
+            class Suite(TestComponent):
                 async def cleanup(self, u: TestUtils) -> None:
                     u.measure("rail_v", 0.0)
         """
@@ -115,7 +115,7 @@ class TestMeasurementInNodeFires:
 class TestMeasurementInNodeStaysQuiet:
     def test_configure_and_test_methods_are_nodes(self) -> None:
         source = """
-            class Suite(LitmusTest):
+            class Suite(TestComponent):
                 async def configure(self, utils: TestUtils) -> dict[str, Any]:
                     utils.measure("boot_s", 1.0)
                     return {}
@@ -129,7 +129,7 @@ class TestMeasurementInNodeStaysQuiet:
 
     def test_helpers_are_left_to_the_runtime_guard(self) -> None:
         source = """
-            class Suite(LitmusTest):
+            class Suite(TestComponent):
                 async def cleanup(self, utils: TestUtils) -> None:
                     await self._restore(utils)
                 async def _restore(self, utils: TestUtils) -> None:
@@ -137,7 +137,7 @@ class TestMeasurementInNodeStaysQuiet:
         """
         assert _lines(source) == []
 
-    def test_cleanup_on_a_class_that_is_not_a_litmus_test(self) -> None:
+    def test_cleanup_on_a_class_that_is_not_a_test_component(self) -> None:
         source = """
             class Plain:
                 async def cleanup(self, utils: TestUtils) -> None:
@@ -147,7 +147,7 @@ class TestMeasurementInNodeStaysQuiet:
 
     def test_an_unregistered_method_is_not_a_hook(self) -> None:
         source = """
-            class Suite(LitmusTest):
+            class Suite(TestComponent):
                 async def _snapshot(self, utils: TestUtils) -> object:
                     return utils.measure("temp_c", 40.0)
         """
@@ -156,10 +156,10 @@ class TestMeasurementInNodeStaysQuiet:
 
 class TestMeasurementInNodeAtTheCommandLine:
     def test_seeded_fixture_is_caught(self) -> None:
-        fixtures = Path(__file__).parent / "fixtures" / "litmus_check"
+        fixtures = Path(__file__).parent / "fixtures" / "hilt_check"
         out = io.StringIO()
 
-        status = LitmusCheckCommand(stdout=out, stderr=io.StringIO()).run(
+        status = HiltCheckCommand(stdout=out, stderr=io.StringIO()).run(
             ["--select", CODE, str(fixtures)]
         )
 

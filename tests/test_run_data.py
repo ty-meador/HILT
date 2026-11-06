@@ -4,8 +4,8 @@ import json
 from collections.abc import Mapping
 from typing import Any, cast
 
-from litmus import PASS, AfterEachContext, LitmusTest, RunResult, TestUtils, Verdict
-from litmus.run_data import JsonObject, snapshot_run_data
+from hilt import PASS, AfterEachContext, RunResult, TestComponent, TestUtils, Verdict
+from hilt.run_data import JsonObject, snapshot_run_data
 
 
 class _Handle:
@@ -87,13 +87,13 @@ class TestRunDataFiltering:
         }
 
 
-class TestLitmusTestRunData:
+class TestTestComponentRunData:
     async def test_run_data_captures_configure_and_test_method_context(self) -> None:
-        class Suite(LitmusTest):
+        class Suite(TestComponent):
             async def configure(self, utils: TestUtils) -> dict[str, Any]:
                 return {"serial": "SN-0042", "transport": _Handle()}
 
-            def build_suite(self) -> LitmusTest:
+            def build_suite(self) -> TestComponent:
                 return self.test("sample", self._sample)
 
             async def _sample(self, utils: TestUtils) -> Verdict:
@@ -118,8 +118,8 @@ class TestLitmusTestRunData:
         samples = [1]
         seed = TestUtils(ctx={"evidence": {"samples": samples}})
 
-        class Suite(LitmusTest):
-            def build_suite(self) -> LitmusTest:
+        class Suite(TestComponent):
+            def build_suite(self) -> TestComponent:
                 return self.test("claim", self._claim)
 
             async def _claim(self, utils: TestUtils) -> Verdict:
@@ -138,11 +138,11 @@ class TestLitmusTestRunData:
         }
 
     async def test_a_leaf_result_is_the_context_view_plus_its_evidence(self) -> None:
-        class Suite(LitmusTest):
+        class Suite(TestComponent):
             async def configure(self, utils: TestUtils) -> dict[str, Any]:
                 return {"limit_v": 12.5, "transport": _Handle()}
 
-            def build_suite(self) -> LitmusTest:
+            def build_suite(self) -> TestComponent:
                 return self.test("claim", self._claim)
 
             async def _claim(self, utils: TestUtils) -> Verdict:
@@ -168,11 +168,11 @@ class TestLitmusTestRunData:
         assert tree["evidence"] == {"reading_v": 12.1, "samples": [1, 2]}
 
     async def test_composed_authored_nodes_capture_only_their_own_context(self) -> None:
-        class Child(LitmusTest):
+        class Child(TestComponent):
             async def configure(self, utils: TestUtils) -> dict[str, Any]:
                 return {"child": "local"}
 
-            def build_suite(self) -> LitmusTest:
+            def build_suite(self) -> TestComponent:
                 return self.test("claim", self._claim)
 
             async def _claim(self, utils: TestUtils) -> Verdict:
@@ -180,11 +180,11 @@ class TestLitmusTestRunData:
 
         child = Child(name="child")
 
-        class Parent(LitmusTest):
+        class Parent(TestComponent):
             async def configure(self, utils: TestUtils) -> dict[str, Any]:
                 return {"parent": "local"}
 
-            def build_suite(self) -> LitmusTest:
+            def build_suite(self) -> TestComponent:
                 return self.sequence("children", [child])
 
         parent = Parent(name="parent")

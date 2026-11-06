@@ -21,13 +21,13 @@ import time
 from collections.abc import Sequence
 from typing import Any
 
-from litmus import (
+from hilt import (
     PASS,
     CoapCode,
     DeviceApi,
     DeviceApiOperationFailure,
     DeviceRequest,
-    LitmusTest,
+    TestComponent,
     TestFailure,
     TestUtils,
     Verdict,
@@ -35,7 +35,7 @@ from litmus import (
 )
 
 
-class CoapDevice(LitmusTest):
+class CoapDevice(TestComponent):
     """Identify the device, probe a missing resource, and echo payloads of each size."""
 
     def __init__(
@@ -68,7 +68,7 @@ class CoapDevice(LitmusTest):
             raise TestFailure(f"could not open a CoAP session to {url}: {error}") from error
         return {"api": api, "latency_limit_ms": self._latency_limit_ms}
 
-    def build_suite(self) -> LitmusTest:
+    def build_suite(self) -> TestComponent:
         """Identity first, then the independent exchanges together.
 
         The exchanges are independent claims, so they are a `parallel`. They share the
@@ -101,11 +101,11 @@ class CoapDevice(LitmusTest):
             "hello_latency_ms", latency_ms, unit="ms", limits=(None, utils.ctx["latency_limit_ms"])
         )
         body = response.body.decode(errors="replace")
-        if response.status == CoapCode.CONTENT and "litmus" in body and reading.in_limits:
+        if response.status == CoapCode.CONTENT and "hilt" in body and reading.in_limits:
             return PASS({"code": response.status, "body": body, "latency_ms": latency_ms})
         raise TestFailure(
             "device did not greet",
-            f"2.05 mentioning litmus within {reading.limits} ms",
+            f"2.05 mentioning hilt within {reading.limits} ms",
             f"code {response.status}, {body!r}, {latency_ms} ms",
         )
 

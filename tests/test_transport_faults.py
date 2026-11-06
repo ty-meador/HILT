@@ -24,8 +24,8 @@ import asyncssh
 import pytest
 from tests.loopback_sshd import LoopbackSshd
 
-from litmus.executor import DEFAULT_EXEC_OUTPUT_BUDGET
-from litmus.ssh import SshInterface
+from hilt.executor import DEFAULT_EXEC_OUTPUT_BUDGET
+from hilt.ssh import SshInterface
 
 _SETTLE_SECONDS = 2.0
 

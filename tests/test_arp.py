@@ -9,9 +9,9 @@ from typing import Any
 
 import pytest
 
-from litmus import PASS, ArpResolutionFailure, ArpResolver, TestFailure, TestUtils
-from litmus.executor import ExecResult, LocalExec
-from litmus.utils import ScopedLogger
+from hilt import PASS, ArpResolutionFailure, ArpResolver, TestFailure, TestUtils
+from hilt.executor import ExecResult, LocalExec
+from hilt.utils import ScopedLogger
 
 _ARP_TABLE = """\
 IP address       HW type     Flags       HW address            Mask     Device
@@ -56,19 +56,19 @@ class _ScriptedExec:
 
 class TestPublicSurface:
     def test_resolver_and_failure_are_exported(self) -> None:
-        import litmus
+        import hilt
 
-        assert litmus.ArpResolver is ArpResolver
-        assert "ArpResolver" in litmus.__all__
-        assert litmus.ArpResolutionFailure is ArpResolutionFailure
-        assert "ArpResolutionFailure" in litmus.__all__
+        assert hilt.ArpResolver is ArpResolver
+        assert "ArpResolver" in hilt.__all__
+        assert hilt.ArpResolutionFailure is ArpResolutionFailure
+        assert "ArpResolutionFailure" in hilt.__all__
 
 
 def _resolver(exec_fn: _ScriptedExec, *, mac: str = "AA-BB-CC-DD-EE-FF") -> ArpResolver:
     return ArpResolver(
         mac=mac,
         exec_fn=exec_fn,
-        logger=ScopedLogger(logging.getLogger("litmus"), ()),
+        logger=ScopedLogger(logging.getLogger("hilt"), ()),
         cache_key="local",
     )
 

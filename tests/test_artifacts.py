@@ -10,9 +10,9 @@ from typing import Protocol, cast
 
 import pytest
 
-import litmus
-from litmus import PASS, Artifact, LitmusTest, TestUtils, Verdict
-from litmus.lifecycle import State
+import hilt
+from hilt import PASS, Artifact, TestComponent, TestUtils, Verdict
+from hilt.lifecycle import State
 
 
 class _ArtifactPointerRecord(Protocol):
@@ -20,7 +20,7 @@ class _ArtifactPointerRecord(Protocol):
     artifact_path: str
     artifact_timestamp: str
     artifact_type: str
-    litmus_scope: tuple[str, ...]
+    hilt_scope: tuple[str, ...]
     message: str
 
 
@@ -28,8 +28,8 @@ class TestArtifactValue:
     def test_artifact_is_public_immutable_data_without_a_write_surface(self) -> None:
         artifact = Artifact(name="pre-flash", type="hardware-survey", data={"ready": True})
 
-        assert litmus.Artifact is Artifact
-        assert "Artifact" in litmus.__all__
+        assert hilt.Artifact is Artifact
+        assert "Artifact" in hilt.__all__
         assert not hasattr(artifact, "write")
         assert not hasattr(artifact, "write_file")
         with pytest.raises(FrozenInstanceError):
@@ -72,8 +72,8 @@ class TestCaptureArtifact:
         captured_paths: list[Path] = []
         timestamp = datetime(2026, 8, 30, 14, 5, 9, tzinfo=UTC)
 
-        class Suite(LitmusTest):
-            def build_suite(self) -> LitmusTest:
+        class Suite(TestComponent):
+            def build_suite(self) -> TestComponent:
                 return self.test("snapshot", self._snapshot)
 
             async def _snapshot(self, utils: TestUtils) -> Verdict:
@@ -86,8 +86,8 @@ class TestCaptureArtifact:
                 captured_paths.append(await utils.capture_artifact(artifact))
                 return PASS
 
-        with caplog.at_level(logging.INFO, logger="litmus"):
-            outcome = await Suite(name="rack").run(env={"LITMUS_ARTIFACT_ROOT": str(tmp_path)})
+        with caplog.at_level(logging.INFO, logger="hilt"):
+            outcome = await Suite(name="rack").run(env={"HILT_ARTIFACT_ROOT": str(tmp_path)})
 
         assert outcome.state is State.PASS
         assert len(captured_paths) == 1
@@ -117,7 +117,7 @@ class TestCaptureArtifact:
         assert pointer.artifact_type == "hardware-survey"
         assert pointer.artifact_path == str(artifact_path)
         assert pointer.artifact_timestamp == "2026-08-30T14:05:09Z"
-        assert pointer.litmus_scope == ("rack", "snapshot")
+        assert pointer.hilt_scope == ("rack", "snapshot")
 
     async def test_capture_rejects_unserializable_data_without_orphaning_a_file(
         self,
@@ -127,7 +127,7 @@ class TestCaptureArtifact:
         utils = TestUtils(artifact_root=tmp_path)
         artifact = Artifact(name="bad", type="survey", data=object())
 
-        with caplog.at_level(logging.INFO, logger="litmus"), pytest.raises(TypeError):
+        with caplog.at_level(logging.INFO, logger="hilt"), pytest.raises(TypeError):
             await utils.capture_artifact(artifact)
 
         assert await asyncio.to_thread(lambda: list(tmp_path.iterdir())) == []
@@ -145,7 +145,7 @@ class TestCaptureArtifact:
     def test_explicit_artifact_root_wins_over_the_environment(self, tmp_path: Path) -> None:
         explicit = tmp_path / "explicit"
         utils = TestUtils(
-            env={"LITMUS_ARTIFACT_ROOT": str(tmp_path / "environment")},
+            env={"HILT_ARTIFACT_ROOT": str(tmp_path / "environment")},
             artifact_root=explicit,
         )
 

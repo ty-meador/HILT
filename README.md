@@ -1,11 +1,11 @@
-![litmus test hero image](hero.png)
-# litmus
+![HILT hero image](hero.png)
+# HILT
 
 **Hardware-in-the-loop tests that can't quietly lie, and failures a technician can
 triage at 2am without calling you.**
 
-Litmus is an opinionated HIL test framework for Python. You write what you claim
-about the hardware. Litmus enforces the verdict, records the evidence as the test
+HILT (Hardware-In-the-Loop Testing) is an opinionated test framework for Python. You write what you claim
+about the hardware. HILT enforces the verdict, records the evidence as the test
 runs, and gives the floor a terminal Inspector for reading it. The same building
 block scales from one bench DUT to a rack of seventy running concurrently.
 
@@ -17,7 +17,7 @@ Most test scripts have one way to fail: something raises. A bad unit, a bug in t
 test, and a database timeout all raise, and all show up as the same red FAIL. The
 technician on shift guesses or escalates, and the line waits for an engineer.
 
-Litmus sets one bar and builds everything around it:
+HILT sets one bar and builds everything around it:
 
 > A Floor Technician can correctly categorize a failure and start the right recovery
 > protocol **within 60 seconds** of opening the Inspector, without messaging the
@@ -25,27 +25,27 @@ Litmus sets one bar and builds everything around it:
 
 ## Try it
 
-Requires Python 3.14 and [uv](https://docs.astral.sh/uv/). Litmus is not on PyPI yet;
+Requires Python 3.14 and [uv](https://docs.astral.sh/uv/). HILT is not on PyPI yet;
 install from a clone.
 
 ```sh
 make install
-uv run litmus run examples/hello_world.py
-uv run litmus inspect
+uv run hilt run examples/hello_world.py
+uv run hilt inspect
 ```
 
 A suite is a class, a claim is a method, and a verdict is explicit:
 
 ```python
-from litmus import PASS, LitmusTest, TestFailure, TestUtils, Verdict
+from hilt import PASS, TestComponent, TestFailure, TestUtils, Verdict
 
 
-class HelloWorld(LitmusTest):
+class HelloWorld(TestComponent):
     def __init__(self, *, name: str, greeting: str = "hello world") -> None:
         super().__init__(name=name)
         self._greeting = greeting
 
-    def build_suite(self) -> LitmusTest:
+    def build_suite(self) -> TestComponent:
         return self.test("say hello", self._say_hello)
 
     async def _say_hello(self, utils: TestUtils) -> Verdict:
@@ -62,7 +62,7 @@ station.
 ## Three outcomes, never merged
 
 **No pass by default.** "Reached the end without throwing" proves only that none of
-the failures you thought of happened. A Litmus test passes only by returning the
+the failures you thought of happened. A HILT test passes only by returning the
 `PASS` sentinel, which can't be forged from a string, a truthy value, or parsed config.
 Declare the readings a pass must carry with `@evidence(...)`, and a pass without them
 doesn't count.
@@ -78,7 +78,7 @@ different path:
 
 Two developer mistakes, two different states, on purpose. An unmodeled exception
 carries information about what went wrong, so it is recorded as a Fail and marked as
-a bug. A method that falls off the end produces nothing, and Litmus will not forge a
+a bug. A method that falls off the end produces nothing, and HILT will not forge a
 verdict from nothing, so the node is Aborted and marked as a bug. Both are loud. Neither
 takes down the sibling DUTs running beside it.
 
@@ -90,7 +90,7 @@ and point-in-time artifacts stitched onto that timeline. Entries are flushed as 
 written, so an interrupted run keeps its chronology up to the moment it stopped. With
 NTP-synced stations, that timeline holds up in a customer dispute.
 
-**One building block, bench to rack.** `LitmusTest` is the only unit. A leaf check, an
+**One building block, bench to rack.** `TestComponent` is the only unit. A leaf check, an
 ordered `sequence()`, a concurrent `parallel()`, a whole device, and a full rack are the
 same type, composed. No level knows what sits above it, so the test tree mirrors the
 hardware tree.
@@ -98,11 +98,11 @@ hardware tree.
 **Guardrails your team can't bypass.** Rules are enforced at runtime (one child
 boundary owns the verdict, the failure taxonomy, and lifecycle order, and `cleanup`
 always runs), at import time (a structurally broken suite refuses to load), and by
-static analysis (`litmus-check` flags an ungated `PASS`). Nothing that protects the
+static analysis (`hilt-check` flags an ungated `PASS`). Nothing that protects the
 hardware or the verdict relies on the linter alone.
 
 **Safe aborts.** When the integration layer fails mid-run or the operator hits Ctrl-C,
-Litmus closes every in-flight transport across the tree: SSH sessions destroyed,
+HILT closes every in-flight transport across the tree: SSH sessions destroyed,
 subprocesses killed. A 30-minute firmware flash doesn't keep writing to a board after
 the run is called off. Start and finish hooks stay paired, so your MES never gets
 orphan rows.
@@ -115,7 +115,7 @@ becomes the timeout message the technician reads. Time budgets (`fail_after=` /
 
 ## The Inspector
 
-`litmus inspect` opens any saved run in a terminal UI built for the person at the
+`hilt inspect` opens any saved run in a terminal UI built for the person at the
 station. The **Inspect** tab replays the evidence. The **Re-Run** tab re-runs any branch
 or leaf of the tree with the exact production code, without touching the production
 record.
@@ -159,20 +159,20 @@ The same record is available as versioned JSON (`--json`, with
 - [API stability](docs/api-stability.md): the public surface and versioning policy
 
 GitLab renders every page under
-https://gitlab.com/Tyler-Meador/litmus_test/-/tree/main/docs. Each release branch
+https://gitlab.com/Tyler-Meador/HILT/-/tree/main/docs. Each release branch
 also carries the built site under `docs/site/`, so a station can open it from a clone
 with no network. The
-[Floor Technician guide](https://gitlab.com/Tyler-Meador/litmus_test/-/blob/main/docs/floor-technician.md)
+[Floor Technician guide](https://gitlab.com/Tyler-Meador/HILT/-/blob/main/docs/floor-technician.md)
 is the URL that belongs on a station label.
 
 ## Status
 
-Litmus is at 0.0.x and the API is still moving. Semantic versioning starts at 1.0.0;
+HILT is at 0.0.x and the API is still moving. Semantic versioning starts at 1.0.0;
 until then [API stability](docs/api-stability.md) describes what may change and
 `CHANGELOG.md` records every change. Issues and merge requests are welcome.
 
 ## License
 
-Copyright 2026 Tyler Meador. Litmus-Test ("Litmus") is released under the Apache
+Copyright 2026 Tyler Meador. HILT is released under the Apache
 License, Version 2.0. The full text is in `LICENSE`; the copyright notice is in
 `NOTICE`. There is no warranty; see the license for the terms.

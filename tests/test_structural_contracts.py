@@ -1,17 +1,17 @@
-"""Import-time structural enforcement for authored LitmusTest subclasses."""
+"""Import-time structural enforcement for authored TestComponent subclasses."""
 
 from collections.abc import Mapping
 
 import pytest
 
-from litmus import PASS, ContractViolation, LitmusTest, Verdict
+from hilt import PASS, ContractViolation, TestComponent, Verdict
 
 
-def _suite(self: LitmusTest) -> LitmusTest:
+def _suite(self: TestComponent) -> TestComponent:
     return self.test("claim", self._claim)  # type: ignore[attr-defined]
 
 
-async def _replacement(self: LitmusTest, utils: object) -> Verdict:
+async def _replacement(self: TestComponent, utils: object) -> Verdict:
     return PASS
 
 
@@ -45,13 +45,13 @@ class TestSealedInternals:
         }
 
         with pytest.raises(TypeError, match=rf"{method_name}.*framework-owned"):
-            type(f"Overrides_{method_name}", (LitmusTest,), namespace)
+            type(f"Overrides_{method_name}", (TestComponent,), namespace)
 
 
 class TestCoroutineContracts:
     @pytest.mark.parametrize("method_name", ["configure", "cleanup"])
     def test_lifecycle_methods_must_be_coroutines(self, method_name: str) -> None:
-        def synchronous(self: LitmusTest, utils: object) -> object:
+        def synchronous(self: TestComponent, utils: object) -> object:
             return {}
 
         namespace: dict[str, object] = {
@@ -60,13 +60,13 @@ class TestCoroutineContracts:
         }
 
         with pytest.raises(TypeError, match=rf"{method_name}.*async def"):
-            type(f"Synchronous_{method_name}", (LitmusTest,), namespace)
+            type(f"Synchronous_{method_name}", (TestComponent,), namespace)
 
     def test_verdict_annotated_test_method_must_be_a_coroutine(self) -> None:
         with pytest.raises(TypeError, match=r"_claim.*async def"):
 
-            class SynchronousClaim(LitmusTest):  # pyright: ignore[reportUnusedClass]
-                def build_suite(self) -> LitmusTest:
+            class SynchronousClaim(TestComponent):  # pyright: ignore[reportUnusedClass]
+                def build_suite(self) -> TestComponent:
                     return self.test(
                         "claim",
                         self._claim,  # pyright: ignore[reportArgumentType]
@@ -80,8 +80,8 @@ class TestCoroutineContracts:
         # recognize it, or an evidence-carrying method could quietly be synchronous.
         with pytest.raises(TypeError, match=r"_claim.*async def"):
 
-            class SynchronousClaim(LitmusTest):  # pyright: ignore[reportUnusedClass]
-                def build_suite(self) -> LitmusTest:
+            class SynchronousClaim(TestComponent):  # pyright: ignore[reportUnusedClass]
+                def build_suite(self) -> TestComponent:
                     return self.test(
                         "claim",
                         self._claim,  # pyright: ignore[reportArgumentType]
@@ -94,15 +94,15 @@ class TestCoroutineContracts:
         "annotation",
         [
             "Verdict",
-            "litmus.verdict.Verdict",
+            "hilt.verdict.Verdict",
             "Verdict[Mapping[str, object]]",
-            "litmus.verdict.Verdict[Mapping[str, object]]",
+            "hilt.verdict.Verdict[Mapping[str, object]]",
         ],
     )
     def test_deferred_verdict_annotation_is_also_enforced(self, annotation: str) -> None:
         # Under `from __future__ import annotations` the hint is a string. Authors write
         # it bare, qualified, parameterized, or all three; each spelling is the contract.
-        def synchronous(self: LitmusTest, utils: object) -> object:
+        def synchronous(self: TestComponent, utils: object) -> object:
             return PASS
 
         synchronous.__annotations__["return"] = annotation
@@ -112,11 +112,11 @@ class TestCoroutineContracts:
         }
 
         with pytest.raises(TypeError, match=r"_claim.*async def"):
-            type("SynchronousClaim", (LitmusTest,), namespace)
+            type("SynchronousClaim", (TestComponent,), namespace)
 
     def test_sync_helper_without_a_verdict_contract_remains_valid(self) -> None:
-        class Suite(LitmusTest):
-            def build_suite(self) -> LitmusTest:
+        class Suite(TestComponent):
+            def build_suite(self) -> TestComponent:
                 return self.test("claim", self._claim)
 
             def _label(self) -> str:
@@ -129,8 +129,8 @@ class TestCoroutineContracts:
         assert Suite(name="rack").name == "rack"
 
     def test_specialization_cannot_drop_an_inherited_async_verdict_contract(self) -> None:
-        class BaseSuite(LitmusTest):
-            def build_suite(self) -> LitmusTest:
+        class BaseSuite(TestComponent):
+            def build_suite(self) -> TestComponent:
                 return self.test("claim", self._claim)
 
             async def _claim(self, utils: object) -> Verdict:
@@ -151,12 +151,12 @@ class TestBuildSuiteContract:
     def test_build_suite_must_be_implemented_by_an_authored_lineage(self) -> None:
         with pytest.raises(TypeError, match=r"build_suite.*must be overridden"):
 
-            class MissingSuite(LitmusTest):  # pyright: ignore[reportUnusedClass]
+            class MissingSuite(TestComponent):  # pyright: ignore[reportUnusedClass]
                 pass
 
     def test_specialization_may_inherit_an_authored_build_suite(self) -> None:
-        class BaseSuite(LitmusTest):
-            def build_suite(self) -> LitmusTest:
+        class BaseSuite(TestComponent):
+            def build_suite(self) -> TestComponent:
                 return self.test("claim", self._claim)
 
             async def _claim(self, utils: object) -> Verdict:
@@ -171,27 +171,27 @@ class TestBuildSuiteContract:
     def test_build_suite_must_be_a_synchronous_method(self) -> None:
         with pytest.raises(TypeError, match=r"build_suite.*def, not async def"):
 
-            class AsyncSuite(LitmusTest):  # pyright: ignore[reportUnusedClass]
+            class AsyncSuite(TestComponent):  # pyright: ignore[reportUnusedClass]
                 async def build_suite(  # pyright: ignore[reportIncompatibleMethodOverride]
                     self,
-                ) -> LitmusTest:
+                ) -> TestComponent:
                     return self
 
     def test_build_suite_must_be_a_method(self) -> None:
         with pytest.raises(TypeError, match=r"build_suite.*defined with def"):
-            type("DataSuite", (LitmusTest,), {"build_suite": object()})
+            type("DataSuite", (TestComponent,), {"build_suite": object()})
 
 
 class TestHookRegistrationShape:
     def test_audit_requires_interval_and_function_during_construction(self) -> None:
-        class MissingInterval(LitmusTest):
+        class MissingInterval(TestComponent):
             def __init__(self, *, name: str) -> None:
                 super().__init__(name=name)
                 self.use_audit(  # pyright: ignore[reportCallIssue]
                     fn=self._audit
                 )
 
-            def build_suite(self) -> LitmusTest:
+            def build_suite(self) -> TestComponent:
                 return self.test("claim", self._claim)
 
             async def _audit(self, utils: object) -> object:
@@ -204,12 +204,12 @@ class TestHookRegistrationShape:
             MissingInterval(name="rack")
 
     def test_registered_hook_functions_must_be_coroutines(self) -> None:
-        class SynchronousAudit(LitmusTest):
+        class SynchronousAudit(TestComponent):
             def __init__(self, *, name: str) -> None:
                 super().__init__(name=name)
                 self.use_audit(interval=1.0, fn=self._audit)  # type: ignore[arg-type]
 
-            def build_suite(self) -> LitmusTest:
+            def build_suite(self) -> TestComponent:
                 return self.test("claim", self._claim)
 
             def _audit(self, utils: object) -> object:
@@ -222,13 +222,13 @@ class TestHookRegistrationShape:
             SynchronousAudit(name="rack")
 
     def test_complete_hooks_register_during_construction(self) -> None:
-        class Suite(LitmusTest):
+        class Suite(TestComponent):
             def __init__(self, *, name: str) -> None:
                 super().__init__(name=name)
                 self.use_survey(self._survey)
                 self.use_audit(interval=1.0, fn=self._audit)
 
-            def build_suite(self) -> LitmusTest:
+            def build_suite(self) -> TestComponent:
                 return self.test("claim", self._claim)
 
             async def _survey(self, utils: object) -> object:
@@ -243,8 +243,8 @@ class TestHookRegistrationShape:
         assert Suite(name="rack").name == "rack"
 
     def test_hooks_cannot_be_registered_after_construction(self) -> None:
-        class Suite(LitmusTest):
-            def build_suite(self) -> LitmusTest:
+        class Suite(TestComponent):
+            def build_suite(self) -> TestComponent:
                 return self.test("claim", self._claim)
 
             async def _survey(self, utils: object) -> object:

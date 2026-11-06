@@ -12,20 +12,20 @@ from dataclasses import dataclass
 
 from tests.mock_connector import ConnectorInstaller
 
-from litmus import (
+from hilt import (
     PASS,
     BeforeEachContext,
-    LitmusTest,
     OperatorInterrupt,
     RunResult,
     SummaryTreeNode,
+    TestComponent,
     TestFailure,
     TestUtils,
     Verdict,
 )
-from litmus.executor import ExecResult
-from litmus.lifecycle import State
-from litmus.mock import MockTransport
+from hilt.executor import ExecResult
+from hilt.lifecycle import State
+from hilt.mock import MockTransport
 
 _DUT_COUNT = 70
 _MEMORY_ROUNDS = 4
@@ -61,7 +61,7 @@ class _AbortMeasurement:
     requested_at: float | None = None
 
 
-class _SyntheticDut(LitmusTest):
+class _SyntheticDut(TestComponent):
     """Represent one independently routed DUT in the synthetic rack."""
 
     def __init__(
@@ -88,7 +88,7 @@ class _SyntheticDut(LitmusTest):
         await utils.use_shell(host=host, username="root")
         return {}
 
-    def build_suite(self) -> LitmusTest:
+    def build_suite(self) -> TestComponent:
         """Run the DUT probe and, for one peer, the harness-abort trigger."""
         tests = [self.test("probe", self._probe)]
         if self._include_abort_trigger:
@@ -112,7 +112,7 @@ class _SyntheticDut(LitmusTest):
         return PASS
 
 
-class _SyntheticRack(LitmusTest):
+class _SyntheticRack(TestComponent):
     """Compose exactly seventy independent synthetic DUT lifecycles."""
 
     def __init__(
@@ -137,7 +137,7 @@ class _SyntheticRack(LitmusTest):
             for index, transport in enumerate(transports)
         )
 
-    def build_suite(self) -> LitmusTest:
+    def build_suite(self) -> TestComponent:
         """Run all DUT lifecycles under the rack's structured-concurrency owner."""
         return self.parallel("rack DUTs", self._duts)
 
@@ -185,9 +185,9 @@ async def _run_released_rack(install: ConnectorInstaller) -> None:
     assert result.state is State.PASS
 
 
-def _retained_litmus_bytes() -> int:
+def _retained_hilt_bytes() -> int:
     snapshot = tracemalloc.take_snapshot().filter_traces(
-        (tracemalloc.Filter(True, "*/src/litmus/*"),)
+        (tracemalloc.Filter(True, "*/src/hilt/*"),)
     )
     return sum(stat.size for stat in snapshot.statistics("filename"))
 
@@ -241,18 +241,18 @@ class TestRackScale:
         try:
             await _run_released_rack(install_mock_connector)
             gc.collect()
-            baseline = _retained_litmus_bytes()
+            baseline = _retained_hilt_bytes()
             samples: list[int] = []
             for _ in range(_MEMORY_ROUNDS):
                 await _run_released_rack(install_mock_connector)
                 gc.collect()
-                samples.append(_retained_litmus_bytes())
+                samples.append(_retained_hilt_bytes())
         finally:
             tracemalloc.stop()
 
         retained_growth = max(samples) - baseline
         assert retained_growth <= _RETAINED_MEMORY_LIMIT_BYTES, (
-            f"retained Litmus memory grew by {retained_growth} bytes; "
+            f"retained HILT memory grew by {retained_growth} bytes; "
             f"limit is {_RETAINED_MEMORY_LIMIT_BYTES} bytes"
         )
 

@@ -2,7 +2,7 @@
 
 An honest OS peer: a real sshd, real PAM, a real ``uname``, on a kernel that is not
 the host's. The image is Debian's own cloud build, verified against its SHA512SUMS
-and cached once under ``~/.cache/litmus-bench/``; every boot runs on a throwaway
+and cached once under ``~/.cache/hilt-bench/``; every boot runs on a throwaway
 qcow2 overlay so the base stays pristine. A cloud-init seed ISO (``xorriso``) creates
 the ``bench`` user with a bench-only ed25519 key for ``check`` and a password for the
 shipped example, which resolves credentials from the environment and has no key path.
@@ -13,7 +13,7 @@ shipped example, which resolves credentials from the environment and has no key 
     check   SshInterface contract: connect, exec, status, provenance
 
 Needs ``qemu-system-x86_64``, ``xorriso``, ``ssh-keygen`` and ``/dev/kvm`` (kvm group).
-Forwarded port: ``LITMUS_BENCH_SSH_PORT`` (default 2222) on 127.0.0.1.
+Forwarded port: ``HILT_BENCH_SSH_PORT`` (default 2222) on 127.0.0.1.
 """
 
 from __future__ import annotations
@@ -28,14 +28,14 @@ import urllib.request
 from pathlib import Path
 
 from bench._common import cache_dir, pid_from, report, require_tool, run
-from litmus.ssh import SshInterface
+from hilt.ssh import SshInterface
 
 IMAGE_BASE = "https://cloud.debian.org/images/cloud/trixie/latest/"
 IMAGE_NAME = "debian-13-genericcloud-amd64.qcow2"
 USER = "bench"
 PASSWORD = "bench"
 HOST = "127.0.0.1"
-PORT = int(os.environ.get("LITMUS_BENCH_SSH_PORT", "2222"))
+PORT = int(os.environ.get("HILT_BENCH_SSH_PORT", "2222"))
 MEMORY_MIB = "1024"
 BOOT_TIMEOUT = 240.0
 
@@ -87,7 +87,7 @@ def ensure_key(key: Path) -> str:
                 "-N",
                 "",
                 "-C",
-                "litmus-bench",
+                "hilt-bench",
                 "-f",
                 str(key),
             ]
@@ -98,7 +98,7 @@ def ensure_key(key: Path) -> str:
 def ensure_seed(seed_dir: Path, seed: Path, pubkey: str) -> None:
     """Write the NoCloud seed (user-data, meta-data) and pack it as a ``cidata`` ISO."""
     seed_dir.mkdir(exist_ok=True)
-    (seed_dir / "meta-data").write_text("instance-id: litmus-bench\nlocal-hostname: litmus-dut\n")
+    (seed_dir / "meta-data").write_text("instance-id: hilt-bench\nlocal-hostname: hilt-dut\n")
     (seed_dir / "user-data").write_text(
         "#cloud-config\n"
         "ssh_pwauth: true\n"

@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://gitlab.com/Tyler-Meador/litmus_test/-/raw/main/docs/schema/timeline-v1.schema.json",
-  "title": "litmus timeline record, format_version 1",
+  "$id": "https://gitlab.com/Tyler-Meador/HILT/-/raw/main/docs/schema/timeline-v1.schema.json",
+  "title": "hilt timeline record, format_version 1",
   "description": "One JSON Lines object from a node's timeline.jsonl: the temporal view of a run. Every physical line of the file is one complete instance of this schema. The object stays open so a consumer accepts fields added within version 1 by a later release; docs/inspector-json.md carries the policy.",
   "type": "object",
   "required": ["format_version", "timestamp", "scope", "level", "message"],

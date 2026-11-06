@@ -6,18 +6,18 @@ from enum import StrEnum
 
 import pytest
 
-from litmus import (
+from hilt import (
     PASS,
     AfterEachContext,
     BeforeEachContext,
     ExternalIntegrationFailure,
-    LitmusTest,
+    TestComponent,
     TestFailure,
     TestUtils,
     Verdict,
 )
-from litmus.lifecycle import State
-from litmus.results import RunResult, SummaryTreeNode
+from hilt.lifecycle import State
+from hilt.results import RunResult, SummaryTreeNode
 
 
 class _RaceArm(StrEnum):
@@ -60,7 +60,7 @@ class _RaceControls:
         gates[arm].set()
 
 
-class _WatchedSuite(LitmusTest):
+class _WatchedSuite(TestComponent):
     """Expose independently gated authored-main and audit settlements."""
 
     def __init__(
@@ -75,7 +75,7 @@ class _WatchedSuite(LitmusTest):
         self._audit_failure = audit_failure
         self.use_audit(interval=0.000_001, fn=self._audit)
 
-    def build_suite(self) -> LitmusTest:
+    def build_suite(self) -> TestComponent:
         """Return the single authored claim watched by the audit."""
         return self.test("authored main", self._main)
 
@@ -94,10 +94,10 @@ class _WatchedSuite(LitmusTest):
         raise self._audit_failure
 
 
-class _AbortProbe(LitmusTest):
+class _AbortProbe(TestComponent):
     """Give the root integration hook a concurrent node on which to halt."""
 
-    def build_suite(self) -> LitmusTest:
+    def build_suite(self) -> TestComponent:
         """Return a claim that remains unreachable when its before hook aborts."""
         return self.test("unreachable claim", self._claim)
 
@@ -107,15 +107,15 @@ class _AbortProbe(LitmusTest):
         raise TestFailure("abort probe received the wrong scope")
 
 
-class _RaceRoot(LitmusTest):
+class _RaceRoot(TestComponent):
     """Compose the watched node beside the independent abort trigger."""
 
-    def __init__(self, *, name: str, watched: LitmusTest, abort_probe: LitmusTest) -> None:
+    def __init__(self, *, name: str, watched: TestComponent, abort_probe: TestComponent) -> None:
         super().__init__(name=name)
         self._watched = watched
         self._abort_probe = abort_probe
 
-    def build_suite(self) -> LitmusTest:
+    def build_suite(self) -> TestComponent:
         """Run the three race contenders under one shared run-abort signal."""
         return self.parallel("race", [self._watched, self._abort_probe])
 

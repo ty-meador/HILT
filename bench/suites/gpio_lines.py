@@ -12,7 +12,7 @@ Blocking ``gpiod`` calls run under ``asyncio.to_thread`` so a parked edge wait c
 stall the audit clock or the sibling leaf. The framework's abort sweep does not know
 about the requests; the ``with`` blocks release them on any exit.
 
-Needs the ``bench`` dependency group: ``uv run --group bench litmus run ...``.
+Needs the ``bench`` dependency group: ``uv run --group bench hilt run ...``.
 """
 
 from __future__ import annotations
@@ -26,23 +26,23 @@ from typing import Any
 import gpiod
 from gpiod.line import Direction, Edge, Value
 
-from litmus import PASS, LitmusTest, TestFailure, TestUtils, Verdict, evidence
+from hilt import PASS, TestComponent, TestFailure, TestUtils, Verdict, evidence
 
 type _Config = dict[Iterable[int | str] | int | str, gpiod.LineSettings | None]
 
 
-class GpioHeader(LitmusTest):
+class GpioHeader(TestComponent):
     """Input, output, and edge events on three lines of one chip."""
 
     def __init__(
         self,
         *,
         name: str = "gpio",
-        sim: str = "/sys/kernel/config/gpio-sim/litmus",
+        sim: str = "/sys/kernel/config/gpio-sim/hilt",
         input_line: int = 0,
         output_line: int = 1,
         edge_line: int = 2,
-        consumer: str = "litmus-bench",
+        consumer: str = "hilt-bench",
         edge_latency_limit_us: float = 5000.0,
         edge_wait_s: float = 1.0,
     ) -> None:
@@ -89,7 +89,7 @@ class GpioHeader(LitmusTest):
             "edge_wait_s": self._edge_wait_s,
         }
 
-    def build_suite(self) -> LitmusTest:
+    def build_suite(self) -> TestComponent:
         """Three lines, three independent claims."""
         return self.parallel(
             self.name,

@@ -21,7 +21,7 @@ from tests.inspector_rack import (
     saved_bytes,
 )
 
-from litmus.inspector_app import (
+from hilt.inspector_app import (
     ArtifactScreen,
     InspectorApp,
     RowDisplay,
@@ -33,14 +33,14 @@ from litmus.inspector_app import (
     _tree_prefixes,  # pyright: ignore[reportPrivateUsage]
     _window,  # pyright: ignore[reportPrivateUsage]
 )
-from litmus.inspector_artifact_view import ArtifactModal
-from litmus.inspector_artifacts import ArtifactReader
-from litmus.inspector_rerun import RerunRecord, RerunSession
-from litmus.inspector_run import SavedRun
-from litmus.inspector_selection import SelectionView
-from litmus.inspector_timeline import TimelineDiagnostic, TimelineRead, TimelineRecord
-from litmus.inspector_timeline_view import TimelineEntry, TimelineView
-from litmus.inspector_tree import TreeRow
+from hilt.inspector_artifact_view import ArtifactModal
+from hilt.inspector_artifacts import ArtifactReader
+from hilt.inspector_rerun import RerunRecord, RerunSession
+from hilt.inspector_run import SavedRun
+from hilt.inspector_selection import SelectionView
+from hilt.inspector_timeline import TimelineDiagnostic, TimelineRead, TimelineRecord
+from hilt.inspector_timeline_view import TimelineEntry, TimelineView
+from hilt.inspector_tree import TreeRow
 
 SIZE = (100, 30)
 
