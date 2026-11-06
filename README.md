@@ -21,7 +21,11 @@ failure that doesn't raise doesn't show up at all; it passes. In the former case
 the technician on shift guesses or escalates and the line waits for an engineer;
 in the latter, a bad unit ships to the customer.
 
-HILT sets one bar and builds everything around it:
+HILT closes both gaps. A test passes only by returning an explicit verdict, so a
+failure that never raises cannot pass by default. And every failure it records is
+sorted by cause before anyone reads it: bad unit, bad bench, or bad test. That
+sorting is held to one bar, and everything else in the framework is built around
+meeting it:
 
 > A Floor Technician can correctly categorize a failure and start the right recovery
 > protocol **within 60 seconds** of opening the Inspector, without messaging the
