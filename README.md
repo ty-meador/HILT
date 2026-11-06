@@ -23,9 +23,13 @@ in the latter, a bad unit ships to the customer.
 
 HILT closes both gaps. A test passes only by returning an explicit verdict, so a
 failure that never raises cannot pass by default. And every failure it records is
-sorted by cause before anyone reads it: bad unit, bad bench, or bad test. That
-sorting is held to one bar, and everything else in the framework is built around
-meeting it:
+sorted by cause before anyone reads it: bad unit, bad bench, or bad test.
+
+That is what the pit of success is for. The guardrails push the engineer to name
+each failure mode while the test is being written, and the engine holds that line
+at run time, so the sorting is done before the suite ever reaches the floor. The
+same component composes from one bench DUT to a rack, so it is done once. Every
+guardrail and every line of the engine is measured against one bar:
 
 > A Floor Technician can correctly categorize a failure and start the right recovery
 > protocol **within 60 seconds** of opening the Inspector, without messaging the
