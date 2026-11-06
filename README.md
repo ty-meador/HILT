@@ -16,7 +16,8 @@ reading it, so a technician can triage a failure at 2am without calling you.
 ## Why
 
 Most test scripts have one way to fail: something raises. A bad unit, a bug in the
-test, and a database timeout all raise, and all show up as the same red FAIL. The
+test, and a database timeout all raise, and all show up as the same red FAIL. A
+failure that doesn't raise doesn't show up at all; it passes. Either way the
 technician on shift guesses or escalates, and the line waits for an engineer.
 
 HILT sets one bar and builds everything around it:
