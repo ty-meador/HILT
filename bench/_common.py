@@ -14,7 +14,7 @@ from pathlib import Path
 
 def cache_dir() -> Path:
     """Where images, keys, overlays, and container build contexts live (not the tree)."""
-    root = Path(os.environ.get("LITMUS_BENCH_CACHE", Path.home() / ".cache" / "litmus-bench"))
+    root = Path(os.environ.get("HILT_BENCH_CACHE", Path.home() / ".cache" / "hilt-bench"))
     root.mkdir(parents=True, exist_ok=True)
     return root
 

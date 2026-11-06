@@ -1,6 +1,6 @@
-"""`litmus.__all__` is the public surface and `docs/api-stability.md` is its record.
+"""`hilt.__all__` is the public surface and `docs/api-stability.md` is its record.
 
-The two must name the same set, every name must resolve to a documented litmus object
+The two must name the same set, every name must resolve to a documented hilt object
 of the kind the table claims, and the examples and documented code blocks must reach
 the surface only through the package root. An MR that changes one without the others
 is refused here, not discovered by a station.
@@ -18,7 +18,7 @@ from typing import TypeAliasType
 
 import pytest
 
-import litmus
+import hilt
 
 ROOT = Path(__file__).resolve().parents[1]
 POLICY = ROOT / "docs" / "api-stability.md"
@@ -59,19 +59,15 @@ def _kind_of(obj: object) -> str:
     return "constant"
 
 
-def _litmus_imports(tree: ast.AST) -> Iterator[tuple[str, str]]:
-    """Every (module, name) an import statement pulls from the litmus package."""
+def _hilt_imports(tree: ast.AST) -> Iterator[tuple[str, str]]:
+    """Every (module, name) an import statement pulls from the hilt package."""
     for node in ast.walk(tree):
-        if (
-            isinstance(node, ast.ImportFrom)
-            and node.module
-            and node.module.split(".")[0] == "litmus"
-        ):
+        if isinstance(node, ast.ImportFrom) and node.module and node.module.split(".")[0] == "hilt":
             for alias in node.names:
                 yield node.module, alias.name
         if isinstance(node, ast.Import):
             for alias in node.names:
-                if alias.name.split(".")[0] == "litmus":
+                if alias.name.split(".")[0] == "hilt":
                     yield alias.name, "<module>"
 
 
@@ -103,61 +99,59 @@ def _import_lines(block: str) -> Iterator[tuple[str, str]]:
             statement.append(stripped)
             if ")" not in stripped:
                 continue
-        elif stripped.startswith(("from litmus", "import litmus")):
+        elif stripped.startswith(("from hilt", "import hilt")):
             statement.append(stripped)
             if stripped.endswith("("):
                 continue
         else:
             continue
-        yield from _litmus_imports(ast.parse(" ".join(statement)))
+        yield from _hilt_imports(ast.parse(" ".join(statement)))
         statement = []
 
 
 class TestDunderAll:
-    def test_every_public_name_is_a_litmus_object(self) -> None:
-        for name in litmus.__all__:
-            obj = getattr(litmus, name)
+    def test_every_public_name_is_a_hilt_object(self) -> None:
+        for name in hilt.__all__:
+            obj = getattr(hilt, name)
             module = getattr(obj, "__module__", None) or type(obj).__module__
-            assert module.split(".")[0] == "litmus", (
-                f"{name} resolves outside the package: {module}"
-            )
+            assert module.split(".")[0] == "hilt", f"{name} resolves outside the package: {module}"
 
     def test_no_public_name_is_underscored(self) -> None:
-        assert [name for name in litmus.__all__ if name.startswith("_")] == []
+        assert [name for name in hilt.__all__ if name.startswith("_")] == []
 
     def test_public_names_are_unique(self) -> None:
-        assert len(set(litmus.__all__)) == len(litmus.__all__)
+        assert len(set(hilt.__all__)) == len(hilt.__all__)
 
     def test_every_public_class_states_its_contract(self) -> None:
         undocumented = [
             name
-            for name in litmus.__all__
-            if inspect.isclass(getattr(litmus, name))
-            and not (inspect.getdoc(getattr(litmus, name)) or "").strip()
+            for name in hilt.__all__
+            if inspect.isclass(getattr(hilt, name))
+            and not (inspect.getdoc(getattr(hilt, name)) or "").strip()
         ]
         assert undocumented == []
 
     def test_version_is_the_installed_distribution(self) -> None:
-        assert litmus.__version__ == importlib.metadata.version("litmus")
-        assert _SEMVER.match(litmus.__version__), litmus.__version__
+        assert hilt.__version__ == importlib.metadata.version("hilt")
+        assert _SEMVER.match(hilt.__version__), hilt.__version__
 
 
 class TestReferenceTable:
     def test_table_and_dunder_all_name_the_same_set(self) -> None:
         rows = _reference_rows()
-        assert set(rows) == set(litmus.__all__), {
-            "in __all__ only": sorted(set(litmus.__all__) - set(rows)),
-            "in table only": sorted(set(rows) - set(litmus.__all__)),
+        assert set(rows) == set(hilt.__all__), {
+            "in __all__ only": sorted(set(hilt.__all__) - set(rows)),
+            "in table only": sorted(set(rows) - set(hilt.__all__)),
         }
 
     def test_table_rows_follow_dunder_all_order(self) -> None:
-        assert list(_reference_rows()) == list(litmus.__all__)
+        assert list(_reference_rows()) == list(hilt.__all__)
 
     def test_declared_kind_matches_the_object(self) -> None:
         mismatched = {
-            name: (kind, _kind_of(getattr(litmus, name)))
+            name: (kind, _kind_of(getattr(hilt, name)))
             for name, kind in _reference_rows().items()
-            if kind != _kind_of(getattr(litmus, name))
+            if kind != _kind_of(getattr(hilt, name))
         }
         assert mismatched == {}
 
@@ -171,7 +165,7 @@ class TestReferenceTable:
         assert len(rows) == 1
         promised = re.findall(r"`([a-z_]+)`", rows[0].split("|")[3])
         assert {"use_shell", "get_shell", "use_serial", "get_serial"} <= set(promised)
-        missing = [name for name in promised if not hasattr(litmus.TestUtils, name)]
+        missing = [name for name in promised if not hasattr(hilt.TestUtils, name)]
         assert missing == []
 
     def test_every_row_points_at_a_document_that_exists(self) -> None:
@@ -188,22 +182,22 @@ class TestReferenceTable:
 
 class TestSurfaceIsReachedThroughThePackageRoot:
     @pytest.mark.parametrize("example", sorted(EXAMPLES.glob("*.py")), ids=lambda p: p.name)
-    def test_examples_import_only_public_names_from_litmus(self, example: Path) -> None:
+    def test_examples_import_only_public_names_from_hilt(self, example: Path) -> None:
         tree = ast.parse(example.read_text(encoding="utf-8"))
         offending = [
             (module, name)
-            for module, name in _litmus_imports(tree)
-            if module != "litmus" or name not in litmus.__all__
+            for module, name in _hilt_imports(tree)
+            if module != "hilt" or name not in hilt.__all__
         ]
         assert offending == []
 
     @pytest.mark.parametrize("document", DOCUMENTS, ids=lambda p: p.name)
-    def test_documented_code_imports_only_public_names_from_litmus(self, document: Path) -> None:
+    def test_documented_code_imports_only_public_names_from_hilt(self, document: Path) -> None:
         offending = [
             (start, module, name)
             for start, block in _python_blocks(document)
             for module, name in _import_lines(block)
-            if module != "litmus" or name not in litmus.__all__
+            if module != "hilt" or name not in hilt.__all__
         ]
         assert offending == []
 
@@ -215,4 +209,4 @@ class TestSurfaceIsReachedThroughThePackageRoot:
             for _, block in _python_blocks(document)
             for module, name in _import_lines(block)
         ]
-        assert ("litmus", "JsonObject") in found
+        assert ("hilt", "JsonObject") in found

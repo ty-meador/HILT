@@ -8,10 +8,10 @@ from typing import cast
 
 import pytest
 
-from litmus import PASS, Artifact, LitmusTest, TestUtils, Verdict
-from litmus.inspector_artifacts import ArtifactContent, ArtifactDiagnostic, ArtifactReader
-from litmus.inspector_timeline import TimelineReader, TimelineRecord
-from litmus.run_data import JsonObject, JsonValue
+from hilt import PASS, Artifact, TestComponent, TestUtils, Verdict
+from hilt.inspector_artifacts import ArtifactContent, ArtifactDiagnostic, ArtifactReader
+from hilt.inspector_timeline import TimelineReader, TimelineRecord
+from hilt.run_data import JsonObject, JsonValue
 
 
 def _capture(**changes: JsonValue) -> JsonObject:
@@ -30,7 +30,7 @@ class TestArtifactReader:
     def test_installed_schema_is_the_published_contract(self, name: str) -> None:
         relative = f"{name}-v1.schema.json"
         published = Path(__file__).resolve().parents[1] / "docs/schema" / relative
-        installed = distribution("litmus").locate_file(f"litmus_data/{relative}")
+        installed = distribution("hilt").locate_file(f"hilt_data/{relative}")
         assert installed.read_bytes() == published.read_bytes()
 
     @pytest.mark.parametrize("data", [None, {}, [], "", False, 0, "π"])
@@ -190,11 +190,11 @@ class TestArtifactReader:
     async def test_reads_captures_and_root_result_from_a_moved_seventy_dut_run(
         self, tmp_path: Path
     ) -> None:
-        class Suite(LitmusTest):
+        class Suite(TestComponent):
             async def configure(self, utils: TestUtils) -> dict[str, str]:
                 return {"dut": self.name}
 
-            def build_suite(self) -> LitmusTest:
+            def build_suite(self) -> TestComponent:
                 return self.test("snapshot", self._snapshot)
 
             async def _snapshot(self, utils: TestUtils) -> Verdict:
@@ -205,12 +205,12 @@ class TestArtifactReader:
                     return PASS
                 raise AssertionError("capture did not settle")
 
-        class Rack(LitmusTest):
-            def build_suite(self) -> LitmusTest:
+        class Rack(TestComponent):
+            def build_suite(self) -> TestComponent:
                 return self.parallel("devices", [Suite(name=f"dut-{i:02d}") for i in range(70)])
 
         suite = Rack(name="rack")
-        result = await suite.run(env={"LITMUS_ARTIFACT_ROOT": str(tmp_path / "original")})
+        result = await suite.run(env={"HILT_ARTIFACT_ROOT": str(tmp_path / "original")})
         assert suite.log_path is not None
         original_root = suite.log_path.parent.parent
         paths = await asyncio.to_thread(lambda: sorted(original_root.rglob("timeline.jsonl")))

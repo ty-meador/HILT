@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://gitlab.com/Tyler-Meador/litmus_test/-/raw/main/docs/schema/artifact-v1.schema.json",
-  "title": "litmus artifact envelope, format_version 1",
+  "$id": "https://gitlab.com/Tyler-Meador/HILT/-/raw/main/docs/schema/artifact-v1.schema.json",
+  "title": "hilt artifact envelope, format_version 1",
   "description": "Point-in-time evidence published by capture_artifact. The envelope remains open for additive fields within version 1; data is the observation, including explicit null, and never a viewer-computed verdict.",
   "type": "object",
   "required": ["format_version", "name", "type", "timestamp", "data"],

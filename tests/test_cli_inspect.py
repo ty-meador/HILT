@@ -1,4 +1,4 @@
-"""``litmus inspect``: what it opens, how it finds the latest run, and what it refuses.
+"""``hilt inspect``: what it opens, how it finds the latest run, and what it refuses.
 
 Every test records a real run and then forbids suite execution before the command is
 invoked, so a passing test is also the proof that inspection runs no suite code. The
@@ -18,22 +18,22 @@ from pathlib import Path
 import pytest
 from tests.inspector_rack import record_mixed_run
 
-from litmus import LitmusTest
-from litmus.cli import (
+from hilt import TestComponent
+from hilt.cli import (
     EXIT_PASS,
     EXIT_USAGE,
-    LitmusCommand,
+    HiltCommand,
     SavedRunLocator,
     SuiteLoader,
     UsageError,
 )
-from litmus.inspector_rerun import RerunSession
-from litmus.inspector_run import SavedRun
+from hilt.inspector_rerun import RerunSession
+from hilt.inspector_run import SavedRun
 
 
 def _run(*argv: str) -> tuple[int, str, str]:
     out, err = io.StringIO(), io.StringIO()
-    status = LitmusCommand(stdout=out, stderr=err).run(argv)
+    status = HiltCommand(stdout=out, stderr=err).run(argv)
     return status, out.getvalue(), err.getvalue()
 
 
@@ -68,16 +68,16 @@ def opened(monkeypatch: pytest.MonkeyPatch) -> _Opened:
         def run(self) -> None:
             recorded.runs.append(self._saved)
 
-    monkeypatch.setattr("litmus.cli.InspectorApp", _Recorder)
+    monkeypatch.setattr("hilt.cli.InspectorApp", _Recorder)
     return recorded
 
 
 _SUITE = """
-from litmus import PASS, LitmusTest, TestUtils, Verdict
+from hilt import PASS, TestComponent, TestUtils, Verdict
 
 
-class Bench(LitmusTest):
-    def build_suite(self) -> LitmusTest:
+class Bench(TestComponent):
+    def build_suite(self) -> TestComponent:
         return self.test("claim", self._claim)
 
     async def _claim(self, utils: TestUtils) -> Verdict:
@@ -117,7 +117,7 @@ class TestOpening:
         text = capsys.readouterr().out
         assert "PATH" in text
         assert "--artifact-root" in text
-        assert "LITMUS_ARTIFACT_ROOT" in text
+        assert "HILT_ARTIFACT_ROOT" in text
         assert "--suite" in text
 
 
@@ -146,7 +146,7 @@ class TestRerunSuite:
         root = tmp_path / "evidence"
         assert _run("run", "--artifact-root", str(root), str(suite))[0] == EXIT_PASS
 
-        def refuse_load(self: SuiteLoader, target: str) -> type[LitmusTest]:
+        def refuse_load(self: SuiteLoader, target: str) -> type[TestComponent]:
             raise AssertionError("loaded at open")
 
         monkeypatch.setattr(SuiteLoader, "load", refuse_load)
@@ -168,7 +168,7 @@ class TestRerunSuite:
         status, _, err = _run("inspect", str(run_root), "--suite", str(tmp_path / "gone.py"))
 
         assert (status, opened.runs) == (EXIT_USAGE, [])
-        assert err.startswith("litmus inspect: error: ")
+        assert err.startswith("hilt inspect: error: ")
         assert "no such file" in err
 
     def test_an_explicit_suite_of_another_shape_is_refused_on_the_tab(
@@ -207,7 +207,7 @@ class TestLatestRun:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, opened: _Opened
     ) -> None:
         _, newer = self._two_runs(tmp_path, monkeypatch)
-        monkeypatch.setenv("LITMUS_ARTIFACT_ROOT", str(tmp_path))
+        monkeypatch.setenv("HILT_ARTIFACT_ROOT", str(tmp_path))
 
         status, _, err = _run("inspect")
 
@@ -218,7 +218,7 @@ class TestLatestRun:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, opened: _Opened
     ) -> None:
         older, newer = self._two_runs(tmp_path, monkeypatch)
-        monkeypatch.setenv("LITMUS_ARTIFACT_ROOT", str(tmp_path / "second"))
+        monkeypatch.setenv("HILT_ARTIFACT_ROOT", str(tmp_path / "second"))
 
         status, _, err = _run("inspect", "--artifact-root", str(tmp_path / "first"))
 
@@ -231,7 +231,7 @@ class TestLatestRun:
     ) -> None:
         run_root = _record(tmp_path, monkeypatch)
         shutil.move(run_root, tmp_path / "artifacts" / "kept")
-        monkeypatch.delenv("LITMUS_ARTIFACT_ROOT")
+        monkeypatch.delenv("HILT_ARTIFACT_ROOT")
         monkeypatch.chdir(tmp_path)
 
         status, _, err = _run("inspect")
@@ -256,12 +256,12 @@ class TestRefusals:
     ) -> None:
         empty = tmp_path / "empty"
         empty.mkdir()
-        monkeypatch.setenv("LITMUS_ARTIFACT_ROOT", str(empty))
+        monkeypatch.setenv("HILT_ARTIFACT_ROOT", str(empty))
 
         status, out, err = _run("inspect")
 
         assert (status, out, opened.runs) == (EXIT_USAGE, "", [])
-        assert err.startswith("litmus inspect: error: no saved run under ")
+        assert err.startswith("hilt inspect: error: no saved run under ")
         assert str(empty) in err
         assert "nothing to inspect" in err
 
@@ -277,7 +277,7 @@ class TestRefusals:
         status, _, err = _run("inspect", str(absent))
 
         assert (status, opened.runs) == (EXIT_USAGE, [])
-        assert err.startswith("litmus inspect: error: ")
+        assert err.startswith("hilt inspect: error: ")
         assert str(absent) in err
         assert "unavailable" in err
 
@@ -300,5 +300,5 @@ class TestRefusals:
         status, _, err = _run("inspect", str(result))
 
         assert (status, opened.runs) == (EXIT_USAGE, [])
-        assert err.startswith("litmus inspect: error: ")
+        assert err.startswith("hilt inspect: error: ")
         assert str(result) in err

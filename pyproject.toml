@@ -1,5 +1,5 @@
 [project]
-name = "litmus"
+name = "hilt"
 version = "0.0.1"
 description = "React-for-hardware HIL testing framework — Python port"
 readme = "README.md"
@@ -39,11 +39,11 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://gitlab.com/Tyler-Meador/litmus_test"
-Documentation = "https://gitlab.com/Tyler-Meador/litmus_test/-/tree/main/docs"
-Source = "https://gitlab.com/Tyler-Meador/litmus_test"
-Issues = "https://gitlab.com/Tyler-Meador/litmus_test/-/issues"
-Changelog = "https://gitlab.com/Tyler-Meador/litmus_test/-/blob/main/CHANGELOG.md"
+Homepage = "https://gitlab.com/Tyler-Meador/HILT"
+Documentation = "https://gitlab.com/Tyler-Meador/HILT/-/tree/main/docs"
+Source = "https://gitlab.com/Tyler-Meador/HILT"
+Issues = "https://gitlab.com/Tyler-Meador/HILT/-/issues"
+Changelog = "https://gitlab.com/Tyler-Meador/HILT/-/blob/main/CHANGELOG.md"
 
 [project.optional-dependencies]
 pylsp = [
@@ -77,24 +77,24 @@ dev = [
 ]
 
 [project.scripts]
-litmus = "litmus.cli:main"
-litmus-check = "litmus_check.cli:main"
+hilt = "hilt.cli:main"
+hilt-check = "hilt_check.cli:main"
 
 [project.entry-points.pylsp]
-litmus_check = "litmus_check.pylsp_plugin"
+hilt_check = "hilt_check.pylsp_plugin"
 
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/litmus", "tools/litmus_check"]
+packages = ["src/hilt", "tools/hilt_check"]
 
 # The Inspector validates against the published contract, including outside a checkout.
 [tool.hatch.build.targets.wheel.force-include]
-"docs/schema/timeline-v1.schema.json" = "litmus_data/timeline-v1.schema.json"
-"docs/schema/artifact-v1.schema.json" = "litmus_data/artifact-v1.schema.json"
-"docs/schema/result-v1.schema.json" = "litmus_data/result-v1.schema.json"
+"docs/schema/timeline-v1.schema.json" = "hilt_data/timeline-v1.schema.json"
+"docs/schema/artifact-v1.schema.json" = "hilt_data/artifact-v1.schema.json"
+"docs/schema/result-v1.schema.json" = "hilt_data/result-v1.schema.json"
 
 # ---------------------------------------------------------------------------
 # Tooling — single source of truth. Run via `make`; do not override locally.
@@ -135,14 +135,14 @@ convention = "google"
 [tool.ruff.lint.per-file-ignores]
 # Tests document by name (STANDARDS.md §6): the coverage rules (D1xx) are off, the
 # format rules stay on so a docstring that is written is written the same way. The
-# basename pattern reaches the pytest stub `litmus new` writes, which
+# basename pattern reaches the pytest stub `hilt new` writes, which
 # tests/test_scaffold.py lints under this config from a temporary directory.
 "tests/**" = ["D1"]
 "test_*.py" = ["D1"]
 # The failure taxonomy's class names are fixed by PLAN.md section 2 and carried from
 # the legacy framework — they are the vocabulary the FT and the artifacts already use.
 # An `Error` suffix would rename a published contract to satisfy a naming convention.
-"src/litmus/errors.py" = ["N818"]
+"src/hilt/errors.py" = ["N818"]
 
 [tool.pyright]
 include = ["src", "tests", "examples", "tools", "bench"]
@@ -154,7 +154,7 @@ venv = ".venv"
 
 [tool.coverage.run]
 branch = true
-source = ["litmus", "litmus_check"]
+source = ["hilt", "hilt_check"]
 # The report stays out of the checkout's tracked tree and clear of the evidence
 # containment guard, which watches ``artifacts/`` only.
 data_file = ".coverage/data"
@@ -162,7 +162,7 @@ data_file = ".coverage/data"
 [tool.coverage.report]
 precision = 1
 # Global floor. Ratchet-only: raise it to the new measurement when coverage rises,
-# never lower it (STANDARDS.md section 6). Per-file floors: [tool.litmus.coverage].
+# never lower it (STANDARDS.md section 6). Per-file floors: [tool.hilt.coverage].
 fail_under = 97.4
 exclude_also = [
     "if TYPE_CHECKING:",
@@ -175,15 +175,15 @@ output = ".coverage/coverage.json"
 [tool.coverage.xml]
 output = ".coverage/cobertura.xml"
 
-[tool.litmus.coverage]
+[tool.hilt.coverage]
 # Per-file branch-coverage floors on the kernel of trust, enforced by
 # tools/coverage_floor.py after the suite runs. Ratchet-only, like fail_under.
-[tool.litmus.coverage.floors]
-"src/litmus/verdict.py" = 100.0
-"src/litmus/base.py" = 96.3
-"src/litmus/lifecycle.py" = 98.8
-"src/litmus/executor.py" = 98.9
-"src/litmus/timeline.py" = 100.0
+[tool.hilt.coverage.floors]
+"src/hilt/verdict.py" = 100.0
+"src/hilt/base.py" = 96.3
+"src/hilt/lifecycle.py" = 98.8
+"src/hilt/executor.py" = 98.9
+"src/hilt/timeline.py" = 100.0
 
 [tool.pytest.ini_options]
 addopts = "--hypothesis-seed=64"
@@ -195,8 +195,8 @@ asyncio_default_fixture_loop_scope = "function"
 [tool.mutmut]
 # Mutation audit over the kernel of trust (issue #69). `make mutants`, not a gate.
 # The whole package is copied so imports resolve; only these three files are mutated.
-source_paths = ["src/litmus"]
-only_mutate = ["src/litmus/verdict.py", "src/litmus/base.py", "src/litmus/lifecycle.py"]
+source_paths = ["src/hilt"]
+only_mutate = ["src/hilt/verdict.py", "src/hilt/base.py", "src/hilt/lifecycle.py"]
 # Scoped to the test files that actually cover the three modules (verified via
 # coverage contexts), so a mutant's rerun stays cheap under the 90-minute audit budget.
 pytest_add_cli_args_test_selection = [

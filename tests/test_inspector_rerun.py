@@ -17,11 +17,11 @@ from tests.inspector_rack import (
     record_parked_run,
 )
 
-from litmus import PASS, LitmusTest, TestUtils, Verdict
-from litmus.base import declared_tree
-from litmus.inspector_rerun import RerunSession, first_mismatch, subtree_indices, subtree_of
-from litmus.inspector_timeline import TimelineRecord
-from litmus.run_data import JsonObject
+from hilt import PASS, TestComponent, TestUtils, Verdict
+from hilt.base import declared_tree
+from hilt.inspector_rerun import RerunSession, first_mismatch, subtree_indices, subtree_of
+from hilt.inspector_timeline import TimelineRecord
+from hilt.run_data import JsonObject
 
 POWER, CHECKS, VOLTS, SLOW, LATER = 2, 3, 4, 5, 6
 """Row indices in ``MIXED_ROWS``; the recording pins them."""
@@ -45,7 +45,7 @@ def _partial(session: RerunSession, index: int) -> bool | None:
     return None if record is None else record.partial
 
 
-def _refusing() -> LitmusTest:
+def _refusing() -> TestComponent:
     raise RuntimeError("no such module: bench")
 
 
@@ -114,8 +114,8 @@ class TestPreparing:
     ) -> None:
         saved = await record_mixed_run(tmp_path, monkeypatch)
 
-        class _Shorter(LitmusTest):
-            def build_suite(self) -> LitmusTest:
+        class _Shorter(TestComponent):
+            def build_suite(self) -> TestComponent:
                 return self.sequence("steps", [self.test("power", self._power)])
 
             async def _power(self, utils: TestUtils) -> Verdict:
@@ -149,7 +149,7 @@ class TestRunning:
         partial = {index: _partial(session, index) for index in range(3)}
         assert partial == {0: True, 1: True, 2: False}
         assert session.scratch_root is not None
-        assert session.scratch_root.name.startswith("litmus-rerun-")
+        assert session.scratch_root.name.startswith("hilt-rerun-")
         assert len(list((session.scratch_root / str(POWER)).rglob("result.json"))) == 1
 
         view = await session.select(POWER)
@@ -251,8 +251,8 @@ class TestRunning:
     ) -> None:
         session = await _mixed_session(tmp_path, monkeypatch)
 
-        class _Sabotage(LitmusTest):
-            def build_suite(self) -> LitmusTest:
+        class _Sabotage(TestComponent):
+            def build_suite(self) -> TestComponent:
                 raise RuntimeError("build_suite exploded")
 
         monkeypatch.setattr(session, "_factory", lambda: _Sabotage(name="rack"))

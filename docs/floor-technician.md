@@ -17,7 +17,7 @@ in customer disputes.
 ## Where to look
 
 A completed run always writes a timestamped directory under
-`LITMUS_ARTIFACT_ROOT` (or `./artifacts` if that variable was not set). Inside
+`HILT_ARTIFACT_ROOT` (or `./artifacts` if that variable was not set). Inside
 that directory:
 
 | You want | File |
@@ -94,7 +94,7 @@ The declared tree is still complete, so you can see what was skipped.
 | `physical_location` | Station / slot name from `PHYSICAL_LOCATION`, or `unknown` if that variable was not in the run environment. |
 | `env` | The run environment as the run declared it. Secrets in an unfiltered environment are in this object verbatim — that is an operator obligation, not a framework rewrite. With `environment=DEBUG` the allow/deny list is ignored and a warning is in the log. |
 | `run_data` | Suite-authored evidence snapshot: what `configure()` provided, minus anything that is not JSON. Version 1 always has a `measurements` array: the numbers this node recorded with `utils.measure`, or empty. Other keys are the suite's. The readings a claim took, and the numbers it measured, are on that claim's node in `summary_tree`, not here. |
-| `suite_target` | Which suite produced this run, as `litmus run` was told it: the file or module, `::`, the class. This is what the Inspector's Re-Run tab executes when you press Enter on a node, so the check you run at the bench is the code that ran in production. `null` means the run was not started by `litmus run`; open the Inspector with `--suite` if you need to re-run from it. |
+| `suite_target` | Which suite produced this run, as `hilt run` was told it: the file or module, `::`, the class. This is what the Inspector's Re-Run tab executes when you press Enter on a node, so the check you run at the bench is the code that ran in production. `null` means the run was not started by `hilt run`; open the Inspector with `--suite` if you need to re-run from it. |
 
 ### A summary-tree node
 
@@ -220,7 +220,7 @@ decoder can refuse a version it was not written for, loudly.
 ## What this page is not
 
 It is not the authoring guide (`docs/idioms.md`, `docs/contracts.md`). It is
-not the runner's exit-code table (`docs/litmus-run.md`) — though exit `0`/`1`/`2`
+not the runner's exit-code table (`docs/hilt-run.md`) — though exit `0`/`1`/`2`
 match Pass/Fail/Aborted, and exit `3` means there is no `result.json` because
 no run happened. It is not the Inspector TUI; when that lands, it will consume
 exactly these files.

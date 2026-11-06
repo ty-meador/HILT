@@ -1,7 +1,7 @@
 # A `pyright: ignore` that suppresses nothing would make the misspelled-key claims in
 # this file vacuous, so here an unnecessary ignore is itself an error.
 # pyright: reportUnnecessaryTypeIgnoreComment=true
-"""Opt-in typed context: ``LitmusTest[CtxT]`` narrows ``utils.ctx`` for the author (#75).
+"""Opt-in typed context: ``TestComponent[CtxT]`` narrows ``utils.ctx`` for the author (#75).
 
 Nothing about the run changes. The context object is always the framework's
 ``RunContext``, a ``dict[str, Any]`` the framework owns. The parameter exists so that a
@@ -17,8 +17,8 @@ and the ignore comments are the assertions, and ``make check`` is what runs them
 from collections.abc import Mapping
 from typing import Any, TypedDict, assert_type
 
-from litmus import PASS, LitmusTest, State, TestUtils, Verdict
-from litmus.utils import RunContext
+from hilt import PASS, State, TestComponent, TestUtils, Verdict
+from hilt.utils import RunContext
 
 
 class PowerCtx(TypedDict):
@@ -28,13 +28,13 @@ class PowerCtx(TypedDict):
     volts: float
 
 
-class TypedPowerSuite(LitmusTest[PowerCtx]):
+class TypedPowerSuite(TestComponent[PowerCtx]):
     """A suite that names its context shape once and is held to it everywhere."""
 
     async def configure(self, utils: TestUtils[PowerCtx]) -> PowerCtx:
         return {"rail": "3v3", "volts": 3.3}
 
-    def build_suite(self) -> LitmusTest:
+    def build_suite(self) -> TestComponent:
         return self.test("rail", self._rail_is_up)
 
     async def _rail_is_up(self, utils: TestUtils[PowerCtx]) -> Verdict:
@@ -48,13 +48,13 @@ class TypedPowerSuite(LitmusTest[PowerCtx]):
         assert_type(utils.ctx["rail"], str)
 
 
-class UntypedPowerSuite(LitmusTest):
+class UntypedPowerSuite(TestComponent):
     """The same suite without the parameter: what every suite written before #75 is."""
 
     async def configure(self, utils: TestUtils) -> Mapping[str, Any]:
         return {"rail": "3v3", "volts": 3.3}
 
-    def build_suite(self) -> LitmusTest:
+    def build_suite(self) -> TestComponent:
         return self.test("rail", self._rail_is_up)
 
     async def _rail_is_up(self, utils: TestUtils) -> Verdict:
@@ -129,4 +129,4 @@ class TestAMisspelledKeyIsRejectedStatically:
             async def configure(self, utils: TestUtils[PowerCtx]) -> PowerCtx:
                 return {"rail": "3v3"}  # pyright: ignore[reportReturnType]
 
-        assert issubclass(WrongConfigure, LitmusTest)
+        assert issubclass(WrongConfigure, TestComponent)

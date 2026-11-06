@@ -8,15 +8,15 @@ from pathlib import Path
 from typing import cast
 from xml.etree.ElementTree import Element, fromstring
 
-import litmus
-from litmus import PASS, LitmusTest, TestFailure, TestUtils, Verdict
-from litmus.junit import JunitXml
-from litmus.lifecycle import Slot, State
-from litmus.results import NodeType, RunResult, SummaryTreeNode
+import hilt
+from hilt import PASS, TestComponent, TestFailure, TestUtils, Verdict
+from hilt.junit import JunitXml
+from hilt.lifecycle import Slot, State
+from hilt.results import NodeType, RunResult, SummaryTreeNode
 
 
 def _xml(result: object) -> Element:
-    rendered = JunitXml().render(cast("litmus.RunResult", result))
+    rendered = JunitXml().render(cast("hilt.RunResult", result))
     assert rendered.startswith('<?xml version="1.0" encoding="UTF-8"?>')
     root = fromstring(rendered.split("\n", 1)[1])
     assert root.tag == "testsuites"
@@ -37,14 +37,14 @@ def _by_name(root: Element, name: str) -> Element:
 
 class TestPublicSurface:
     def test_junit_xml_is_not_on_the_public_surface(self) -> None:
-        assert not hasattr(litmus, "JunitXml")
-        assert "JunitXml" not in litmus.__all__
+        assert not hasattr(hilt, "JunitXml")
+        assert "JunitXml" not in hilt.__all__
 
 
 class TestPassFailAborted:
     async def test_pass_is_a_bare_testcase(self) -> None:
-        class Suite(LitmusTest):
-            def build_suite(self) -> LitmusTest:
+        class Suite(TestComponent):
+            def build_suite(self) -> TestComponent:
                 return self.test("say hello", self._say)
 
             async def _say(self, _utils: TestUtils) -> Verdict:
@@ -62,8 +62,8 @@ class TestPassFailAborted:
         assert case.get("classname") == "hello"
 
     async def test_fail_is_a_failure_element_carrying_the_taxonomy(self) -> None:
-        class Suite(LitmusTest):
-            def build_suite(self) -> LitmusTest:
+        class Suite(TestComponent):
+            def build_suite(self) -> TestComponent:
                 return self.test("firmware", self._firmware)
 
             async def _firmware(self, _utils: TestUtils) -> Verdict:
@@ -86,8 +86,8 @@ class TestPassFailAborted:
         assert root.get("errors") == "0"
 
     async def test_aborted_is_an_error_element_not_a_failure(self) -> None:
-        class Suite(LitmusTest):
-            def build_suite(self) -> LitmusTest:
+        class Suite(TestComponent):
+            def build_suite(self) -> TestComponent:
                 return self.test("forgot", self._forgot)
 
             async def _forgot(self, _utils: TestUtils) -> Verdict:
@@ -109,8 +109,8 @@ class TestPassFailAborted:
 
 class TestTreeShape:
     async def test_parallel_nodes_become_classname_leaves_become_testcases(self) -> None:
-        class Suite(LitmusTest):
-            def build_suite(self) -> LitmusTest:
+        class Suite(TestComponent):
+            def build_suite(self) -> TestComponent:
                 return self.parallel(
                     "claims",
                     [
@@ -137,8 +137,8 @@ class TestTreeShape:
         assert root.get("errors") == "0"
 
     async def test_unreached_sequence_steps_are_skipped(self) -> None:
-        class Suite(LitmusTest):
-            def build_suite(self) -> LitmusTest:
+        class Suite(TestComponent):
+            def build_suite(self) -> TestComponent:
                 return self.sequence(
                     "ordered",
                     [
@@ -163,12 +163,12 @@ class TestTreeShape:
         assert root.get("failures") == "1"
 
     async def test_configure_failure_is_a_testcase_not_a_skip(self) -> None:
-        class Suite(LitmusTest):
+        class Suite(TestComponent):
             async def configure(self, utils: TestUtils) -> dict[str, object]:
                 del utils
                 raise TestFailure("device missing")
 
-            def build_suite(self) -> LitmusTest:
+            def build_suite(self) -> TestComponent:
                 return self.test("never", self._never)
 
             async def _never(self, _utils: TestUtils) -> Verdict:
@@ -190,8 +190,8 @@ class TestTreeShape:
 
 class TestArtifactPointers:
     async def test_system_out_points_at_the_timeline(self) -> None:
-        class Suite(LitmusTest):
-            def build_suite(self) -> LitmusTest:
+        class Suite(TestComponent):
+            def build_suite(self) -> TestComponent:
                 return self.test("say hello", self._say)
 
             async def _say(self, _utils: TestUtils) -> Verdict:
@@ -207,8 +207,8 @@ class TestArtifactPointers:
         assert system_out.text.endswith("timeline.jsonl")
 
     async def test_write_persists_utf8_xml(self, tmp_path: Path) -> None:
-        class Suite(LitmusTest):
-            def build_suite(self) -> LitmusTest:
+        class Suite(TestComponent):
+            def build_suite(self) -> TestComponent:
                 return self.test("say hello", self._say)
 
             async def _say(self, _utils: TestUtils) -> Verdict:
@@ -226,8 +226,8 @@ class TestArtifactPointers:
 
 class TestAnyRunResult:
     async def test_a_parallel_node_of_mixed_states_round_trips_the_counts(self) -> None:
-        class Suite(LitmusTest):
-            def build_suite(self) -> LitmusTest:
+        class Suite(TestComponent):
+            def build_suite(self) -> TestComponent:
                 return self.parallel(
                     "rack",
                     [
@@ -260,11 +260,11 @@ class TestAnyRunResult:
 
 class TestTimeoutProjection:
     async def test_abort_after_is_an_error_with_timeout_pointer(self) -> None:
-        class Suite(LitmusTest):
+        class Suite(TestComponent):
             def __init__(self, *, name: str) -> None:
                 super().__init__(name=name, abort_after=0.03)
 
-            def build_suite(self) -> LitmusTest:
+            def build_suite(self) -> TestComponent:
                 return self.test("stall", self._stall)
 
             async def _stall(self, _utils: TestUtils) -> Verdict:
@@ -289,11 +289,11 @@ class TestTimeoutProjection:
         assert root.get("errors") == "1"
 
     async def test_fail_after_keeps_failure_and_names_the_clock(self) -> None:
-        class Suite(LitmusTest):
+        class Suite(TestComponent):
             def __init__(self, *, name: str) -> None:
                 super().__init__(name=name, fail_after=0.03)
 
-            def build_suite(self) -> LitmusTest:
+            def build_suite(self) -> TestComponent:
                 return self.test("stall", self._stall)
 
             async def _stall(self, _utils: TestUtils) -> Verdict:

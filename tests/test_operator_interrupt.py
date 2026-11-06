@@ -14,17 +14,17 @@ import pytest
 from tests.loopback_sshd import LoopbackSshd
 from tests.mock_connector import ConnectorInstaller
 
-from litmus import (
+from hilt import (
     PASS,
     ExternalIntegrationFailure,
-    LitmusTest,
     OperatorInterrupt,
     RunResult,
+    TestComponent,
     TestUtils,
     Verdict,
 )
-from litmus.lifecycle import RunAbort, State
-from litmus.mock import MockTransport
+from hilt.lifecycle import RunAbort, State
+from hilt.mock import MockTransport
 
 _WAIT_LIMIT_SECONDS = 5.0
 _SSH_DUT_COUNT = 70
@@ -46,11 +46,11 @@ def _capture_process_exits(monkeypatch: pytest.MonkeyPatch) -> Generator[list[in
     def record(code: int) -> None:
         seen.append(int(code))
 
-    monkeypatch.setattr("litmus.base.os._exit", record)
+    monkeypatch.setattr("hilt.base.os._exit", record)
     yield seen
 
 
-class _ParkedSuite(LitmusTest):
+class _ParkedSuite(TestComponent):
     """One leaf that waits until the operator (or the test) releases it."""
 
     def __init__(
@@ -66,7 +66,7 @@ class _ParkedSuite(LitmusTest):
         self.in_cleanup = asyncio.Event() if in_cleanup is None else in_cleanup
         self.release_cleanup = asyncio.Event() if release_cleanup is None else release_cleanup
 
-    def build_suite(self) -> LitmusTest:
+    def build_suite(self) -> TestComponent:
         return self.test("probe", self._probe)
 
     async def _probe(self, utils: TestUtils) -> Verdict:
@@ -81,8 +81,8 @@ class _ParkedSuite(LitmusTest):
         await self.release_cleanup.wait()
 
 
-class _PassingSuite(LitmusTest):
-    def build_suite(self) -> LitmusTest:
+class _PassingSuite(TestComponent):
+    def build_suite(self) -> TestComponent:
         return self.test("ok", self._ok)
 
     async def _ok(self, utils: TestUtils) -> Verdict:
@@ -90,13 +90,13 @@ class _PassingSuite(LitmusTest):
         return PASS
 
 
-class _GroupedParkedSuite(LitmusTest):
+class _GroupedParkedSuite(TestComponent):
     def __init__(self, *, parked: asyncio.Event, halt_started: asyncio.Event) -> None:
         super().__init__(name="rack")
         self._parked = parked
         self._halt_started = halt_started
 
-    def build_suite(self) -> LitmusTest:
+    def build_suite(self) -> TestComponent:
         return self.parallel(
             "parallel",
             [
@@ -205,8 +205,8 @@ class TestHandlerScope:
     async def test_a_raising_run_still_drops_the_handler(self) -> None:
         handlers_before = _loop_signal_handlers()
 
-        class Boom(LitmusTest):
-            def build_suite(self) -> LitmusTest:
+        class Boom(TestComponent):
+            def build_suite(self) -> TestComponent:
                 return self.test("boom", self._boom)
 
             async def _boom(self, utils: TestUtils) -> Verdict:
@@ -269,13 +269,13 @@ class TestOperatorAbortHardClosesTransports:
         transport.park("flash")
         in_flight = asyncio.Event()
 
-        class FlashSuite(LitmusTest):
+        class FlashSuite(TestComponent):
             async def configure(self, utils: TestUtils) -> dict[str, object]:
                 install_mock_connector(utils, transport)
                 await utils.use_shell(host="dut", username="root")
                 return {}
 
-            def build_suite(self) -> LitmusTest:
+            def build_suite(self) -> TestComponent:
                 return self.test("flash", self._flash)
 
             async def _flash(self, utils: TestUtils) -> Verdict:
@@ -301,7 +301,7 @@ class TestOperatorAbortHardClosesTransports:
         assert transport.has_in_flight is False
 
 
-class _SshDut(LitmusTest):
+class _SshDut(TestComponent):
     """One DUT dialing the in-process sshd and parking a remote sleep."""
 
     def __init__(
@@ -328,7 +328,7 @@ class _SshDut(LitmusTest):
         )
         return {}
 
-    def build_suite(self) -> LitmusTest:
+    def build_suite(self) -> TestComponent:
         return self.test("flash", self._flash)
 
     async def _flash(self, utils: TestUtils) -> Verdict:
@@ -359,7 +359,7 @@ class _SshCoordinator:
             self.all_executing.set()
 
 
-class _SshRack(LitmusTest):
+class _SshRack(TestComponent):
     def __init__(self, *, peer: LoopbackSshd, coordinator: _SshCoordinator) -> None:
         super().__init__(name="ssh rack")
         self._duts = tuple(
@@ -367,7 +367,7 @@ class _SshRack(LitmusTest):
             for index in range(_SSH_DUT_COUNT)
         )
 
-    def build_suite(self) -> LitmusTest:
+    def build_suite(self) -> TestComponent:
         return self.parallel("rack DUTs", self._duts)
 
 

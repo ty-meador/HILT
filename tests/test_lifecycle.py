@@ -14,7 +14,7 @@ from typing import Any, final
 
 import pytest
 
-from litmus import (
+from hilt import (
     PASS,
     ContractViolation,
     ExternalIntegrationFailure,
@@ -26,7 +26,7 @@ from litmus import (
 
 # Internal machinery on purpose: the boundary is the subject under test here, and the
 # self-test suite is the one consumer allowed to reach past the public surface.
-from litmus.lifecycle import SLOT_POLICIES, ChildBoundary, Outcome, RunAbort, Slot, State
+from hilt.lifecycle import SLOT_POLICIES, ChildBoundary, Outcome, RunAbort, Slot, State
 
 NODE = "dimm-0"
 WRONG_VALUE = 42
@@ -469,7 +469,7 @@ class TestBugGuardLayers:
     async def test_the_two_layers_are_distinguishable_in_the_log(
         self, caplog: pytest.LogCaptureFixture
     ) -> None:
-        with caplog.at_level("ERROR", logger="litmus"):
+        with caplog.at_level("ERROR", logger="hilt"):
             developer = ChildBoundary(NODE)
             await developer.run(Slot.TEST_METHOD, self._raises(ValueError("kaboom")))
             framework = ChildBoundary(NODE)
@@ -484,7 +484,7 @@ class TestBugGuardLayers:
     ) -> None:
         # Cleanup swallows the error to protect the verdict; the swallow log line is
         # the record of it. A second banner line would read as a second bug.
-        with caplog.at_level("ERROR", logger="litmus"):
+        with caplog.at_level("ERROR", logger="hilt"):
             boundary = ChildBoundary(NODE)
             await boundary.run(Slot.CLEANUP, self._raises(ValueError("kaboom")))
         assert len(caplog.records) == 1

@@ -1,4 +1,4 @@
-"""``LitmusTest.run(subtree=...)``: one declared node through the sealed lifecycle.
+"""``TestComponent.run(subtree=...)``: one declared node through the sealed lifecycle.
 
 Ty's ruling of 2026-09-10 (issue #89): the Inspector's Re-Run tab executes a node with
 the code that ran in production. The framework keeps ownership of configure and cleanup
@@ -12,9 +12,9 @@ from pathlib import Path
 
 import pytest
 
-from litmus import PASS, ContractViolation, LitmusTest, TestFailure, TestUtils, Verdict
-from litmus.lifecycle import State
-from litmus.results import RunResult, SummaryTreeNode
+from hilt import PASS, ContractViolation, TestComponent, TestFailure, TestUtils, Verdict
+from hilt.lifecycle import State
+from hilt.results import RunResult, SummaryTreeNode
 
 
 def _states(result: RunResult) -> dict[str, State | None]:
@@ -30,7 +30,7 @@ def _states(result: RunResult) -> dict[str, State | None]:
     return states
 
 
-class _Bench(LitmusTest):
+class _Bench(TestComponent):
     """Records which slots ran, so a pruned run proves who executed and who did not."""
 
     def __init__(self, name: str, trace: list[str]) -> None:
@@ -41,7 +41,7 @@ class _Bench(LitmusTest):
         self.trace.append("configure")
         return {}
 
-    def build_suite(self) -> LitmusTest:
+    def build_suite(self) -> TestComponent:
         return self.sequence(
             "steps",
             [
@@ -61,8 +61,8 @@ class _Bench(LitmusTest):
         self.trace.append("cleanup")
 
 
-class _FailsFirst(LitmusTest):
-    def build_suite(self) -> LitmusTest:
+class _FailsFirst(TestComponent):
+    def build_suite(self) -> TestComponent:
         return self.sequence(
             "steps", [self.test("broken", self._broken), self.test("fine", self._fine)]
         )
@@ -136,9 +136,7 @@ class TestSubtreeSelection:
         root = tmp_path / "never"
 
         with pytest.raises(ContractViolation, match=r"names child 7 of 'steps'.*3 children"):
-            await _Bench("bench", trace).run(
-                env={"LITMUS_ARTIFACT_ROOT": str(root)}, subtree=(0, 7)
-            )
+            await _Bench("bench", trace).run(env={"HILT_ARTIFACT_ROOT": str(root)}, subtree=(0, 7))
 
         assert trace == []
         assert not root.exists()

@@ -1,4 +1,4 @@
-"""The persisted temporal backbone for each Litmus run."""
+"""The persisted temporal backbone for each HILT run."""
 
 import asyncio
 import json
@@ -6,9 +6,9 @@ from pathlib import Path
 
 import pytest
 
-from litmus import PASS, Artifact, LitmusTest, TestFailure, TestUtils, Verdict
-from litmus.lifecycle import State
-from litmus.timeline import RunTimeline
+from hilt import PASS, Artifact, TestComponent, TestFailure, TestUtils, Verdict
+from hilt.lifecycle import State
+from hilt.timeline import RunTimeline
 
 
 def _records(path: Path) -> list[dict[str, object]]:
@@ -19,13 +19,13 @@ class TestPersistedTimeline:
     async def test_run_streams_per_owner_logs_and_artifact_pointers(self, tmp_path: Path) -> None:
         captured: list[Path] = []
 
-        class Suite(LitmusTest):
+        class Suite(TestComponent):
             def __init__(self, *, name: str) -> None:
                 super().__init__(name=name)
                 self._snapshot_case = self.test("snapshot", self._snapshot)
                 self._checks = self.sequence("checks", [self._snapshot_case])
 
-            def build_suite(self) -> LitmusTest:
+            def build_suite(self) -> TestComponent:
                 return self._checks
 
             async def _snapshot(self, utils: TestUtils) -> Verdict:
@@ -40,7 +40,7 @@ class TestPersistedTimeline:
                 raise TestFailure("snapshot was not captured")
 
         suite = Suite(name="rack/name")
-        result = await suite.run(env={"LITMUS_ARTIFACT_ROOT": str(tmp_path)})
+        result = await suite.run(env={"HILT_ARTIFACT_ROOT": str(tmp_path)})
 
         assert result.state is State.PASS
         assert suite.log_path is not None
@@ -84,8 +84,8 @@ class TestPersistedTimeline:
     async def test_interrupted_run_keeps_every_complete_json_line(self, tmp_path: Path) -> None:
         recorded = asyncio.Event()
 
-        class Suite(LitmusTest):
-            def build_suite(self) -> LitmusTest:
+        class Suite(TestComponent):
+            def build_suite(self) -> TestComponent:
                 return self.test("wait", self._wait)
 
             async def _wait(self, utils: TestUtils) -> Verdict:
@@ -97,7 +97,7 @@ class TestPersistedTimeline:
                 raise TestFailure("wait unexpectedly returned")
 
         suite = Suite(name="rack")
-        task = asyncio.create_task(suite.run(env={"LITMUS_ARTIFACT_ROOT": str(tmp_path)}))
+        task = asyncio.create_task(suite.run(env={"HILT_ARTIFACT_ROOT": str(tmp_path)}))
         await recorded.wait()
         task.cancel()
         with pytest.raises(asyncio.CancelledError):
@@ -110,8 +110,8 @@ class TestPersistedTimeline:
         assert all(path.read_text(encoding="utf-8").endswith("\n") for path in paths)
 
     async def test_unreached_discrete_node_opens_no_log(self, tmp_path: Path) -> None:
-        class Later(LitmusTest):
-            def build_suite(self) -> LitmusTest:
+        class Later(TestComponent):
+            def build_suite(self) -> TestComponent:
                 return self.test("later claim", self._claim)
 
             async def _claim(self, utils: TestUtils) -> Verdict:
@@ -119,7 +119,7 @@ class TestPersistedTimeline:
                     return PASS
                 raise TestFailure("node has no scope")
 
-        class Suite(LitmusTest):
+        class Suite(TestComponent):
             def __init__(self, *, name: str) -> None:
                 super().__init__(name=name)
                 self._later = Later(name="later")
@@ -128,14 +128,14 @@ class TestPersistedTimeline:
                     [self.test("stop", self._stop), self._later],
                 )
 
-            def build_suite(self) -> LitmusTest:
+            def build_suite(self) -> TestComponent:
                 return self._checks
 
             async def _stop(self, utils: TestUtils) -> Verdict:
                 raise TestFailure("stop here")
 
         suite = Suite(name="rack")
-        result = await suite.run(env={"LITMUS_ARTIFACT_ROOT": str(tmp_path)})
+        result = await suite.run(env={"HILT_ARTIFACT_ROOT": str(tmp_path)})
 
         assert result.state is State.FAIL
         assert suite._later.log_path is None
@@ -146,8 +146,8 @@ class TestPersistedTimeline:
         self,
         tmp_path: Path,
     ) -> None:
-        class Suite(LitmusTest):
-            def build_suite(self) -> LitmusTest:
+        class Suite(TestComponent):
+            def build_suite(self) -> TestComponent:
                 return self.test("claim", self._claim)
 
             async def _claim(self, utils: TestUtils) -> Verdict:
@@ -159,7 +159,7 @@ class TestPersistedTimeline:
         result = await suite.run(
             env={
                 "environment": "DEBUG",
-                "LITMUS_ARTIFACT_ROOT": str(tmp_path),
+                "HILT_ARTIFACT_ROOT": str(tmp_path),
                 "SECRET": "published",
             },
             env_allow=["^PHYSICAL_LOCATION$"],
@@ -192,8 +192,8 @@ class TestPersistedTimeline:
         expected: str,
         warns: bool,
     ) -> None:
-        class Suite(LitmusTest):
-            def build_suite(self) -> LitmusTest:
+        class Suite(TestComponent):
+            def build_suite(self) -> TestComponent:
                 return self.test("claim", self._claim)
 
             async def _claim(self, utils: TestUtils) -> Verdict:
@@ -203,7 +203,7 @@ class TestPersistedTimeline:
                 raise TestFailure("node has no scope")
 
         suite = Suite(name="rack")
-        result = await suite.run(env={"LITMUS_ARTIFACT_ROOT": str(tmp_path)})
+        result = await suite.run(env={"HILT_ARTIFACT_ROOT": str(tmp_path)})
 
         assert result.state is State.PASS
         assert suite.log_path is not None
@@ -233,17 +233,17 @@ class TestPersistedTimeline:
     async def test_sequence_roll_up_writes_into_parent_timeline(self, tmp_path: Path) -> None:
         passing_case = self._passing_case
 
-        class Suite(LitmusTest):
+        class Suite(TestComponent):
             def __init__(self, *, name: str) -> None:
                 super().__init__(name=name)
                 self._claim = self.test("claim", passing_case)
                 self._checks = self.sequence("checks", [self._claim], discrete_log_file=False)
 
-            def build_suite(self) -> LitmusTest:
+            def build_suite(self) -> TestComponent:
                 return self._checks
 
         suite = Suite(name="rack")
-        result = await suite.run(env={"LITMUS_ARTIFACT_ROOT": str(tmp_path)})
+        result = await suite.run(env={"HILT_ARTIFACT_ROOT": str(tmp_path)})
 
         assert result.state is State.PASS
         assert suite.log_path is not None
@@ -255,20 +255,20 @@ class TestPersistedTimeline:
     async def test_root_always_owns_timeline_when_opted_out(self, tmp_path: Path) -> None:
         passing_case = self._passing_case
 
-        class Suite(LitmusTest):
-            def build_suite(self) -> LitmusTest:
+        class Suite(TestComponent):
+            def build_suite(self) -> TestComponent:
                 return self.test("claim", passing_case)
 
         suite = Suite(name="rack", discrete_log_file=False)
-        result = await suite.run(env={"LITMUS_ARTIFACT_ROOT": str(tmp_path)})
+        result = await suite.run(env={"HILT_ARTIFACT_ROOT": str(tmp_path)})
 
         assert result.state is State.PASS
         assert suite.log_path is not None
         assert _records(suite.log_path)
 
     def test_sequence_and_parallel_can_roll_up_explicitly(self) -> None:
-        class Suite(LitmusTest):
-            def build_suite(self) -> LitmusTest:
+        class Suite(TestComponent):
+            def build_suite(self) -> TestComponent:
                 raise AssertionError
 
         suite = Suite(name="rack")

@@ -16,7 +16,7 @@ executes even after a failure, because "3 of 8" is the datum a timing race leave
 Each invocation draws a fresh Hypothesis seed and records its replay command before
 starting pytest. This overrides the fixed gate seed without changing ``make check``.
 
-Environment: ``LITMUS_BOT_TOKEN`` (api scope) and ``DISCORD_WEBHOOK_URL`` are the two
+Environment: ``HILT_BOT_TOKEN`` (api scope) and ``DISCORD_WEBHOOK_URL`` are the two
 secrets; ``GITLAB_API_V4_URL`` and ``GITLAB_PROJECT_ID`` default to this project. The
 head sha comes from ``git rev-parse`` on the checkout, and the night's record names the
 bench host and the ``.soak/`` directory the logs stayed in. A missing secret is
@@ -51,7 +51,7 @@ DEFAULT_RACK_REPEATS = 20
 GREEN_STREAK_TARGET = 14
 DISCORD_MESSAGE_LIMIT = 1900
 DEFAULT_API_V4_URL = "https://gitlab.com/api/v4"
-DEFAULT_PROJECT_ID = "85833370"  # Tyler-Meador/litmus_test
+DEFAULT_PROJECT_ID = "85833370"  # Tyler-Meador/HILT
 _FAILURE_LINE = re.compile(r"^(?:FAILED|ERROR) (\S+)", re.MULTILINE)
 _MARKER = re.compile(r"<!-- nightly-soak verdict=(green|red) ")
 
@@ -218,7 +218,7 @@ class NightlySoak:
         return runs
 
     def _record(self, report: NightReport) -> None:
-        token = self._env.get("LITMUS_BOT_TOKEN")
+        token = self._env.get("HILT_BOT_TOKEN")
         if token:
             streak = 0
             if report.green:
@@ -227,7 +227,7 @@ class NightlySoak:
             self._api(token, "POST", f"issues/{ISSUE_IID}/notes", note)
             self._say(f"recorded on #{ISSUE_IID}")
         else:
-            self._say(f"LITMUS_BOT_TOKEN unset; night not recorded on #{ISSUE_IID}")
+            self._say(f"HILT_BOT_TOKEN unset; night not recorded on #{ISSUE_IID}")
         if report.green:
             return
         webhook = self._env.get("DISCORD_WEBHOOK_URL")

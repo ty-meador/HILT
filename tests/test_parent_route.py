@@ -13,18 +13,18 @@ from __future__ import annotations
 import pytest
 from tests.mock_connector import ConnectorInstaller
 
-from litmus import (
+from hilt import (
     PASS,
     ExecResult,
-    LitmusTest,
+    TestComponent,
     TestFailure,
     TestUtils,
     Verdict,
 )
-from litmus.executor import LocalExec
-from litmus.lifecycle import Slot, State
-from litmus.mock import MockTransport
-from litmus.utils import node_runtime
+from hilt.executor import LocalExec
+from hilt.lifecycle import Slot, State
+from hilt.mock import MockTransport
+from hilt.utils import node_runtime
 
 
 def _provenance(utils: TestUtils) -> str:
@@ -39,27 +39,27 @@ class TestChildrenInheritTheParentsRoute:
         hop = MockTransport()
         seen: list[str] = []
 
-        class Child(LitmusTest):
+        class Child(TestComponent):
             async def configure(self, utils: TestUtils) -> dict[str, object]:
                 # Read at the composed node itself: a leaf made by `self.test` always
                 # reports "inherited", since it inherits from its authored parent.
                 seen.append(_provenance(utils))
                 return {}
 
-            def build_suite(self) -> LitmusTest:
+            def build_suite(self) -> TestComponent:
                 return self.test("probe", self._probe)
 
             async def _probe(self, utils: TestUtils) -> Verdict:
                 await utils.exec("probe")
                 return PASS
 
-        class Gateway(LitmusTest):
+        class Gateway(TestComponent):
             async def configure(self, utils: TestUtils) -> dict[str, object]:
                 install_mock_connector(utils, {"gateway": hop})
                 await utils.use_shell(host="gateway", username="root")
                 return {}
 
-            def build_suite(self) -> LitmusTest:
+            def build_suite(self) -> TestComponent:
                 return Child(name="child")
 
         result = await Gateway(name="gateway").run()
@@ -74,21 +74,21 @@ class TestChildrenInheritTheParentsRoute:
     ) -> None:
         hop = MockTransport()
 
-        class Child(LitmusTest):
-            def build_suite(self) -> LitmusTest:
+        class Child(TestComponent):
+            def build_suite(self) -> TestComponent:
                 return self.test("probe", self._probe)
 
             async def _probe(self, utils: TestUtils) -> Verdict:
                 await utils.exec(f"probe {self.name}")
                 return PASS
 
-        class Gateway(LitmusTest):
+        class Gateway(TestComponent):
             async def configure(self, utils: TestUtils) -> dict[str, object]:
                 install_mock_connector(utils, {"gateway": hop})
                 await utils.use_shell(host="gateway", username="root")
                 return {}
 
-            def build_suite(self) -> LitmusTest:
+            def build_suite(self) -> TestComponent:
                 return self.parallel(
                     "behind the hop",
                     [Child(name="first"), Child(name="second")],
@@ -106,25 +106,25 @@ class TestChildrenInheritTheParentsRoute:
     ) -> None:
         hop = MockTransport()
 
-        class Leaf(LitmusTest):
-            def build_suite(self) -> LitmusTest:
+        class Leaf(TestComponent):
+            def build_suite(self) -> TestComponent:
                 return self.test("probe", self._probe)
 
             async def _probe(self, utils: TestUtils) -> Verdict:
                 await utils.exec("deep probe")
                 return PASS
 
-        class Middle(LitmusTest):
-            def build_suite(self) -> LitmusTest:
+        class Middle(TestComponent):
+            def build_suite(self) -> TestComponent:
                 return Leaf(name="leaf")
 
-        class Gateway(LitmusTest):
+        class Gateway(TestComponent):
             async def configure(self, utils: TestUtils) -> dict[str, object]:
                 install_mock_connector(utils, {"gateway": hop})
                 await utils.use_shell(host="gateway", username="root")
                 return {}
 
-            def build_suite(self) -> LitmusTest:
+            def build_suite(self) -> TestComponent:
                 return Middle(name="middle")
 
         result = await Gateway(name="gateway").run()
@@ -150,34 +150,34 @@ class TestAChildMayStepOffTheRoute:
 
         monkeypatch.setattr(LocalExec, "run", local_run)
 
-        class Routed(LitmusTest):
-            def build_suite(self) -> LitmusTest:
+        class Routed(TestComponent):
+            def build_suite(self) -> TestComponent:
                 return self.test("probe", self._probe)
 
             async def _probe(self, utils: TestUtils) -> Verdict:
                 await utils.exec("routed probe")
                 return PASS
 
-        class Local(LitmusTest):
+        class Local(TestComponent):
             async def configure(self, utils: TestUtils) -> dict[str, object]:
                 await utils.use_shell(inherit=False)
                 seen.append(_provenance(utils))
                 return {}
 
-            def build_suite(self) -> LitmusTest:
+            def build_suite(self) -> TestComponent:
                 return self.test("probe", self._probe)
 
             async def _probe(self, utils: TestUtils) -> Verdict:
                 await utils.exec("local probe")
                 return PASS
 
-        class Gateway(LitmusTest):
+        class Gateway(TestComponent):
             async def configure(self, utils: TestUtils) -> dict[str, object]:
                 install_mock_connector(utils, {"gateway": hop})
                 await utils.use_shell(host="gateway", username="root")
                 return {}
 
-            def build_suite(self) -> LitmusTest:
+            def build_suite(self) -> TestComponent:
                 return self.sequence(
                     self.name,
                     [Routed(name="routed"), Local(name="local")],
@@ -201,7 +201,7 @@ class TestTheParentTearsTheHopDownLast:
         target = MockTransport()
         order: list[str] = []
 
-        class Child(LitmusTest):
+        class Child(TestComponent):
             async def configure(self, utils: TestUtils) -> dict[str, object]:
                 # A child's own connection form tunnels through the inherited hop.
                 install_mock_connector(utils, {"target": target})
@@ -209,7 +209,7 @@ class TestTheParentTearsTheHopDownLast:
                 order.append("child-configure")
                 return {}
 
-            def build_suite(self) -> LitmusTest:
+            def build_suite(self) -> TestComponent:
                 return self.test("probe", self._probe)
 
             async def _probe(self, utils: TestUtils) -> Verdict:
@@ -222,14 +222,14 @@ class TestTheParentTearsTheHopDownLast:
                 assert target.connected
                 assert hop.connected
 
-        class Gateway(LitmusTest):
+        class Gateway(TestComponent):
             async def configure(self, utils: TestUtils) -> dict[str, object]:
                 install_mock_connector(utils, {"gateway": hop})
                 await utils.use_shell(host="gateway", username="root")
                 order.append("gateway-configure")
                 return {}
 
-            def build_suite(self) -> LitmusTest:
+            def build_suite(self) -> TestComponent:
                 return Child(name="child")
 
             async def cleanup(self, utils: TestUtils) -> None:
@@ -260,16 +260,16 @@ class TestTheParentTearsTheHopDownLast:
         hop = MockTransport()
         hop_alive_at_second_child: list[bool] = []
 
-        class Failing(LitmusTest):
-            def build_suite(self) -> LitmusTest:
+        class Failing(TestComponent):
+            def build_suite(self) -> TestComponent:
                 return self.test("probe", self._probe)
 
             async def _probe(self, utils: TestUtils) -> Verdict:
                 del utils
                 raise TestFailure("first device is bad")
 
-        class Second(LitmusTest):
-            def build_suite(self) -> LitmusTest:
+        class Second(TestComponent):
+            def build_suite(self) -> TestComponent:
                 return self.test("probe", self._probe)
 
             async def _probe(self, utils: TestUtils) -> Verdict:
@@ -277,13 +277,13 @@ class TestTheParentTearsTheHopDownLast:
                 await utils.exec("second probe")
                 return PASS
 
-        class Gateway(LitmusTest):
+        class Gateway(TestComponent):
             async def configure(self, utils: TestUtils) -> dict[str, object]:
                 install_mock_connector(utils, {"gateway": hop})
                 await utils.use_shell(host="gateway", username="root")
                 return {}
 
-            def build_suite(self) -> LitmusTest:
+            def build_suite(self) -> TestComponent:
                 return self.parallel(
                     "behind the hop",
                     [Failing(name="failing"), Second(name="second")],
@@ -306,21 +306,21 @@ class TestAGatewayThatNeverComesUp:
         hop.fail_next_connect(ConnectionError("peer unreachable"))
         child_ran = False
 
-        class Child(LitmusTest):
+        class Child(TestComponent):
             async def configure(self, utils: TestUtils) -> dict[str, object]:
                 nonlocal child_ran
                 del utils
                 child_ran = True
                 return {}
 
-            def build_suite(self) -> LitmusTest:
+            def build_suite(self) -> TestComponent:
                 return self.test("probe", self._probe)
 
             async def _probe(self, utils: TestUtils) -> Verdict:
                 del utils
                 return PASS
 
-        class Gateway(LitmusTest):
+        class Gateway(TestComponent):
             async def configure(self, utils: TestUtils) -> dict[str, object]:
                 install_mock_connector(utils, {"gateway": hop})
                 try:
@@ -329,7 +329,7 @@ class TestAGatewayThatNeverComesUp:
                     raise TestFailure(f"SSH connect failed: {error}") from error
                 return {}
 
-            def build_suite(self) -> LitmusTest:
+            def build_suite(self) -> TestComponent:
                 return Child(name="child")
 
         result = await Gateway(name="gateway").run()

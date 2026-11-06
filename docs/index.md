@@ -1,6 +1,6 @@
-# litmus
+# HILT
 
-React-for-hardware HIL testing framework. A Floor Technician categorizes a
+HILT (Hardware-In-the-Loop Testing) is a React-for-hardware test framework. A Floor Technician categorizes a
 failure and starts the right recovery protocol without reading suite source;
 a developer writes the suite that makes that possible.
 
@@ -12,7 +12,7 @@ a developer writes the suite that makes that possible.
 - **Public surface:** [API stability](api-stability.md) is the policy;
   the [API reference](api.md) is generated from the public names' docstrings.
 - **Inspector contributors:** the [target specification](inspector.md) carries the
-  terminal workflow that `litmus inspect` opens.
+  terminal workflow that `hilt inspect` opens.
 
 Build this site locally with `make docs`. A broken cross-reference fails the
 gate. Nothing hosts it: GitLab renders every page from `docs/` on `main`, and a

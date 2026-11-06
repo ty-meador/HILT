@@ -1,4 +1,4 @@
-"""``litmus/ctx-provenance``: every ctx read is provided by ``configure()``; ctx is never written.
+"""``hilt/ctx-provenance``: every ctx read is provided by ``configure()``; ctx is never written.
 
 Strict by ruling (issues #112 and #118): a read is provided by ``configure()``'s returned
 dict or ``TypedDict`` and by nothing else. Ctx is read-only after configure returns, so
@@ -10,11 +10,11 @@ import io
 from pathlib import Path
 from textwrap import dedent
 
-from litmus_check import SuiteModule, Violation
-from litmus_check.cli import EXIT_VIOLATIONS, LitmusCheckCommand
-from litmus_check.rules.ctx_provenance import CtxProvenanceRule
+from hilt_check import SuiteModule, Violation
+from hilt_check.cli import EXIT_VIOLATIONS, HiltCheckCommand
+from hilt_check.rules.ctx_provenance import CtxProvenanceRule
 
-CODE = "litmus/ctx-provenance"
+CODE = "hilt/ctx-provenance"
 
 
 def _check(source: str) -> list[Violation]:
@@ -29,7 +29,7 @@ def _lines(source: str) -> list[int]:
 class TestCtxProvenanceFiresOnReads:
     def test_read_of_a_key_configure_never_returns(self) -> None:
         source = """
-            class Suite(LitmusTest):
+            class Suite(TestComponent):
                 async def configure(self, utils: TestUtils) -> dict[str, Any]:
                     return {"present": 1}
                 async def _claim(self, utils: TestUtils) -> Verdict:
@@ -45,8 +45,8 @@ class TestCtxProvenanceFiresOnReads:
 
     def test_class_without_configure_provides_nothing(self) -> None:
         source = """
-            class Suite(LitmusTest):
-                def build_suite(self) -> LitmusTest:
+            class Suite(TestComponent):
+                def build_suite(self) -> TestComponent:
                     return self.test("x", self._claim)
                 async def _claim(self, utils):
                     return utils.ctx["ip"]
@@ -55,7 +55,7 @@ class TestCtxProvenanceFiresOnReads:
 
     def test_cleanup_and_hooks_and_configure_are_readers(self) -> None:
         source = """
-            class Suite(LitmusTest):
+            class Suite(TestComponent):
                 def __init__(self, *, name: str) -> None:
                     super().__init__(name=name)
                     self.use_survey(self._snapshot)
@@ -74,7 +74,7 @@ class TestCtxProvenanceFiresOnReads:
 
     def test_alias_through_cast_is_still_ctx(self) -> None:
         source = """
-            class Suite(LitmusTest):
+            class Suite(TestComponent):
                 async def configure(self, utils: TestUtils) -> dict[str, Any]:
                     return {"rail": "on"}
                 async def _claim(self, utils: TestUtils) -> Verdict:
@@ -91,7 +91,7 @@ class TestCtxProvenanceFiresOnReads:
 
     def test_inherited_configure_from_a_same_module_base(self) -> None:
         source = """
-            class Base(LitmusTest):
+            class Base(TestComponent):
                 async def configure(self, utils: TestUtils) -> dict[str, Any]:
                     return {"serial": "SN-1"}
             class Suite(Base):
@@ -107,12 +107,12 @@ class TestCtxProvenanceFiresOnReads:
 
     def test_a_subscripted_verdict_annotation_still_marks_a_test_method(self) -> None:
         source = """
-            class Suite(LitmusTest):
+            class Suite(TestComponent):
                 async def configure(self, utils: TestUtils) -> dict[str, Any]:
                     return {}
                 async def _claim(self, utils: TestUtils) -> Verdict[_Shape]:
                     return utils.ctx["ip"]
-                async def _other(self, utils: TestUtils) -> "litmus.Verdict[_Shape]":
+                async def _other(self, utils: TestUtils) -> "hilt.Verdict[_Shape]":
                     return utils.ctx["ip"]
         """
         assert _lines(source) == [6, 8]
@@ -121,7 +121,7 @@ class TestCtxProvenanceFiresOnReads:
 class TestCtxProvenanceFiresOnWrites:
     def test_every_write_is_flagged_and_named(self) -> None:
         source = """
-            class Suite(LitmusTest):
+            class Suite(TestComponent):
                 async def configure(self, utils: TestUtils) -> dict[str, Any]:
                     return {"n": 0, "m": 0}
                 async def _claim(self, utils: TestUtils) -> Verdict:
@@ -158,7 +158,7 @@ class TestCtxProvenanceFiresOnWrites:
 
     def test_a_write_through_an_alias_is_flagged(self) -> None:
         source = """
-            class Suite(LitmusTest):
+            class Suite(TestComponent):
                 async def configure(self, utils: TestUtils) -> dict[str, Any]:
                     return {}
                 async def _claim(self, utils: TestUtils) -> Verdict:
@@ -170,7 +170,7 @@ class TestCtxProvenanceFiresOnWrites:
 
     def test_configure_and_cleanup_writes_are_flagged_too(self) -> None:
         source = """
-            class Suite(LitmusTest):
+            class Suite(TestComponent):
                 async def configure(self, utils: TestUtils) -> dict[str, Any]:
                     utils.ctx["early"] = 1
                     return {"rail": "on"}
@@ -181,7 +181,7 @@ class TestCtxProvenanceFiresOnWrites:
 
     def test_writes_are_flagged_even_when_configure_is_unreadable(self) -> None:
         source = """
-            class Suite(LitmusTest):
+            class Suite(TestComponent):
                 async def configure(self, utils: TestUtils) -> dict[str, Any]:
                     return self._build()
                 async def _claim(self, utils: TestUtils) -> Verdict:
@@ -197,7 +197,7 @@ class TestCtxProvenanceStaysQuiet:
             class _Ctx(TypedDict):
                 rail: str
                 temperature_c: float
-            class Suite(LitmusTest):
+            class Suite(TestComponent):
                 async def configure(self, utils: TestUtils) -> _Ctx:
                     built = {"rail": "on"}
                     built["temperature_c"] = 40.0
@@ -212,7 +212,7 @@ class TestCtxProvenanceStaysQuiet:
 
     def test_dict_call_and_cast_return_are_readable(self) -> None:
         source = """
-            class Suite(LitmusTest):
+            class Suite(TestComponent):
                 async def configure(self, utils: TestUtils) -> dict[str, Any]:
                     if utils.env.get("FAST"):
                         return dict(mode="fast")
@@ -226,7 +226,7 @@ class TestCtxProvenanceStaysQuiet:
 
     def test_optional_reads_and_mutation_of_a_value_held_in_ctx(self) -> None:
         source = """
-            class Suite(LitmusTest):
+            class Suite(TestComponent):
                 async def configure(self, utils: TestUtils) -> dict[str, Any]:
                     return {"samples": [], "rail": rail}
                 async def _claim(self, utils: TestUtils) -> Verdict:
@@ -242,7 +242,7 @@ class TestCtxProvenanceStaysQuiet:
 
     def test_unreadable_configure_return_silences_the_class_reads(self) -> None:
         spread = """
-            class Suite(LitmusTest):
+            class Suite(TestComponent):
                 async def configure(self, utils: TestUtils) -> dict[str, Any]:
                     resolved = await utils.get_arp_resolver().resolve("aa:bb")
                     return {**resolved, "arp": True}
@@ -250,14 +250,14 @@ class TestCtxProvenanceStaysQuiet:
                     return utils.ctx["ip"]
         """
         computed = """
-            class Suite(LitmusTest):
+            class Suite(TestComponent):
                 async def configure(self, utils: TestUtils) -> dict[str, Any]:
                     return {self.own_key: True}
                 async def _claim(self, utils: TestUtils) -> Verdict:
                     return utils.ctx["ip"]
         """
         helper = """
-            class Suite(LitmusTest):
+            class Suite(TestComponent):
                 async def configure(self, utils: TestUtils) -> dict[str, Any]:
                     return self._build()
                 async def _claim(self, utils: TestUtils) -> Verdict:
@@ -274,7 +274,7 @@ class TestCtxProvenanceStaysQuiet:
 
     def test_dynamic_keys_and_non_suite_classes(self) -> None:
         source = """
-            class Suite(LitmusTest):
+            class Suite(TestComponent):
                 async def configure(self, utils: TestUtils) -> dict[str, Any]:
                     return {}
                 async def _claim(self, utils: TestUtils) -> Verdict:
@@ -291,10 +291,10 @@ class TestCtxProvenanceStaysQuiet:
 
     def test_methods_without_a_utils_parameter_are_not_readers(self) -> None:
         source = """
-            class Suite(LitmusTest):
+            class Suite(TestComponent):
                 async def configure(self, utils: TestUtils) -> dict[str, Any]:
                     return {}
-                def build_suite(self) -> LitmusTest:
+                def build_suite(self) -> TestComponent:
                     return self.test("x", self._claim)
                 @property
                 def run_data(self) -> JsonObject:
@@ -310,12 +310,12 @@ class TestCtxProvenanceEdges:
 
     def test_members_that_are_not_readers_are_skipped(self) -> None:
         source = """
-            class Suite(LitmusTest):
+            class Suite(TestComponent):
                 \"\"\"A docstring and a class attribute are not methods.\"\"\"
                 limit_c = 70.0
                 def __init__(self, *, name: str) -> None:
                     super().__init__(name=name)
-                def build_suite(self) -> LitmusTest:
+                def build_suite(self) -> TestComponent:
                     return self.test("x", self._other)
                 async def cleanup(self) -> None:
                     return None
@@ -333,7 +333,7 @@ class TestCtxProvenanceEdges:
 
     def test_configure_edge_returns(self) -> None:
         bare_return = """
-            class Suite(LitmusTest):
+            class Suite(TestComponent):
                 async def configure(self, utils: TestUtils) -> dict[str, Any]:
                     if utils.env.get("SKIP"):
                         return
@@ -343,7 +343,7 @@ class TestCtxProvenanceEdges:
         """
         assert _lines(bare_return) == []
         local_edges = """
-            class Suite(LitmusTest):
+            class Suite(TestComponent):
                 async def configure(self, utils: TestUtils) -> dict[str, Any]:
                     pending: dict[str, Any]
                     other = {}
@@ -359,7 +359,7 @@ class TestCtxProvenanceEdges:
         """
         assert _lines(local_edges) == []
         wildcard_update = """
-            class Suite(LitmusTest):
+            class Suite(TestComponent):
                 async def configure(self, utils: TestUtils) -> dict[str, Any]:
                     built = {"rail": "on"}
                     built.update(await self._probe())
@@ -369,7 +369,7 @@ class TestCtxProvenanceEdges:
         """
         assert _lines(wildcard_update) == []
         non_string_key = """
-            class Suite(LitmusTest):
+            class Suite(TestComponent):
                 async def configure(self, utils: TestUtils) -> dict[str, Any]:
                     return {1: "one"}
                 async def _claim(self, utils: TestUtils) -> Verdict:
@@ -377,7 +377,7 @@ class TestCtxProvenanceEdges:
         """
         assert _lines(non_string_key) == []
         dict_call_positional = """
-            class Suite(LitmusTest):
+            class Suite(TestComponent):
                 async def configure(self, utils: TestUtils) -> dict[str, Any]:
                     return dict(await self._probe())
                 async def _claim(self, utils: TestUtils) -> Verdict:
@@ -385,7 +385,7 @@ class TestCtxProvenanceEdges:
         """
         assert _lines(dict_call_positional) == []
         dict_call_splat = """
-            class Suite(LitmusTest):
+            class Suite(TestComponent):
                 async def configure(self, utils: TestUtils) -> dict[str, Any]:
                     return dict(**await self._probe())
                 async def _claim(self, utils: TestUtils) -> Verdict:
@@ -393,7 +393,7 @@ class TestCtxProvenanceEdges:
         """
         assert _lines(dict_call_splat) == []
         local_setdefault = """
-            class Suite(LitmusTest):
+            class Suite(TestComponent):
                 async def configure(self, utils: TestUtils) -> dict[str, Any]:
                     built = {}
                     built.setdefault("rail", "on")
@@ -412,7 +412,7 @@ class TestCtxProvenanceEdges:
                 rail: str
             class _Ctx(_Base):
                 temperature_c: float
-            class Suite(LitmusTest):
+            class Suite(TestComponent):
                 async def configure(self, utils: TestUtils) -> "_Ctx":
                     return {}
                 async def _claim(self, utils: TestUtils) -> Verdict:
@@ -424,7 +424,7 @@ class TestCtxProvenanceEdges:
         not_a_typed_dict = """
             class _Plain:
                 rail: str
-            class Suite(LitmusTest):
+            class Suite(TestComponent):
                 async def configure(self, utils: TestUtils) -> _Plain:
                     return {}
                 async def _claim(self, utils: TestUtils) -> Verdict:
@@ -432,7 +432,7 @@ class TestCtxProvenanceEdges:
         """
         assert _lines(not_a_typed_dict) == [8]
         imported_annotation = """
-            class Suite(LitmusTest):
+            class Suite(TestComponent):
                 async def configure(self, utils: TestUtils) -> Imported:
                     return {}
                 async def _claim(self, utils: TestUtils) -> Verdict:
@@ -442,7 +442,7 @@ class TestCtxProvenanceEdges:
 
     def test_unresolvable_base_silences_a_derived_suite(self) -> None:
         source = """
-            class Base(LitmusTest):
+            class Base(TestComponent):
                 async def configure(self, utils: TestUtils) -> dict[str, Any]:
                     return {"serial": "SN-1"}
             class Suite(Base, Mixin):
@@ -456,11 +456,11 @@ class TestCtxProvenanceEdges:
 
     def test_registrar_calls_outside_a_method_are_ignored(self) -> None:
         source = """
-            class Suite(LitmusTest):
+            class Suite(TestComponent):
                 hooks = register(use_survey)
                 async def configure(self, utils: TestUtils) -> dict[str, Any]:
                     return {}
-                def build_suite(*args) -> LitmusTest:
+                def build_suite(*args) -> TestComponent:
                     return args[0].test("x")
                 async def _snapshot(self, utils: TestUtils) -> object:
                     return utils.ctx.get("x")
@@ -470,10 +470,10 @@ class TestCtxProvenanceEdges:
 
 class TestCtxProvenanceAtTheCommandLine:
     def test_seeded_fixture_is_caught_and_clean_fixture_is_not(self) -> None:
-        fixtures = Path(__file__).parent / "fixtures" / "litmus_check"
+        fixtures = Path(__file__).parent / "fixtures" / "hilt_check"
         out = io.StringIO()
 
-        status = LitmusCheckCommand(stdout=out, stderr=io.StringIO()).run(
+        status = HiltCheckCommand(stdout=out, stderr=io.StringIO()).run(
             ["--select", CODE, str(fixtures)]
         )
 

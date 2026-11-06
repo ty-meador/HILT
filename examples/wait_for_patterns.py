@@ -30,17 +30,17 @@ The observations below are scripted so the example runs on any development machi
 Replace them with `utils.exec()` or another asynchronous hardware read in a real
 suite; the lifecycle and evidence shape remain the same.
 
-Run them: `litmus run examples/wait_for_patterns.py::ConfigureGatedDevice` and
-`litmus run examples/wait_for_patterns.py::MainAssertionDevice`.
+Run them: `hilt run examples/wait_for_patterns.py::ConfigureGatedDevice` and
+`hilt run examples/wait_for_patterns.py::MainAssertionDevice`.
 """
 
 import asyncio
 from typing import Any
 
-from litmus import PASS, Artifact, LitmusTest, TestFailure, TestUtils, Verdict, evidence
+from hilt import PASS, Artifact, TestComponent, TestFailure, TestUtils, Verdict, evidence
 
 
-class ConfigureGatedDevice(LitmusTest):
+class ConfigureGatedDevice(TestComponent):
     """Wait for readiness before allowing any hardware claim to run."""
 
     def __init__(
@@ -55,7 +55,7 @@ class ConfigureGatedDevice(LitmusTest):
         """Capture deterministic stand-ins for the device observations.
 
         The defaults reach ``active`` on the second poll and report healthy, so
-        `litmus run` needs no arguments.
+        `hilt run` needs no arguments.
         """
         super().__init__(name=name)
         self._service_states = service_states
@@ -111,7 +111,7 @@ class ConfigureGatedDevice(LitmusTest):
         # health claim's verdict, which did not observe them.
         return {"service_state": service_state, "service_poll_attempts": attempts}
 
-    def build_suite(self) -> LitmusTest:
+    def build_suite(self) -> TestComponent:
         """Run the health claim only after the configure gate succeeds."""
         return self.test("service-health", self._check_health)
 
@@ -150,7 +150,7 @@ class ConfigureGatedDevice(LitmusTest):
         )
 
 
-class MainAssertionDevice(LitmusTest):
+class MainAssertionDevice(TestComponent):
     """Use the polling window itself as a hardware claim."""
 
     def __init__(
@@ -163,7 +163,7 @@ class MainAssertionDevice(LitmusTest):
     ) -> None:
         """Capture deterministic stress-marker observations.
 
-        The default marker appears on the third poll, so `litmus run` needs no
+        The default marker appears on the third poll, so `hilt run` needs no
         arguments.
         """
         super().__init__(name=name)
@@ -181,7 +181,7 @@ class MainAssertionDevice(LitmusTest):
         """
         return {"poll_interval_s": self._interval, "poll_timeout_s": self._timeout_seconds}
 
-    def build_suite(self) -> LitmusTest:
+    def build_suite(self) -> TestComponent:
         """Declare the stress-completion claim."""
         return self.test("stress-test-completes", self._wait_for_stress)
 

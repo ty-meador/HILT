@@ -1,7 +1,7 @@
 """GPIO surrogate: the kernel's ``gpio-sim``, a fake chip whose lines you drive from sysfs.
 
-``make bench-root-setup`` builds a chip labelled "litmus-bench" with eight lines under
-``/sys/kernel/config/gpio-sim/litmus`` and opens its ``/dev/gpiochipN`` and per-line
+``make bench-root-setup`` builds a chip labelled "hilt-bench" with eight lines under
+``/sys/kernel/config/gpio-sim/hilt`` and opens its ``/dev/gpiochipN`` and per-line
 ``pull`` knobs to the bench user. From userspace it is an ordinary character device:
 the same ``GPIO_V2_*`` ioctls a real chip answers, reached here through libgpiod's
 ``gpiod`` bindings (the ``bench`` dependency group). The far side is sysfs:
@@ -21,8 +21,8 @@ from gpiod.line import Direction, Edge, Value
 
 from bench._common import report
 
-_SIM = Path("/sys/kernel/config/gpio-sim/litmus")
-_CONSUMER = "litmus-bench"
+_SIM = Path("/sys/kernel/config/gpio-sim/hilt")
+_CONSUMER = "hilt-bench"
 _INPUT, _OUTPUT, _EDGE = 0, 1, 2
 type _Config = dict[Iterable[int | str] | int | str, gpiod.LineSettings | None]
 

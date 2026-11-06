@@ -1,4 +1,4 @@
-"""``litmus/evidence-shadows-ctx``: an ``@evidence`` key is not a ctx key and not ``measurements``.
+"""``hilt/evidence-shadows-ctx``: an ``@evidence`` key is not a ctx key and not ``measurements``.
 
 Bench finding F14, issue #161. Two of five bench suites hit the tier-1 refusal on their
 first run because the natural name for a reading was the natural name for the limit or
@@ -13,11 +13,11 @@ from textwrap import dedent
 
 import pytest
 
-from litmus_check import SuiteModule, Violation
-from litmus_check.cli import EXIT_CLEAN, EXIT_VIOLATIONS, LitmusCheckCommand
-from litmus_check.rules.evidence_shadows_ctx import EvidenceShadowsCtxRule
+from hilt_check import SuiteModule, Violation
+from hilt_check.cli import EXIT_CLEAN, EXIT_VIOLATIONS, HiltCheckCommand
+from hilt_check.rules.evidence_shadows_ctx import EvidenceShadowsCtxRule
 
-CODE = "litmus/evidence-shadows-ctx"
+CODE = "hilt/evidence-shadows-ctx"
 _BENCH_SUITES = Path(__file__).resolve().parents[1] / "bench" / "suites"
 
 
@@ -38,7 +38,7 @@ def _named_key(violation: Violation) -> str:
 class TestEvidenceShadowsCtxFires:
     def test_a_literal_key_configure_returns_is_flagged_on_the_literal(self) -> None:
         source = """
-            class Suite(LitmusTest):
+            class Suite(TestComponent):
                 async def configure(self, utils: TestUtils) -> dict[str, Any]:
                     return {"kernel": "6.1.0", "limit_c": 70.0}
 
@@ -56,7 +56,7 @@ class TestEvidenceShadowsCtxFires:
 
     def test_every_clashing_key_is_its_own_violation(self) -> None:
         source = """
-            class Suite(LitmusTest):
+            class Suite(TestComponent):
                 async def configure(self, utils: TestUtils) -> dict[str, Any]:
                     return dict(domain="ads.example", probe="probe.example")
 
@@ -70,7 +70,7 @@ class TestEvidenceShadowsCtxFires:
 
     def test_the_measurements_slot_is_reserved_whatever_configure_returns(self) -> None:
         source = """
-            class Suite(LitmusTest):
+            class Suite(TestComponent):
                 async def configure(self, utils: TestUtils) -> dict[str, Any]:
                     return self._discover()
 
@@ -94,7 +94,7 @@ class TestEvidenceShadowsCtxFires:
                 rail_v: float
                 ripple_mv: float
 
-            class Suite(LitmusTest):
+            class Suite(TestComponent):
                 async def configure(self, utils: TestUtils) -> _Ctx:
                     return {"rail_v": 3.3}
 
@@ -114,7 +114,7 @@ class TestEvidenceShadowsCtxFires:
             class _Reading(_Base):
                 machine: str
 
-            class Suite(LitmusTest):
+            class Suite(TestComponent):
                 async def configure(self, utils: TestUtils) -> dict[str, Any]:
                     return {"kernel": "6.1.0"}
 
@@ -128,7 +128,7 @@ class TestEvidenceShadowsCtxFires:
 
     def test_a_subclass_without_configure_is_held_to_what_its_base_provides(self) -> None:
         source = """
-            class Base(LitmusTest):
+            class Base(TestComponent):
                 async def configure(self, utils: TestUtils) -> dict[str, Any]:
                     return {"domain": "ads.example"}
 
@@ -143,7 +143,7 @@ class TestEvidenceShadowsCtxFires:
 
     def test_a_local_dict_configure_builds_and_returns_counts(self) -> None:
         source = """
-            class Suite(LitmusTest):
+            class Suite(TestComponent):
                 async def configure(self, utils: TestUtils) -> dict[str, Any]:
                     ctx = {"ip": "10.0.0.1"}
                     ctx["kernel"] = "6.1.0"
@@ -164,7 +164,7 @@ class TestEvidenceShadowsCtxStaysQuiet:
             class _Reading(TypedDict):
                 kernel_running: str
 
-            class Suite(LitmusTest):
+            class Suite(TestComponent):
                 async def configure(self, utils: TestUtils) -> dict[str, Any]:
                     return {"kernel": "6.1.0", "domain": "ads.example"}
 
@@ -184,7 +184,7 @@ class TestEvidenceShadowsCtxStaysQuiet:
 
     def test_an_unreadable_configure_is_left_to_tier_one(self) -> None:
         source = """
-            class Suite(LitmusTest):
+            class Suite(TestComponent):
                 async def configure(self, utils: TestUtils) -> dict[str, Any]:
                     return await self._discover(utils)
 
@@ -198,7 +198,7 @@ class TestEvidenceShadowsCtxStaysQuiet:
 
     def test_unreadable_declarations_undecorated_methods_and_helpers_are_ignored(self) -> None:
         source = """
-            class Suite(LitmusTest):
+            class Suite(TestComponent):
                 async def configure(self, utils: TestUtils) -> dict[str, Any]:
                     return {"kernel": "6.1.0"}
 
@@ -227,11 +227,11 @@ class TestEvidenceShadowsCtxStaysQuiet:
         # The leaf shares the parent's ctx at run time, where tier 1 refuses the
         # payload; a single-file analysis does not know the parent, so the rule is quiet.
         source = """
-            class Parent(LitmusTest):
+            class Parent(TestComponent):
                 async def configure(self, utils: TestUtils) -> dict[str, Any]:
                     return {"domain": "ads.example"}
 
-            class Leaf(LitmusTest):
+            class Leaf(TestComponent):
                 async def configure(self, utils: TestUtils) -> dict[str, Any]:
                     return {}
 
@@ -284,10 +284,10 @@ class TestEvidenceShadowsCtxAtTheBench:
 
 class TestEvidenceShadowsCtxAtTheCommandLine:
     def test_seeded_fixture_is_caught_and_clean_fixture_is_not(self) -> None:
-        fixtures = Path(__file__).parent / "fixtures" / "litmus_check"
+        fixtures = Path(__file__).parent / "fixtures" / "hilt_check"
         out = io.StringIO()
 
-        status = LitmusCheckCommand(stdout=out, stderr=io.StringIO()).run(
+        status = HiltCheckCommand(stdout=out, stderr=io.StringIO()).run(
             ["--select", CODE, str(fixtures)]
         )
 
@@ -297,10 +297,10 @@ class TestEvidenceShadowsCtxAtTheCommandLine:
         assert lines[-1] == "Found 1 violation."
 
     def test_the_clean_fixture_alone_is_clean(self) -> None:
-        fixture = Path(__file__).parent / "fixtures" / "litmus_check" / "clean_suite.py"
+        fixture = Path(__file__).parent / "fixtures" / "hilt_check" / "clean_suite.py"
         out = io.StringIO()
 
-        status = LitmusCheckCommand(stdout=out, stderr=io.StringIO()).run(
+        status = HiltCheckCommand(stdout=out, stderr=io.StringIO()).run(
             ["--select", CODE, str(fixture)]
         )
 

@@ -27,7 +27,7 @@ from typing import Any
 from tests.fake_console import FakeConsole
 
 from bench._common import cache_dir, pid_from, report, require_tool
-from litmus.serial import SerialInterface
+from hilt.serial import SerialInterface
 
 
 async def _exercise(device: str) -> int:
@@ -106,7 +106,7 @@ def _spawn_socat(
 def check() -> int:
     """Spawn the socat pair, hand one end to the console and the other to the transport."""
     socat = require_tool("socat")
-    with tempfile.TemporaryDirectory(prefix="litmus-bench-serial-") as tmp:
+    with tempfile.TemporaryDirectory(prefix="hilt-bench-serial-") as tmp:
         dut_link = Path(tmp) / "dut"
         peer_link = Path(tmp) / "peer"
         socat_proc = _spawn_socat(socat, dut_link, peer_link)

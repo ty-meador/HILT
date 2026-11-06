@@ -4,7 +4,7 @@ The contracts below define the mutual obligations between the developer and the 
 These are non-negotiable invariants. Any API change must preserve every contract listed here.
 
 In the Python port, tier-1 enforcement of these contracts lives in the child-boundary
-wrapper (`src/litmus/lifecycle.py`, `ChildBoundary`): every call the framework makes into
+wrapper (`src/hilt/lifecycle.py`, `ChildBoundary`): every call the framework makes into
 suite code passes through it, and per-slot policy (`SLOT_POLICIES`) is declared once and
 read nowhere else. Nothing that protects hardware or verdict integrity may live only in
 static analysis.
@@ -14,7 +14,7 @@ static analysis.
 ## Lifecycle Contract
 **Developer obligation:** Implement `configure()`, `build_suite()`, and `cleanup()` with the correct intent.
 - `configure()` — put the test in a known state and return what the tests will read. Readiness gates and polling live here. The return is a plain dict (or a local `TypedDict` under pyright strict; the framework annotation is `Mapping[str, Any]`) whose entries become `utils.ctx` for test methods, hooks, `cleanup()`, and all descendant tests. Ctx does not change after that: a `[]` read of a key `configure()` did not provide, and any write once it has returned, is a `ContractViolation` naming the test and the key, not a hardware Fail. `.get()` and `in` read an optional key (issues #112, #118).
-- `build_suite()` — pure table-of-contents composition. Return a `LitmusTest` built from `self.test()` / `self.sequence()` / `self.parallel()`. Test methods (private class methods passed to `self.test()`) carry the actual verdict logic — return `PASS`, or `PASS(evidence)` with the readings, to pass; raise `TestFailure` (optionally with `evidence=`) to fail intentionally.
+- `build_suite()` — pure table-of-contents composition. Return a `TestComponent` built from `self.test()` / `self.sequence()` / `self.parallel()`. Test methods (private class methods passed to `self.test()`) carry the actual verdict logic — return `PASS`, or `PASS(evidence)` with the readings, to pass; raise `TestFailure` (optionally with `evidence=`) to fail intentionally.
 - `cleanup()` — restore state. Must not throw (errors are swallowed and logged). It reads ctx and does not write it; a value it must restore was captured in `configure()`.
 
 **Framework obligation:** Execute configure → build_suite → cleanup in order, guaranteed.
@@ -32,7 +32,7 @@ static analysis.
 ---
 
 ## Terminal State Contract
-**Framework obligation:** Every run of a `LitmusTest` resolves to exactly one of three peer terminal states. The states are distinct categories with distinct recovery protocols — the framework does not collapse them. There is no hidden fourth: a call that settles without producing a terminal state (a successful `configure`, a completed `cleanup`) reports no state at all rather than inventing one.
+**Framework obligation:** Every run of a `TestComponent` resolves to exactly one of three peer terminal states. The states are distinct categories with distinct recovery protocols — the framework does not collapse them. There is no hidden fourth: a call that settles without producing a terminal state (a successful `configure`, a completed `cleanup`) reports no state at all rather than inventing one.
 
 1. **Pass** — a test method returned a `Verdict`: the bare `PASS`, or `PASS(evidence)` carrying its readings. The check is `isinstance(result, Verdict)`; a `Verdict` is obtained only by importing `PASS` or calling it, so nothing a suite constructs can forge one. A pass without its declared evidence is not a pass: when the method carries `@evidence(...)`, a `PASS` that does not carry every declared key is a `ContractViolation` (developer-bug Fail), never a green run (issue #118).
 2. **Fail** — a test method raised a `TestFailure` (or subclass): the DUT produced a verdict and the verdict was negative. OR the developer didn't model a failure mode: a plain exception → `ContractViolation` Fail (`bug: true`).
@@ -55,7 +55,7 @@ time. A node with neither has no deadline of its own and is bounded only by its
 ancestors. Durations must be positive, finite numbers; booleans, zero, negatives,
 infinities, NaN, and non-numbers are rejected before execution.
 
-- The pair is part of the `LitmusTest` fractal atom. It is accepted by authored-node
+- The pair is part of the `TestComponent` fractal atom. It is accepted by authored-node
   construction, `self.test()`, `self.parallel()`, `self.sequence()`, and root `run()`.
   Every node is a suite, so every placement reads the same way: this suite completes
   within the budget or the named state is raised. Construction and `run()` are two
@@ -175,7 +175,7 @@ the record identifies the exact clock and budget without requiring the suite sou
   naming the node and the measurement: an empty name, a `bool`, `NaN`, or infinite
   value, a non-text unit, or a window that bounds nothing or runs backwards; the same name
   recorded twice in one node; a call from outside `configure()` or the test method
-  (`cleanup`, surveys, audits, hooks, or after the node settled); and `litmus.measure`
+  (`cleanup`, surveys, audits, hooks, or after the node settled); and `hilt.measure`
   where no node's slot is executing. The record is sealed on every terminal state,
   Aborted included, and published on the node's `run_data` and on every `summary_tree`
   node (`null` when the node never ran). A measurement does not satisfy an `@evidence`
@@ -220,7 +220,7 @@ is self-contained and cannot overwrite a neighboring run.
 - Authored suites, sequences, and parallel nodes own a log by default. Leaves roll up
   to the nearest owning ancestor. Sequences, parallel nodes, and composed suites may opt
   into the same roll-up with `discrete_log_file=False`; a root still owns the run log.
-- `LitmusTest.log_path` exposes the owning node's absolute `timeline.jsonl` path after
+- `TestComponent.log_path` exposes the owning node's absolute `timeline.jsonl` path after
   execution. It remains `None` for pending nodes and nodes whose records roll up.
 - Every `summary_tree` node carries the same link as `log_path`, rendered as a POSIX
   path relative to the run directory, so the structural record reaches the temporal
@@ -284,7 +284,7 @@ leave point-in-time artifacts at the configured base root; authored suites use `
 - Hooks receive a deliberately narrow context (`BeforeEachContext` / `AfterEachContext`): node name, ancestor chain, breadcrumbs, scoped logger, env snapshot. NOT `exec`, `get_shell`, or `capture_artifact`. Integration hooks are for external coordination, not for exercising the hardware.
 - Unpaired registration (only `before_each` or only `after_each`) emits a loud warning at run start unless `allow_unpaired_hooks=True` is passed. The pairing enforces the started/finished symmetry.
 
-**Developer obligation:** Do not register `before_each`/`after_each` inside your `LitmusTest` subclasses. These hooks are the integrator's contract with the outside world, not part of the test's own lifecycle. Use `use_survey` / `use_audit` for per-test observation; use `before_each` / `after_each` only when composing Litmus into a larger harness.
+**Developer obligation:** Do not register `before_each`/`after_each` inside your `TestComponent` subclasses. These hooks are the integrator's contract with the outside world, not part of the test's own lifecycle. Use `use_survey` / `use_audit` for per-test observation; use `before_each` / `after_each` only when composing HILT into a larger harness.
 
 ---
 
@@ -311,7 +311,7 @@ The operator-signal handler is installed by `run()`/`main()` only while that run
 **Framework obligation:** `TestUtils` is the single, fully-scoped utility surface passed to every lifecycle method.
 
 - `utils.exec` never throws. It returns an `ExecResult(stdout, stderr, exit_code, truncated, captured_bytes)` — a non-zero exit code is data for the test method to judge, not an exception. Signal-killed, aborted, and closed-transport commands settle as `exit_code=-1`. A `ConnectionError` from `RemoteInterface.exec` is absorbed here; the protocol stays loud, the author-facing surface stays total. `CancelledError` still propagates.
-- Stdout and stderr together are bounded by one named `output_budget` (default 4 MiB), applied identically by the local executor and `SshInterface`. The budget is configured at the run seed (`LitmusTest.run(output_budget=...)` / `TestUtils(output_budget=...)`) or at `LocalExec` / `SshInterface` construction — never as a process-global. Exceeding it terminates the command the same way abort does (SIGTERM the host process group; SIGTERM then close that SSH channel, session stays up) and settles with the bytes actually received, `truncated=True`, and `captured_bytes` equal to what was kept. Truncation is evidence, never an exception. The scoped log names it (`exec output truncated: captured N bytes (budget B)`). Streaming reads preserve interrupted output: decode happens only at settlement, with replacement for a cut in the middle of a UTF-8 sequence.
+- Stdout and stderr together are bounded by one named `output_budget` (default 4 MiB), applied identically by the local executor and `SshInterface`. The budget is configured at the run seed (`TestComponent.run(output_budget=...)` / `TestUtils(output_budget=...)`) or at `LocalExec` / `SshInterface` construction — never as a process-global. Exceeding it terminates the command the same way abort does (SIGTERM the host process group; SIGTERM then close that SSH channel, session stays up) and settles with the bytes actually received, `truncated=True`, and `captured_bytes` equal to what was kept. Truncation is evidence, never an exception. The scoped log names it (`exec output truncated: captured N bytes (budget B)`). Streaming reads preserve interrupted output: decode happens only at settlement, with replacement for a cut in the middle of a UTF-8 sequence.
 
 **Developer obligation:** Use only `utils.*` inside lifecycle methods — never import framework internals directly into test logic.
 
@@ -327,7 +327,7 @@ The operator-signal handler is installed by `run()`/`main()` only while that run
 - **Ownership.** The node whose `configure()` opened a shell, through `use_shell` or `get_shell`, owns it. The framework closes it at that node's cleanup (after the post-cleanup survey, before the hop it tunnels through), never earlier and never from another node.
 - **Hooks and audits observe the route; they do not set it.** They read `utils.exec_route` and exec through what `configure()` committed to. A survey runs at phases before `configure()` and after `cleanup()`, and an audit runs concurrently with the test method, so neither has a moment at which one route could be declared once. `get_shell` stays open to them: an auxiliary endpoint changes nothing the routing line states.
 - `propagate=False` on `use_shell` stops this node's router from flowing to children; they start local. `propagate` on `get_shell` is a documented no-op.
-- **The parent owns the route.** A route is owned by the node whose `configure()` declared it and is inherited by every node that node composes, down the tree, until a descendant declares `inherit=False` (or the owner declared `propagate=False`). A device class never takes a routing argument: a gateway is a parent whose `configure()` opens the hop and whose `build_suite()` composes the devices behind it, and those devices are routed by being its children. The `LitmusTest` constructor has no `via=`; the only `via` is the tunnel argument to `use_shell` / `get_shell`, declared inside `configure()` by the node that owns the route (issue #137).
+- **The parent owns the route.** A route is owned by the node whose `configure()` declared it and is inherited by every node that node composes, down the tree, until a descendant declares `inherit=False` (or the owner declared `propagate=False`). A device class never takes a routing argument: a gateway is a parent whose `configure()` opens the hop and whose `build_suite()` composes the devices behind it, and those devices are routed by being its children. The `TestComponent` constructor has no `via=`; the only `via` is the tunnel argument to `use_shell` / `get_shell`, declared inside `configure()` by the node that owns the route (issue #137).
 - Children inherit the route through run params (`RouterRunParams`), never through ctx. ctx is instance-local domain data, not infrastructure.
 - Routed tunnels are borrowed; the router owns hop lifecycle. Every hop the router resolves — an explicit `via=` Shell or an inherited route — is already live, so the connector threads it through the transport's borrowed `tunnel=` channel, never the owned `via=` one. The opened interface must not disconnect, cancel, or collapse its hop. What a node opened is recorded on the node (`opened`), stays connected through the node's post-cleanup survey, and closes after that survey and before the hop it tunnels through — the parent's hop closes at the same point of the parent's own lifecycle, after every child is done with it (issue #115), so a survey that execs at post-cleanup reads the device, not a closed transport; a hard abort on the hop kills everything tunneled through it at the socket (In-Flight Termination Contract). A dead hop at open time is an error, not something the router silently brings up.
 
@@ -356,7 +356,7 @@ The request never mutates the caller's headers or retains its JSON object.
 
 `DeviceResponse.json()` decodes the returned bytes. `parse(response_type="json")`
 is the format-selecting form; `response_type="yaml"` uses `yaml.safe_load` from the
-optional `litmus[yaml]` extra. Unknown formats raise `ValueError`, a missing YAML
+optional `hilt[yaml]` extra. Unknown formats raise `ValueError`, a missing YAML
 dependency raises `ImportError`, and parser errors propagate without a fallback.
 Parsing is explicit, independent of response status and headers; it preserves `body`
 and `status`, makes no request, and supplies no verdict. A malformed body remains a
@@ -369,6 +369,6 @@ A CoAP `status` is the dotted code (`"2.05"`, a `CoapCode` constant). An HTTP
 ---
 
 ## Composability Contract
-**Framework obligation:** Any `LitmusTest` or subclass thereof can be composed indefinitely in any shape the SE deems appropriate.
+**Framework obligation:** Any `TestComponent` or subclass thereof can be composed indefinitely in any shape the SE deems appropriate.
 
 **Developer obligation:** Leaves must be self-contained — declare their own readiness preconditions in `configure()`, not in the parent sequence.

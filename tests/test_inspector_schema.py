@@ -11,23 +11,23 @@ import pytest
 from jsonschema import Draft202012Validator
 from jsonschema.exceptions import ValidationError
 
-from litmus import (
+from hilt import (
     PASS,
     Artifact,
     ContractViolation,
     ExternalIntegrationFailure,
-    LitmusTest,
     MissingVerdict,
     OperatorInterrupt,
     RunResult,
     SummaryTreeNode,
+    TestComponent,
     TestFailure,
     TestUtils,
     Verdict,
 )
-from litmus.errors import Failure
-from litmus.lifecycle import Slot, State, TimeoutEvidence
-from litmus.results import NodeType
+from hilt.errors import Failure
+from hilt.lifecycle import Slot, State, TimeoutEvidence
+from hilt.results import NodeType
 
 SCHEMA_DIR = Path(__file__).resolve().parents[1] / "docs" / "schema"
 RESULT_SCHEMA = SCHEMA_DIR / "result-v1.schema.json"
@@ -141,7 +141,7 @@ class TestEmittedRecordsValidate:
     async def test_a_real_run_validates_its_result_and_every_timeline_line(
         self, tmp_path: Path
     ) -> None:
-        class Suite(LitmusTest):
+        class Suite(TestComponent):
             def __init__(self, *, name: str) -> None:
                 super().__init__(name=name)
                 self._checks = self.sequence(
@@ -153,7 +153,7 @@ class TestEmittedRecordsValidate:
                     ],
                 )
 
-            def build_suite(self) -> LitmusTest:
+            def build_suite(self) -> TestComponent:
                 return self._checks
 
             async def _snapshot(self, utils: TestUtils) -> Verdict:
@@ -170,7 +170,7 @@ class TestEmittedRecordsValidate:
                 return PASS
 
         suite = Suite(name="rack/name")
-        result = await suite.run(env={"LITMUS_ARTIFACT_ROOT": str(tmp_path)})
+        result = await suite.run(env={"HILT_ARTIFACT_ROOT": str(tmp_path)})
         assert result.state is State.FAIL
         assert suite.log_path is not None
         run_root = suite.log_path.parent.parent

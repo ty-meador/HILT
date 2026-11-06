@@ -3,17 +3,17 @@
 import json
 from typing import Any
 
-from litmus import (
+from hilt import (
     ArpResolutionFailure,
     ContractViolation,
     ExternalIntegrationFailure,
     FrameworkContractViolation,
-    LitmusError,
+    HiltError,
     MissingVerdict,
     OperatorInterrupt,
     TestFailure,
 )
-from litmus.errors import MISSING
+from hilt.errors import MISSING
 
 
 class DimmFailure(TestFailure):
@@ -23,14 +23,14 @@ class DimmFailure(TestFailure):
 class TestTaxonomyShape:
     def test_test_failure_is_a_verdict_of_fail(self) -> None:
         failure = TestFailure("firmware mismatch", expected="2.4.1", received="2.3.9")
-        assert isinstance(failure, LitmusError)
+        assert isinstance(failure, HiltError)
         assert failure.fail_message == "firmware mismatch"
         assert failure.has_comparison is True
         assert failure.is_bug is False
 
     def test_arp_resolution_failure_is_not_a_test_failure(self) -> None:
         failure = ArpResolutionFailure("missing", mac="aa:bb:cc:dd:ee:ff", host="local")
-        assert isinstance(failure, LitmusError)
+        assert isinstance(failure, HiltError)
         assert not isinstance(failure, TestFailure)
         assert failure.mac == "aa:bb:cc:dd:ee:ff"
         assert failure.host == "local"
@@ -50,7 +50,7 @@ class TestTaxonomyShape:
         # Peer taxonomies: the recovery is different, so the type must be too. A
         # `except TestFailure` anywhere must not intercept a run-level halt.
         failure = ExternalIntegrationFailure("before_each", RuntimeError("db down"))
-        assert isinstance(failure, LitmusError)
+        assert isinstance(failure, HiltError)
         assert not isinstance(failure, TestFailure)
         assert failure.is_bug is False
 
@@ -65,14 +65,14 @@ class TestTaxonomyShape:
         # Aborted is a peer of Pass and Fail. If this ever became a TestFailure, the
         # framework would be forging a verdict the test never produced.
         missing = MissingVerdict("dimm-0", returned=None)
-        assert isinstance(missing, LitmusError)
+        assert isinstance(missing, HiltError)
         assert not isinstance(missing, TestFailure)
         assert missing.is_bug is True
         assert missing.returned is None
 
     def test_operator_interrupt_names_the_operator_and_is_not_a_test_failure(self) -> None:
         failure = OperatorInterrupt(2)
-        assert isinstance(failure, LitmusError)
+        assert isinstance(failure, HiltError)
         assert not isinstance(failure, TestFailure)
         assert not isinstance(failure, ExternalIntegrationFailure)
         assert failure.is_bug is False

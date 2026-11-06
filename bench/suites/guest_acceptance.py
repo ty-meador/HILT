@@ -11,7 +11,7 @@ suite does not know that: it reads ``GUEST_HOST`` / ``GUEST_USER`` and optional
 against a Raspberry Pi on the rack.
 
 Run it: ``make bench-suite-guest``, or set the four variables and
-``PYTHONPATH=. litmus run bench/suites/guest_acceptance.py``.
+``PYTHONPATH=. hilt run bench/suites/guest_acceptance.py``.
 """
 
 from __future__ import annotations
@@ -20,7 +20,7 @@ import time
 from collections.abc import Sequence
 from typing import Any
 
-from litmus import PASS, LitmusTest, Phase, TestFailure, TestUtils, Verdict, evidence
+from hilt import PASS, Phase, TestComponent, TestFailure, TestUtils, Verdict, evidence
 
 _SETTLED_STATES = frozenset({"running", "degraded"})
 
@@ -39,7 +39,7 @@ def _number(text: str) -> float | None:
         return None
 
 
-class DebianGuest(LitmusTest):
+class DebianGuest(TestComponent):
     """Prove a guest booted to a usable state and is inside its resource limits."""
 
     def __init__(
@@ -132,7 +132,7 @@ class DebianGuest(LitmusTest):
             "clock_skew_limit_s": self._clock_skew_limit_s,
         }
 
-    def build_suite(self) -> LitmusTest:
+    def build_suite(self) -> TestComponent:
         """Identity, then the units, then the independent resource readings."""
         return self.sequence(
             self.name,

@@ -1,4 +1,4 @@
-"""Sequence and parallel composition translated from the legacy Litmus example.
+"""Sequence and parallel composition translated from the legacy HILT example.
 
 Concept: the shape of the tree is a statement about dependencies between claims.
 
@@ -11,22 +11,22 @@ Concept: the shape of the tree is a statement about dependencies between claims.
   failures instead of the first one.
 
 Both nodes have verdicts of their own: a sequence or parallel is Pass only when every
-child is. The verdict of the composition is what `litmus run` reports and what the
+child is. The verdict of the composition is what `hilt run` reports and what the
 exit status reflects.
 
 The values are deterministic stand-ins for device readings so the example runs on
 any development machine. A real suite takes them with `utils.exec()` or a hardware
 read inside the test method; the composition is unchanged.
 
-Run them: `litmus run examples/test_composition.py::SequencedDevice` settles Pass;
-`litmus run examples/test_composition.py::ParallelDevice` settles Fail with two of
+Run them: `hilt run examples/test_composition.py::SequencedDevice` settles Pass;
+`hilt run examples/test_composition.py::ParallelDevice` settles Fail with two of
 its three claims recorded, and exits 1.
 """
 
-from litmus import PASS, LitmusTest, TestFailure, TestUtils, Verdict
+from hilt import PASS, TestComponent, TestFailure, TestUtils, Verdict
 
 
-class SequencedDevice(LitmusTest):
+class SequencedDevice(TestComponent):
     """Check dependent startup claims serially and stop at the first failure."""
 
     def __init__(
@@ -39,7 +39,7 @@ class SequencedDevice(LitmusTest):
     ) -> None:
         """Capture the simulated observations that the sequence will evaluate.
 
-        The defaults are the healthy readings, so `litmus run` needs no arguments.
+        The defaults are the healthy readings, so `hilt run` needs no arguments.
         The self-tests pass unhealthy ones to pin the stop-at-first-failure rule.
         """
         super().__init__(name=name)
@@ -47,7 +47,7 @@ class SequencedDevice(LitmusTest):
         self._firmware_version = firmware_version
         self._application_pid = application_pid
 
-    def build_suite(self) -> LitmusTest:
+    def build_suite(self) -> TestComponent:
         """Order the startup claims so later checks depend on earlier success.
 
         Read the list top to bottom as "boot, then firmware, then the application".
@@ -86,7 +86,7 @@ class SequencedDevice(LitmusTest):
         raise TestFailure("application not running", "pid present", "(none)")
 
 
-class ParallelDevice(LitmusTest):
+class ParallelDevice(TestComponent):
     """Check independent sensor claims concurrently and collect every failure."""
 
     def __init__(
@@ -108,7 +108,7 @@ class ParallelDevice(LitmusTest):
         self._voltage_v = voltage_v
         self._fan_rpm = fan_rpm
 
-    def build_suite(self) -> LitmusTest:
+    def build_suite(self) -> TestComponent:
         """Group the sensor claims because none depends on another.
 
         A hot board does not make the voltage reading wrong, and a slow fan does not

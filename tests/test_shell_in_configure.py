@@ -11,17 +11,17 @@ import logging
 
 import pytest
 
-from litmus import (
+from hilt import (
     PASS,
     ContractViolation,
-    LitmusTest,
     State,
+    TestComponent,
     TestFailure,
     TestUtils,
     Verdict,
 )
-from litmus.results import SummaryTreeNode
-from litmus.utils import node_runtime
+from hilt.results import SummaryTreeNode
+from hilt.utils import node_runtime
 
 DETAIL = (
     "use_shell declared a route outside configure(); the exec route is fixed when "
@@ -40,8 +40,8 @@ def _routing_line(utils: TestUtils) -> str:
 
 class TestDeclarationOutsideConfigureIsAContractViolation:
     async def test_from_a_test_method_lands_as_a_bug_naming_the_leaf(self) -> None:
-        class Suite(LitmusTest):
-            def build_suite(self) -> LitmusTest:
+        class Suite(TestComponent):
+            def build_suite(self) -> TestComponent:
                 return self.test("rail", self._claim)
 
             async def _claim(self, utils: TestUtils) -> Verdict:
@@ -60,12 +60,12 @@ class TestDeclarationOutsideConfigureIsAContractViolation:
         assert failure.fail_message == f"CONTRACT VIOLATION IN rail: {DETAIL}"
 
     async def test_from_an_audit_fails_the_node(self) -> None:
-        class Suite(LitmusTest):
+        class Suite(TestComponent):
             def __init__(self, *, name: str) -> None:
                 super().__init__(name=name)
                 self.use_audit(interval=0.01, fn=self._retarget)
 
-            def build_suite(self) -> LitmusTest:
+            def build_suite(self) -> TestComponent:
                 return self.test("rail", self._claim)
 
             async def _claim(self, utils: TestUtils) -> Verdict:
@@ -89,7 +89,7 @@ class TestDeclarationOutsideConfigureIsAContractViolation:
     ) -> None:
         lines: list[str] = []
 
-        class Suite(LitmusTest):
+        class Suite(TestComponent):
             def __init__(self, *, name: str) -> None:
                 super().__init__(name=name)
                 self.use_survey(self._retarget)
@@ -98,7 +98,7 @@ class TestDeclarationOutsideConfigureIsAContractViolation:
                 await utils.use_shell(inherit=False)
                 return {}
 
-            def build_suite(self) -> LitmusTest:
+            def build_suite(self) -> TestComponent:
                 return self.test("rail", self._claim)
 
             async def _claim(self, utils: TestUtils) -> Verdict:
@@ -122,8 +122,8 @@ class TestDeclarationOutsideConfigureIsAContractViolation:
     async def test_from_cleanup_is_refused_and_logged(
         self, caplog: pytest.LogCaptureFixture
     ) -> None:
-        class Suite(LitmusTest):
-            def build_suite(self) -> LitmusTest:
+        class Suite(TestComponent):
+            def build_suite(self) -> TestComponent:
                 return self.test("rail", self._claim)
 
             async def _claim(self, utils: TestUtils) -> Verdict:
@@ -153,8 +153,8 @@ class TestDeclarationOutsideConfigureIsAContractViolation:
 
 class TestReadsAndConfigureDeclarationsAreAdmitted:
     async def test_bare_read_from_a_test_method_returns_the_active_shell(self) -> None:
-        class Suite(LitmusTest):
-            def build_suite(self) -> LitmusTest:
+        class Suite(TestComponent):
+            def build_suite(self) -> TestComponent:
                 return self.test("rail", self._claim)
 
             async def _claim(self, utils: TestUtils) -> Verdict:
@@ -170,14 +170,14 @@ class TestReadsAndConfigureDeclarationsAreAdmitted:
     async def test_configure_may_declare_more_than_once(
         self, caplog: pytest.LogCaptureFixture
     ) -> None:
-        class Suite(LitmusTest):
+        class Suite(TestComponent):
             async def configure(self, utils: TestUtils) -> dict[str, object]:
                 await utils.use_shell(inherit=False)
                 await utils.use_shell()
                 await utils.use_shell(inherit=False, propagate=False)
                 return {}
 
-            def build_suite(self) -> LitmusTest:
+            def build_suite(self) -> TestComponent:
                 return self.test("rail", self._claim)
 
             async def _claim(self, utils: TestUtils) -> Verdict:
@@ -194,11 +194,11 @@ class TestReadsAndConfigureDeclarationsAreAdmitted:
     async def test_the_window_shuts_when_configure_raises(self) -> None:
         seen: list[bool] = []
 
-        class Suite(LitmusTest):
+        class Suite(TestComponent):
             async def configure(self, utils: TestUtils) -> dict[str, object]:
                 raise TestFailure("bench down", "up", "down")
 
-            def build_suite(self) -> LitmusTest:
+            def build_suite(self) -> TestComponent:
                 raise AssertionError("configure failure must skip the suite")
 
             async def cleanup(self, utils: TestUtils) -> None:

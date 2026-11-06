@@ -19,14 +19,14 @@ import pytest
 
 # Internal machinery on purpose: the choke point is the subject under test, and the
 # self-test suite is the one consumer allowed to reach past the public surface.
-from litmus.executor import (
+from hilt.executor import (
     DEFAULT_EXEC_OUTPUT_BUDGET,
     BoundedCapture,
     ExecResult,
     LocalExec,
     _reap_group,  # pyright: ignore[reportPrivateUsage]
 )
-from litmus.ssh import SshInterface
+from hilt.ssh import SshInterface
 
 
 class TestExecResultSettled:
@@ -162,12 +162,12 @@ class TestExecResult:
 
 class TestPublicSurface:
     def test_local_exec_is_not_on_the_public_surface(self) -> None:
-        import litmus
+        import hilt
 
-        assert not hasattr(litmus, "LocalExec")
-        assert "LocalExec" not in litmus.__all__
-        assert litmus.ExecResult is ExecResult
-        assert "ExecResult" in litmus.__all__
+        assert not hasattr(hilt, "LocalExec")
+        assert "LocalExec" not in hilt.__all__
+        assert hilt.ExecResult is ExecResult
+        assert "ExecResult" in hilt.__all__
 
 
 class TestLocalExecNeverThrows:
@@ -196,7 +196,7 @@ class TestLocalExecNeverThrows:
         assert result.stderr.strip() == "err"
 
     async def test_a_missing_command_is_still_a_result(self) -> None:
-        result = await LocalExec().run("litmus-no-such-command-on-purpose")
+        result = await LocalExec().run("hilt-no-such-command-on-purpose")
         assert result.exit_code != 0
         assert result.exit_code != -1
 

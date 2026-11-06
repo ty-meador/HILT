@@ -4,10 +4,10 @@ Status: SIGNED — Ty approved this note in !129 on 2026-09-09; recorded on #96
 
 I2C and SPI carry register transactions, not command strings. This note
 states the transfer, addressing, arbitration, timing, and released-bus
-obligations that make both buses fit Litmus's existing lifecycle. They are
+obligations that make both buses fit HILT's existing lifecycle. They are
 two interfaces under one contract shape, not one type with a protocol flag.
 The [three HIL rulings](index.md#the-three-rulings) govern both.
-[Ty's approval of the actual note](https://gitlab.com/Tyler-Meador/litmus_test/-/merge_requests/129#note_3812483928)
+[Ty's approval of the actual note](https://gitlab.com/Tyler-Meador/HILT/-/merge_requests/129#note_3812483928)
 signs the obligations below. Implementation requires its own approved issue
 and Zavala's review under [API stability](../api-stability.md).
 
@@ -29,7 +29,7 @@ to a stuck-low SDA) or smuggling a controller inside a `RemoteInterface`
 subclass that answers `_exec` with a fake dialect — exactly the
 parallel-lifecycle-in-disguise [ruling 1](index.md#the-three-rulings)
 forbids. `I2cInterface` and `SpiInterface` are their own ABCs,
-structurally parallel to `RemoteInterface` (`src/litmus/remote.py`) and to
+structurally parallel to `RemoteInterface` (`src/hilt/remote.py`) and to
 the signed [`GpioInterface`](gpio.md) / [`PwmInterface`](pwm.md): each owns
 `connect` / `disconnect` / `cancel_in_flight` in the same shape, and adds
 transaction-shaped operations in place of `exec`.
@@ -219,15 +219,15 @@ reason to give either bus its own lifecycle.
 
 No new terminal state is introduced, and no new exception root.
 `BusOperationFailure` and `BusArbitrationFailure` derive from
-`LitmusError`, not `TestFailure`, for the same reason GPIO's
+`HiltError`, not `TestFailure`, for the same reason GPIO's
 `PinSettleFailure` and PWM's `PwmOperationFailure` do: failure to complete
 a transaction does not identify the DUT as the cause.
 
 | Situation | Raised as | Terminal state |
 |---|---|---|
 | Invalid address, mode, payload, or conflicting in-flight use | `TypeError` / `ValueError` at the call site | `ContractViolation` (Fail, `bug: true`) if it escapes |
-| I2C NACK on address or data; transaction exceeds its ceiling (including stretch); SPI transfer exceeds its ceiling; release cannot be confirmed at bring-up | `BusOperationFailure` (provisional `LitmusError`) naming the handle, operation, address or CS, and ceiling | Fail when the author catches it and states the verdict; a `ContractViolation` Fail (`bug: true`) when it escapes |
-| I2C arbitration loss | `BusArbitrationFailure` (provisional `LitmusError`) | As above. Never an automatic DUT Fail |
+| I2C NACK on address or data; transaction exceeds its ceiling (including stretch); SPI transfer exceeds its ceiling; release cannot be confirmed at bring-up | `BusOperationFailure` (provisional `HiltError`) naming the handle, operation, address or CS, and ceiling | Fail when the author catches it and states the verdict; a `ContractViolation` Fail (`bug: true`) when it escapes |
+| I2C arbitration loss | `BusArbitrationFailure` (provisional `HiltError`) | As above. Never an automatic DUT Fail |
 | SPI MISO fill (0xFF / 0x00) | No exception: those bytes are the transfer result | Whatever verdict the author writes. The interface does not guess "unplugged" |
 | Backend cannot reach the adapter at bring-up | `ConnectionError` from the interface's own `connect` | Absorbed the way `RemoteInterface` connect failures are absorbed today |
 | Release cannot be confirmed during the safe-state sweep | No exception; the run is already ending | Terminal state unchanged; timeline records the unconfirmed release, naming the handle. Never a success line |
@@ -317,7 +317,7 @@ implementation:
    repeated-START; SPI CS held only for one `transfer`). No unbound
    read/write that another node can interleave.
 3. Address-NACK, data-NACK, and arbitration loss are named operational
-   `LitmusError`s; no automatic retry.
+   `HiltError`s; no automatic retry.
 4. SPI MISO fill is data. Device-missing is not a SPI protocol error.
 5. Abort safe-state is a released bus (STOP / CS deassert), not a
    framework-invented register write. Authored `cleanup()` may write a

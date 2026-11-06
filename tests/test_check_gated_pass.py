@@ -1,4 +1,4 @@
-"""``litmus/gated-pass``: a ``return PASS`` must sit inside a conditional branch.
+"""``hilt/gated-pass``: a ``return PASS`` must sit inside a conditional branch.
 
 The cases mirror the legacy language server's ``unconditional-pass`` suite, translated
 to the Python idiom (``if`` bodies, ``elif`` chains, ``match`` arms, nested defs).
@@ -8,11 +8,11 @@ import io
 from pathlib import Path
 from textwrap import dedent
 
-from litmus_check import SuiteModule, Violation
-from litmus_check.cli import EXIT_VIOLATIONS, LitmusCheckCommand
-from litmus_check.rules.gated_pass import GatedPassRule
+from hilt_check import SuiteModule, Violation
+from hilt_check.cli import EXIT_VIOLATIONS, HiltCheckCommand
+from hilt_check.rules.gated_pass import GatedPassRule
 
-CODE = "litmus/gated-pass"
+CODE = "hilt/gated-pass"
 
 
 def _check(source: str) -> list[Violation]:
@@ -27,7 +27,7 @@ def _lines(source: str) -> list[int]:
 class TestGatedPassFires:
     def test_bare_return_at_the_bottom_of_a_test_method(self) -> None:
         source = """
-            class Suite(LitmusTest):
+            class Suite(TestComponent):
                 async def _claim(self, utils: TestUtils) -> Verdict:
                     return PASS
         """
@@ -58,7 +58,7 @@ class TestGatedPassFires:
     def test_qualified_sentinel_counts(self) -> None:
         source = """
             async def claim(utils):
-                return litmus.PASS
+                return hilt.PASS
         """
         assert _lines(source) == [3]
 
@@ -160,8 +160,8 @@ class TestGatedPassStaysQuiet:
                 return "PASS"
             def other():
                 return None
-            class Suite(LitmusTest):
-                def build_suite(self) -> LitmusTest:
+            class Suite(TestComponent):
+                def build_suite(self) -> TestComponent:
                     return self.test("x", self._claim)
         """
         assert _lines(source) == []
@@ -169,10 +169,10 @@ class TestGatedPassStaysQuiet:
 
 class TestGatedPassAtTheCommandLine:
     def test_seeded_fixture_is_caught_and_clean_fixture_is_not(self) -> None:
-        fixtures = Path(__file__).parent / "fixtures" / "litmus_check"
+        fixtures = Path(__file__).parent / "fixtures" / "hilt_check"
         out = io.StringIO()
 
-        status = LitmusCheckCommand(stdout=out, stderr=io.StringIO()).run(
+        status = HiltCheckCommand(stdout=out, stderr=io.StringIO()).run(
             ["--select", CODE, str(fixtures)]
         )
 

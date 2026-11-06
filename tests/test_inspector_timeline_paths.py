@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from litmus.inspector_timeline import TimelineDiagnostic, TimelineReader, TimelineRecord
+from hilt.inspector_timeline import TimelineDiagnostic, TimelineReader, TimelineRecord
 
 
 def _line(message: str) -> bytes:

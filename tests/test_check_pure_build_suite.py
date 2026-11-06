@@ -1,14 +1,14 @@
-"""``litmus/pure-build-suite``: ``build_suite`` declares one composition and no logic."""
+"""``hilt/pure-build-suite``: ``build_suite`` declares one composition and no logic."""
 
 import io
 from pathlib import Path
 from textwrap import dedent
 
-from litmus_check import SuiteModule, Violation
-from litmus_check.cli import EXIT_VIOLATIONS, LitmusCheckCommand
-from litmus_check.rules.pure_build_suite import PureBuildSuiteRule
+from hilt_check import SuiteModule, Violation
+from hilt_check.cli import EXIT_VIOLATIONS, HiltCheckCommand
+from hilt_check.rules.pure_build_suite import PureBuildSuiteRule
 
-CODE = "litmus/pure-build-suite"
+CODE = "hilt/pure-build-suite"
 
 
 def _check(source: str) -> list[Violation]:
@@ -23,8 +23,8 @@ def _lines(source: str) -> list[int]:
 class TestPureBuildSuiteFires:
     def test_assignment_before_the_return(self) -> None:
         source = """
-            class Suite(LitmusTest):
-                def build_suite(self) -> LitmusTest:
+            class Suite(TestComponent):
+                def build_suite(self) -> TestComponent:
                     children = [self.test("a", self._a)]
                     return self.sequence(self.name, children)
         """
@@ -35,8 +35,8 @@ class TestPureBuildSuiteFires:
 
     def test_branching_between_compositions(self) -> None:
         source = """
-            class Suite(LitmusTest):
-                def build_suite(self) -> LitmusTest:
+            class Suite(TestComponent):
+                def build_suite(self) -> TestComponent:
                     if self._fast:
                         return self.test("quick", self._quick)
                     return self.parallel(self.name, [self.test("slow", self._slow)])
@@ -48,8 +48,8 @@ class TestPureBuildSuiteFires:
 
     def test_a_second_top_level_return_is_flagged_on_its_own(self) -> None:
         source = """
-            class Suite(LitmusTest):
-                def build_suite(self) -> LitmusTest:
+            class Suite(TestComponent):
+                def build_suite(self) -> TestComponent:
                     return self.test("a", self._a)
                     return self.test("b", self._b)
         """
@@ -60,8 +60,8 @@ class TestPureBuildSuiteFires:
 
     def test_loop_building_children(self) -> None:
         source = """
-            class Suite(LitmusTest):
-                def build_suite(self) -> LitmusTest:
+            class Suite(TestComponent):
+                def build_suite(self) -> TestComponent:
                     for port in self._ports:
                         self._children.append(self.test(str(port), self._probe))
                     return self.parallel(self.name, self._children)
@@ -70,8 +70,8 @@ class TestPureBuildSuiteFires:
 
     def test_conditional_expressions_inside_the_return(self) -> None:
         source = """
-            class Suite(LitmusTest):
-                def build_suite(self) -> LitmusTest:
+            class Suite(TestComponent):
+                def build_suite(self) -> TestComponent:
                     return self.sequence(
                         self.name,
                         [
@@ -84,8 +84,8 @@ class TestPureBuildSuiteFires:
 
     def test_filtered_comprehensions_lambdas_and_boolean_logic_inside_the_return(self) -> None:
         source = """
-            class Suite(LitmusTest):
-                def build_suite(self) -> LitmusTest:
+            class Suite(TestComponent):
+                def build_suite(self) -> TestComponent:
                     return self.parallel(
                         self.name,
                         [self.test(n, self._probe) for n in self._names if n and n != "x"],
@@ -99,8 +99,8 @@ class TestPureBuildSuiteFires:
 
     def test_enumeration_by_unfiltered_comprehension_is_allowed(self) -> None:
         source = """
-            class Suite(LitmusTest):
-                def build_suite(self) -> LitmusTest:
+            class Suite(TestComponent):
+                def build_suite(self) -> TestComponent:
                     return self.parallel(
                         "stress",
                         [
@@ -113,8 +113,8 @@ class TestPureBuildSuiteFires:
 
     def test_a_generator_with_a_filter_is_still_flagged(self) -> None:
         source = """
-            class Suite(LitmusTest):
-                def build_suite(self) -> LitmusTest:
+            class Suite(TestComponent):
+                def build_suite(self) -> TestComponent:
                     return self.parallel(
                         "rails",
                         list(self.test(r, self._rail) for r in self._rails if r.enabled),
@@ -124,8 +124,8 @@ class TestPureBuildSuiteFires:
 
     def test_await_and_walrus_inside_the_return(self) -> None:
         source = """
-            class Suite(LitmusTest):
-                async def build_suite(self) -> LitmusTest:
+            class Suite(TestComponent):
+                async def build_suite(self) -> TestComponent:
                     return self.test((label := await self._label()), self._a)
         """
         kinds = [v.message.split(":")[1].split()[0] for v in _check(source)]
@@ -134,8 +134,8 @@ class TestPureBuildSuiteFires:
 
     def test_docstring_is_allowed_but_a_second_expression_statement_is_not(self) -> None:
         source = """
-            class Suite(LitmusTest):
-                def build_suite(self) -> LitmusTest:
+            class Suite(TestComponent):
+                def build_suite(self) -> TestComponent:
                     \"\"\"Declare the claims.\"\"\"
                     print("building")
                     return self.test("a", self._a)
@@ -144,9 +144,9 @@ class TestPureBuildSuiteFires:
 
     def test_transitive_subclasses_are_covered(self) -> None:
         source = """
-            class Base(LitmusTest): ...
+            class Base(TestComponent): ...
             class Suite(Base):
-                def build_suite(self) -> LitmusTest:
+                def build_suite(self) -> TestComponent:
                     x = 1
                     return self.test("a", self._a)
         """
@@ -156,8 +156,8 @@ class TestPureBuildSuiteFires:
 class TestPureBuildSuiteStaysQuiet:
     def test_nested_factories_fstrings_and_child_constructors(self) -> None:
         source = """
-            class Suite(LitmusTest):
-                def build_suite(self) -> LitmusTest:
+            class Suite(TestComponent):
+                def build_suite(self) -> TestComponent:
                     \"\"\"Declare the composition.\"\"\"
                     return self.sequence(
                         self.name,
@@ -172,7 +172,7 @@ class TestPureBuildSuiteStaysQuiet:
         """
         assert _lines(source) == []
 
-    def test_only_litmus_classes_are_inspected(self) -> None:
+    def test_only_hilt_classes_are_inspected(self) -> None:
         source = """
             class Builder:
                 def build_suite(self):
@@ -187,12 +187,12 @@ class TestPureBuildSuiteStaysQuiet:
 
     def test_other_methods_may_hold_logic(self) -> None:
         source = """
-            class Suite(LitmusTest):
+            class Suite(TestComponent):
                 async def configure(self, utils: TestUtils) -> dict[str, Any]:
                     if utils.env.get("FAST"):
                         return {"fast": True}
                     return {"fast": False}
-                def build_suite(self) -> LitmusTest:
+                def build_suite(self) -> TestComponent:
                     return self.test("a", self._a)
         """
         assert _lines(source) == []
@@ -200,10 +200,10 @@ class TestPureBuildSuiteStaysQuiet:
 
 class TestPureBuildSuiteAtTheCommandLine:
     def test_seeded_fixture_is_caught_and_clean_fixture_is_not(self) -> None:
-        fixtures = Path(__file__).parent / "fixtures" / "litmus_check"
+        fixtures = Path(__file__).parent / "fixtures" / "hilt_check"
         out = io.StringIO()
 
-        status = LitmusCheckCommand(stdout=out, stderr=io.StringIO()).run(
+        status = HiltCheckCommand(stdout=out, stderr=io.StringIO()).run(
             ["--select", CODE, str(fixtures)]
         )
 

@@ -16,12 +16,12 @@ import sys
 import time
 
 from bench._common import cache_dir, report, require_tool, run
-from litmus.device_api import CoapCode, CoapInterface, DeviceRequest
+from hilt.device_api import CoapCode, CoapInterface, DeviceRequest
 
-IMAGE = "litmus-bench/coap"
-CONTAINER = "litmus-bench-coap"
+IMAGE = "hilt-bench/coap"
+CONTAINER = "hilt-bench-coap"
 HOST = "127.0.0.1"
-PORT = int(os.environ.get("LITMUS_BENCH_COAP_PORT", "5683"))
+PORT = int(os.environ.get("HILT_BENCH_COAP_PORT", "5683"))
 
 _DOCKERFILE = """\
 FROM python:3.12-slim
@@ -40,7 +40,7 @@ import aiocoap.resource as resource
 
 class Hello(resource.Resource):
     async def render_get(self, request):
-        return aiocoap.Message(payload=b"hello from the litmus bench")
+        return aiocoap.Message(payload=b"hello from the hilt bench")
 
 
 class Echo(resource.Resource):
@@ -109,7 +109,7 @@ async def check() -> int:
     response = await backend.request(DeviceRequest(method="GET", path="/hello"))
     failures += report(
         "GET /hello is 2.05 Content",
-        response.status == CoapCode.CONTENT and b"litmus" in response.body,
+        response.status == CoapCode.CONTENT and b"hilt" in response.body,
         f"code={response.status} body={response.body!r}",
     )
     response = await backend.request(DeviceRequest(method="PUT", path="/echo", payload=b"ping"))

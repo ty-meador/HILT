@@ -13,9 +13,9 @@ from typing import Protocol, cast
 import pytest
 from tests.fake_console import open_pty_console
 
-from litmus.executor import ExecResult
-from litmus.remote import RemoteInterface
-from litmus.routing import (
+from hilt.executor import ExecResult
+from hilt.remote import RemoteInterface
+from hilt.routing import (
     ExecRouter,
     ExecRouting,
     RouterRunParams,
@@ -25,12 +25,12 @@ from litmus.routing import (
     ShellOpenRequest,
     SshConnector,
 )
-from litmus.ssh import SshInterface
-from litmus.utils import ScopedLogger
+from hilt.ssh import SshInterface
+from hilt.utils import ScopedLogger
 
 
 class _ScopedLogRecord(Protocol):
-    litmus_scope: tuple[str, ...]
+    hilt_scope: tuple[str, ...]
 
 
 class _Local:
@@ -145,11 +145,11 @@ class _Routing:
 
 class TestPublicSurface:
     def test_routing_is_not_on_the_public_surface(self) -> None:
-        import litmus
+        import hilt
 
-        assert not hasattr(litmus, "ExecRouter")
-        assert not hasattr(litmus, "ExecRouting")
-        assert "ExecRouter" not in litmus.__all__
+        assert not hasattr(hilt, "ExecRouter")
+        assert not hasattr(hilt, "ExecRouting")
+        assert "ExecRouter" not in hilt.__all__
 
 
 class TestExecRouter:
@@ -420,7 +420,7 @@ class TestConnectProvenance:
     ) -> None:
         harness = _Routing()
 
-        with caplog.at_level("INFO", logger="litmus"):
+        with caplog.at_level("INFO", logger="hilt"):
             jump = await harness.routing.use_shell(host="bastion", username="ops")
             await harness.routing.get_shell(host="dut", username="root", via=jump)
 
@@ -434,14 +434,14 @@ class TestConnectProvenance:
     ) -> None:
         local = _Local()
         connector = _Connector()
-        logger = ScopedLogger(logging.getLogger("litmus"), ("rack", "dut"))
+        logger = ScopedLogger(logging.getLogger("hilt"), ("rack", "dut"))
         routing = ExecRouting(local.run, connector=connector, logger=logger)
 
-        with caplog.at_level("INFO", logger="litmus"):
+        with caplog.at_level("INFO", logger="hilt"):
             await routing.use_shell(host="10.0.0.1", username="root")
 
         scoped = [cast("_ScopedLogRecord", record) for record in caplog.records]
-        assert [record.litmus_scope for record in scoped] == [("rack", "dut")]
+        assert [record.hilt_scope for record in scoped] == [("rack", "dut")]
 
 
 class TestUseSerialShapes:
@@ -699,7 +699,7 @@ class TestSerialConnector:
         local = _Local()
         routing = ExecRouting(local.run)
         async with open_pty_console() as (device, _console):
-            with caplog.at_level("INFO", logger="litmus"):
+            with caplog.at_level("INFO", logger="hilt"):
                 shell = await routing.use_serial(device=device, prompt_timeout=5.0)
             try:
                 assert (await routing.exec("uname")).stdout == "uname"

@@ -14,23 +14,23 @@ import pytest
 from tests.fake_console import SERIAL_BRIDGE_COMMAND, FakeConsole, open_pty_console
 from tests.loopback_sshd import LoopbackSshd
 
-from litmus.executor import ExecResult
-from litmus.remote import RemoteInterface
-from litmus.serial import SerialInterface
-from litmus.ssh import SshInterface
+from hilt.executor import ExecResult
+from hilt.remote import RemoteInterface
+from hilt.serial import SerialInterface
+from hilt.ssh import SshInterface
 
 ROOT = Path(__file__).resolve().parents[1]
 
 
 class TestPublicSurface:
     def test_serial_interface_is_not_on_the_public_surface(self) -> None:
-        import litmus
+        import hilt
 
-        assert not hasattr(litmus, "SerialInterface")
-        assert "SerialInterface" not in litmus.__all__
+        assert not hasattr(hilt, "SerialInterface")
+        assert "SerialInterface" not in hilt.__all__
 
     def test_package_init_does_not_import_serial(self) -> None:
-        tree = ast.parse((ROOT / "src" / "litmus" / "__init__.py").read_text(encoding="utf-8"))
+        tree = ast.parse((ROOT / "src" / "hilt" / "__init__.py").read_text(encoding="utf-8"))
         imported: list[str] = []
         for node in ast.walk(tree):
             if isinstance(node, ast.Import):
@@ -639,6 +639,6 @@ class TestMissingExtra:
 
         monkeypatch.setattr(builtins, "__import__", fake_import)
         transport = SerialInterface(device="/dev/ttyUSB0")
-        with pytest.raises(ModuleNotFoundError, match="litmus\\[serial\\]"):
+        with pytest.raises(ModuleNotFoundError, match="hilt\\[serial\\]"):
             await transport.connect()
         assert transport.connected is False

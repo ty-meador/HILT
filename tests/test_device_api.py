@@ -13,27 +13,27 @@ from typing import Any, Protocol
 
 import pytest
 
-from litmus import (
+from hilt import (
     PASS,
     CoapCode,
     DeviceApi,
     DeviceApiOperationFailure,
     DeviceRequest,
     DeviceResponse,
-    LitmusTest,
     SummaryTreeNode,
+    TestComponent,
     TestFailure,
     TestUtils,
     Verdict,
 )
-from litmus.device_api import (
+from hilt.device_api import (
     CoapInterface,
     DeviceApiInterface,
     HttpInterface,
     MockDeviceApi,
 )
-from litmus.lifecycle import State
-from litmus.utils import node_runtime
+from hilt.lifecycle import State
+from hilt.utils import node_runtime
 
 
 class _Router(Protocol):
@@ -362,18 +362,18 @@ class TestCoapCode:
 
 class TestPublicSurface:
     def test_backends_are_not_on_the_public_surface(self) -> None:
-        import litmus
+        import hilt
 
         for name in ("MockDeviceApi", "HttpInterface", "CoapInterface", "DeviceApiInterface"):
-            assert not hasattr(litmus, name)
-            assert name not in litmus.__all__
+            assert not hasattr(hilt, name)
+            assert name not in hilt.__all__
 
     def test_author_names_are_public(self) -> None:
-        import litmus
+        import hilt
 
-        assert litmus.DeviceApi is DeviceApi
-        assert "DeviceRequest" in litmus.__all__
-        assert "DeviceApiOperationFailure" in litmus.__all__
+        assert hilt.DeviceApi is DeviceApi
+        assert "DeviceRequest" in hilt.__all__
+        assert "DeviceApiOperationFailure" in hilt.__all__
 
 
 class TestJsonRequest:
@@ -471,7 +471,7 @@ class TestResponseParsing:
         response = DeviceResponse(200, b'{"ready": true}')
 
         assert response.json() == {"ready": True}
-        with pytest.raises(ImportError, match=r"litmus\[yaml\]"):
+        with pytest.raises(ImportError, match=r"hilt\[yaml\]"):
             response.parse(response_type="yaml")
 
     def test_unknown_response_type_is_refused(self) -> None:
@@ -783,7 +783,7 @@ class TestHttpSpecific:
     async def test_json_bytes_and_content_type_reach_the_server_without_body_logging(
         self, caplog: pytest.LogCaptureFixture
     ) -> None:
-        caplog.set_level(logging.INFO, logger="litmus")
+        caplog.set_level(logging.INFO, logger="hilt")
         received: list[tuple[bytes, dict[str, str]]] = []
 
         def router(
@@ -893,7 +893,7 @@ class TestHttpSpecific:
     async def test_header_values_are_withheld_unless_opted_in(
         self, caplog: pytest.LogCaptureFixture
     ) -> None:
-        caplog.set_level(logging.INFO, logger="litmus")
+        caplog.set_level(logging.INFO, logger="hilt")
         server = await asyncio.start_server(
             lambda reader, writer: _http_client(reader, writer, _echo_router),
             "127.0.0.1",
@@ -960,8 +960,8 @@ class TestGetHttpLifecycle:
         holder: dict[str, DeviceApi] = {}
         servers: list[asyncio.Server] = []
 
-        class Probe(LitmusTest):
-            def build_suite(self) -> LitmusTest:
+        class Probe(TestComponent):
+            def build_suite(self) -> TestComponent:
                 return self.test("whoami", self._whoami)
 
             async def configure(self, utils: TestUtils) -> dict[str, DeviceApi]:
@@ -1004,8 +1004,8 @@ class TestGetHttpLifecycle:
         servers: list[asyncio.Server] = []
         sizes = (1, 64, 512, 1024, 1500)
 
-        class Echoes(LitmusTest):
-            def build_suite(self) -> LitmusTest:
+        class Echoes(TestComponent):
+            def build_suite(self) -> TestComponent:
                 return self.parallel(
                     "exchange",
                     [self.test(f"echo-{size}b", self._echo, size=size) for size in sizes],

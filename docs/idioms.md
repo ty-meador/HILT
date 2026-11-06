@@ -6,19 +6,19 @@ If implementing something feels awkward or "ugly", you are fighting the framewor
 Treat that friction as a design-review signal, not a style preference and not immediate
 evidence that the framework needs another feature. Ask:
 
-> What established Litmus idiom is this design fighting, and which problem-domain concept
+> What established HILT idiom is this design fighting, and which problem-domain concept
 > would let composition, lifecycle boundaries, or `utils` express the intent coherently?
 
 Resolve that question before expanding the public API. A new abstraction is warranted only
 when the existing idioms cannot express a real manufacturing-test concept without obscuring
 evidence, hardware ownership, or verdict integrity. Convenience alone is not sufficient.
 
-The most important application is the React boundary in the port plan's section 1. Litmus
+The most important application is the React boundary in the port plan's section 1. HILT
 borrows React's component model—composition, inversion of control, hooks, and local state—not
 its runtime model. Reconciliation, re-rendering, and reactivity are out of scope because a
 hardware test executes once and may produce irreversible physical side effects. If a proposal
 feels awkward because it tries to import that runtime model, the friction identifies a crossed
-boundary, not a missing Litmus feature.
+boundary, not a missing HILT feature.
 
 ## Immutable-self Convention
 After `__init__` runs, `self` is read-only. What the tests need flows through configure's return value into `utils.ctx`, and what they observed leaves with the verdict. This eliminates hidden state coupling and makes the data flow explicit.
@@ -33,7 +33,7 @@ After `__init__` runs, `self` is read-only. What the tests need flows through co
 **Why:** Mutable state, on `self` or in ctx, creates hidden coupling between lifecycle phases. When inputs flow through ctx and readings flow out with the verdict, the data path is explicit and traceable. The Floor Technician benefits because each leaf's record carries exactly what that leaf handed back, beside the limits it judged against.
 
 **Enforcement:** This is a tier-1 runtime guard, not merely a lint convention.
-`LitmusTest` freezes only after the most-derived `__init__` returns, so subclasses may
+`TestComponent` freezes only after the most-derived `__init__` returns, so subclasses may
 finish declaring their identity after `super().__init__()`. Ordinary assignment and
 deletion then raise `AttributeError`. Framework-owned lifecycle and evidence transitions
 use `object.__setattr__` directly; suite code receives no framework escape-hatch method.
@@ -71,8 +71,8 @@ async def _check_voltage(self, utils: TestUtils) -> Verdict:
   `configure()` returns names the limit or the target (`kernel`, `domain`, `voltage_high_v`);
   a key `@evidence` declares names the reading judged against it (`kernel_running`,
   `queried`, `output_voltage_v`). The same word cannot do both, so pick the evidence name
-  with the ctx key in view. `litmus-check` flags the clash on the declaring literal as
-  `litmus/evidence-shadows-ctx` (bench finding F14, issue #161).
+  with the ctx key in view. `hilt-check` flags the clash on the declaring literal as
+  `hilt/evidence-shadows-ctx` (bench finding F14, issue #161).
 - A measurement is not evidence. `utils.measure` records a number beside the verdict
   (see *Measurements* below); it does not satisfy an `@evidence` declaration, so a claim
   that wants the reading in both records names it in both.
@@ -91,9 +91,9 @@ class VoltageEvidence(TypedDict):
 async def _check_voltage(self, utils: TestUtils) -> Verdict[VoltageEvidence]: ...
 ```
 
-`litmus-check` enforces the declaration statically as `litmus/evidence-fulfilled`, the one
-namespace as `litmus/evidence-shadows-ctx`, and the read-only context as part of
-`litmus/ctx-provenance`.
+`hilt-check` enforces the declaration statically as `hilt/evidence-fulfilled`, the one
+namespace as `hilt/evidence-shadows-ctx`, and the read-only context as part of
+`hilt/ctx-provenance`.
 
 ## The Parent Owns the Route
 
@@ -106,12 +106,12 @@ device saying so. A device class never takes a routing argument; it is written o
 and reused on every bench.
 
 ```python
-class Gateway(LitmusTest):
+class Gateway(TestComponent):
     async def configure(self, utils: TestUtils) -> dict[str, Any]:
         await utils.use_shell(host="10.0.0.1", username="ops")
         return {}
 
-    def build_suite(self) -> LitmusTest:
+    def build_suite(self) -> TestComponent:
         return MyDevice(name="target", mac="aa:bb:cc:dd:ee:ff")
 ```
 
@@ -166,7 +166,7 @@ A non-leaf node's `run_data` is the ctx view alone.
 
 Stripping is deterministic and all-or-nothing at each top-level ctx entry. If a list or
 dict contains one invalid nested value, that complete entry is absent from `run_data`.
-Litmus does not remove only the handle and leave a plausible-looking partial record.
+HILT does not remove only the handle and leave a plausible-looking partial record.
 
 A value the claims need but the record must not carry, such as a session credential
 obtained in `configure()`, is named in `redact_ctx` on the suite class (issue #154).
@@ -177,7 +177,7 @@ record shows that the key was held; it never shows what. ctx itself is unchanged
 claims read the real value.
 
 ```python
-class BlocklistRoundTrip(LitmusTest):
+class BlocklistRoundTrip(TestComponent):
     redact_ctx = ("sid", r"api_.*")
 
     async def configure(self, utils: TestUtils) -> dict[str, Any]:
@@ -211,7 +211,7 @@ Override `run_data` only when you need computed or filtered output from the cont
 An override sees the ctx view, not the readings, which are merged when the leaf settles:
 
 ```python
-from litmus import JsonObject
+from hilt import JsonObject
 
 
 @property
@@ -236,10 +236,10 @@ verdict stays whatever the gated `PASS` says, because a limit is evidence, never
 verdict (`docs/measurements.md`):
 
 ```python
-from litmus import PASS, LitmusTest, TestFailure, TestUtils, Verdict, evidence
+from hilt import PASS, TestComponent, TestFailure, TestUtils, Verdict, evidence
 
 
-class Rail(LitmusTest):
+class Rail(TestComponent):
     @evidence("output_voltage_v")
     async def _output_rail(self, utils: TestUtils) -> Verdict:
         volts = await self._read_rail(utils)
@@ -249,11 +249,11 @@ class Rail(LitmusTest):
         raise TestFailure("rail outside window", "4.75-5.25 V", f"{volts} V")
 ```
 
-The gate reads in plain sight, so `litmus/gated-pass` sees the predicate and the next
+The gate reads in plain sight, so `hilt/gated-pass` sees the predicate and the next
 reader sees the criterion. Name the quantity once per node, in the unit it will always
 carry; the consumer keys its series on that name. Record for trend without a window by
 passing `limits=None`. Measure from `configure()` (a bring-up reading) or the test
-method only; `cleanup`, surveys, audits, and hooks are refused. `from litmus import
+method only; `cleanup`, surveys, audits, and hooks are refused. `from hilt import
 measure` is the same call resolved to the running node when a helper does not have
 `utils` in hand.
 
@@ -265,10 +265,10 @@ the device, and the framework refuses it.
 
 ## Composition Factories: `self.test`, `self.sequence`, `self.parallel`
 
-`LitmusTest` exposes three instance factories for building the suite. The names are
+`TestComponent` exposes three instance factories for building the suite. The names are
 the vocabulary a suite reads aloud in: a leaf is a *test*, dependent children run in
 *sequence*, independent children run in *parallel*. There is exactly one spelling for
-each; `case` and `group` are retired (issue #110) and `litmus/retired-names` flags them.
+each; `case` and `group` are retired (issue #110) and `hilt/retired-names` flags them.
 
 - `self.test(name, fn, *, fail_after=None, abort_after=None)` — the leaf: one verdict
   method, named here at composition time. Defaults to `discrete_log_file=False` so
@@ -281,7 +281,7 @@ each; `case` and `group` are retired (issue #110) and `litmus/retired-names` fla
 
 Pass `discrete_log_file=False` to `self.sequence()` or `self.parallel()` when that
 composition is too small to merit a separate Inspector timeline. Its records then roll
-into the nearest owning ancestor, just as leaves do. Authored `LitmusTest`
+into the nearest owning ancestor, just as leaves do. Authored `TestComponent`
 subclasses also default to a discrete timeline and may opt into roll-up through
 `super().__init__(..., discrete_log_file=False)`. The root always owns a log so every
 run has an authoritative temporal backbone.
@@ -289,7 +289,7 @@ run has an authoritative temporal backbone.
 **Private methods pass as references directly — Python bound methods carry `self` for free.**
 
 ```python
-def build_suite(self) -> LitmusTest:
+def build_suite(self) -> TestComponent:
     return self.sequence(
         self.name,
         [
@@ -307,8 +307,8 @@ async def _check_reachable(self, utils: TestUtils) -> Verdict:
     raise TestFailure("device unreachable", "exit 0", str(result.exit_code))
 ```
 
-Every `return PASS` sits under the predicate that earns it; `litmus-check` (the
-`litmus/gated-pass` rule) flags a bare one, and the examples show the gated shape.
+Every `return PASS` sits under the predicate that earns it; `hilt-check` (the
+`hilt/gated-pass` rule) flags a bare one, and the examples show the gated shape.
 
 ### Enumerate Leaves at Runtime
 
@@ -322,14 +322,14 @@ built, so a leaf that could never be called fails `build_suite` with a
 `ContractViolation` before any hardware is touched.
 
 ```python
-class Compute(LitmusTest):
+class Compute(TestComponent):
     def __init__(self, *, name: str, cpu_count: int) -> None:
         super().__init__(name=name)
         self._cpu_count = cpu_count
 
     async def _cpu_stress(self, utils: TestUtils, *, cpu: int) -> Verdict: ...
 
-    def build_suite(self) -> LitmusTest:
+    def build_suite(self) -> TestComponent:
         return self.parallel(
             "stress",
             [
@@ -341,7 +341,7 @@ class Compute(LitmusTest):
 
 The comprehension maps a known population (every core, every rail, every channel) onto
 leaves; it does not choose among them. A comprehension with an `if` filter decides at
-build time which claims exist, and `litmus/pure-build-suite` flags it. The population
+build time which claims exist, and `hilt/pure-build-suite` flags it. The population
 is identity, like a hook: it comes in through `__init__`, never out of `configure()`.
 
 ### `self.test()` or `configure()`?
@@ -360,7 +360,7 @@ missing the time limit is a negative hardware verdict, and `abort_after` when th
 harness should stop waiting without claiming the hardware failed.
 
 ```python
-def build_suite(self) -> LitmusTest:
+def build_suite(self) -> TestComponent:
     return self.parallel(
         "rack claims",
         [
@@ -410,7 +410,7 @@ evidence are the gateway's own, and the devices behind it are never asked.
 Survey and audit hooks are registered in `__init__`, not in `configure()`. They are stackable — multiple calls register multiple independent hooks, each firing on its own schedule.
 
 ```python
-class ComputeBlade(LitmusTest):
+class ComputeBlade(TestComponent):
     def __init__(self, params: TestParams) -> None:
         super().__init__(params)
 
@@ -433,10 +433,10 @@ on the test host and records the developer's machine as device evidence. Say whi
 boundaries the survey observes, and guard the route:
 
 ```python
-from litmus import LitmusTest, Phase, TestUtils
+from hilt import TestComponent, Phase, TestUtils
 
 
-class PiHole(LitmusTest):
+class PiHole(TestComponent):
     def __init__(self, *, name: str) -> None:
         super().__init__(name=name)
         self.use_survey(
@@ -475,7 +475,7 @@ rail down in `cleanup`.
 
 ## Integration Hooks: `before_each` / `after_each` on the Run Params
 
-For composing Litmus into a larger harness (shop-floor DB, lab coordinator, audit pipeline), pass `before_each` and `after_each` to the root `run()` call:
+For composing HILT into a larger harness (shop-floor DB, lab coordinator, audit pipeline), pass `before_each` and `after_each` to the root `run()` call:
 
 ```python
 await root.run(
@@ -502,7 +502,7 @@ The exception-path behavior is: throw from either hook → run halts → every e
 ## Configure-Returns-Context Pattern
 `configure()` returns a plain dict; the framework merges it into `utils.ctx` for test methods, survey hooks, `cleanup()`, and all descendant leaves, then closes it. No instance fields are needed for configure-phase data.
 
-The return value is the contract with the test methods: it names every key they read with `[]`, and it is all they will ever find there. Seed no placeholders — a reading belongs on the verdict, not in ctx — and nothing writes ctx after configure returns. `litmus-check` enforces both statically as `litmus/ctx-provenance`; at run time a `[]` read of a missing key, or any later write, is a `ContractViolation` naming the test and the key, while `.get()` and `in` read an optional key (issues #112, #118).
+The return value is the contract with the test methods: it names every key they read with `[]`, and it is all they will ever find there. Seed no placeholders — a reading belongs on the verdict, not in ctx — and nothing writes ctx after configure returns. `hilt-check` enforces both statically as `hilt/ctx-provenance`; at run time a `[]` read of a missing key, or any later write, is a `ContractViolation` naming the test and the key, while `.get()` and `in` read an optional key (issues #112, #118).
 
 The framework annotation is `Mapping[str, Any]`; a plain `dict[str, Any]` return is the
 default and satisfies it. When a suite benefits from precise key types, define a local
@@ -528,7 +528,7 @@ methods a `Mapping[str, Any]`, so a misspelled key survives pyright and reaches 
 floor as a `ContextInsufficient` contract violation — a Fail under the bug banner,
 where the author meant to take a reading (issue #112). Naming the type once on the
 class closes that gap: declare
-`class MySuite(LitmusTest[MyCtx])` and annotate the lifecycle methods
+`class MySuite(TestComponent[MyCtx])` and annotate the lifecycle methods
 `utils: TestUtils[MyCtx]`, and `utils.ctx["volts"]` is a `float` to the editor while
 `utils.ctx["volt"]` is a type error before it is ever run (issue #75).
 
@@ -538,11 +538,11 @@ class PowerCtx(TypedDict):
     volts: float
 
 
-class PowerSuite(LitmusTest[PowerCtx]):
+class PowerSuite(TestComponent[PowerCtx]):
     async def configure(self, utils: TestUtils[PowerCtx]) -> PowerCtx:
         return {"rail": "3v3", "volts": 3.3}
 
-    def build_suite(self) -> LitmusTest:
+    def build_suite(self) -> TestComponent:
         return self.test("rail", self._rail_is_up)
 
     async def _rail_is_up(self, utils: TestUtils[PowerCtx]) -> Verdict:
@@ -551,7 +551,7 @@ class PowerSuite(LitmusTest[PowerCtx]):
         raise TestFailure("rail low", "> 3.0V", f"{utils.ctx['volts']}V")
 ```
 
-This is sugar, and it is opt-in in both directions. Writing `LitmusTest` and
+This is sugar, and it is opt-in in both directions. Writing `TestComponent` and
 `TestUtils` bare means what it always did — the parameter defaults to
 `Mapping[str, Any]` — so no existing suite has to change, and a suite that adopts the
 parameter is making a claim to its own reader, not to the framework. Nothing about the
@@ -561,11 +561,11 @@ than a static one; and `run_data` still strips class instances, functions, and l
 handles value by value.
 
 Composition stays unparameterized on purpose. `self.test()`, `self.sequence()`, and
-`self.parallel()` speak of `LitmusTest` nodes of any context shape, because a rack composes suites that do not share one context — pinning them to
+`self.parallel()` speak of `TestComponent` nodes of any context shape, because a rack composes suites that do not share one context — pinning them to
 a single `CtxT` would make the parameter contagious rather than opt-in.
 
 ```python
-class MyDevice(LitmusTest):
+class MyDevice(TestComponent):
     # configure ALWAYS returns the context your test provides to its
     # lifecycle methods and children. This tells future devs exactly what
     # context your test requires and what it supplies — important, for
@@ -595,7 +595,7 @@ class MyDevice(LitmusTest):
     async def cleanup(self, utils: TestUtils) -> None:
         pass  # ssh auto-disconnected by framework, after the post-cleanup survey
 
-    def build_suite(self) -> LitmusTest:
+    def build_suite(self) -> TestComponent:
         return self.sequence(
             self.name,
             [
@@ -624,7 +624,7 @@ authors import it for lifecycle annotations, not as plumbing they must assemble.
 
 Every node receives a distinct `TestUtils` object with a logger scoped to that node's
 full root-to-leaf path. Leaves, sequences, and parallel nodes built by one authored
-instance share that instance's `utils.ctx` dict, while a composed `LitmusTest` subclass
+instance share that instance's `utils.ctx` dict, while a composed `TestComponent` subclass
 starts with a fresh context. The environment snapshot is immutable and shared across
 the run; the halt signal is read-only from suite code.
 
@@ -635,7 +635,7 @@ the run; the halt signal is read-only from suite code.
 - Every full run creates a timestamped directory under the configured artifact root.
   A logging owner streams both `timeline.log` for humans and versioned
   `timeline.jsonl` for the Inspector, flushing both on every entry. Treat
-  `LitmusTest.log_path` as the authoritative path; directory names are not an API.
+  `TestComponent.log_path` as the authoritative path; directory names are not an API.
 - While a durable timeline is attached, `utils.logger.isEnabledFor(...)` is true at
   every level so developer-side guards cannot suppress the authoritative chronology.
   Process logging handlers still apply their own level policy.
@@ -643,13 +643,13 @@ the run; the halt signal is read-only from suite code.
 ### Point-in-Time Artifacts
 
 Construct an immutable `Artifact` and pass it to `utils.capture_artifact()`. The method
-persists the JSON artifact under `LITMUS_ARTIFACT_ROOT`, then emits a structured pointer
+persists the JSON artifact under `HILT_ARTIFACT_ROOT`, then emits a structured pointer
 through the same scoped logger that records the surrounding test events. `Artifact`
 deliberately has no `write()` or `write_file()` method: a file without its pointer would
 be absent from the authoritative chronology.
 
 ```python
-from litmus import Artifact
+from hilt import Artifact
 
 snapshot = Artifact(
     name="pre-flash",
@@ -677,14 +677,14 @@ A full `run()` also persists the root payload automatically as `result.json` in 
 run's artifact directory. Authored suites should consume the returned `RunResult` when
 they need the live value; they never write the canonical Inspector file themselves.
 
-## Fractal Design: Litmus exposes a single class
+## Fractal Design: HILT exposes a single class
 | Need | Use |
 |---|---|
-| Physical hardware component | `LitmusTest` |
-| Networked device (MAC-based) | `LitmusTest` + `utils.get_arp_resolver()` in configure |
-| Device reached over SSH, connection shared across tests | `LitmusTest` with configure returning `{"ssh": ...}` |
-| Device behind a jump host or OOB gateway | The gateway is a `LitmusTest` whose `configure()` opens the hop and whose `build_suite()` composes the device |
-| Standalone test procedure | `LitmusTest` |
+| Physical hardware component | `TestComponent` |
+| Networked device (MAC-based) | `TestComponent` + `utils.get_arp_resolver()` in configure |
+| Device reached over SSH, connection shared across tests | `TestComponent` with configure returning `{"ssh": ...}` |
+| Device behind a jump host or OOB gateway | The gateway is a `TestComponent` whose `configure()` opens the hop and whose `build_suite()` composes the device |
+| Standalone test procedure | `TestComponent` |
 
 ---
 
@@ -748,13 +748,13 @@ return {**resolved, "arp": arp}
 return self.sequence(self.name, [self.test("gateway-up", self._gateway_up), DutDevice(name="dut")])
 ```
 
-See `examples/networked_device.py`. `litmus run ...::DutDevice` reads the test host's ARP table; `litmus run ...::Gateway` runs the same DUT class through the hop.
+See `examples/networked_device.py`. `hilt run ...::DutDevice` reads the test host's ARP table; `hilt run ...::Gateway` runs the same DUT class through the hop.
 
 ---
 
 ## SSH Device — Class-Owned Connection
 
-Extend `LitmusTest` when one SSH connection must be shared across all of the device's leaves. Open in `configure()` via `utils.use_shell()` and let the framework route `utils.exec` through it automatically.
+Extend `TestComponent` when one SSH connection must be shared across all of the device's leaves. Open in `configure()` via `utils.use_shell()` and let the framework route `utils.exec` through it automatically.
 
 Returning `{"ssh": ...}` from `configure()` also makes the device eligible as a `via` target. Pass it as `via` in `TestParams` — the framework manages the lifecycle and scopes `utils.exec` automatically.
 
@@ -817,7 +817,7 @@ The backends stay off the public surface, the way `SshInterface` does.
 For a JSON body, declare `json=` instead of encoding bytes and setting a header by
 hand. Read it back with `.json()`, or select the parser with
 `.parse(response_type="json")` / `.parse(response_type="yaml")` (YAML needs
-`litmus[yaml]`). Both leave the original bytes and status available. Parser errors
+`hilt[yaml]`). Both leave the original bytes and status available. Parser errors
 propagate, so model a malformed response as `TestFailure` when it is a DUT failure
 mode. Neither the transfer nor the parser chooses a verdict.
 
@@ -839,7 +839,7 @@ Where `wait_for()` is called determines what the timeout *means*, not what gets 
 
 `looking_for` is required and must be plain language — it becomes the Floor Technician's primary diagnostic string when a wait times out. The call returns the predicate's truthy value (`True` stays `True`); a claim that needs what was observed returns it from the predicate instead of closing over a list.
 
-The runnable [`examples/wait_for_patterns.py`](https://gitlab.com/Tyler-Meador/litmus_test/-/blob/main/examples/wait_for_patterns.py) ports
+The runnable [`examples/wait_for_patterns.py`](https://gitlab.com/Tyler-Meador/HILT/-/blob/main/examples/wait_for_patterns.py) ports
 both placements from the legacy example. It also shows how polling observations flow
 through scoped logs, phase-boundary surveys, point-in-time artifacts, `run_data`, and the
 root `summary_tree` without adding another evidence API.

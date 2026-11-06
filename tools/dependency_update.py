@@ -7,7 +7,7 @@ whose description carries the plan. The reviewer's ``make check`` on that MR run
 gate, audit included, over the new set. With ``--dry-run`` (``make deps-plan``) it only
 prints the plan.
 
-Environment: ``LITMUS_BOT_TOKEN`` (api + write_repository) is required for the full
+Environment: ``HILT_BOT_TOKEN`` (api + write_repository) is required for the full
 run; ``GITLAB_API_V4_URL``, ``GITLAB_PROJECT_ID``, ``GITLAB_PROJECT_PATH``, and
 ``GITLAB_SERVER_HOST`` default to this project.
 """
@@ -26,8 +26,8 @@ from urllib import request
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_API_V4_URL = "https://gitlab.com/api/v4"
-DEFAULT_PROJECT_ID = "85833370"  # Tyler-Meador/litmus_test
-DEFAULT_PROJECT_PATH = "Tyler-Meador/litmus_test"
+DEFAULT_PROJECT_ID = "85833370"  # Tyler-Meador/HILT
+DEFAULT_PROJECT_PATH = "Tyler-Meador/HILT"
 DEFAULT_SERVER_HOST = "gitlab.com"
 BRANCH_PREFIX = "deps-update-"
 ASSIGNEE_IDS = (1880678,)  # Ty
@@ -59,7 +59,7 @@ class DependencyUpdate:
         print("upgrade plan:\n" + plan)
         if self._dry_run:
             return 0
-        token = os.environ["LITMUS_BOT_TOKEN"]
+        token = os.environ["HILT_BOT_TOKEN"]
         existing = self._open_update_mr(token)
         if existing is not None:
             print(f"update MR !{existing} is still open; not opening another")

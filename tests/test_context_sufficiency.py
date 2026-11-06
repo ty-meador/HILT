@@ -10,9 +10,9 @@ import json
 
 import pytest
 
-from litmus import PASS, ContractViolation, LitmusTest, State, TestFailure, TestUtils, Verdict
-from litmus.errors import ContextImmutable, ContextInsufficient
-from litmus.results import SummaryTreeNode
+from hilt import PASS, ContractViolation, State, TestComponent, TestFailure, TestUtils, Verdict
+from hilt.errors import ContextImmutable, ContextInsufficient
+from hilt.results import SummaryTreeNode
 
 
 def _leaf(tree: SummaryTreeNode, index: int = 0) -> SummaryTreeNode:
@@ -23,11 +23,11 @@ class TestMissingKeyIsAContractViolation:
     async def test_test_method_read_lands_as_a_bug_naming_the_test_and_the_key(self) -> None:
         cleaned: list[str] = []
 
-        class Suite(LitmusTest):
+        class Suite(TestComponent):
             async def configure(self, utils: TestUtils) -> dict[str, object]:
                 return {"present": 1}
 
-            def build_suite(self) -> LitmusTest:
+            def build_suite(self) -> TestComponent:
                 return self.test("rail", self._claim)
 
             async def _claim(self, utils: TestUtils) -> Verdict:
@@ -56,8 +56,8 @@ class TestMissingKeyIsAContractViolation:
         assert cleaned == ["cleanup"]
 
     async def test_optional_reads_never_raise(self) -> None:
-        class Suite(LitmusTest):
-            def build_suite(self) -> LitmusTest:
+        class Suite(TestComponent):
+            def build_suite(self) -> TestComponent:
                 return self.test("rail", self._claim)
 
             async def _claim(self, utils: TestUtils) -> Verdict:
@@ -71,8 +71,8 @@ class TestMissingKeyIsAContractViolation:
         assert result.state is State.PASS
 
     async def test_a_suite_except_keyerror_cannot_swallow_it(self) -> None:
-        class Suite(LitmusTest):
-            def build_suite(self) -> LitmusTest:
+        class Suite(TestComponent):
+            def build_suite(self) -> TestComponent:
                 return self.test("rail", self._claim)
 
             async def _claim(self, utils: TestUtils) -> Verdict:
@@ -92,11 +92,11 @@ class TestMissingKeyIsAContractViolation:
     async def test_configure_reading_an_unprovided_key_is_its_own_bug(self) -> None:
         calls: list[str] = []
 
-        class Suite(LitmusTest):
+        class Suite(TestComponent):
             async def configure(self, utils: TestUtils) -> dict[str, object]:
                 return {"rail": utils.ctx["rail"]}
 
-            def build_suite(self) -> LitmusTest:
+            def build_suite(self) -> TestComponent:
                 raise AssertionError("configure failure must skip the suite")
 
             async def cleanup(self, utils: TestUtils) -> None:
@@ -115,8 +115,8 @@ class TestMissingKeyIsAContractViolation:
         assert calls == ["cleanup"]
 
     async def test_composed_child_reads_its_own_context_not_the_parents(self) -> None:
-        class Child(LitmusTest):
-            def build_suite(self) -> LitmusTest:
+        class Child(TestComponent):
+            def build_suite(self) -> TestComponent:
                 return self.test("child claim", self._claim)
 
             async def _claim(self, utils: TestUtils) -> Verdict:
@@ -124,11 +124,11 @@ class TestMissingKeyIsAContractViolation:
                     return PASS
                 raise TestFailure("no", "shared", "none")
 
-        class Parent(LitmusTest):
+        class Parent(TestComponent):
             async def configure(self, utils: TestUtils) -> dict[str, object]:
                 return {"shared": True}
 
-            def build_suite(self) -> LitmusTest:
+            def build_suite(self) -> TestComponent:
                 return Child(name="child")
 
         result = await Parent(name="parent").run()
@@ -143,8 +143,8 @@ class TestMissingKeyIsAContractViolation:
     async def test_cleanup_read_is_logged_and_leaves_the_verdict_alone(
         self, caplog: pytest.LogCaptureFixture
     ) -> None:
-        class Suite(LitmusTest):
-            def build_suite(self) -> LitmusTest:
+        class Suite(TestComponent):
+            def build_suite(self) -> TestComponent:
                 return self.test("rail", self._claim)
 
             async def _claim(self, utils: TestUtils) -> Verdict:
@@ -153,7 +153,7 @@ class TestMissingKeyIsAContractViolation:
             async def cleanup(self, utils: TestUtils) -> None:
                 utils.ctx["shell"]
 
-        with caplog.at_level("ERROR", logger="litmus"):
+        with caplog.at_level("ERROR", logger="hilt"):
             result = await Suite(name="psu").run()
 
         assert result.state is State.PASS
@@ -167,11 +167,11 @@ class TestTheContextIsStillADict:
     async def test_ctx_is_a_dict_that_snapshots_and_serializes(self) -> None:
         seen: dict[str, object] = {}
 
-        class Suite(LitmusTest):
+        class Suite(TestComponent):
             async def configure(self, utils: TestUtils) -> dict[str, object]:
                 return {"rail": "on"}
 
-            def build_suite(self) -> LitmusTest:
+            def build_suite(self) -> TestComponent:
                 return self.test("rail", self._claim)
 
             async def _claim(self, utils: TestUtils) -> Verdict:
@@ -209,11 +209,11 @@ class TestTheContextIsReadOnlyAfterConfigure:
     ) -> None:
         cleaned: list[str] = []
 
-        class Suite(LitmusTest):
+        class Suite(TestComponent):
             async def configure(self, utils: TestUtils) -> dict[str, object]:
                 return {"rail": "on"}
 
-            def build_suite(self) -> LitmusTest:
+            def build_suite(self) -> TestComponent:
                 return self.test("rail", self._claim)
 
             async def _claim(self, utils: TestUtils) -> Verdict:
@@ -245,8 +245,8 @@ class TestTheContextIsReadOnlyAfterConfigure:
     async def test_a_cleanup_write_is_logged_and_leaves_the_verdict_alone(
         self, caplog: pytest.LogCaptureFixture
     ) -> None:
-        class Suite(LitmusTest):
-            def build_suite(self) -> LitmusTest:
+        class Suite(TestComponent):
+            def build_suite(self) -> TestComponent:
                 return self.test("rail", self._claim)
 
             async def _claim(self, utils: TestUtils) -> Verdict:
@@ -257,7 +257,7 @@ class TestTheContextIsReadOnlyAfterConfigure:
             async def cleanup(self, utils: TestUtils) -> None:
                 utils.ctx["restored"] = True  # pyright: ignore[reportIndexIssue]
 
-        with caplog.at_level("ERROR", logger="litmus"):
+        with caplog.at_level("ERROR", logger="hilt"):
             result = await Suite(name="psu").run()
 
         assert result.state is State.PASS
@@ -270,11 +270,11 @@ class TestTheContextIsReadOnlyAfterConfigure:
     async def test_the_context_closes_even_when_configure_fails(self) -> None:
         seen: dict[str, object] = {}
 
-        class Suite(LitmusTest):
+        class Suite(TestComponent):
             async def configure(self, utils: TestUtils) -> dict[str, object]:
                 raise TestFailure("never reached a testable state")
 
-            def build_suite(self) -> LitmusTest:
+            def build_suite(self) -> TestComponent:
                 return self.test("rail", self._claim)
 
             async def _claim(self, utils: TestUtils) -> Verdict:
@@ -292,7 +292,7 @@ class TestTheContextIsReadOnlyAfterConfigure:
         assert seen == {"key": "restored"}
 
     def test_every_mutator_refuses_once_frozen_and_names_the_key(self) -> None:
-        from litmus.utils import RunContext
+        from hilt.utils import RunContext
 
         ctx = RunContext({"rail": "on", "limit": 5}, owner="psu")
         ctx["seeded"] = 1
@@ -339,7 +339,7 @@ class TestTheContextIsReadOnlyAfterConfigure:
         assert ctx.frozen is True
 
     def test_a_context_stays_open_until_the_framework_freezes_it(self) -> None:
-        from litmus.utils import RunContext
+        from hilt.utils import RunContext
 
         ctx = RunContext(owner="psu")
         ctx["a"] = 1

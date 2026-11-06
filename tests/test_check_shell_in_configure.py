@@ -1,4 +1,4 @@
-"""``litmus/shell-in-configure``: a route is declared in ``configure()``, nowhere else.
+"""``hilt/shell-in-configure``: a route is declared in ``configure()``, nowhere else.
 
 The cases carry the ``useShell``-outside-``configure`` half of the legacy language
 server's ``hook-outside-constructor`` suite, which the port left behind until the
@@ -9,11 +9,11 @@ import io
 from pathlib import Path
 from textwrap import dedent
 
-from litmus_check import SuiteModule, Violation
-from litmus_check.cli import EXIT_VIOLATIONS, LitmusCheckCommand
-from litmus_check.rules.shell_in_configure import ShellInConfigureRule
+from hilt_check import SuiteModule, Violation
+from hilt_check.cli import EXIT_VIOLATIONS, HiltCheckCommand
+from hilt_check.rules.shell_in_configure import ShellInConfigureRule
 
-CODE = "litmus/shell-in-configure"
+CODE = "hilt/shell-in-configure"
 
 
 def _check(source: str) -> list[Violation]:
@@ -28,7 +28,7 @@ def _lines(source: str) -> list[int]:
 class TestShellInConfigureFires:
     def test_declaration_inside_a_test_method(self) -> None:
         source = """
-            class Suite(LitmusTest):
+            class Suite(TestComponent):
                 async def _claim(self, utils: TestUtils) -> Verdict:
                     await utils.use_shell(host="dut", username="root")
                     if utils.ctx["ok"]:
@@ -42,7 +42,7 @@ class TestShellInConfigureFires:
 
     def test_policy_only_declaration_inside_cleanup(self) -> None:
         source = """
-            class Suite(LitmusTest):
+            class Suite(TestComponent):
                 async def cleanup(self, utils: TestUtils) -> None:
                     await utils.use_shell(inherit=False)
         """
@@ -50,7 +50,7 @@ class TestShellInConfigureFires:
 
     def test_declaration_inside_a_survey(self) -> None:
         source = """
-            class Suite(LitmusTest):
+            class Suite(TestComponent):
                 async def _snapshot(self, utils: TestUtils) -> object:
                     shell = await utils.use_shell(propagate=False)
                     return shell
@@ -59,7 +59,7 @@ class TestShellInConfigureFires:
 
     def test_declaration_from_a_helper_called_by_configure(self) -> None:
         source = """
-            class Suite(LitmusTest):
+            class Suite(TestComponent):
                 async def configure(self, utils: TestUtils) -> dict[str, Any]:
                     await self._open(utils)
                     return {}
@@ -70,7 +70,7 @@ class TestShellInConfigureFires:
 
     def test_closure_defined_in_configure_is_not_configure(self) -> None:
         source = """
-            class Suite(LitmusTest):
+            class Suite(TestComponent):
                 async def configure(self, utils: TestUtils) -> dict[str, Any]:
                     async def later() -> None:
                         await utils.use_shell(host="dut", username="root")
@@ -81,7 +81,7 @@ class TestShellInConfigureFires:
 
     def test_receiver_name_does_not_matter(self) -> None:
         source = """
-            class Suite(LitmusTest):
+            class Suite(TestComponent):
                 async def _claim(self, u: TestUtils) -> Verdict:
                     await u.use_shell(inherit=False)
                     return PASS
@@ -90,7 +90,7 @@ class TestShellInConfigureFires:
 
     def test_positional_argument_is_still_a_declaration(self) -> None:
         source = """
-            class Suite(LitmusTest):
+            class Suite(TestComponent):
                 async def _claim(self, utils: TestUtils) -> Verdict:
                     await utils.use_shell(jump)
                     return PASS
@@ -99,7 +99,7 @@ class TestShellInConfigureFires:
 
     def test_use_serial_is_the_same_declaration(self) -> None:
         source = """
-            class Suite(LitmusTest):
+            class Suite(TestComponent):
                 async def _claim(self, utils: TestUtils) -> Verdict:
                     await utils.use_serial(device="/dev/ttyUSB0")
                     return PASS
@@ -112,7 +112,7 @@ class TestShellInConfigureFires:
 
     def test_transitive_subclasses_are_covered(self) -> None:
         source = """
-            class Base(LitmusTest): ...
+            class Base(TestComponent): ...
             class Suite(Base):
                 async def _claim(self, utils: TestUtils) -> Verdict:
                     await utils.use_shell(host="dut", username="root")
@@ -124,7 +124,7 @@ class TestShellInConfigureFires:
 class TestShellInConfigureStaysQuiet:
     def test_declarations_inside_configure_including_a_chain(self) -> None:
         source = """
-            class Suite(LitmusTest):
+            class Suite(TestComponent):
                 async def configure(self, utils: TestUtils) -> dict[str, Any]:
                     jump = await utils.use_shell(host="jump", username="root")
                     await utils.use_shell(host="dut", username="root", via=jump)
@@ -135,7 +135,7 @@ class TestShellInConfigureStaysQuiet:
 
     def test_bare_read_anywhere(self) -> None:
         source = """
-            class Suite(LitmusTest):
+            class Suite(TestComponent):
                 async def _claim(self, utils: TestUtils) -> Verdict:
                     shell = await utils.use_shell()
                     if shell.ssh is None:
@@ -148,7 +148,7 @@ class TestShellInConfigureStaysQuiet:
 
     def test_get_shell_is_not_a_declaration(self) -> None:
         source = """
-            class Suite(LitmusTest):
+            class Suite(TestComponent):
                 async def _claim(self, utils: TestUtils) -> Verdict:
                     extra = await utils.get_shell(host="aux", username="root")
                     if extra:
@@ -159,7 +159,7 @@ class TestShellInConfigureStaysQuiet:
 
     def test_use_serial_in_configure_and_its_read_and_aux_forms_anywhere(self) -> None:
         source = """
-            class Suite(LitmusTest):
+            class Suite(TestComponent):
                 async def configure(self, utils: TestUtils) -> dict[str, Any]:
                     await utils.use_serial(device="/dev/ttyUSB0", baud=9600)
                     return {}
@@ -172,7 +172,7 @@ class TestShellInConfigureStaysQuiet:
         """
         assert _lines(source) == []
 
-    def test_classes_that_are_not_litmus_tests(self) -> None:
+    def test_classes_that_are_not_test_components(self) -> None:
         source = """
             class Plain:
                 async def method(self, utils: TestUtils) -> None:
@@ -184,7 +184,7 @@ class TestShellInConfigureStaysQuiet:
         source = """
             utils = object()
             utils.use_shell(host="dut", username="root")
-            class Suite(LitmusTest):
+            class Suite(TestComponent):
                 declared = utils.use_shell(inherit=False)
         """
         assert _lines(source) == []
@@ -192,10 +192,10 @@ class TestShellInConfigureStaysQuiet:
 
 class TestShellInConfigureAtTheCommandLine:
     def test_seeded_fixture_is_caught(self) -> None:
-        fixtures = Path(__file__).parent / "fixtures" / "litmus_check"
+        fixtures = Path(__file__).parent / "fixtures" / "hilt_check"
         out = io.StringIO()
 
-        status = LitmusCheckCommand(stdout=out, stderr=io.StringIO()).run(
+        status = HiltCheckCommand(stdout=out, stderr=io.StringIO()).run(
             ["--select", CODE, str(fixtures)]
         )
 

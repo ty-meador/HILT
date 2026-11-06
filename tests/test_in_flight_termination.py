@@ -22,8 +22,8 @@ import asyncssh
 import pytest
 from tests.loopback_sshd import LoopbackSshd
 
-from litmus.executor import ExecResult, LocalExec
-from litmus.ssh import SshInterface
+from hilt.executor import ExecResult, LocalExec
+from hilt.ssh import SshInterface
 
 _PROMPT_SECONDS = 1.0
 

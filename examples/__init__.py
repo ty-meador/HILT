@@ -1,1 +1,1 @@
-"""Runnable, fully annotated Litmus suites for authors to learn from."""
+"""Runnable, fully annotated HILT suites for authors to learn from."""

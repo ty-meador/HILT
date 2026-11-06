@@ -19,25 +19,25 @@ from typing import Any
 
 import pytest
 
-from litmus import (
+from hilt import (
     PASS,
     Artifact,
     ContractViolation,
     Failure,
-    LitmusTest,
     RunResult,
     SummaryTreeNode,
+    TestComponent,
     TestFailure,
     TestUtils,
     Verdict,
 )
-from litmus.lifecycle import ChildBoundary, Slot, State
-from litmus.redaction import REDACTED, Redactions, compile_redact_ctx, key_is_redacted
-from litmus.run_data import snapshot_run_data
-from litmus.utils import RunContext, ScopedLogger
+from hilt.lifecycle import ChildBoundary, Slot, State
+from hilt.redaction import REDACTED, Redactions, compile_redact_ctx, key_is_redacted
+from hilt.run_data import snapshot_run_data
+from hilt.utils import RunContext, ScopedLogger
 
-_SID = "litmus-154-sid-7c1e9a42b0d8"
-_TOKEN = "litmus-154-token-f00dcafe9911"
+_SID = "hilt-154-sid-7c1e9a42b0d8"
+_TOKEN = "hilt-154-token-f00dcafe9911"
 
 
 class _Handle:
@@ -106,8 +106,8 @@ class _Seen:
         self.values: list[object] = []
 
 
-def _suite(seen: _Seen, *, fail: bool) -> LitmusTest:
-    class Suite(LitmusTest):
+def _suite(seen: _Seen, *, fail: bool) -> TestComponent:
+    class Suite(TestComponent):
         redact_ctx = ("sid", r"api_.*")
 
         async def configure(self, utils: TestUtils) -> dict[str, Any]:
@@ -120,7 +120,7 @@ def _suite(seen: _Seen, *, fail: bool) -> LitmusTest:
                 "domain": "bench.example",
             }
 
-        def build_suite(self) -> LitmusTest:
+        def build_suite(self) -> TestComponent:
             return self.sequence(
                 "claims",
                 [
@@ -159,7 +159,7 @@ async def _run(
     tmp_path: Path, caplog: pytest.LogCaptureFixture, *, fail: bool
 ) -> tuple[RunResult, bytes, _Seen]:
     seen = _Seen()
-    with caplog.at_level(logging.DEBUG, logger="litmus"):
+    with caplog.at_level(logging.DEBUG, logger="hilt"):
         result = await _suite(seen, fail=fail).run(env={"PHYSICAL_LOCATION": "bench-154"})
     return result, _evidence(result, tmp_path / "artifacts", caplog), seen
 
@@ -171,10 +171,10 @@ class TestDeclaration:
     def test_a_bare_string_is_refused_at_class_definition(self) -> None:
         with pytest.raises(TypeError, match=r"Suite\.redact_ctx must be a sequence"):
 
-            class Suite(LitmusTest):  # pyright: ignore[reportUnusedClass]
+            class Suite(TestComponent):  # pyright: ignore[reportUnusedClass]
                 redact_ctx = "sid"
 
-                def build_suite(self) -> LitmusTest:
+                def build_suite(self) -> TestComponent:
                     return self.test("t", self._t)
 
                 async def _t(self, utils: TestUtils) -> Verdict:
@@ -205,10 +205,10 @@ class TestDeclaration:
         assert compile_redact_ctx("Suite", ()) == ()
 
     def test_a_subclass_adds_to_its_parent_declaration_and_never_replaces_it(self) -> None:
-        class Parent(LitmusTest):
+        class Parent(TestComponent):
             redact_ctx = ("sid",)
 
-            def build_suite(self) -> LitmusTest:
+            def build_suite(self) -> TestComponent:
                 return self.test("t", self._t)
 
             async def _t(self, utils: TestUtils) -> Verdict:
@@ -222,7 +222,7 @@ class TestDeclaration:
 
         assert [p.pattern for p in Child._redact_ctx_patterns] == ["sid"]  # pyright: ignore[reportPrivateUsage]
         assert [p.pattern for p in Override._redact_ctx_patterns] == ["sid", "token"]  # pyright: ignore[reportPrivateUsage]
-        assert LitmusTest._redact_ctx_patterns == ()  # pyright: ignore[reportPrivateUsage]
+        assert TestComponent._redact_ctx_patterns == ()  # pyright: ignore[reportPrivateUsage]
 
 
 class TestKeyMatching:
@@ -332,8 +332,8 @@ class TestScopedLoggerMasking:
     ) -> None:
         redactions = Redactions()
         redactions.register(_SID)
-        logger = ScopedLogger(logging.getLogger("litmus"), ("pihole",), redactions=redactions)
-        with caplog.at_level(logging.DEBUG, logger="litmus"):
+        logger = ScopedLogger(logging.getLogger("hilt"), ("pihole",), redactions=redactions)
+        with caplog.at_level(logging.DEBUG, logger="hilt"):
             logger.info("session %s opened", _SID)
             logger.info("plain %d", 3)
             logger.info("tagged", extra={"session": _SID, "n": 1})
@@ -345,8 +345,8 @@ class TestScopedLoggerMasking:
     def test_without_redactions_the_record_passes_through_untouched(
         self, caplog: pytest.LogCaptureFixture
     ) -> None:
-        logger = ScopedLogger(logging.getLogger("litmus"), ("pihole",))
-        with caplog.at_level(logging.DEBUG, logger="litmus"):
+        logger = ScopedLogger(logging.getLogger("hilt"), ("pihole",))
+        with caplog.at_level(logging.DEBUG, logger="hilt"):
             logger.info("session %s opened", _SID)
         assert caplog.records[0].getMessage() == f"session {_SID} opened"
         assert caplog.records[0].args == (_SID,)
@@ -457,7 +457,7 @@ class TestRecordContainment:
         # ``dict.setdefault`` and ``dict.__ior__`` insert at C level without passing
         # through ``__setitem__``; each override must register on its own, or the ctx
         # view says REDACTED while the secret sits in the timeline and the failure.
-        class Suite(LitmusTest):
+        class Suite(TestComponent):
             redact_ctx = ("sid",)
 
             async def configure(self, utils: TestUtils) -> dict[str, Any]:
@@ -470,7 +470,7 @@ class TestRecordContainment:
                     ctx |= {"sid": _SID}
                 return {}
 
-            def build_suite(self) -> LitmusTest:
+            def build_suite(self) -> TestComponent:
                 return self.test("login", self._login)
 
             async def _login(self, utils: TestUtils) -> Verdict:
@@ -479,7 +479,7 @@ class TestRecordContainment:
                     f"FTL refused session {utils.ctx['sid']}", "200", utils.ctx["sid"]
                 )
 
-        with caplog.at_level(logging.DEBUG, logger="litmus"):
+        with caplog.at_level(logging.DEBUG, logger="hilt"):
             result = await Suite(name="pihole").run(env={"PHYSICAL_LOCATION": "bench-154"})
         haystack = _evidence(result, tmp_path / "artifacts", caplog)
 
@@ -496,26 +496,26 @@ class TestRecordContainment:
     async def test_a_nested_suite_secret_is_masked_run_wide(
         self, tmp_path: Path, caplog: pytest.LogCaptureFixture
     ) -> None:
-        class Child(LitmusTest):
+        class Child(TestComponent):
             redact_ctx = ("child_secret",)
 
             async def configure(self, utils: TestUtils) -> dict[str, Any]:
                 return {"child_secret": _TOKEN}
 
-            def build_suite(self) -> LitmusTest:
+            def build_suite(self) -> TestComponent:
                 return self.test("leaf", self._leaf)
 
             async def _leaf(self, utils: TestUtils) -> Verdict:
                 utils.logger.info("child holds %s", utils.ctx["child_secret"])
                 return PASS
 
-        class Parent(LitmusTest):
+        class Parent(TestComponent):
             redact_ctx = ("parent_secret",)
 
             async def configure(self, utils: TestUtils) -> dict[str, Any]:
                 return {"parent_secret": _SID}
 
-            def build_suite(self) -> LitmusTest:
+            def build_suite(self) -> TestComponent:
                 return self.sequence(
                     "steps", [Child(name="child"), self.test("after", self._after)]
                 )
@@ -526,7 +526,7 @@ class TestRecordContainment:
                 utils.logger.info("parent saw %s and %s", utils.ctx["parent_secret"], _TOKEN)
                 return PASS
 
-        with caplog.at_level(logging.DEBUG, logger="litmus"):
+        with caplog.at_level(logging.DEBUG, logger="hilt"):
             result = await Parent(name="rack").run(env={"PHYSICAL_LOCATION": "bench-154"})
         haystack = _evidence(result, tmp_path / "artifacts", caplog)
 

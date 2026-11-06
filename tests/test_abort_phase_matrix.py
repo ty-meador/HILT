@@ -18,22 +18,22 @@ from typing import Any
 import pytest
 from tests.mock_connector import ConnectorInstaller
 
-from litmus import (
+from hilt import (
     PASS,
     AfterEachContext,
     Artifact,
     BeforeEachContext,
     ExecResult,
     ExternalIntegrationFailure,
-    LitmusTest,
     OperatorInterrupt,
+    TestComponent,
     TestFailure,
     TestUtils,
     Verdict,
 )
-from litmus.lifecycle import AuditSignal, RunAbort, State
-from litmus.mock import MockTransport
-from litmus.results import SummaryTreeNode
+from hilt.lifecycle import AuditSignal, RunAbort, State
+from hilt.mock import MockTransport
+from hilt.results import SummaryTreeNode
 
 
 class _Phase(StrEnum):
@@ -115,7 +115,7 @@ class _Controls:
             raise self.integration_cause
 
 
-class _Target(LitmusTest):
+class _Target(TestComponent):
     def __init__(self, controls: _Controls) -> None:
         super().__init__(name="target")
         self._controls = controls
@@ -127,7 +127,7 @@ class _Target(LitmusTest):
         self._controls.completed.append("configure")
         return {"configured": True}
 
-    def build_suite(self) -> LitmusTest:
+    def build_suite(self) -> TestComponent:
         if self._controls.kind is _Kind.LEAF:
             return self.test("claim", self._claim)
         children = [self.test("claim", self._claim), self.test("sibling", self._sibling)]
@@ -162,7 +162,7 @@ class _Target(LitmusTest):
         return {"observation": observation}
 
 
-class _Harness(LitmusTest):
+class _Harness(TestComponent):
     def __init__(
         self,
         controls: _Controls,
@@ -190,7 +190,7 @@ class _Harness(LitmusTest):
             await probe.started.wait()
         return {}
 
-    def build_suite(self) -> LitmusTest:
+    def build_suite(self) -> TestComponent:
         if self._controls.source in (_Source.BEFORE_HOOK, _Source.AFTER_HOOK):
             return self.parallel("harness", [self._target, self.test("trigger", self._trigger)])
         return self._target

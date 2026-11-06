@@ -4,15 +4,15 @@
 
 - `utils.logger` is scoped per node. Every entry is captured in artifacts.
 - `discrete_log_file=True` (the default on class-based tests) gives the node its own log file; `False` rolls entries into the parent logger. Inline `self.test()` bodies default to `False`.
-- Every full run creates a timestamped directory under the configured artifact root. A logging owner streams both `timeline.log` for humans and versioned `timeline.jsonl` for the Inspector, flushing both on every entry. Treat `LitmusTest.log_path` as the authoritative path; directory names are not an API.
+- Every full run creates a timestamped directory under the configured artifact root. A logging owner streams both `timeline.log` for humans and versioned `timeline.jsonl` for the Inspector, flushing both on every entry. Treat `TestComponent.log_path` as the authoritative path; directory names are not an API.
 - While a durable timeline is attached, `utils.logger.isEnabledFor(...)` is true at every level so developer-side guards cannot suppress the chronology. Process logging handlers still apply their own level policy.
 
 ### Point-in-time artifacts
 
-Construct an immutable `Artifact` and pass it to `utils.capture_artifact()`. The method persists the JSON artifact under `LITMUS_ARTIFACT_ROOT`, then emits a structured pointer through the same scoped logger that records the surrounding test events. `Artifact` deliberately has no `write()` method: a file without its pointer would be absent from the chronology.
+Construct an immutable `Artifact` and pass it to `utils.capture_artifact()`. The method persists the JSON artifact under `HILT_ARTIFACT_ROOT`, then emits a structured pointer through the same scoped logger that records the surrounding test events. `Artifact` deliberately has no `write()` method: a file without its pointer would be absent from the chronology.
 
 ```python
-from litmus import Artifact
+from hilt import Artifact
 
 snapshot = Artifact(
     name="pre-flash", type="hardware-survey", data={"firmware": "2.4.1", "healthy": True}
@@ -49,7 +49,7 @@ except ArpResolutionFailure as error:
 return {**resolved, "arp": arp}
 ```
 
-The resolver is scoped to the node's current exec route and its cache is keyed by the routing label, so a device composed under a gateway resolves through the hop with no change to the device's code. `litmus run ...::DutDevice` reads the test host's ARP table; `litmus run ...::Gateway` runs the same class through the hop. See `examples/networked_device.py`.
+The resolver is scoped to the node's current exec route and its cache is keyed by the routing label, so a device composed under a gateway resolves through the hop with no change to the device's code. `hilt run ...::DutDevice` reads the test host's ARP table; `hilt run ...::Gateway` runs the same class through the hop. See `examples/networked_device.py`.
 
 ## SSH: `use_shell` and `get_shell`
 
@@ -83,7 +83,7 @@ async def configure(self, utils: TestUtils) -> dict[str, Any]:
 
 The line settings are the transport's: `prompt` (a regex; `None` is a bare POSIX prompt), `login_prompt` / `password_prompt` with `username` / `password` for a console that logs in, `login_timeout` for connect, `prompt_timeout` for how long one `exec` waits for the prompt before settling `exit_code == -1` with the text so far as evidence. A console's `stderr` is transport-generated only (`"prompt timeout"`, `"transport closed"`); everything the DUT writes lands in `stdout`. The contract is `docs/hil/serial.md`.
 
-A console behind a hop (a console server, a Pi with a USB-UART) is the same call: pass an SSH `Shell` as `via`, or declare `use_shell(host=...)` on the parent and let the console inherit the route. The device path then names a node on the hop box and the bytes bridge through it (`bridge_command` overrides the default `stty` + `cat` bridge). A serial console accepts no other kind of hop; passing one is a `TypeError` naming the call. The policy-only shapes (`inherit=False`, `propagate=False`) belong to `use_shell`. `pyserial-asyncio` is the `litmus[serial]` extra; a local open without it raises `ModuleNotFoundError` naming the install.
+A console behind a hop (a console server, a Pi with a USB-UART) is the same call: pass an SSH `Shell` as `via`, or declare `use_shell(host=...)` on the parent and let the console inherit the route. The device path then names a node on the hop box and the bytes bridge through it (`bridge_command` overrides the default `stty` + `cat` bridge). A serial console accepts no other kind of hop; passing one is a `TypeError` naming the call. The policy-only shapes (`inherit=False`, `propagate=False`) belong to `use_shell`. `pyserial-asyncio` is the `hilt[serial]` extra; a local open without it raises `ModuleNotFoundError` naming the install.
 
 ## Device API: CoAP and HTTP
 
@@ -103,7 +103,7 @@ The backends stay off the public surface, the way `SshInterface` does.
 
 ## `wait_for`
 
-`looking_for` is required and must be plain language: it is the Floor Technician's primary diagnostic string when a wait times out. Both placements raise `TestFailure`; where the call sits decides what the timeout means, and that is a lifecycle question answered on the idioms page. The call returns the predicate's truthy value (`True` stays `True`), so a claim that needs the observation returns it from the predicate instead of writing into a closure. The runnable [`examples/wait_for_patterns.py`](https://gitlab.com/Tyler-Meador/litmus_test/-/blob/main/examples/wait_for_patterns.py) shows both placements and how polling observations flow through scoped logs, surveys, artifacts, `run_data`, and the root `summary_tree` without another evidence API.
+`looking_for` is required and must be plain language: it is the Floor Technician's primary diagnostic string when a wait times out. Both placements raise `TestFailure`; where the call sits decides what the timeout means, and that is a lifecycle question answered on the idioms page. The call returns the predicate's truthy value (`True` stays `True`), so a claim that needs the observation returns it from the predicate instead of writing into a closure. The runnable [`examples/wait_for_patterns.py`](https://gitlab.com/Tyler-Meador/HILT/-/blob/main/examples/wait_for_patterns.py) shows both placements and how polling observations flow through scoped logs, surveys, artifacts, `run_data`, and the root `summary_tree` without another evidence API.
 
 ## `utils.exec`
 

@@ -1,93 +1,51 @@
-![litmus test hero image](hero.png)
-# litmus
+![HILT hero image](hero.png)
+# HILT
 
 **Hardware-in-the-loop tests that can't quietly lie, and failures a technician can
 triage at 2am without calling you.**
 
-Litmus is an opinionated HIL test framework for Python, built on asyncio structured
-concurrency and sized for production lines: one bench DUT or a rack of 132 running
-concurrently. You write what you claim about the hardware. Litmus enforces the verdict,
-collects the evidence, and gives the floor a terminal Inspector for reading it.
+HILT (Hardware-In-the-Loop Testing) is an opinionated test framework for Python. You write what you claim
+about the hardware. HILT enforces the verdict, records the evidence as the test
+runs, and gives the floor a terminal Inspector for reading it. The same building
+block scales from one bench DUT to a rack of seventy running concurrently.
 
 > *The act of executing the test is the act of producing irrefutable evidence*
 
 ## Why
 
-Most test scripts have exactly one way to fail: something raises. A bad unit,
-a bug in the test, and a database timeout all raise, and all show up as the
-same red FAIL. Was it the unit, the test, or the database? The technician on
-shift guesses or escalates, and the line waits for an engineer.
+Most test scripts have one way to fail: something raises. A bad unit, a bug in the
+test, and a database timeout all raise, and all show up as the same red FAIL. The
+technician on shift guesses or escalates, and the line waits for an engineer.
 
-Litmus sets one bar and builds everything around it:
+HILT sets one bar and builds everything around it:
 
 > A Floor Technician can correctly categorize a failure and start the right recovery
 > protocol **within 60 seconds** of opening the Inspector, without messaging the
 > engineer who wrote the test.
 
-## What you get
+## Try it
 
-**No pass by default. EVER.** "Reached the end without throwing" proves only that none of
-the failures you thought of happened. In Litmus a test method passes only by returning
-the `PASS` sentinel, which can't be forged from a string, a truthy value, or parsed
-config. Fall off the end and the node is **Aborted** loudly as a contract violation. 
-Optionally, declare the readings a pass must carry with `@evidence(...)`, and a pass without them doesn't count.
+Requires Python 3.14 and [uv](https://docs.astral.sh/uv/). HILT is not on PyPI yet;
+install from a clone.
 
-**Three outcomes, three recovery paths.** Every node ends in exactly one of three
-states, and the framework never merges them:
+```sh
+make install
+uv run hilt run examples/hello_world.py
+uv run hilt inspect
+```
 
-| State | What happened | What the floor does |
-|---|---|---|
-| **Pass** | An explicit verdict, with its declared evidence | Ship it |
-| **Fail** | The DUT failed a modeled check, or the test raised an exception it didn't model (flagged loudly as a developer contract violation) | Check the hardware, or escalate the defect |
-| **Aborted** | No verdict exists: the harness broke, the operator stopped the rack, or a test returned nothing | Fix the harness. Don't condemn the unit |
-
-**Evidence is a side effect of running.** Each run writes a timestamped directory with
-a versioned `result.json`, a human `timeline.log` and machine `timeline.jsonl` per
-node, and point-in-time artifacts stitched onto that timeline. All of it is flushed
-entry by entry, so an interrupted run keeps the chronology up to the point it stopped.
-With NTP-synced stations, that timeline will hold up in a customer dispute ("did the
-failures start before your 2pm firmware push?").
-
-**One building block, from a single check to a rack.** `LitmusTest` is the only unit - analogous to reacts "Component".
-A leaf check, an ordered `sequence()`, a concurrent `parallel()`, a whole device, and a
-70-DUT rack are all the same type, composed. No level knows what sits above it, so the
-test tree mirrors the hardware tree.
-
-**Guardrails your team can't bypass.** The rules are enforced in three tiers:
-
-1. **Runtime.** Every call into your code passes one child boundary that owns the
-   verdict, the failure taxonomy, and lifecycle order (`configure` → `build_suite` →
-   `cleanup`, and cleanup always runs).
-2. **Import time.** A structurally broken suite refuses to import, so it never
-   reaches a fixture.
-3. **Static analysis.** `litmus-check` flags an ungated `PASS` and impure composition.
-
-Nothing that protects the hardware or the verdict relies on the linter alone.
-
-**Safe aborts.** If the integration layer fails mid-run or the operator hits Ctrl-C,
-Litmus closes every in-flight transport across the tree right away: SSH sessions
-destroyed, subprocesses killed. A 30-minute firmware flash doesn't keep writing to a
-board after the run has been called off. Start and finish hooks stay paired, so your
-MES never gets orphan rows.
-
-**Less plumbing.** Call `utils.use_shell()` in `configure()` and every descendant's
-`utils.exec` runs over that SSH hop, including through jump hosts. `wait_for()`
-requires a `looking_for=` description, which becomes the timeout message the
-technician reads. Time budgets (`fail_after=` / `abort_after=`) attach to any node,
-and a child can only tighten its parent's budget, never loosen it.
-
-## What a test looks like
+A suite is a class, a claim is a method, and a verdict is explicit:
 
 ```python
-from litmus import PASS, LitmusTest, TestFailure, TestUtils, Verdict
+from hilt import PASS, TestComponent, TestFailure, TestUtils, Verdict
 
 
-class HelloWorld(LitmusTest):
+class HelloWorld(TestComponent):
     def __init__(self, *, name: str, greeting: str = "hello world") -> None:
         super().__init__(name=name)
         self._greeting = greeting
 
-    def build_suite(self) -> LitmusTest:
+    def build_suite(self) -> TestComponent:
         return self.test("say hello", self._say_hello)
 
     async def _say_hello(self, utils: TestUtils) -> Verdict:
@@ -97,12 +55,70 @@ class HelloWorld(LitmusTest):
         raise TestFailure("nothing to say", "a greeting", "(empty)")
 ```
 
+The **[Getting started guide](docs/getting-started.md)** continues from here: the
+examples in teaching order, running against real devices over SSH, and deploying to a
+station.
+
+## Three outcomes, never merged
+
+**No pass by default.** "Reached the end without throwing" proves only that none of
+the failures you thought of happened. A HILT test passes only by returning the
+`PASS` sentinel, which can't be forged from a string, a truthy value, or parsed config.
+Declare the readings a pass must carry with `@evidence(...)`, and a pass without them
+doesn't count.
+
+Every node ends in exactly one of three states, and each sends the floor down a
+different path:
+
+| State | What happened | What the floor does |
+|---|---|---|
+| **Pass** | The test returned `PASS`, with its declared evidence | Ship it |
+| **Fail** | The hardware failed a modeled check (`TestFailure`), **or** the test raised an exception it didn't model. The second case is recorded as Fail with a loud contract-violation banner and `bug: true` | Check the hardware, or hand the flagged bug to the engineer |
+| **Aborted** | No verdict exists: the harness or integration layer broke, the operator stopped the rack, a time budget expired, **or** the test returned without `PASS`. That last case is also flagged `bug: true` | Fix the harness or the test. Don't condemn the unit |
+
+Two developer mistakes, two different states, on purpose. An unmodeled exception
+carries information about what went wrong, so it is recorded as a Fail and marked as
+a bug. A method that falls off the end produces nothing, and HILT will not forge a
+verdict from nothing, so the node is Aborted and marked as a bug. Both are loud. Neither
+takes down the sibling DUTs running beside it.
+
+## What you get
+
+**Evidence is a side effect of running.** Each run writes a timestamped directory with
+a versioned `result.json`, a human `timeline.log` and machine `timeline.jsonl` per node,
+and point-in-time artifacts stitched onto that timeline. Entries are flushed as they are
+written, so an interrupted run keeps its chronology up to the moment it stopped. With
+NTP-synced stations, that timeline holds up in a customer dispute.
+
+**One building block, bench to rack.** `TestComponent` is the only unit. A leaf check, an
+ordered `sequence()`, a concurrent `parallel()`, a whole device, and a full rack are the
+same type, composed. No level knows what sits above it, so the test tree mirrors the
+hardware tree.
+
+**Guardrails your team can't bypass.** Rules are enforced at runtime (one child
+boundary owns the verdict, the failure taxonomy, and lifecycle order, and `cleanup`
+always runs), at import time (a structurally broken suite refuses to load), and by
+static analysis (`hilt-check` flags an ungated `PASS`). Nothing that protects the
+hardware or the verdict relies on the linter alone.
+
+**Safe aborts.** When the integration layer fails mid-run or the operator hits Ctrl-C,
+HILT closes every in-flight transport across the tree: SSH sessions destroyed,
+subprocesses killed. A 30-minute firmware flash doesn't keep writing to a board after
+the run is called off. Start and finish hooks stay paired, so your MES never gets
+orphan rows.
+
+**Less plumbing.** Call `utils.use_shell()` in `configure()` and every descendant's
+`utils.exec` runs over that SSH hop, jump hosts included. Serial consoles and HTTP/CoAP
+device APIs route the same way. `wait_for()` requires a `looking_for=` description that
+becomes the timeout message the technician reads. Time budgets (`fail_after=` /
+`abort_after=`) attach to any node, and a child can only tighten its parent's budget.
+
 ## The Inspector
 
-`litmus inspect` opens any saved run in a terminal UI built for the person at the
-station. The `Inspect` tab replays the evidence from the run. The `Re-Run` tab
-allows the technician to re-run any branch or leaf of the test hierarchy - dependencies
-are managed by the framework.
+`hilt inspect` opens any saved run in a terminal UI built for the person at the
+station. The **Inspect** tab replays the evidence. The **Re-Run** tab re-runs any branch
+or leaf of the tree with the exact production code, without touching the production
+record.
 
 ```text
   [ Inspect ]   Re-Run
@@ -123,84 +139,40 @@ are managed by the framework.
   q Quit  Tab Inspect / Re-Run  ← → failures  h Hide passes  n p page  f Errors only
 ```
 
-- **← / →** jump between failures, skipping everything that passed. **h** folds
-  the passing branches out of a large rack.
-- The highlighted node's timeline updates as the cursor moves. **1–9** open the
-  captured artifacts, such as survey data showing whether the device's reported
-  health matched what actually happened.
+- **← / →** jump between failures, skipping everything that passed. **h** folds the
+  passing branches out of a large rack.
+- The highlighted node's timeline follows the cursor. **1–9** open captured artifacts.
 - Missing readings are shown as **not taken** by name, so an absent value is never
   mistaken for zero.
-- **Re-Run** is the bench: after debugging the hardware, press Enter on one node to
-  re-run just that subtree with the exact production code. Nothing it produces
-  overwrites the production record.
 
-The same run record is available as versioned JSON (`--json`, with published JSON
-Schemas) and as JUnit XML (`--junit`) for CI and dashboards.
-
-## Try it
-
-Requires Python 3.14 and [uv](https://docs.astral.sh/uv/).
-
-```sh
-make install
-uv run litmus run examples/hello_world.py
-uv run litmus inspect
-```
-
-The locally executable examples progress from one explicit claim, through composition,
-to polling, lifecycle hooks, and the evidence surface:
-
-```sh
-uv run litmus run examples/hello_world.py
-uv run litmus run examples/test_composition.py::SequencedDevice
-uv run litmus run examples/test_composition.py::ParallelDevice   # exits 1 by design
-uv run litmus run examples/wait_for_patterns.py::ConfigureGatedDevice
-uv run litmus run examples/wait_for_patterns.py::MainAssertionDevice
-uv run litmus run examples/hardware_device_lifecycle.py
-uv run litmus run examples/run_data_evidence.py
-```
-
-The SSH-backed examples take their target from `utils.env` in `configure()`; a missing
-variable Fails the suite (exit 1) with a message that names the variable to set:
-
-```sh
-SSH_HOST=dut.lab SSH_USER=root uv run litmus run examples/remote_device_ssh.py
-JUMP_HOST=jump.lab JUMP_USER=ops TARGET_HOST=dut.lab TARGET_USER=root uv run litmus run examples/ssh_tunneling.py
-DUT_MAC=aa:bb:cc:dd:ee:ff uv run litmus run examples/networked_device.py::DutDevice
-TARGET_ADDRESS=pihole.lab TARGET_USER=root uv run litmus run examples/pi_hole_server.py
-```
-
-The **[Getting started guide](docs/getting-started.md)** continues from there: writing
-your first suite, the examples in teaching order, running against real devices over
-SSH, deploying to a station, and contributing.
+The same record is available as versioned JSON (`--json`, with
+[published schemas](docs/schema/)) and as JUnit XML (`--junit`) for CI and dashboards.
 
 ## Documentation
 
 - [Getting started](docs/getting-started.md): install, first run, examples, deployment
-- [Overview](docs/overview.md): the philosophy, the failure taxonomy, and the pit of success
+- [Overview](docs/overview.md): the philosophy and the failure taxonomy
 - [Contracts](docs/contracts.md): what the framework guarantees and what it asks of you
 - [Idioms](docs/idioms.md): authoring patterns
 - [Inspector](docs/inspector.md) and [Floor Technician guide](docs/floor-technician.md):
   the station side
 - [API stability](docs/api-stability.md): the public surface and versioning policy
 
-Nothing hosts the docs site. The tree is the documentation: GitLab renders every
-page under https://gitlab.com/Tyler-Meador/litmus_test/-/tree/main/docs, and each
-release branch (`release/MAJOR.MINOR.PATCH`) also carries the built site under
-`docs/site/` (`make docs-release`; open `docs/site/index.html` from a clone, no
-network needed). The Floor Technician guide is `docs/floor-technician.md`; its
-rendered page,
-https://gitlab.com/Tyler-Meador/litmus_test/-/blob/main/docs/floor-technician.md,
+GitLab renders every page under
+https://gitlab.com/Tyler-Meador/HILT/-/tree/main/docs. Each release branch
+also carries the built site under `docs/site/`, so a station can open it from a clone
+with no network. The
+[Floor Technician guide](https://gitlab.com/Tyler-Meador/HILT/-/blob/main/docs/floor-technician.md)
 is the URL that belongs on a station label.
 
 ## Status
 
-Litmus is at 0.0.x. The public API follows semantic versioning from 1.0.0. Until then,
-[API stability](docs/api-stability.md) describes what may change, and `CHANGELOG.md`
-records every change.
+HILT is at 0.0.x and the API is still moving. Semantic versioning starts at 1.0.0;
+until then [API stability](docs/api-stability.md) describes what may change and
+`CHANGELOG.md` records every change. Issues and merge requests are welcome.
 
 ## License
 
-Copyright 2026 Tyler Meador. Litmus-Test ("Litmus") is released under the Apache
-License, Version 2.0 (`Apache-2.0`). The full text is in `LICENSE`; the copyright
-notice is in `NOTICE`. There is no warranty; see the license for the terms.
+Copyright 2026 Tyler Meador. HILT is released under the Apache
+License, Version 2.0. The full text is in `LICENSE`; the copyright notice is in
+`NOTICE`. There is no warranty; see the license for the terms.

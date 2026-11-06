@@ -6,11 +6,11 @@ from pathlib import Path
 
 import pytest
 
-from litmus import PASS, LitmusTest, TestFailure, TestUtils, Verdict
-from litmus.inspector_artifacts import ArtifactDiagnostic
-from litmus.inspector_run import SavedRunReader
-from litmus.inspector_tree import InspectorTree, SelectedTree, TreeReader
-from litmus.run_data import JsonObject, JsonValue
+from hilt import PASS, TestComponent, TestFailure, TestUtils, Verdict
+from hilt.inspector_artifacts import ArtifactDiagnostic
+from hilt.inspector_run import SavedRunReader
+from hilt.inspector_tree import InspectorTree, SelectedTree, TreeReader
+from hilt.run_data import JsonObject, JsonValue
 
 
 def _node(name: str, **changes: JsonValue) -> JsonObject:
@@ -300,8 +300,8 @@ class TestInspectorTree:
     async def test_recorded_seventy_dut_rack_is_navigable_after_the_run_moves(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        class Device(LitmusTest):
-            def build_suite(self) -> LitmusTest:
+        class Device(TestComponent):
+            def build_suite(self) -> TestComponent:
                 return self.test("voltage", self._voltage)
 
             async def _voltage(self, utils: TestUtils) -> Verdict:
@@ -309,8 +309,8 @@ class TestInspectorTree:
                     return PASS({"volts": 3.3})
                 raise TestFailure("rail low", evidence={"volts": 0})
 
-        class Rack(LitmusTest):
-            def build_suite(self) -> LitmusTest:
+        class Rack(TestComponent):
+            def build_suite(self) -> TestComponent:
                 return self.parallel("devices", [Device(name=f"dut-{i:02d}") for i in range(70)])
 
         rack = Rack(name="rack")
@@ -324,7 +324,7 @@ class TestInspectorTree:
         def refuse_suite_execution(*args: object, **kwargs: object) -> None:
             raise AssertionError("inspection attempted suite execution")
 
-        monkeypatch.setattr(LitmusTest, "run", refuse_suite_execution)
+        monkeypatch.setattr(TestComponent, "run", refuse_suite_execution)
         tree = await TreeReader().read(moved / "result.json")
         assert isinstance(tree, InspectorTree)
         assert tree.result == recorded

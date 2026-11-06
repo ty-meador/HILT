@@ -12,25 +12,25 @@ from typing import cast
 
 import pytest
 
-from litmus import (
+from hilt import (
     PASS,
     ArpResolver,
     Artifact,
     ContractViolation,
     FrameworkContractViolation,
-    LitmusTest,
     MissingVerdict,
     Phase,
     RunResult,
     SummaryTreeNode,
+    TestComponent,
     TestUtils,
     Verdict,
 )
-from litmus.base import _bounded_finalization  # pyright: ignore[reportPrivateUsage]
-from litmus.cli import SuiteLoader, UsageError
-from litmus.errors import ContextInsufficient
-from litmus.executor import ExecResult, LocalExec
-from litmus.hooks import (
+from hilt.base import _bounded_finalization  # pyright: ignore[reportPrivateUsage]
+from hilt.cli import SuiteLoader, UsageError
+from hilt.errors import ContextInsufficient
+from hilt.executor import ExecResult, LocalExec
+from hilt.hooks import (
     AuditHook,
     BeforeEachContext,
     BeforeEachHook,
@@ -38,14 +38,14 @@ from litmus.hooks import (
     SurveyHook,
     invoke_integration_hook,
 )
-from litmus.lifecycle import Slot, State
-from litmus.remote import RemoteInterface
-from litmus.results import NodeType
-from litmus.routing import ShellOpenRequest, SshConnector
-from litmus.ssh import SshInterface
-from litmus.timeline import RunTimeline
-from litmus.utils import RunContext
-from litmus_check import Rule, RuleRegistry, SuiteModule, Violation
+from hilt.lifecycle import Slot, State
+from hilt.remote import RemoteInterface
+from hilt.results import NodeType
+from hilt.routing import ShellOpenRequest, SshConnector
+from hilt.ssh import SshInterface
+from hilt.timeline import RunTimeline
+from hilt.utils import RunContext
+from hilt_check import Rule, RuleRegistry, SuiteModule, Violation
 
 _FCV_FIX = "report it to the framework maintainers with the full log and reproduction steps"
 
@@ -61,15 +61,15 @@ def _assert_names_rule_and_fix(message: str) -> None:
     raise AssertionError(f"message does not name a rule and a fix: {message!r}")
 
 
-def _suite(self: LitmusTest) -> LitmusTest:
+def _suite(self: TestComponent) -> TestComponent:
     return self.test("claim", self._claim)  # type: ignore[attr-defined]
 
 
-async def _claim(self: LitmusTest, utils: object) -> Verdict:
+async def _claim(self: TestComponent, utils: object) -> Verdict:
     return PASS
 
 
-def _sync_claim(self: LitmusTest, utils: object) -> Verdict:
+def _sync_claim(self: TestComponent, utils: object) -> Verdict:
     return PASS
 
 
@@ -119,9 +119,9 @@ class TestDefaultDetails:
 class TestImportTimeTypeErrors:
     def test_sealed_override_names_the_fix(self) -> None:
         with pytest.raises(TypeError) as raised:
-            type("OverridesMain", (LitmusTest,), {"build_suite": _suite, "main": _claim})
+            type("OverridesMain", (TestComponent,), {"build_suite": _suite, "main": _claim})
         assert str(raised.value) == (
-            "LitmusTest.main is framework-owned and cannot be overridden; "
+            "TestComponent.main is framework-owned and cannot be overridden; "
             "rename the method or call the public API instead of replacing it"
         )
         _assert_names_rule_and_fix(str(raised.value))
@@ -130,7 +130,7 @@ class TestImportTimeTypeErrors:
         with pytest.raises(TypeError) as raised:
             type(
                 "SyncConfigure",
-                (LitmusTest,),
+                (TestComponent,),
                 {"build_suite": _suite, "configure": _sync_claim},
             )
         assert str(raised.value) == (
@@ -142,8 +142,8 @@ class TestImportTimeTypeErrors:
     def test_verdict_method_must_be_async(self) -> None:
         with pytest.raises(TypeError) as raised:
 
-            class SyncClaim(LitmusTest):  # pyright: ignore[reportUnusedClass]
-                def build_suite(self) -> LitmusTest:
+            class SyncClaim(TestComponent):  # pyright: ignore[reportUnusedClass]
+                def build_suite(self) -> TestComponent:
                     return self.test(
                         "claim",
                         self._claim,  # pyright: ignore[reportArgumentType]
@@ -161,29 +161,29 @@ class TestImportTimeTypeErrors:
     def test_build_suite_must_be_overridden(self) -> None:
         with pytest.raises(TypeError) as raised:
 
-            class MissingSuite(LitmusTest):  # pyright: ignore[reportUnusedClass]
+            class MissingSuite(TestComponent):  # pyright: ignore[reportUnusedClass]
                 pass
 
         assert str(raised.value) == (
             "MissingSuite.build_suite must be overridden; "
-            "define def build_suite(self) -> LitmusTest on the subclass"
+            "define def build_suite(self) -> TestComponent on the subclass"
         )
         _assert_names_rule_and_fix(str(raised.value))
 
     def test_build_suite_must_be_a_method(self) -> None:
         with pytest.raises(TypeError) as raised:
-            type("DataSuite", (LitmusTest,), {"build_suite": object()})
+            type("DataSuite", (TestComponent,), {"build_suite": object()})
         assert str(raised.value) == (
             "DataSuite.build_suite must be defined with def; assign a method, not a data attribute"
         )
         _assert_names_rule_and_fix(str(raised.value))
 
     def test_build_suite_must_not_be_async(self) -> None:
-        async def async_suite(self: LitmusTest) -> LitmusTest:
+        async def async_suite(self: TestComponent) -> TestComponent:
             return self
 
         with pytest.raises(TypeError) as raised:
-            type("AsyncSuite", (LitmusTest,), {"build_suite": async_suite})
+            type("AsyncSuite", (TestComponent,), {"build_suite": async_suite})
         assert str(raised.value) == (
             "AsyncSuite.build_suite must be defined with def, not async def; "
             "build_suite is a pure table of contents and must not await"
@@ -192,7 +192,7 @@ class TestImportTimeTypeErrors:
 
     def test_test_rejects_a_synchronous_function(self) -> None:
         with pytest.raises(TypeError) as raised:
-            LitmusTest(name="rack").test("claim", _sync_claim)  # type: ignore[arg-type]
+            TestComponent(name="rack").test("claim", _sync_claim)  # type: ignore[arg-type]
         assert str(raised.value) == (
             f"test method {_sync_claim.__qualname__} must be defined with async def; "
             "write it as async def and return PASS or raise TestFailure"
@@ -202,16 +202,17 @@ class TestImportTimeTypeErrors:
 
 class TestAuthorContractViolations:
     def test_empty_parallel_and_sequence_name_the_fix(self) -> None:
-        suite = LitmusTest(name="rack")
+        suite = TestComponent(name="rack")
         with pytest.raises(ContractViolation) as parallel:
             suite.parallel("parallel", [])
         with pytest.raises(ContractViolation) as sequence:
             suite.sequence("sequence", [])
         assert parallel.value.detail == (
-            "a parallel node must contain at least one child; pass one or more LitmusTest instances"
+            "a parallel node must contain at least one child; "
+            "pass one or more TestComponent instances"
         )
         assert sequence.value.detail == (
-            "a sequence must contain at least one child; pass one or more LitmusTest instances"
+            "a sequence must contain at least one child; pass one or more TestComponent instances"
         )
         assert parallel.value.node == "parallel"
         assert sequence.value.node == "sequence"
@@ -224,7 +225,7 @@ class TestAuthorContractViolations:
             return PASS
 
         with pytest.raises(ContractViolation) as raised:
-            LitmusTest(name="rack").test("no cpu", probe)
+            TestComponent(name="rack").test("no cpu", probe)
         assert raised.value.node == "no cpu"
         assert raised.value.detail == (
             "arguments do not fit test method "
@@ -242,7 +243,7 @@ class TestAuthorContractViolations:
 
         bound = functools.partial(probe, cpu=0)
         with pytest.raises(ContractViolation) as misfit:
-            LitmusTest(name="rack").test("bound", bound, 5)
+            TestComponent(name="rack").test("bound", bound, 5)
         assert misfit.value.node == "bound"
         assert misfit.value.detail.startswith(f"arguments do not fit test method {bound!r} (")
 
@@ -252,14 +253,14 @@ class TestAuthorContractViolations:
 
         instance = Probe()
         with pytest.raises(TypeError) as synchronous:
-            LitmusTest(name="rack").test("instance", instance)  # pyright: ignore[reportArgumentType]
+            TestComponent(name="rack").test("instance", instance)  # pyright: ignore[reportArgumentType]
         assert str(synchronous.value).startswith(
             f"test method {instance!r} must be defined with async def; "
         )
 
     def test_hooks_after_construction_name_the_fix(self) -> None:
-        class Suite(LitmusTest):
-            def build_suite(self) -> LitmusTest:
+        class Suite(TestComponent):
+            def build_suite(self) -> TestComponent:
                 return self.test("claim", self._claim)
 
             async def _survey(self, utils: object) -> object:
@@ -279,7 +280,7 @@ class TestAuthorContractViolations:
 
     def test_base_build_suite_names_the_composition_fix(self) -> None:
         with pytest.raises(ContractViolation) as raised:
-            LitmusTest(name="rack").build_suite()
+            TestComponent(name="rack").build_suite()
         assert raised.value.node == "rack"
         assert raised.value.detail == (
             "build_suite() must return a test, sequence, or parallel composition; "
@@ -289,7 +290,7 @@ class TestAuthorContractViolations:
 
     def test_mutual_exclusive_deadlines_name_the_fix(self) -> None:
         with pytest.raises(ContractViolation) as raised:
-            LitmusTest(name="rack", fail_after=1.0, abort_after=1.0)
+            TestComponent(name="rack", fail_after=1.0, abort_after=1.0)
         assert raised.value.node == "rack"
         assert raised.value.detail == (
             "fail_after and abort_after are mutually exclusive; declare exactly one or neither"
@@ -298,7 +299,7 @@ class TestAuthorContractViolations:
 
     def test_non_positive_deadline_names_the_fix(self) -> None:
         with pytest.raises(ContractViolation) as raised:
-            LitmusTest(name="rack", fail_after=0)
+            TestComponent(name="rack", fail_after=0)
         assert raised.value.node == "rack"
         assert raised.value.detail == (
             "fail_after must be a positive finite number of seconds; "
@@ -310,13 +311,13 @@ class TestAuthorContractViolations:
         # The author declared abort_after; telling them fail_after is wrong sends them
         # to the wrong line.
         with pytest.raises(ContractViolation) as raised:
-            LitmusTest(name="rack", abort_after="soon")  # pyright: ignore[reportArgumentType]
+            TestComponent(name="rack", abort_after="soon")  # pyright: ignore[reportArgumentType]
         assert raised.value.node == "rack"
         assert raised.value.detail.startswith("abort_after must be a positive finite number")
 
     async def test_duplicate_root_deadline_names_the_fix(self) -> None:
-        class Suite(LitmusTest):
-            def build_suite(self) -> LitmusTest:
+        class Suite(TestComponent):
+            def build_suite(self) -> TestComponent:
                 return self.test("claim", self._claim)
 
             async def _claim(self, utils: object) -> Verdict:
@@ -333,7 +334,7 @@ class TestAuthorContractViolations:
     async def test_finalization_timeout_names_the_operation_and_the_fix(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        monkeypatch.setattr("litmus.base._FINALIZATION_TIMEOUT_SECONDS", 0.01)
+        monkeypatch.setattr("hilt.base._FINALIZATION_TIMEOUT_SECONDS", 0.01)
 
         async def hang() -> object:
             await asyncio.Event().wait()
@@ -353,8 +354,8 @@ class TestAuthorContractViolations:
         _assert_names_rule_and_fix(raised.value.detail)
 
     async def test_a_second_run_names_the_fix(self) -> None:
-        class Suite(LitmusTest):
-            def build_suite(self) -> LitmusTest:
+        class Suite(TestComponent):
+            def build_suite(self) -> TestComponent:
                 return self.test("claim", self._claim)
 
             async def _claim(self, utils: object) -> Verdict:
@@ -365,7 +366,7 @@ class TestAuthorContractViolations:
         with pytest.raises(ContractViolation) as raised:
             await suite.main(TestUtils())
         assert raised.value.detail == (
-            "a LitmusTest instance may run only once; construct a new instance for each run"
+            "a TestComponent instance may run only once; construct a new instance for each run"
         )
         _assert_names_rule_and_fix(raised.value.detail)
 
@@ -441,12 +442,12 @@ class TestHookMessages:
         _assert_names_rule_and_fix(str(raised.value))
 
     def test_an_unknown_survey_phase_names_the_fix(self) -> None:
-        class Suite(LitmusTest):
+        class Suite(TestComponent):
             def __init__(self, *, name: str) -> None:
                 super().__init__(name=name)
                 self.use_survey(self._survey, phases=["mid-test"])  # pyright: ignore[reportArgumentType]
 
-            def build_suite(self) -> LitmusTest:
+            def build_suite(self) -> TestComponent:
                 return self.test("claim", self._claim)
 
             async def _survey(self, utils: object) -> object:
@@ -490,7 +491,7 @@ class TestHookMessages:
             name="rack",
             ancestor_names=("rack",),
             bread_crumbs="rack",
-            logger=logging.LoggerAdapter(logging.getLogger("litmus"), extra={}),
+            logger=logging.LoggerAdapter(logging.getLogger("hilt"), extra={}),
             env={},
         )
         with pytest.raises(TypeError) as raised:
@@ -758,7 +759,7 @@ class TestRunnerUsageErrors:
         with pytest.raises(UsageError) as raised:
             SuiteLoader().load(str(path))
         assert str(raised.value) == (
-            f"{path}: defines no LitmusTest subclass; "
+            f"{path}: defines no TestComponent subclass; "
             f"define one in that module or name one as {path}::SuiteClass"
         )
         _assert_names_rule_and_fix(str(raised.value))
@@ -766,9 +767,9 @@ class TestRunnerUsageErrors:
     def test_module_suite_bound_to_a_non_suite_names_the_fix(self, tmp_path: Path) -> None:
         path = tmp_path / "suite_bound_to_a_string.py"
         path.write_text(
-            "from litmus import LitmusTest\n"
-            "class First(LitmusTest):\n"
-            "    def build_suite(self) -> LitmusTest:\n        return self\n"
+            "from hilt import TestComponent\n"
+            "class First(TestComponent):\n"
+            "    def build_suite(self) -> TestComponent:\n        return self\n"
             "class Second(First):\n    pass\n"
             "__suite__ = 'Second'\n",
             encoding="utf-8",
@@ -776,7 +777,7 @@ class TestRunnerUsageErrors:
         with pytest.raises(UsageError) as raised:
             SuiteLoader().load(str(path))
         assert str(raised.value) == (
-            f"{path}: __suite__ is 'Second', not a LitmusTest subclass; "
+            f"{path}: __suite__ is 'Second', not a TestComponent subclass; "
             "bind it to one of: First, Second"
         )
         _assert_names_rule_and_fix(str(raised.value))

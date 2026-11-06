@@ -1,13 +1,13 @@
 # JUnit XML reporter
 
-Every CI system reads JUnit XML. `litmus.junit.JunitXml` maps a `RunResult` summary
-tree onto that schema so a litmus run shows up beside every other suite with no
+Every CI system reads JUnit XML. `hilt.junit.JunitXml` maps a `RunResult` summary
+tree onto that schema so a hilt run shows up beside every other suite with no
 adapter. The Floor Technician's taxonomy survives the mapping: a red build says
 hardware, harness, or bug — not just red.
 
-The runner calls `JunitXml.write`: `litmus run --junit PATH` writes the report beside
-the run's evidence (`docs/litmus-run.md`). A harness adapter that imports
-`litmus.junit` directly does so off the promised surface (`docs/api-stability.md`).
+The runner calls `JunitXml.write`: `hilt run --junit PATH` writes the report beside
+the run's evidence (`docs/hilt-run.md`). A harness adapter that imports
+`hilt.junit` directly does so off the promised surface (`docs/api-stability.md`).
 
 This is a *projection* of the Inspector JSON contract, not a second source of truth.
 `RunResult.to_json()` remains the evidence record. JUnit is what CI already knows
@@ -17,9 +17,9 @@ how to paint.
 
 There is no fourth terminal state. A declared node that did not run (`state` is
 `null` on the summary tree — a later step in a failed sequence) is `skipped`, which
-is a JUnit status, not a litmus state.
+is a JUnit status, not a HILT state.
 
-| Litmus | JUnit element | What the FT still sees |
+| HILT | JUnit element | What the FT still sees |
 |---|---|---|
 | `Pass` | `testcase` with neither `failure` nor `error` | A green row. |
 | `Fail` | `failure` | Taxonomy class on `@type`, `fail_message` on `@message`, full `to_json()` payload in the body. `bug: true` means broken code, not broken hardware. |

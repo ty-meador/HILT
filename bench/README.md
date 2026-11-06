@@ -1,7 +1,7 @@
 # Bench
 
 The bench is a sibling of `examples/` and models the expected real-world use of
-`litmus`: a developer's rack, composed from the shipped tools, run against devices
+`hilt`: a developer's rack, composed from the shipped tools, run against devices
 (Ty's ruling of 2026-10-15 on #139). It is not part of the framework. Nothing here
 is reached by `make check`; nothing here is shipped.
 
@@ -24,7 +24,7 @@ loads `vcan`/`vxcan`/`i2c-stub`/`gpio-sim`, creates the links and the gpio-sim c
 and opens the stub's `/dev/i2c-N`, the chip's `/dev/gpiochipN` and its sysfs `pull`
 knobs to you. It is the only step that needs root. `make bench-down` stops
 the guest and both containers. Images, keys, overlays and generated container
-contexts live in `~/.cache/litmus-bench/` (`LITMUS_BENCH_CACHE` to move it).
+contexts live in `~/.cache/hilt-bench/` (`HILT_BENCH_CACHE` to move it).
 
 Host packages: `apt install socat can-utils i2c-tools xorriso qemu-system-x86`.
 The GPIO bench needs the python `gpiod` bindings, which `uv run --group bench`

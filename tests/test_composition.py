@@ -5,16 +5,16 @@ from typing import cast
 
 import pytest
 
-from litmus import (
+from hilt import (
     PASS,
     ContractViolation,
     FrameworkContractViolation,
-    LitmusTest,
+    TestComponent,
     TestFailure,
     TestUtils,
     Verdict,
 )
-from litmus.lifecycle import AuditSignal, Outcome, RunAbort, Slot, State, TimeBudgetClock
+from hilt.lifecycle import AuditSignal, Outcome, RunAbort, Slot, State, TimeBudgetClock
 
 
 class _NonTerminalChild:
@@ -31,7 +31,7 @@ class _NonTerminalChild:
 
 
 class _InconsistentChildren:
-    def __iter__(self) -> Iterator[LitmusTest]:
+    def __iter__(self) -> Iterator[TestComponent]:
         return iter(())
 
     def __len__(self) -> int:
@@ -40,10 +40,10 @@ class _InconsistentChildren:
 
 class TestCompositionFactories:
     async def test_test_sequence_and_parallel_compose_with_bound_methods(self) -> None:
-        calls: list[tuple[str, LitmusTest]] = []
+        calls: list[tuple[str, TestComponent]] = []
 
-        class Suite(LitmusTest):
-            def build_suite(self) -> LitmusTest:
+        class Suite(TestComponent):
+            def build_suite(self) -> TestComponent:
                 return self.sequence(
                     self.name,
                     [
@@ -71,7 +71,7 @@ class TestCompositionFactories:
         assert calls == [("first", suite), ("second", suite)]
 
     def test_composites_require_at_least_one_child(self) -> None:
-        suite = LitmusTest(name="rack")
+        suite = TestComponent(name="rack")
 
         with pytest.raises(ContractViolation, match=r"sequence.*at least one child"):
             suite.sequence("sequence", [])
@@ -81,12 +81,12 @@ class TestCompositionFactories:
     async def test_leaves_enumerate_at_runtime_by_passing_the_varying_argument(self) -> None:
         stressed: list[int] = []
 
-        class Compute(LitmusTest):
+        class Compute(TestComponent):
             def __init__(self, *, name: str, cpu_count: int) -> None:
                 super().__init__(name=name)
                 self._cpu_count = cpu_count
 
-            def build_suite(self) -> LitmusTest:
+            def build_suite(self) -> TestComponent:
                 return self.parallel(
                     "stress",
                     [
@@ -110,8 +110,8 @@ class TestCompositionFactories:
     async def test_positional_arguments_reach_the_method_after_utils(self) -> None:
         seen: list[tuple[str, float]] = []
 
-        class Rails(LitmusTest):
-            def build_suite(self) -> LitmusTest:
+        class Rails(TestComponent):
+            def build_suite(self) -> TestComponent:
                 return self.sequence(
                     "rails",
                     [
@@ -130,7 +130,7 @@ class TestCompositionFactories:
         assert seen == [("12V", 0.5), ("5V", 0.25)]
 
     def test_arguments_that_do_not_fit_the_method_fail_at_composition(self) -> None:
-        suite = LitmusTest(name="rack")
+        suite = TestComponent(name="rack")
 
         async def probe(_utils: object, *, cpu: int) -> Verdict:
             del cpu
@@ -146,7 +146,7 @@ class TestCompositionFactories:
             suite.test("extra", probe, 1, 2)
 
     def test_budgets_are_the_leaf_s_and_never_reach_the_method(self) -> None:
-        suite = LitmusTest(name="rack")
+        suite = TestComponent(name="rack")
 
         async def clashes(_utils: object, *, fail_after: float) -> Verdict:
             del fail_after
@@ -158,7 +158,7 @@ class TestCompositionFactories:
             suite.test("clash", clashes, fail_after=1.0)
 
     def test_test_rejects_a_function_that_is_not_a_coroutine_function(self) -> None:
-        suite = LitmusTest(name="rack")
+        suite = TestComponent(name="rack")
 
         def plain(_utils: object) -> Verdict:
             return PASS
@@ -169,7 +169,7 @@ class TestCompositionFactories:
             suite.test("lambda", lambda _utils: PASS)  # pyright: ignore[reportArgumentType, reportUnknownLambdaType]
 
     def test_composed_nodes_own_a_timeline_unless_rolled_up(self) -> None:
-        suite = LitmusTest(name="rack")
+        suite = TestComponent(name="rack")
 
         async def claim(_utils: object) -> Verdict:
             return PASS
@@ -187,7 +187,7 @@ class TestCompositionFactories:
         async def passes(_utils: object) -> Verdict:
             return PASS
 
-        suite = LitmusTest(name="rack")
+        suite = TestComponent(name="rack")
         leaf = suite.test("leaf", passes)
         escalate = "report it to the framework maintainers with the full log and reproduction steps"
         nodes = (
@@ -209,8 +209,8 @@ class TestCompositionFactories:
             assert raised.value.detail == detail
 
     async def test_sequence_reports_a_nonterminal_child_as_a_framework_bug(self) -> None:
-        sequence = LitmusTest(name="dependent claims")
-        child = cast("LitmusTest", _NonTerminalChild())
+        sequence = TestComponent(name="dependent claims")
+        child = cast("TestComponent", _NonTerminalChild())
 
         with pytest.raises(FrameworkContractViolation) as raised:
             await sequence._run_sequence(TestUtils(), RunAbort(), (child,))
@@ -224,8 +224,8 @@ class TestCompositionFactories:
     async def test_sequence_reports_an_incomplete_pass_check_as_a_framework_bug(
         self,
     ) -> None:
-        sequence = LitmusTest(name="dependent claims")
-        children = cast("tuple[LitmusTest, ...]", _InconsistentChildren())
+        sequence = TestComponent(name="dependent claims")
+        children = cast("tuple[TestComponent, ...]", _InconsistentChildren())
 
         with pytest.raises(FrameworkContractViolation) as raised:
             await sequence._run_sequence(TestUtils(), RunAbort(), children)
@@ -241,8 +241,8 @@ class TestSequenceExecution:
     async def test_sequence_bails_at_the_first_failing_child(self) -> None:
         calls: list[str] = []
 
-        class Suite(LitmusTest):
-            def build_suite(self) -> LitmusTest:
+        class Suite(TestComponent):
+            def build_suite(self) -> TestComponent:
                 return self.sequence(
                     "dependent claims",
                     [
@@ -274,8 +274,8 @@ class TestSequenceExecution:
     async def test_sequence_passes_only_after_every_child_passes(self) -> None:
         calls: list[str] = []
 
-        class Suite(LitmusTest):
-            def build_suite(self) -> LitmusTest:
+        class Suite(TestComponent):
+            def build_suite(self) -> TestComponent:
                 return self.sequence(
                     "dependent claims",
                     [

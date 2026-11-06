@@ -2,7 +2,7 @@
 
 ``make check`` runs the suite under branch coverage. This script reads the JSON
 report and enforces the global floor (``[tool.coverage.report] fail_under``) and the
-per-file floors in ``[tool.litmus.coverage.floors]``, which coverage.py cannot do on
+per-file floors in ``[tool.hilt.coverage.floors]``, which coverage.py cannot do on
 its own. Measurements are rounded to the report's precision before the comparison,
 the same rule coverage.py applies to ``fail_under``, so 91.46 meets a floor of 91.5
 and a rounding edge cannot flap the gate. Floors are ratchet-only: below the floor
@@ -41,11 +41,11 @@ class CoverageFloors:
 
     @classmethod
     def from_pyproject(cls, pyproject: Path = PYPROJECT) -> CoverageFloors:
-        """Read ``fail_under`` and ``[tool.litmus.coverage.floors]`` from pyproject."""
+        """Read ``fail_under`` and ``[tool.hilt.coverage.floors]`` from pyproject."""
         with pyproject.open("rb") as handle:
             tool = tomllib.load(handle)["tool"]
         total_floor = float(tool["coverage"]["report"]["fail_under"])
-        raw_floors: Mapping[str, object] = tool["litmus"]["coverage"]["floors"]
+        raw_floors: Mapping[str, object] = tool["hilt"]["coverage"]["floors"]
         file_floors = {path: float(_number(floor)) for path, floor in raw_floors.items()}
         return cls(total_floor=total_floor, file_floors=file_floors)
 

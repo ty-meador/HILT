@@ -1,7 +1,7 @@
-site_name: litmus
-site_url: https://gitlab.com/Tyler-Meador/litmus_test/-/tree/main/docs/
+site_name: HILT
+site_url: https://gitlab.com/Tyler-Meador/HILT/-/tree/main/docs/
 site_description: React-for-hardware HIL testing framework
-repo_url: https://gitlab.com/Tyler-Meador/litmus_test
+repo_url: https://gitlab.com/Tyler-Meador/HILT
 edit_uri: -/blob/main/docs/
 copyright: Copyright 2026 Tyler Meador
 
@@ -39,9 +39,9 @@ nav:
   - Inspector (target specification): inspector.md
   - Measurements: measurements.md
   - JUnit XML: junit-xml.md
-  - litmus run: litmus-run.md
-  - litmus new: litmus-new.md
-  - litmus-check: litmus-check.md
+  - hilt run: hilt-run.md
+  - hilt new: hilt-new.md
+  - hilt-check: hilt-check.md
   - API stability: api-stability.md
   - API reference: api.md
   - HIL interfaces:

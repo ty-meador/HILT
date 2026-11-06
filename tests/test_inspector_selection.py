@@ -6,16 +6,16 @@ from pathlib import Path
 
 import pytest
 
-from litmus import PASS, LitmusTest, TestFailure, TestUtils, Verdict
-from litmus.inspector_selection import InspectorSelection
-from litmus.inspector_timeline import (
+from hilt import PASS, TestComponent, TestFailure, TestUtils, Verdict
+from hilt.inspector_selection import InspectorSelection
+from hilt.inspector_timeline import (
     TimelineDiagnostic,
     TimelineRead,
     TimelineReader,
     TimelineRecord,
 )
-from litmus.inspector_tree import InspectorTree, TreeReader
-from litmus.run_data import JsonObject, JsonValue
+from hilt.inspector_tree import InspectorTree, TreeReader
+from hilt.run_data import JsonObject, JsonValue
 
 
 def _node(name: str, **changes: JsonValue) -> JsonObject:
@@ -253,8 +253,8 @@ class TestInspectorSelection:
     async def test_moved_seventy_dut_saved_run_loads_each_selected_claim_without_execution(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        class Device(LitmusTest):
-            def build_suite(self) -> LitmusTest:
+        class Device(TestComponent):
+            def build_suite(self) -> TestComponent:
                 return self.test("voltage", self._voltage)
 
             async def _voltage(self, utils: TestUtils) -> Verdict:
@@ -263,8 +263,8 @@ class TestInspectorSelection:
                     return PASS({"volts": 3.3})
                 raise TestFailure("rail low", evidence={"volts": 0})
 
-        class Rack(LitmusTest):
-            def build_suite(self) -> LitmusTest:
+        class Rack(TestComponent):
+            def build_suite(self) -> TestComponent:
                 return self.parallel("devices", [Device(name=f"dut-{i:02d}") for i in range(70)])
 
         rack = Rack(name="rack")
@@ -277,7 +277,7 @@ class TestInspectorSelection:
         def refuse_execution(*args: object, **kwargs: object) -> None:
             raise AssertionError("saved selection attempted suite execution")
 
-        monkeypatch.setattr(LitmusTest, "run", refuse_execution)
+        monkeypatch.setattr(TestComponent, "run", refuse_execution)
         before = {path: path.read_bytes() for path in moved.rglob("*") if path.is_file()}
         tree = await TreeReader().read(moved / "result.json")
         assert isinstance(tree, InspectorTree)

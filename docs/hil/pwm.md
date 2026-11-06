@@ -4,8 +4,8 @@ Status: SIGNED — Ty approved this note in !125 on 2026-09-08; recorded on #94
 
 PWM controls a repeating output through its frequency and duty cycle. This note
 states the transfer, ramp, timing, and disabled-output obligations that make
-that control fit Litmus's existing lifecycle. The [three HIL rulings](index.md#the-three-rulings)
-govern it. [Ty's approval of the actual note](https://gitlab.com/Tyler-Meador/litmus_test/-/merge_requests/125#note_3800005090)
+that control fit HILT's existing lifecycle. The [three HIL rulings](index.md#the-three-rulings)
+govern it. [Ty's approval of the actual note](https://gitlab.com/Tyler-Meador/HILT/-/merge_requests/125#note_3800005090)
 signs the obligations below. Implementation requires its own approved issue
 and Zavala's review under [API stability](../api-stability.md).
 
@@ -166,7 +166,7 @@ remain the observation hooks: survey errors are logged and swallowed, audit
 errors fail their own scope, and `ExternalIntegrationFailure` is never
 swallowed. PWM transfer methods return operational results, never `PASS`.
 
-The proposed `PwmOperationFailure` derives from `LitmusError`, not
+The proposed `PwmOperationFailure` derives from `HiltError`, not
 `TestFailure`, for the same reason GPIO's `PinSettleFailure` does: failure to
 apply a stimulus does not identify the DUT as the cause. It names the channel,
 operation, requested setting, last confirmed setting if known, and any
@@ -219,7 +219,7 @@ independent observation; mock acknowledgements cannot establish it.
 ## Signed decisions recorded on #94
 
 Ty approved these obligations with the note in !125 on 2026-09-08. The signature
-is also recorded on [#94](https://gitlab.com/Tyler-Meador/litmus_test/-/issues/94):
+is also recorded on [#94](https://gitlab.com/Tyler-Meador/HILT/-/issues/94):
 
 1. Explicit frequency/duty pairs with refusal of unrepresentable requests,
    rather than implicit rounding; fixed polarity and declared disabled behavior.
@@ -227,7 +227,7 @@ is also recorded on [#94](https://gitlab.com/Tyler-Meador/litmus_test/-/issues/9
    envelope and a separate completion deadline; no detached ramp after settlement.
 3. Exclusive channel operations and refusal of independent ownership when
    shared hardware cannot preserve node-local isolation and disable semantics.
-4. Operational write/bring-up failures as a modeled `LitmusError` condition,
+4. Operational write/bring-up failures as a modeled `HiltError` condition,
    with unconfirmed finalization recorded under the signed GPIO rule. GPIO's
    typed `UNAVAILABLE` read is not silently extended into a PWM write result.
 

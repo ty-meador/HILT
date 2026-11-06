@@ -1,4 +1,4 @@
-# litmus — development entry points. All tooling config lives in pyproject.toml.
+# HILT — development entry points. All tooling config lives in pyproject.toml.
 .PHONY: install format lint fix typecheck test coverage audit build smoke docs check soak nightly mutants hooks clean \
 	bench-serial bench-serial-up bench-serial-down bench-ssh bench-ssh-down bench-pihole bench-pihole-down \
 	bench-coap bench-coap-down bench-root-setup bench-can bench-i2c bench-gpio bench-up bench-down \
@@ -52,8 +52,8 @@ smoke:  ## Install the wheel into a clean venv and run both console entry points
 	$(MAKE) build
 	uv venv -q .smoke/venv
 	uv pip install -q --python .smoke/venv/bin/python dist/*.whl
-	cd .smoke && venv/bin/litmus-check --list-rules > /dev/null
-	cd .smoke && venv/bin/litmus run ../examples/hello_world.py
+	cd .smoke && venv/bin/hilt-check --list-rules > /dev/null
+	cd .smoke && venv/bin/hilt run ../examples/hello_world.py
 
 check:  ## The gate (there is no CI) — verify only, no auto-fix. Green before push; the reviewer re-runs it before merge.
 	uv run ruff format --check .
@@ -62,7 +62,7 @@ check:  ## The gate (there is no CI) — verify only, no auto-fix. Green before 
 	uv run python tools/import_cycles.py
 	uv run python tools/attribution_check.py
 	$(MAKE) coverage
-	uv run litmus-check examples
+	uv run hilt-check examples
 	$(MAKE) smoke
 	$(MAKE) docs
 	$(MAKE) audit
@@ -89,13 +89,13 @@ soak:  ## Race gate — full suite SOAK_RUNS times; one green run proves nothing
 nightly:  ## The nightly soak at the bench (soak + rack suite RACK_REPEATS times); prints, posts nothing
 	SOAK_RUNS=$(SOAK_RUNS) RACK_REPEATS=$(RACK_REPEATS) uv run python tools/nightly_soak.py --no-post
 
-nightly-record:  ## The nightly soak, recorded on issue #68 (needs LITMUS_BOT_TOKEN; DISCORD_WEBHOOK_URL for a red night)
+nightly-record:  ## The nightly soak, recorded on issue #68 (needs HILT_BOT_TOKEN; DISCORD_WEBHOOK_URL for a red night)
 	SOAK_RUNS=$(SOAK_RUNS) RACK_REPEATS=$(RACK_REPEATS) uv run python tools/nightly_soak.py
 
 deps-plan:  ## Print the uv.lock upgrade plan; touches nothing
 	uv run python tools/dependency_update.py --dry-run
 
-deps-update:  ## Refresh uv.lock and open the update MR (needs LITMUS_BOT_TOKEN); run weekly at the bench
+deps-update:  ## Refresh uv.lock and open the update MR (needs HILT_BOT_TOKEN); run weekly at the bench
 	uv run python tools/dependency_update.py
 
 mutants:  ## Mutation audit over the kernel of trust (verdict/base/lifecycle); not a gate, see STANDARDS.md §6
@@ -105,7 +105,7 @@ mutants:  ## Mutation audit over the kernel of trust (verdict/base/lifecycle); n
 hooks:  ## Point git at the shared hooks (auto-lint on commit)
 	git config core.hooksPath .githooks
 
-# Bench (bench/README.md): sibling to examples/, models real-world use of litmus. None of
+# Bench (bench/README.md): sibling to examples/, models real-world use of hilt. None of
 # these is reached by `make check`, and every one exits non-zero on a [FAIL] line.
 BENCH_PY = PYTHONPATH=. uv run python -m
 bench-serial:  ## Serial contract over a socat pty pair (no root)
@@ -117,15 +117,15 @@ bench-serial-down:  ## Stop the pair
 bench-ssh:  ## SSH contract + the shipped SSH example against a Debian guest under QEMU/KVM
 	$(BENCH_PY) bench.qemu_ssh up
 	$(BENCH_PY) bench.qemu_ssh check
-	SSH_HOST=127.0.0.1 SSH_PORT=$${LITMUS_BENCH_SSH_PORT:-2222} SSH_USER=bench SSH_PASSWORD=bench \
-		PYTHONPATH=. uv run litmus run bench/suites/ssh_lab.py
+	SSH_HOST=127.0.0.1 SSH_PORT=$${HILT_BENCH_SSH_PORT:-2222} SSH_USER=bench SSH_PASSWORD=bench \
+		PYTHONPATH=. uv run hilt run bench/suites/ssh_lab.py
 bench-ssh-down:  ## Stop the guest
 	$(BENCH_PY) bench.qemu_ssh down
 bench-pihole:  ## SSH + HTTP contracts and the shipped Pi-hole example against the Pi-hole container
 	$(BENCH_PY) bench.pihole up
 	$(BENCH_PY) bench.pihole check
-	TARGET_ADDRESS=127.0.0.1 TARGET_PORT=$${LITMUS_BENCH_PIHOLE_SSH_PORT:-2223} TARGET_USER=root TARGET_PASSWORD=bench \
-		PYTHONPATH=. uv run litmus run bench/suites/pihole_lab.py
+	TARGET_ADDRESS=127.0.0.1 TARGET_PORT=$${HILT_BENCH_PIHOLE_SSH_PORT:-2223} TARGET_USER=root TARGET_PASSWORD=bench \
+		PYTHONPATH=. uv run hilt run bench/suites/pihole_lab.py
 bench-pihole-down:  ## Remove the Pi-hole container
 	$(BENCH_PY) bench.pihole down
 bench-coap:  ## Device API over CoAP against an aiocoap container
@@ -150,12 +150,12 @@ bench-down: bench-ssh-down bench-pihole-down bench-coap-down bench-serial-down  
 
 # The real suites (bench/suites/): written the way a developer writes against a rack,
 # aimed at the surrogates above. Each target assumes its device is up (`make bench-up`).
-BENCH_ENV = SERIAL_DEVICE=$$(cat $${LITMUS_BENCH_CACHE:-$$HOME/.cache/litmus-bench}/serial/device 2>/dev/null) \
-	GUEST_HOST=127.0.0.1 GUEST_PORT=$${LITMUS_BENCH_SSH_PORT:-2222} GUEST_USER=bench GUEST_PASSWORD=bench \
-	PIHOLE_HOST=127.0.0.1 PIHOLE_SSH_PORT=$${LITMUS_BENCH_PIHOLE_SSH_PORT:-2223} PIHOLE_USER=root PIHOLE_PASSWORD=bench \
-	PIHOLE_API_URL=http://127.0.0.1:$${LITMUS_BENCH_PIHOLE_HTTP_PORT:-8080} PIHOLE_API_PASSWORD=bench \
-	COAP_URL=coap://127.0.0.1:$${LITMUS_BENCH_COAP_PORT:-5683}
-BENCH_RUN = $(BENCH_ENV) PYTHONPATH=. uv run litmus run
+BENCH_ENV = SERIAL_DEVICE=$$(cat $${HILT_BENCH_CACHE:-$$HOME/.cache/hilt-bench}/serial/device 2>/dev/null) \
+	GUEST_HOST=127.0.0.1 GUEST_PORT=$${HILT_BENCH_SSH_PORT:-2222} GUEST_USER=bench GUEST_PASSWORD=bench \
+	PIHOLE_HOST=127.0.0.1 PIHOLE_SSH_PORT=$${HILT_BENCH_PIHOLE_SSH_PORT:-2223} PIHOLE_USER=root PIHOLE_PASSWORD=bench \
+	PIHOLE_API_URL=http://127.0.0.1:$${HILT_BENCH_PIHOLE_HTTP_PORT:-8080} PIHOLE_API_PASSWORD=bench \
+	COAP_URL=coap://127.0.0.1:$${HILT_BENCH_COAP_PORT:-5683}
+BENCH_RUN = $(BENCH_ENV) PYTHONPATH=. uv run hilt run
 bench-suite-serial:  ## Console by tty path: prompt sync, status, large reply, cancel
 	$(BENCH_RUN) bench/suites/serial_console.py
 bench-suite-guest:  ## Guest acceptance over SSH: survey, audit, wait_for, measurements
@@ -165,7 +165,7 @@ bench-suite-pihole:  ## Pi-hole as a gateway: hop, REST deny-list round trip, di
 bench-suite-coap:  ## CoAP device: hello, 4.04, echo per payload size
 	$(BENCH_RUN) bench/suites/coap_device.py
 bench-suite-gpio:  ## gpio-sim header through gpiod inside the claims (needs root setup)
-	PYTHONPATH=. uv run --group bench litmus run bench/suites/gpio_lines.py
+	PYTHONPATH=. uv run --group bench hilt run bench/suites/gpio_lines.py
 bench-rack:  ## Every device under one parallel owner
 	$(BENCH_RUN) bench/suites/rack.py
 RACK_RUNS ?= 10

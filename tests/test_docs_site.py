@@ -18,7 +18,7 @@ from pathlib import Path
 
 import pytest
 
-import litmus
+import hilt
 
 ROOT = Path(__file__).resolve().parents[1]
 MKDOCS = ROOT / "mkdocs.yml"
@@ -28,11 +28,11 @@ GUIDE = ROOT / "docs" / "getting-started.md"
 MAKEFILE = ROOT / "Makefile"
 CI = ROOT / ".gitlab-ci.yml"
 
-REPO_URL = "https://gitlab.com/Tyler-Meador/litmus_test"
+REPO_URL = "https://gitlab.com/Tyler-Meador/HILT"
 DOCS_URL = f"{REPO_URL}/-/tree/main/docs"
 STATION_URL = f"{REPO_URL}/-/blob/main/docs/floor-technician.md"
 
-_IDENT = re.compile(r"^::: litmus\.([A-Za-z_][A-Za-z0-9_]*)$", re.MULTILINE)
+_IDENT = re.compile(r"^::: hilt\.([A-Za-z_][A-Za-z0-9_]*)$", re.MULTILINE)
 _NAV_ENTRY = re.compile(r":\s*([A-Za-z0-9_./-]+\.md)\s*$", re.MULTILINE)
 
 
@@ -116,7 +116,7 @@ class TestDocsSiteConfig:
 
     def test_api_page_identifiers_match_dunder_all(self) -> None:
         names = _IDENT.findall(API_PAGE.read_text(encoding="utf-8"))
-        assert names == list(litmus.__all__)
+        assert names == list(hilt.__all__)
 
 
 class TestReadmeRecordsThePublishedUrl:
@@ -133,7 +133,7 @@ class TestReadmeRecordsThePublishedUrl:
         assert f"repo_url: {urls['Source']}" in mkdocs
         assert urls["Issues"] == f"{urls['Source']}/-/issues"
         assert "Typing :: Typed" in data["project"]["classifiers"]
-        assert (ROOT / "src" / "litmus" / "py.typed").is_file()
+        assert (ROOT / "src" / "hilt" / "py.typed").is_file()
 
     def test_readme_leads_to_the_getting_started_guide(self) -> None:
         readme = README.read_text(encoding="utf-8")
@@ -164,8 +164,8 @@ class TestGateBuildsTheSite:
         assert "$(MAKE) smoke" in _recipe("check", makefile)
         smoke = _recipe("smoke", makefile)
         assert "uv build" in _recipe("build", makefile)
-        assert "cd .smoke && venv/bin/litmus-check --list-rules" in smoke
-        assert "cd .smoke && venv/bin/litmus run ../examples/hello_world.py" in smoke
+        assert "cd .smoke && venv/bin/hilt-check --list-rules" in smoke
+        assert "cd .smoke && venv/bin/hilt run ../examples/hello_world.py" in smoke
 
     def test_makefile_docs_release_builds_into_the_tree(self) -> None:
         # The release build lands where a release branch commits it and stays out of
@@ -193,7 +193,7 @@ class TestBuiltSite:
 
     def test_every_public_name_appears_in_the_api_reference(self, site: Path) -> None:
         html = (site / "api.html").read_text(encoding="utf-8")
-        missing = [name for name in litmus.__all__ if name not in html]
+        missing = [name for name in hilt.__all__ if name not in html]
         assert missing == []
 
     def test_published_schemas_are_copied(self, site: Path) -> None:

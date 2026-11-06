@@ -90,7 +90,7 @@ async def _check_rail(self, utils: TestUtils) -> Verdict:
 ```
 
 The framework evaluated the limit once, the developer chose what to do about it, and
-`litmus/gated-pass` can see the predicate beside the `PASS`. Whether an out-of-window
+`hilt/gated-pass` can see the predicate beside the `PASS`. Whether an out-of-window
 reading is a `TestFailure`, a warning to trend, or a reason to re-seat the probe and
 read again is the suite author's decision, taken in the suite.
 
@@ -136,7 +136,7 @@ method. A composite node (`sequence`, `parallel`) has a `configure` and may meas
 there.
 
 Not from `cleanup`, which restores state and produces no evidence
-(`litmus/no-verdict-in-cleanup` is the same rule from the verdict's side). Not from
+(`hilt/no-verdict-in-cleanup` is the same rule from the verdict's side). Not from
 surveys or audits: they already have an artifact channel for what they observe, and an
 audit's samples are a time series with its own semantics, which this protocol does not
 define. Not from integration hooks, which are deliberately denied `utils`. A call from
@@ -146,7 +146,7 @@ in the pattern of `ContextImmutable`: the record is sealed at the same moment
 
 ### The package-root alias
 
-Ty's condition on the approval: `from litmus import measure` and `litmus.measure(...)`
+Ty's condition on the approval: `from hilt import measure` and `hilt.measure(...)`
 must both work. They do, with the same signature and the same rules, and `utils.measure`
 remains the home the documentation teaches. The alias is convenience, not a second
 mechanism.
@@ -155,11 +155,11 @@ The alias has to find the *current* node's `TestUtils` without a global, because
 `parallel` node runs its children concurrently in one process and a global would hand
 one child's reading to another. The mechanism is a `contextvars.ContextVar` that the
 framework binds around each slot that admits measurements, at the seam in
-`src/litmus/base.py` where the child boundary is handed `fn(utils)` for `configure` and
+`src/hilt/base.py` where the child boundary is handed `fn(utils)` for `configure` and
 the test method: `set` before the boundary runs the slot, `reset` in `finally`. A
 `ContextVar` is task-local, and asyncio copies the context into every task it creates,
 so each child of a `parallel` node sees its own binding and a gateway parent sees its
-own inside its own slots. `litmus.measure` reads the variable and delegates to that
+own inside its own slots. `hilt.measure` reads the variable and delegates to that
 `TestUtils.measure`; when nothing is bound — module scope, a hook, `cleanup`, a helper
 called from outside a run — it raises `ContractViolation` saying that `measure` was
 called outside a running node and naming `utils.measure` inside `configure` or a test
@@ -373,7 +373,7 @@ against this page and the schema alone:
 | Whether it was inside | `measurements[].in_limits` | Evidence; the consumer does not recompute the verdict from it. |
 | A timestamp | `measurements[].timestamp` | UTC, `Z`-terminated, same form as the timeline. Depends on the station clock rule in `docs/floor-technician.md`. |
 | The node path | The walk from the root of `summary_tree` to the node; `ancestor_names` on a per-node `RunResult` | Durable identity. Names may contain `/`; do not parse `bread_crumbs`. |
-| The run id | The run directory name, `LITMUS_ARTIFACT_ROOT/<timestamp>[.n]`, published by the root timeline's `result` pointer as the directory of `artifact_path` | One directory per `run()`, collision-safe; `result.json` does not repeat it because a consumer has already opened the directory to read the file. |
+| The run id | The run directory name, `HILT_ARTIFACT_ROOT/<timestamp>[.n]`, published by the root timeline's `result` pointer as the directory of `artifact_path` | One directory per `run()`, collision-safe; `result.json` does not repeat it because a consumer has already opened the directory to read the file. |
 | The station | `physical_location` on the root | `PHYSICAL_LOCATION`, or `unknown`. |
 | The node's verdict | `state` on the same tree node | The consumer keys on it before it aggregates. |
 
@@ -393,23 +393,23 @@ alias, and every one of them is a `ContractViolation` (developer bug, `bug: true
 | Duplicate name | The node already recorded that name. |
 | Not numeric | `value` is a `bool`, a `str`, `NaN`, an infinity, or anything that is not `int`/`float`. `None` is not refused: it is the reading not taken (#159). |
 | Invalid limits | Both sides `None`, a non-finite bound, or `low > high`. |
-| Outside a node | `litmus.measure` with nothing bound, or either spelling from `cleanup`, a survey, an audit, a hook, or after the node settled. |
+| Outside a node | `hilt.measure` with nothing bound, or either spelling from `cleanup`, a survey, an audit, a hook, or after the node settled. |
 
-They are raised by a `ContractViolation` subclass in `src/litmus/errors.py` that is
+They are raised by a `ContractViolation` subclass in `src/hilt/errors.py` that is
 not exported, on the precedent of `ContextInsufficient` and `ContextImmutable`: the FT
 reads the banner, `node`, and a `measurement` field naming the reading; the developer
 follows the class name from the log. Nothing protecting the record lives only in tier 3.
 
-Tier-3 rules for `litmus-check`, each mirroring a guard above so the finding reaches
+Tier-3 rules for `hilt-check`, each mirroring a guard above so the finding reaches
 the developer's CI before it reaches a station log:
 
 | Rule | Flags | Mirrors | Status |
 |---|---|---|---|
-| `litmus/measurement-name-unique` | Two `measure(...)` calls with the same literal name inside one `configure` or test method. | Tier 1: duplicate name. | Shipped (#132). |
-| `litmus/measurement-in-node` | A `measure(...)` call, either spelling, inside `cleanup`, a survey or audit function, a `before_each`/`after_each`, or at module scope. | Tier 1: outside a node. | Shipped (#133). |
+| `hilt/measurement-name-unique` | Two `measure(...)` calls with the same literal name inside one `configure` or test method. | Tier 1: duplicate name. | Shipped (#132). |
+| `hilt/measurement-in-node` | A `measure(...)` call, either spelling, inside `cleanup`, a survey or audit function, a `before_each`/`after_each`, or at module scope. | Tier 1: outside a node. | Shipped (#133). |
 
-Neither was part of #86; each was raised as its own issue per `docs/litmus-check.md`
-(*Adding a rule*) and both now ship. The `-> Verdict` and `litmus/gated-pass` rules already cover the
+Neither was part of #86; each was raised as its own issue per `docs/hilt-check.md`
+(*Adding a rule*) and both now ship. The `-> Verdict` and `hilt/gated-pass` rules already cover the
 gate a developer writes on `.in_limits`.
 
 ## What #86 delivers
@@ -417,11 +417,11 @@ gate a developer writes on `.in_limits`.
 The acceptance criteria this note fixes for the implementation issue:
 
 1. `TestUtils.measure` with the signature above, synchronous, returning a frozen
-   `Measurement`; `measure` and `Measurement` added to `litmus.__all__`, the reference
+   `Measurement`; `measure` and `Measurement` added to `hilt.__all__`, the reference
    table in `docs/api-stability.md` (rows in order), `docs/api.md`, and `CHANGELOG.md`
    together, as `docs/api-stability.md` (*Changing the surface*) requires. Two names,
    not three: the violation class stays private.
-2. `litmus.measure` at the package root, bound through a `ContextVar` around
+2. `hilt.measure` at the package root, bound through a `ContextVar` around
    `configure` and the test method, `ContractViolation` when nothing is bound; the
    self-tests exercise every guard through both spellings and prove a `parallel` node's
    children do not see each other's binding.
@@ -446,7 +446,7 @@ The acceptance criteria this note fixes for the implementation issue:
    reference table. This page then drops its Status header and becomes the owning
    doc.
 9. The pi-hole dogfood (`examples/pi_hole_server.py`) records at least one real
-   measurement with limits and gates on `.in_limits` in plain sight; `litmus-check
+   measurement with limits and gates on `.in_limits` in plain sight; `hilt-check
    examples` stays clean.
 10. Coverage floors hold or rise; `make check` green locally.
 

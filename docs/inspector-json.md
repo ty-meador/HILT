@@ -6,12 +6,12 @@ page is the consumer contract those fields live in.
 The Inspector TUI is outside the Python port's current scope. Its input contract is
 not. Every completed node produces a `RunResult`, and `RunResult.to_json()` returns a
 plain Python object that `json.dumps()` accepts without an encoder. The root result is
-self-contained: consumers do not need the live `LitmusTest` objects to reconstruct the
+self-contained: consumers do not need the live `TestComponent` objects to reconstruct the
 run tree. CI that already speaks JUnit XML consumes a projection of the same tree
 (`docs/junit-xml.md`); that reporter is not a second evidence record.
 
-Every full `LitmusTest.run()` atomically writes the root `RunResult.to_json()` payload
-to `result.json` in the timestamped run directory beneath `LITMUS_ARTIFACT_ROOT`. The
+Every full `TestComponent.run()` atomically writes the root `RunResult.to_json()` payload
+to `result.json` in the timestamped run directory beneath `HILT_ARTIFACT_ROOT`. The
 file is present for Pass, Fail, and Aborted outcomes. Its absolute path is published by
 the final entry in the root node's timeline, with artifact name `result` and artifact
 type `run-result`; consumers do not need to derive the run directory name.
@@ -32,7 +32,7 @@ type `run-result`; consumers do not need to derive the run directory name.
 | `physical_location` | string | `PHYSICAL_LOCATION`, or `unknown` when absent. |
 | `env` | object | Environment snapshot taken at the start of the run, filtered per the run's allow or deny list; see below. |
 | `run_data` | object | Detached structured evidence snapshot: the JSON-safe view of the node's ctx, plus, on a leaf, the evidence its verdict carried. It always contains a framework-owned `measurements` array: one entry per `utils.measure` call on this node, in call order, empty when the node measured nothing. |
-| `suite_target` | string or null | The loader target that produced the run, as `litmus run` resolved it: an absolute suite file or module name, `::`, and the suite class name. `litmus inspect` loads this suite for its Re-Run tab, so the technician re-runs a node with the code that ran in production; `--suite` overrides it. `null` when the run was started without one, from a developer's own harness. Added within version 1 on 2026-09-10; a consumer written before it treats the field as additive. |
+| `suite_target` | string or null | The loader target that produced the run, as `hilt run` resolved it: an absolute suite file or module name, `::`, and the suite class name. `hilt inspect` loads this suite for its Re-Run tab, so the technician re-runs a node with the code that ran in production; `--suite` overrides it. `null` when the run was started without one, from a developer's own harness. Added within version 1 on 2026-09-10; a consumer written before it treats the field as additive. |
 
 A measurement entry is `{name, value, unit, limits, in_limits, timestamp}` as
 `docs/measurements.md` defines it: `value` is a number, or `null` when the suite tried
@@ -52,7 +52,7 @@ decoder by `format_version` (see [Versioning policy](#versioning-policy)).
 
 ### The `env` snapshot is filtered by the run, not by the schema
 
-Version 1 publishes the run environment as the run declared it. `LitmusTest.run()` and
+Version 1 publishes the run environment as the run declared it. `TestComponent.run()` and
 `TestUtils` accept **either** `env_allow` **or** `env_deny` (both is a `ValueError`): a
 list of regular expressions matched with `re.search` against each variable's *name*.
 `TOKEN` therefore matches `GITLAB_TOKEN`; anchor as `^HOME$` for an exact name. With an
@@ -70,14 +70,14 @@ declared list is ignored and every variable is published. The run logs a warning
 variables` — so the artifact's extra content is explained in its own timeline.
 
 The filter is applied once, at the root, and every node and every `RunResult` sees the
-same filtered view. `PHYSICAL_LOCATION` and `LITMUS_ARTIFACT_ROOT` are read from that
+same filtered view. `PHYSICAL_LOCATION` and `HILT_ARTIFACT_ROOT` are read from that
 view, so an allow list must let them through to keep their effect. Decoders must not
 assume any particular variable is present (ruling on issue #53, 2026-09-03).
 
 ## Version 1 timeline
 
 Each `run()` creates a timestamped directory directly beneath
-`LITMUS_ARTIFACT_ROOT`. Point-in-time artifacts are stored at that run-directory root.
+`HILT_ARTIFACT_ROOT`. Point-in-time artifacts are stored at that run-directory root.
 Every executed node that owns a discrete log receives a child directory containing:
 
 - `timeline.log` — a streamed human view with one escaped line per entry;
@@ -86,7 +86,7 @@ Every executed node that owns a discrete log receives a child directory containi
 
 Both files are flushed after each entry. Consumers may read the JSON Lines file while a
 run is active and retain every complete line after interruption. The child-directory
-name is framework-owned and must be treated as opaque; use `LitmusTest.log_path` rather
+name is framework-owned and must be treated as opaque; use `TestComponent.log_path` rather
 than reconstructing it.
 
 Every version-1 timeline object contains these fields:

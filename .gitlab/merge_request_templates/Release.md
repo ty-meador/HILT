@@ -16,12 +16,12 @@ changelog section and name any upgrade action before requesting review.
   initial release, record outstanding phase exit criteria and their disposition;
   merged hardening tooling alone does not establish release readiness.
 - [ ] Resolve the distribution name and availability under
-  [#9](https://gitlab.com/Tyler-Meador/litmus_test/-/issues/9). Do not infer a publish
-  target from the current `litmus` development metadata. The legacy repositories
+  [#9](https://gitlab.com/Tyler-Meador/HILT/-/issues/9). Do not infer a publish
+  target from the current `hilt` development metadata. The legacy repositories
   remain untouched; the decision leaves the TypeScript repository alone.
-- [ ] Verify [#103](https://gitlab.com/Tyler-Meador/litmus_test/-/issues/103) supplies
+- [ ] Verify [#103](https://gitlab.com/Tyler-Meador/HILT/-/issues/103) supplies
   the approved name, README, classifiers, URLs, and other package metadata, and
-  [#102](https://gitlab.com/Tyler-Meador/litmus_test/-/issues/102) supplies the wheel
+  [#102](https://gitlab.com/Tyler-Meador/HILT/-/issues/102) supplies the wheel
   build and clean-install smoke test (`make smoke`, run by the gate). There is no
   publish pipeline: `make build` and the upload are bench steps below (#138).
   These are prerequisites, not capabilities supplied by this checklist.
@@ -38,12 +38,12 @@ changelog section and name any upgrade action before requesting review.
 - [ ] Run `make soak` on the candidate and link all eight successful full-suite runs.
   For the initial release, one recorded bench soak on the candidate head is the
   Phase 6 exit (Ty, 2026-09-11 on #138): `make nightly-record` green, rack repeats
-  included, posted to [#68](https://gitlab.com/Tyler-Meador/litmus_test/-/issues/68).
+  included, posted to [#68](https://gitlab.com/Tyler-Meador/HILT/-/issues/68).
   Link that note.
 - [ ] Run `make build` at the bench (`uv build` into `dist/`). Inspect both wheel and
   source distribution; verify the version, metadata, license, and packaged modules.
-- [ ] Link the clean-environment wheel smoke test from #102: `litmus-check --list-rules`
-  and `litmus run examples/hello_world.py` succeed using the installed wheel and a
+- [ ] Link the clean-environment wheel smoke test from #102: `hilt-check --list-rules`
+  and `hilt run examples/hello_world.py` succeed using the installed wheel and a
   copied example outside the source checkout. Verify the expected PASS exit and
   generated evidence, and that imports resolve to the installed distribution.
 - [ ] Confirm `make docs` builds strictly. The site is not hosted: the release branch
@@ -60,7 +60,7 @@ changelog section and name any upgrade action before requesting review.
   actual release version and date. Leave a fresh Unreleased section for later MRs;
   refresh its historical cutoff text and any release comparison links.
 - [ ] Set the matching distribution version in `pyproject.toml`, refresh `uv.lock`
-  with uv, and rerun validation on the final candidate. `litmus.__version__` must
+  with uv, and rerun validation on the final candidate. `hilt.__version__` must
   report the installed version.
 - [ ] Request Commander Zavala's review with the evidence above. Leave the MR open
   for him: only Zavala merges to `main`; never push the release commit there directly.
@@ -79,7 +79,7 @@ changelog section and name any upgrade action before requesting review.
   output; a failed upload is not a released package, and an existing release tag is
   never moved.
 - [ ] Install the published version in a fresh environment, rerun the CLI smoke test,
-  and verify `litmus.__version__`. Confirm the public package page and the release
+  and verify `hilt.__version__`. Confirm the public package page and the release
   branch's `docs/site/index.html` open; record their URLs and the installation result.
 - [ ] Attach the dated changelog and upgrade instructions to the release record so
   station notes can cite the version and the behavior it establishes.

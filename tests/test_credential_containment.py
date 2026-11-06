@@ -20,20 +20,20 @@ from typing import Any
 import pytest
 from tests.loopback_sshd import LoopbackSshd
 
-from litmus import (
+from hilt import (
     PASS,
     Artifact,
     Failure,
-    LitmusTest,
     RunResult,
     SummaryTreeNode,
+    TestComponent,
     TestFailure,
     TestUtils,
     Verdict,
 )
-from litmus.lifecycle import State
+from hilt.lifecycle import State
 
-_PASSWORD = "litmus-65-pw-e8c1f4b2a90d"
+_PASSWORD = "hilt-65-pw-e8c1f4b2a90d"
 _AUTH_PATH = re.compile(rb"auth=(?:key-file|agent)\([^)]*\)")
 
 
@@ -128,10 +128,10 @@ def _suite(
     private_key: str | bytes | None = None,
     private_key_path: str | Path | None = None,
     agent: str | None = None,
-) -> LitmusTest:
+) -> TestComponent:
     """One routed case against a loopback sshd. Credentials stay off ctx."""
 
-    class Suite(LitmusTest):
+    class Suite(TestComponent):
         async def configure(self, utils: TestUtils) -> dict[str, Any]:
             await utils.use_shell(
                 host="127.0.0.1",
@@ -145,7 +145,7 @@ def _suite(
             )
             return {"station": "bench-65"}
 
-        def build_suite(self) -> LitmusTest:
+        def build_suite(self) -> TestComponent:
             return self.test("claim", self._claim)
 
         async def _claim(self, utils: TestUtils) -> Verdict:
@@ -182,7 +182,7 @@ async def _run_suite(
         private_key_path=private_key_path,
         agent=agent,
     )
-    with caplog.at_level("DEBUG", logger="litmus"):
+    with caplog.at_level("DEBUG", logger="hilt"):
         result = await suite.run(env={"PHYSICAL_LOCATION": "bench-65"})
     haystack = _evidence(result, tmp_path / "artifacts", caplog)
     return result, haystack

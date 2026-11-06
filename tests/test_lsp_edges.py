@@ -8,7 +8,7 @@ from textwrap import dedent
 
 import pytest
 
-from litmus_check.fixes import (
+from hilt_check.fixes import (
     GatedPassFix,
     MethodReferenceFix,
     _is_pure_raise_guard,  # pyright: ignore[reportPrivateUsage]
@@ -16,8 +16,8 @@ from litmus_check.fixes import (
     _negate,  # pyright: ignore[reportPrivateUsage]
     _statement_list,  # pyright: ignore[reportPrivateUsage]
 )
-from litmus_check.lsp import (
-    LitmusLsp,
+from hilt_check.lsp import (
+    HiltLsp,
     LspDiagnostic,
     LspObject,
     LspRange,
@@ -28,7 +28,7 @@ from litmus_check.lsp import (
     node_at,
     node_span,
 )
-from litmus_check.model import SuiteModule, Violation
+from hilt_check.model import SuiteModule, Violation
 
 _SUITE = Path("suite.py")
 
@@ -66,8 +66,8 @@ class TestTextEditApply:
 
 class TestDiagnosticSpan:
     def test_whitespace_only_line_extends_to_the_line_length(self) -> None:
-        diagnostic = LitmusLsp._diagnostic(  # pyright: ignore[reportPrivateUsage]
-            Violation(_SUITE, line=1, column=5, code="litmus/gated-pass", message="x"),
+        diagnostic = HiltLsp._diagnostic(  # pyright: ignore[reportPrivateUsage]
+            Violation(_SUITE, line=1, column=5, code="hilt/gated-pass", message="x"),
             "    \n",
         )
 
@@ -75,8 +75,8 @@ class TestDiagnosticSpan:
         assert diagnostic.end_character == 4
 
     def test_line_past_eof_still_renders(self) -> None:
-        diagnostic = LitmusLsp._diagnostic(  # pyright: ignore[reportPrivateUsage]
-            Violation(_SUITE, line=99, column=4, code="litmus/gated-pass", message="x"),
+        diagnostic = HiltLsp._diagnostic(  # pyright: ignore[reportPrivateUsage]
+            Violation(_SUITE, line=99, column=4, code="hilt/gated-pass", message="x"),
             "return PASS\n",
         )
 
@@ -86,7 +86,7 @@ class TestDiagnosticSpan:
 
 class TestCodeActionsOnBrokenBuffers:
     def test_syntax_error_yields_no_actions(self) -> None:
-        actions = LitmusLsp().code_actions(_SUITE, "def (:\n", LspRange(0, 0, 0, 1))
+        actions = HiltLsp().code_actions(_SUITE, "def (:\n", LspRange(0, 0, 0, 1))
 
         assert actions == ()
 
@@ -95,13 +95,13 @@ class TestGatedPassRefusalAndParents:
     def test_wrong_node_kind_offers_nothing(self) -> None:
         module = _module(
             """
-            from litmus import PASS
+            from hilt import PASS
 
             async def claim(utils):
                 return PASS
             """
         )
-        diagnostic = LspDiagnostic(_SUITE, "litmus/gated-pass", "x", 2, 0, 2, 10)
+        diagnostic = LspDiagnostic(_SUITE, "hilt/gated-pass", "x", 2, 0, 2, 10)
 
         assert GatedPassFix().offer(module, "", diagnostic) is None
 
@@ -141,7 +141,7 @@ class TestGatedPassRefusalAndParents:
     def test_return_inside_try_and_except(self) -> None:
         text = dedent(
             """
-            from litmus import PASS, TestFailure
+            from hilt import PASS, TestFailure
 
             async def claim(utils):
                 try:
@@ -154,9 +154,9 @@ class TestGatedPassRefusalAndParents:
                     return PASS
             """
         )
-        adapter = LitmusLsp()
+        adapter = HiltLsp()
         diagnostics = [
-            item for item in adapter.diagnostics(_SUITE, text) if item.code == "litmus/gated-pass"
+            item for item in adapter.diagnostics(_SUITE, text) if item.code == "hilt/gated-pass"
         ]
         assert len(diagnostics) == 2
         rewritten = diagnostics[0]
@@ -167,7 +167,7 @@ class TestGatedPassRefusalAndParents:
     def test_return_inside_for_while_with(self) -> None:
         text = dedent(
             """
-            from litmus import PASS, TestFailure
+            from hilt import PASS, TestFailure
 
             async def claim(utils):
                 for _ in [1]:
@@ -184,9 +184,9 @@ class TestGatedPassRefusalAndParents:
                     return PASS
             """
         )
-        adapter = LitmusLsp()
+        adapter = HiltLsp()
         diagnostics = [
-            item for item in adapter.diagnostics(_SUITE, text) if item.code == "litmus/gated-pass"
+            item for item in adapter.diagnostics(_SUITE, text) if item.code == "hilt/gated-pass"
         ]
         assert len(diagnostics) == 3
         result = adapter.code_actions(_SUITE, text, diagnostics[0].range)[0].apply(text)
@@ -197,7 +197,7 @@ class TestGatedPassRefusalAndParents:
         text = dedent(
             """
             from typing import Any
-            from litmus import PASS
+            from hilt import PASS
 
             async def claim(utils):
                 if utils.ctx["exit_code"] != 0:
@@ -205,26 +205,26 @@ class TestGatedPassRefusalAndParents:
                 return PASS
             """
         )
-        adapter = LitmusLsp()
+        adapter = HiltLsp()
         diagnostic = next(
-            item for item in adapter.diagnostics(_SUITE, text) if item.code == "litmus/gated-pass"
+            item for item in adapter.diagnostics(_SUITE, text) if item.code == "hilt/gated-pass"
         )
         result = adapter.code_actions(_SUITE, text, diagnostic.range)[0].apply(text)
 
-        assert "from litmus import PASS, TestFailure" in result
+        assert "from hilt import PASS, TestFailure" in result
 
     def test_fallback_inserts_import_when_none_exists(self) -> None:
         text = "async def claim(utils):\n    return PASS\n"
-        adapter = LitmusLsp()
+        adapter = HiltLsp()
         diagnostic = adapter.diagnostics(_SUITE, text)[0]
         result = adapter.code_actions(_SUITE, text, diagnostic.range)[0].apply(text)
 
-        assert "from litmus import TestFailure" in result
+        assert "from hilt import TestFailure" in result
 
     def test_star_import_is_left_alone(self) -> None:
         module = _module(
             """
-            from litmus import *
+            from hilt import *
 
             async def claim(utils):
                 return PASS
@@ -236,7 +236,7 @@ class TestGatedPassRefusalAndParents:
     def test_if_with_else_is_not_a_pure_guard(self) -> None:
         text = dedent(
             """
-            from litmus import PASS, TestFailure
+            from hilt import PASS, TestFailure
 
             async def claim(utils):
                 if utils.ctx["exit_code"] != 0:
@@ -246,9 +246,9 @@ class TestGatedPassRefusalAndParents:
                 return PASS
             """
         )
-        adapter = LitmusLsp()
+        adapter = HiltLsp()
         diagnostic = next(
-            item for item in adapter.diagnostics(_SUITE, text) if item.code == "litmus/gated-pass"
+            item for item in adapter.diagnostics(_SUITE, text) if item.code == "hilt/gated-pass"
         )
         action = adapter.code_actions(_SUITE, text, diagnostic.range)[0]
 
@@ -257,7 +257,7 @@ class TestGatedPassRefusalAndParents:
     def test_if_with_two_body_statements_is_not_a_pure_guard(self) -> None:
         text = dedent(
             """
-            from litmus import PASS, TestFailure
+            from hilt import PASS, TestFailure
 
             async def claim(utils):
                 if utils.ctx["exit_code"] != 0:
@@ -266,9 +266,9 @@ class TestGatedPassRefusalAndParents:
                 return PASS
             """
         )
-        adapter = LitmusLsp()
+        adapter = HiltLsp()
         diagnostic = next(
-            item for item in adapter.diagnostics(_SUITE, text) if item.code == "litmus/gated-pass"
+            item for item in adapter.diagnostics(_SUITE, text) if item.code == "hilt/gated-pass"
         )
         action = adapter.code_actions(_SUITE, text, diagnostic.range)[0]
 
@@ -277,7 +277,7 @@ class TestGatedPassRefusalAndParents:
     def test_chained_compare_is_wrapped_in_not_parens(self) -> None:
         text = dedent(
             """
-            from litmus import PASS, TestFailure
+            from hilt import PASS, TestFailure
 
             async def claim(utils):
                 if 0 < utils.ctx["n"] < 10:
@@ -285,9 +285,9 @@ class TestGatedPassRefusalAndParents:
                 return PASS
             """
         )
-        adapter = LitmusLsp()
+        adapter = HiltLsp()
         diagnostic = next(
-            item for item in adapter.diagnostics(_SUITE, text) if item.code == "litmus/gated-pass"
+            item for item in adapter.diagnostics(_SUITE, text) if item.code == "hilt/gated-pass"
         )
         result = adapter.code_actions(_SUITE, text, diagnostic.range)[0].apply(text)
 
@@ -298,28 +298,28 @@ class TestMethodReferenceRefusal:
     def test_wrong_node_kind_offers_nothing(self) -> None:
         module = _module(
             """
-            class Suite(LitmusTest):
-                def build_suite(self) -> LitmusTest:
+            class Suite(TestComponent):
+                def build_suite(self) -> TestComponent:
                     return self.test("x", lambda: self._run())
             """
         )
-        diagnostic = LspDiagnostic(_SUITE, "litmus/method-reference", "x", 1, 0, 1, 5)
+        diagnostic = LspDiagnostic(_SUITE, "hilt/method-reference", "x", 1, 0, 1, 5)
 
         assert MethodReferenceFix().offer(module, "", diagnostic) is None
 
     def test_starargs_are_not_rewritten(self) -> None:
         text = dedent(
             """
-            class Suite(LitmusTest):
-                def build_suite(self) -> LitmusTest:
+            class Suite(TestComponent):
+                def build_suite(self) -> TestComponent:
                     return self.test("x", lambda *a: self._run(*a))
             """
         )
-        adapter = LitmusLsp()
+        adapter = HiltLsp()
         diagnostic = next(
             item
             for item in adapter.diagnostics(_SUITE, text)
-            if item.code == "litmus/method-reference"
+            if item.code == "hilt/method-reference"
         )
 
         assert adapter.code_actions(_SUITE, text, diagnostic.range) == ()
@@ -327,16 +327,16 @@ class TestMethodReferenceRefusal:
     def test_keyword_call_is_not_rewritten(self) -> None:
         text = dedent(
             """
-            class Suite(LitmusTest):
-                def build_suite(self) -> LitmusTest:
+            class Suite(TestComponent):
+                def build_suite(self) -> TestComponent:
                     return self.test("x", lambda u: self._run(u, extra=1))
             """
         )
-        adapter = LitmusLsp()
+        adapter = HiltLsp()
         diagnostic = next(
             item
             for item in adapter.diagnostics(_SUITE, text)
-            if item.code == "litmus/method-reference"
+            if item.code == "hilt/method-reference"
         )
 
         assert adapter.code_actions(_SUITE, text, diagnostic.range) == ()
@@ -344,16 +344,16 @@ class TestMethodReferenceRefusal:
     def test_subscript_callee_is_not_rewritten(self) -> None:
         text = dedent(
             """
-            class Suite(LitmusTest):
-                def build_suite(self) -> LitmusTest:
+            class Suite(TestComponent):
+                def build_suite(self) -> TestComponent:
                     return self.test("x", lambda u: table[0](u))
             """
         )
-        adapter = LitmusLsp()
+        adapter = HiltLsp()
         diagnostic = next(
             item
             for item in adapter.diagnostics(_SUITE, text)
-            if item.code == "litmus/method-reference"
+            if item.code == "hilt/method-reference"
         )
 
         assert adapter.code_actions(_SUITE, text, diagnostic.range) == ()
@@ -361,16 +361,16 @@ class TestMethodReferenceRefusal:
     def test_body_that_is_not_a_call_is_not_rewritten(self) -> None:
         text = dedent(
             """
-            class Suite(LitmusTest):
-                def build_suite(self) -> LitmusTest:
+            class Suite(TestComponent):
+                def build_suite(self) -> TestComponent:
                     return self.test("x", lambda u: u)
             """
         )
-        adapter = LitmusLsp()
+        adapter = HiltLsp()
         diagnostic = next(
             item
             for item in adapter.diagnostics(_SUITE, text)
-            if item.code == "litmus/method-reference"
+            if item.code == "hilt/method-reference"
         )
 
         assert adapter.code_actions(_SUITE, text, diagnostic.range) == ()
@@ -378,16 +378,16 @@ class TestMethodReferenceRefusal:
     def test_argument_name_mismatch_is_not_rewritten(self) -> None:
         text = dedent(
             """
-            class Suite(LitmusTest):
-                def build_suite(self) -> LitmusTest:
+            class Suite(TestComponent):
+                def build_suite(self) -> TestComponent:
                     return self.test("x", lambda u: self._run(v))
             """
         )
-        adapter = LitmusLsp()
+        adapter = HiltLsp()
         diagnostic = next(
             item
             for item in adapter.diagnostics(_SUITE, text)
-            if item.code == "litmus/method-reference"
+            if item.code == "hilt/method-reference"
         )
 
         assert adapter.code_actions(_SUITE, text, diagnostic.range) == ()
@@ -435,14 +435,14 @@ class TestHelpers:
     def test_method_reference_fix_refuses_a_lambda_without_span(self) -> None:
         module = _module(
             """
-            class Suite(LitmusTest):
-                def build_suite(self) -> LitmusTest:
+            class Suite(TestComponent):
+                def build_suite(self) -> TestComponent:
                     return self.test("x", lambda: self._run())
             """
         )
         lambda_node = next(node for node in ast.walk(module.tree) if isinstance(node, ast.Lambda))
         lambda_node.lineno = None  # type: ignore[assignment]
         lambda_node.col_offset = None  # type: ignore[assignment]
-        diagnostic = LspDiagnostic(_SUITE, "litmus/method-reference", "x", 0, 0, 0, 0)
+        diagnostic = LspDiagnostic(_SUITE, "hilt/method-reference", "x", 0, 0, 0, 0)
         # node_at will not match a span-less lambda; offer stays silent.
         assert MethodReferenceFix().offer(module, "", diagnostic) is None

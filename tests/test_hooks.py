@@ -8,9 +8,9 @@ from pathlib import Path
 import pytest
 from tests.loopback_sshd import LoopbackSshd
 
-from litmus import PASS, Artifact, LitmusTest, Phase, TestFailure, TestUtils, Verdict
-from litmus.hooks import SurveyHook
-from litmus.lifecycle import Slot, State
+from hilt import PASS, Artifact, Phase, TestComponent, TestFailure, TestUtils, Verdict
+from hilt.hooks import SurveyHook
+from hilt.lifecycle import Slot, State
 
 
 def _artifact_payloads(root: Path) -> dict[str, object]:
@@ -24,7 +24,7 @@ class TestSurveyHooks:
     async def test_surveys_capture_empty_values_at_every_reachable_phase(
         self, tmp_path: Path
     ) -> None:
-        class Suite(LitmusTest):
+        class Suite(TestComponent):
             def __init__(self, *, name: str) -> None:
                 super().__init__(name=name)
                 self.use_survey(self._survey)
@@ -32,7 +32,7 @@ class TestSurveyHooks:
             async def configure(self, utils: TestUtils) -> dict[str, object]:
                 return {"ready": True}
 
-            def build_suite(self) -> LitmusTest:
+            def build_suite(self) -> TestComponent:
                 return self.test("claim", self._claim)
 
             async def cleanup(self, utils: TestUtils) -> None:
@@ -46,7 +46,7 @@ class TestSurveyHooks:
                     return PASS
                 raise TestFailure("suite was not ready")
 
-        result = await Suite(name="rack").run(env={"LITMUS_ARTIFACT_ROOT": str(tmp_path)})
+        result = await Suite(name="rack").run(env={"HILT_ARTIFACT_ROOT": str(tmp_path)})
 
         assert result.state is State.PASS
         assert _artifact_payloads(tmp_path) == {
@@ -63,14 +63,14 @@ class TestSurveyHooks:
         tmp_path: Path,
         caplog: pytest.LogCaptureFixture,
     ) -> None:
-        class Suite(LitmusTest):
+        class Suite(TestComponent):
             def __init__(self, *, name: str) -> None:
                 super().__init__(name=name)
                 self.use_survey(self._explicit_none)
                 self.use_survey(self._delegated_none)
                 self.use_survey(self._fallthrough)
 
-            def build_suite(self) -> LitmusTest:
+            def build_suite(self) -> TestComponent:
                 return self.test("claim", self._claim)
 
             async def _explicit_none(self, utils: TestUtils) -> object:
@@ -90,8 +90,8 @@ class TestSurveyHooks:
                     return PASS
                 raise TestFailure("unreachable")
 
-        with caplog.at_level(logging.INFO, logger="litmus"):
-            result = await Suite(name="rack").run(env={"LITMUS_ARTIFACT_ROOT": str(tmp_path)})
+        with caplog.at_level(logging.INFO, logger="hilt"):
+            result = await Suite(name="rack").run(env={"HILT_ARTIFACT_ROOT": str(tmp_path)})
 
         assert result.state is State.PASS
         assert _artifact_payloads(tmp_path) == {}
@@ -103,13 +103,13 @@ class TestSurveyHooks:
         assert len(skipped) == 18
 
     async def test_deliberate_none_uses_explicit_artifact_capture(self, tmp_path: Path) -> None:
-        class Suite(LitmusTest):
+        class Suite(TestComponent):
             def __init__(self, *, name: str) -> None:
                 super().__init__(name=name)
                 self._dispatches: list[int] = []
                 self.use_survey(self._null_reading)
 
-            def build_suite(self) -> LitmusTest:
+            def build_suite(self) -> TestComponent:
                 return self.test("claim", self._claim)
 
             async def _null_reading(self, utils: TestUtils) -> object:
@@ -124,7 +124,7 @@ class TestSurveyHooks:
                     return PASS
                 raise TestFailure("unreachable")
 
-        result = await Suite(name="rack").run(env={"LITMUS_ARTIFACT_ROOT": str(tmp_path)})
+        result = await Suite(name="rack").run(env={"HILT_ARTIFACT_ROOT": str(tmp_path)})
 
         assert result.state is State.PASS
         assert _artifact_payloads(tmp_path) == {
@@ -136,12 +136,12 @@ class TestSurveyHooks:
         tmp_path: Path,
         caplog: pytest.LogCaptureFixture,
     ) -> None:
-        class Suite(LitmusTest):
+        class Suite(TestComponent):
             def __init__(self, *, name: str) -> None:
                 super().__init__(name=name)
                 self.use_survey(self._broken_survey)
 
-            def build_suite(self) -> LitmusTest:
+            def build_suite(self) -> TestComponent:
                 return self.test("claim", self._claim)
 
             async def _broken_survey(self, utils: TestUtils) -> object:
@@ -152,8 +152,8 @@ class TestSurveyHooks:
                     return PASS
                 raise TestFailure("unreachable")
 
-        with caplog.at_level(logging.ERROR, logger="litmus"):
-            result = await Suite(name="rack").run(env={"LITMUS_ARTIFACT_ROOT": str(tmp_path)})
+        with caplog.at_level(logging.ERROR, logger="hilt"):
+            result = await Suite(name="rack").run(env={"HILT_ARTIFACT_ROOT": str(tmp_path)})
 
         assert result.state is State.PASS
         assert await asyncio.to_thread(lambda: list(tmp_path.rglob("*.artifact"))) == []
@@ -215,7 +215,7 @@ class TestScheduledSurveys:
     async def test_phases_selects_the_boundaries_a_survey_observes(self, tmp_path: Path) -> None:
         skipped: list[str] = []
 
-        class Suite(LitmusTest):
+        class Suite(TestComponent):
             def __init__(self, *, name: str) -> None:
                 super().__init__(name=name)
                 self.use_survey(self._everywhere)
@@ -225,7 +225,7 @@ class TestScheduledSurveys:
                 )
                 self.use_survey(self._bookends, phases=(Phase.PRE_CONFIGURE, "post-cleanup"))  # pyright: ignore[reportArgumentType]
 
-            def build_suite(self) -> LitmusTest:
+            def build_suite(self) -> TestComponent:
                 return self.test("claim", self._claim)
 
             async def _everywhere(self, utils: TestUtils) -> object:
@@ -247,12 +247,12 @@ class TestScheduledSurveys:
                     skipped.append(message)
 
         watcher = _SkipWatcher(level=logging.DEBUG)
-        logger = logging.getLogger("litmus")
+        logger = logging.getLogger("hilt")
         previous = logger.level
         logger.addHandler(watcher)
         logger.setLevel(logging.DEBUG)
         try:
-            result = await Suite(name="rack").run(env={"LITMUS_ARTIFACT_ROOT": str(tmp_path)})
+            result = await Suite(name="rack").run(env={"HILT_ARTIFACT_ROOT": str(tmp_path)})
         finally:
             logger.removeHandler(watcher)
             logger.setLevel(previous)
@@ -284,12 +284,12 @@ class TestScheduledSurveys:
         )
 
     def test_an_empty_selection_is_refused_at_registration(self) -> None:
-        class Suite(LitmusTest):
+        class Suite(TestComponent):
             def __init__(self, *, name: str) -> None:
                 super().__init__(name=name)
                 self.use_survey(self._survey, phases=())
 
-            def build_suite(self) -> LitmusTest:
+            def build_suite(self) -> TestComponent:
                 return self.test("claim", self._claim)
 
             async def _survey(self, utils: TestUtils) -> object:
@@ -308,12 +308,12 @@ class TestScheduledSurveys:
             SurveyHook(fn=survey, phases=frozenset())
 
     def test_a_name_outside_the_six_is_refused_at_registration(self) -> None:
-        class Suite(LitmusTest):
+        class Suite(TestComponent):
             def __init__(self, *, name: str) -> None:
                 super().__init__(name=name)
                 self.use_survey(self._survey, phases=["mid-test"])  # pyright: ignore[reportArgumentType]
 
-            def build_suite(self) -> LitmusTest:
+            def build_suite(self) -> TestComponent:
                 return self.test("claim", self._claim)
 
             async def _survey(self, utils: TestUtils) -> object:
@@ -329,7 +329,7 @@ class TestScheduledSurveys:
         """After a failed configure the cleanup boundaries still fire, exec on the test host."""
         routes: list[str] = []
 
-        class Suite(LitmusTest):
+        class Suite(TestComponent):
             def __init__(self, *, name: str) -> None:
                 super().__init__(name=name)
                 self.use_survey(
@@ -340,7 +340,7 @@ class TestScheduledSurveys:
             async def configure(self, utils: TestUtils) -> dict[str, object]:
                 raise TestFailure("target unreachable before use_shell")
 
-            def build_suite(self) -> LitmusTest:
+            def build_suite(self) -> TestComponent:
                 return self.test("claim", self._claim)
 
             async def _survey(self, utils: TestUtils) -> object:
@@ -350,7 +350,7 @@ class TestScheduledSurveys:
             async def _claim(self, utils: TestUtils) -> Verdict:
                 return PASS
 
-        result = await Suite(name="rack").run(env={"LITMUS_ARTIFACT_ROOT": str(tmp_path)})
+        result = await Suite(name="rack").run(env={"HILT_ARTIFACT_ROOT": str(tmp_path)})
 
         assert result.state is State.FAIL
         assert routes == ["local", "local"]  # pre-cleanup and post-cleanup, nothing else
@@ -364,7 +364,7 @@ class TestScheduledSurveys:
         assert password is not None
         seen: list[str] = []
 
-        class Suite(LitmusTest):
+        class Suite(TestComponent):
             def __init__(self, *, name: str) -> None:
                 super().__init__(name=name)
                 self.use_survey(self._survey)
@@ -379,7 +379,7 @@ class TestScheduledSurveys:
                 )
                 return {}
 
-            def build_suite(self) -> LitmusTest:
+            def build_suite(self) -> TestComponent:
                 return self.test("claim", self._claim)
 
             async def _survey(self, utils: TestUtils) -> object:
@@ -390,7 +390,7 @@ class TestScheduledSurveys:
                 return PASS
 
         try:
-            result = await Suite(name="rack").run(env={"LITMUS_ARTIFACT_ROOT": str(tmp_path)})
+            result = await Suite(name="rack").run(env={"HILT_ARTIFACT_ROOT": str(tmp_path)})
         finally:
             await peer.aclose()
 
@@ -401,12 +401,12 @@ class TestScheduledSurveys:
 class TestAuditHooks:
     @pytest.mark.parametrize("interval", [0, -1, float("nan"), float("inf"), True])
     def test_interval_must_be_positive_and_finite(self, interval: float) -> None:
-        class Suite(LitmusTest):
+        class Suite(TestComponent):
             def __init__(self, *, name: str) -> None:
                 super().__init__(name=name)
                 self.use_audit(interval=interval, fn=self._audit)
 
-            def build_suite(self) -> LitmusTest:
+            def build_suite(self) -> TestComponent:
                 return self.test("claim", self._claim)
 
             async def _audit(self, utils: TestUtils) -> object:
@@ -427,12 +427,12 @@ class TestAuditHooks:
         cleanup_ran = asyncio.Event()
         observed_signal: list[bool] = []
 
-        class Suite(LitmusTest):
+        class Suite(TestComponent):
             def __init__(self, *, name: str) -> None:
                 super().__init__(name=name)
                 self.use_audit(interval=0.001, fn=self._audit)
 
-            def build_suite(self) -> LitmusTest:
+            def build_suite(self) -> TestComponent:
                 return self.test("long-running claim", self._claim)
 
             async def cleanup(self, utils: TestUtils) -> None:
@@ -450,7 +450,7 @@ class TestAuditHooks:
                     raise
                 raise TestFailure("unreachable")
 
-        result = await Suite(name="rack").run(env={"LITMUS_ARTIFACT_ROOT": str(tmp_path)})
+        result = await Suite(name="rack").run(env={"HILT_ARTIFACT_ROOT": str(tmp_path)})
 
         assert result.slot is Slot.AUDIT
         assert result.state is State.FAIL
@@ -473,15 +473,15 @@ class TestAuditHooks:
                     completed.set()
 
         watcher = _CompletionWatcher()
-        logger = logging.getLogger("litmus")
+        logger = logging.getLogger("hilt")
         logger.addHandler(watcher)
 
-        class Suite(LitmusTest):
+        class Suite(TestComponent):
             def __init__(self, *, name: str) -> None:
                 super().__init__(name=name)
                 self.use_audit(interval=0.000_001, fn=self._audit)
 
-            def build_suite(self) -> LitmusTest:
+            def build_suite(self) -> TestComponent:
                 return self.test("watched claim", self._claim)
 
             async def _audit(self, utils: TestUtils) -> object:
@@ -494,9 +494,9 @@ class TestAuditHooks:
                 raise TestFailure("audit dispatch never completed")
 
         try:
-            with caplog.at_level(logging.DEBUG, logger="litmus"):
+            with caplog.at_level(logging.DEBUG, logger="hilt"):
                 suite = Suite(name="rack")
-                result = await suite.run(env={"LITMUS_ARTIFACT_ROOT": str(tmp_path)})
+                result = await suite.run(env={"HILT_ARTIFACT_ROOT": str(tmp_path)})
         finally:
             logger.removeHandler(watcher)
 
@@ -520,12 +520,12 @@ class TestAuditHooks:
     ) -> None:
         dispatches = 0
 
-        class Suite(LitmusTest):
+        class Suite(TestComponent):
             def __init__(self, *, name: str) -> None:
                 super().__init__(name=name)
                 self.use_audit(interval=0.001, fn=self._audit)
 
-            def build_suite(self) -> LitmusTest:
+            def build_suite(self) -> TestComponent:
                 return self.test("claim", self._claim)
 
             async def _audit(self, utils: TestUtils) -> object:
@@ -539,7 +539,7 @@ class TestAuditHooks:
                     return PASS
                 raise TestFailure("unreachable")
 
-        result = await Suite(name="rack").run(env={"LITMUS_ARTIFACT_ROOT": str(tmp_path)})
+        result = await Suite(name="rack").run(env={"HILT_ARTIFACT_ROOT": str(tmp_path)})
         settled_dispatches = dispatches
         await asyncio.sleep(0.005)
 
@@ -567,12 +567,12 @@ class TestAuditHooks:
 
         monkeypatch.setattr(TestUtils, "capture_artifact", delayed_capture)
 
-        class Suite(LitmusTest):
+        class Suite(TestComponent):
             def __init__(self, *, name: str) -> None:
                 super().__init__(name=name)
                 self.use_audit(interval=0.001, fn=self._audit)
 
-            def build_suite(self) -> LitmusTest:
+            def build_suite(self) -> TestComponent:
                 return self.test("claim", self._claim)
 
             async def _audit(self, utils: TestUtils) -> object:
@@ -585,7 +585,7 @@ class TestAuditHooks:
                 raise TestFailure("unreachable")
 
         running = asyncio.create_task(
-            Suite(name="rack").run(env={"LITMUS_ARTIFACT_ROOT": str(tmp_path)})
+            Suite(name="rack").run(env={"HILT_ARTIFACT_ROOT": str(tmp_path)})
         )
         await capture_started.wait()
         await asyncio.sleep(0.01)
@@ -606,12 +606,12 @@ class TestAuditHooks:
     ) -> None:
         sibling_finished = asyncio.Event()
 
-        class AuditedChild(LitmusTest):
+        class AuditedChild(TestComponent):
             def __init__(self, *, name: str) -> None:
                 super().__init__(name=name)
                 self.use_audit(interval=0.001, fn=self._audit)
 
-            def build_suite(self) -> LitmusTest:
+            def build_suite(self) -> TestComponent:
                 return self.test("watched claim", self._claim)
 
             async def _audit(self, utils: TestUtils) -> object:
@@ -621,8 +621,8 @@ class TestAuditHooks:
                 await asyncio.Event().wait()
                 raise TestFailure("unreachable")
 
-        class HealthySibling(LitmusTest):
-            def build_suite(self) -> LitmusTest:
+        class HealthySibling(TestComponent):
+            def build_suite(self) -> TestComponent:
                 return self.test("healthy claim", self._claim)
 
             async def _claim(self, utils: TestUtils) -> Verdict:
@@ -632,8 +632,8 @@ class TestAuditHooks:
                     return PASS
                 raise TestFailure("unreachable")
 
-        class Root(LitmusTest):
-            def build_suite(self) -> LitmusTest:
+        class Root(TestComponent):
+            def build_suite(self) -> TestComponent:
                 return self.parallel(
                     "independent children",
                     [
@@ -642,7 +642,7 @@ class TestAuditHooks:
                     ],
                 )
 
-        result = await Root(name="rack").run(env={"LITMUS_ARTIFACT_ROOT": str(tmp_path)})
+        result = await Root(name="rack").run(env={"HILT_ARTIFACT_ROOT": str(tmp_path)})
 
         assert result.state is State.FAIL
         assert result.failure is not None

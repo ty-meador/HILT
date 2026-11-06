@@ -1,7 +1,7 @@
 """In-process login-and-shell console for SerialInterface self-tests.
 
 `pty.openpty()` plus this script is the serial equivalent of LoopbackSshd:
-real CRLF, real echo, a parked `sleep`, and the `__LITMUS_RC__=` sentinel
+real CRLF, real echo, a parked `sleep`, and the `__HILT_RC__=` sentinel
 emitted by the console itself so the transport's parser is the thing under
 test. The loopback sshd's `console` command attaches the same script to an
 SSH channel for via-placement tests.
@@ -18,7 +18,7 @@ from contextlib import asynccontextmanager
 from typing import Any, Final, final
 
 SERIAL_BRIDGE_COMMAND: Final[str] = "console"
-_RC_MARKER: Final[str] = "__LITMUS_RC__"
+_RC_MARKER: Final[str] = "__HILT_RC__"
 _SENTINEL_SUFFIX: Final[str] = f'; echo "{_RC_MARKER}=$?"'
 
 

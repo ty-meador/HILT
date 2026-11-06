@@ -6,12 +6,12 @@ import io
 import tomllib
 from pathlib import Path
 
-from litmus_check.cli import LitmusCheckCommand
-from litmus_check.lsp import DIAGNOSTIC_WARNING, LSP_SOURCE, LitmusLsp, LspObject, LspRange
-from litmus_check.registry import RuleRegistry
+from hilt_check.cli import HiltCheckCommand
+from hilt_check.lsp import DIAGNOSTIC_WARNING, LSP_SOURCE, HiltLsp, LspObject, LspRange
+from hilt_check.registry import RuleRegistry
 
 ROOT = Path(__file__).resolve().parents[1]
-FIXTURES = Path(__file__).parent / "fixtures" / "litmus_check"
+FIXTURES = Path(__file__).parent / "fixtures" / "hilt_check"
 # The seeds are split across two files so each file's pinned line numbers stay put
 # (seeded_seams.py says why); the catalogue is covered by the pair, not by either one.
 SEEDED = (FIXTURES / "seeded_suite.py", FIXTURES / "seeded_seams.py")
@@ -23,7 +23,7 @@ def _listed_codes() -> tuple[str, ...]:
 
 
 def _seeded_codes() -> set[str]:
-    lsp = LitmusLsp()
+    lsp = HiltLsp()
     return {
         item.code
         for path in SEEDED
@@ -37,33 +37,33 @@ class TestDiagnosticsCoverTheCatalogue:
 
     def test_list_rules_cli_matches_the_registry_the_adapter_uses(self) -> None:
         out = io.StringIO()
-        LitmusCheckCommand(stdout=out, stderr=io.StringIO()).run(["--list-rules"])
+        HiltCheckCommand(stdout=out, stderr=io.StringIO()).run(["--list-rules"])
         listed = tuple(line.split("\t", 1)[0] for line in out.getvalue().splitlines() if line)
 
         assert listed == _listed_codes()
         assert _seeded_codes() == set(listed)
 
     def test_clean_fixture_is_silent(self) -> None:
-        diagnostics = LitmusLsp().diagnostics(CLEAN, CLEAN.read_text(encoding="utf-8"))
+        diagnostics = HiltLsp().diagnostics(CLEAN, CLEAN.read_text(encoding="utf-8"))
 
         assert diagnostics == ()
 
     def test_syntax_error_yields_no_diagnostics(self) -> None:
-        diagnostics = LitmusLsp().diagnostics(Path("broken.py"), "def (:\n")
+        diagnostics = HiltLsp().diagnostics(Path("broken.py"), "def (:\n")
 
         assert diagnostics == ()
 
     def test_diagnostic_shape_is_lsp(self) -> None:
         source = "async def claim(utils):\n    return PASS\n"
-        diagnostic = LitmusLsp().diagnostics(Path("suite.py"), source)[0]
+        diagnostic = HiltLsp().diagnostics(Path("suite.py"), source)[0]
         payload = diagnostic.to_lsp()
 
-        assert diagnostic.code == "litmus/gated-pass"
+        assert diagnostic.code == "hilt/gated-pass"
         assert diagnostic.source == LSP_SOURCE
         assert diagnostic.severity == DIAGNOSTIC_WARNING
         assert diagnostic.start_line == 1
         assert payload["source"] == LSP_SOURCE
-        assert payload["code"] == "litmus/gated-pass"
+        assert payload["code"] == "hilt/gated-pass"
         assert payload["severity"] == DIAGNOSTIC_WARNING
         start = LspObject.mapping(LspObject.mapping(payload["range"])["start"])
         assert start["line"] == 1
@@ -81,12 +81,10 @@ class TestOptionalExtra:
     def test_entry_point_points_at_the_plugin_module(self) -> None:
         data = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))
 
-        assert data["project"]["entry-points"]["pylsp"]["litmus_check"] == (
-            "litmus_check.pylsp_plugin"
-        )
+        assert data["project"]["entry-points"]["pylsp"]["hilt_check"] == ("hilt_check.pylsp_plugin")
 
     def test_adapter_module_does_not_import_pylsp(self) -> None:
-        source = (ROOT / "tools" / "litmus_check" / "lsp.py").read_text(encoding="utf-8")
+        source = (ROOT / "tools" / "hilt_check" / "lsp.py").read_text(encoding="utf-8")
 
         assert "import pylsp" not in source
         assert "from pylsp" not in source

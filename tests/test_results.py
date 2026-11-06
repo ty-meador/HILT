@@ -8,26 +8,26 @@ from typing import cast
 
 import pytest
 
-import litmus
-from litmus import (
+import hilt
+from hilt import (
     PASS,
     ExternalIntegrationFailure,
-    LitmusTest,
     OperatorInterrupt,
     RunResult,
     SummaryTreeNode,
+    TestComponent,
     TestFailure,
     Verdict,
 )
-from litmus.lifecycle import Slot, State
-from litmus.results import NodeType
-from litmus.utils import _ArtifactStore  # pyright: ignore[reportPrivateUsage]
+from hilt.lifecycle import Slot, State
+from hilt.results import NodeType
+from hilt.utils import _ArtifactStore  # pyright: ignore[reportPrivateUsage]
 
 
 class TestRunResultNavigation:
     async def test_every_executed_result_carries_its_root_to_node_path(self) -> None:
-        class Suite(LitmusTest):
-            def build_suite(self) -> LitmusTest:
+        class Suite(TestComponent):
+            def build_suite(self) -> TestComponent:
                 return self.parallel(
                     "claims",
                     [
@@ -42,8 +42,8 @@ class TestRunResultNavigation:
         result = await Suite(name="rack").run(env={"PHYSICAL_LOCATION": "bench-7"})
         children = cast("tuple[RunResult, ...]", result.value)
 
-        assert litmus.RunResult is RunResult
-        assert litmus.SummaryTreeNode is SummaryTreeNode
+        assert hilt.RunResult is RunResult
+        assert hilt.SummaryTreeNode is SummaryTreeNode
         assert result.ancestor_names == ["rack"]
         assert result.bread_crumbs == "rack"
         assert [child.ancestor_names for child in children] == [
@@ -57,8 +57,8 @@ class TestRunResultNavigation:
         assert result.env["PHYSICAL_LOCATION"] == "bench-7"
 
     async def test_root_summary_tree_contains_executed_and_unreached_nodes(self) -> None:
-        class Suite(LitmusTest):
-            def build_suite(self) -> LitmusTest:
+        class Suite(TestComponent):
+            def build_suite(self) -> TestComponent:
                 return self.sequence(
                     "ordered claims",
                     [
@@ -93,7 +93,7 @@ class TestRunResultNavigation:
     async def test_summary_tree_links_every_owning_node_to_its_timeline(
         self, tmp_path: Path
     ) -> None:
-        class Suite(LitmusTest):
+        class Suite(TestComponent):
             def __init__(self, *, name: str) -> None:
                 super().__init__(name=name)
                 self._gate = self.test("failing gate", self._fails)
@@ -107,7 +107,7 @@ class TestRunResultNavigation:
                     "ordered claims", [self._rolled, self._gate, self._unreached]
                 )
 
-            def build_suite(self) -> LitmusTest:
+            def build_suite(self) -> TestComponent:
                 return self._ordered
 
             async def _fails(self, _utils: object) -> Verdict:
@@ -117,7 +117,7 @@ class TestRunResultNavigation:
                 return PASS
 
         suite = Suite(name="rack")
-        result = await suite.run(env={"LITMUS_ARTIFACT_ROOT": str(tmp_path)})
+        result = await suite.run(env={"HILT_ARTIFACT_ROOT": str(tmp_path)})
 
         root = result.summary_tree
         sequence = root.children[0]
@@ -151,8 +151,8 @@ class TestInspectorJsonContract:
         terminal_state: State,
         tmp_path: Path,
     ) -> None:
-        class Suite(LitmusTest):
-            def build_suite(self) -> LitmusTest:
+        class Suite(TestComponent):
+            def build_suite(self) -> TestComponent:
                 return self.test("terminal", self._terminal)
 
             async def _terminal(self, _utils: object) -> Verdict:
@@ -166,12 +166,12 @@ class TestInspectorJsonContract:
         suite = Suite(name="rack")
         if terminal_state is State.ABORTED:
             result = await suite.run(
-                env={"LITMUS_ARTIFACT_ROOT": str(tmp_path)},
+                env={"HILT_ARTIFACT_ROOT": str(tmp_path)},
                 before_each=abort,
                 allow_unpaired_hooks=True,
             )
         else:
-            result = await suite.run(env={"LITMUS_ARTIFACT_ROOT": str(tmp_path)})
+            result = await suite.run(env={"HILT_ARTIFACT_ROOT": str(tmp_path)})
 
         assert result.state is terminal_state
         assert suite.log_path is not None
@@ -237,8 +237,8 @@ class TestInspectorJsonContract:
         tmp_path: Path,
         monkeypatch: pytest.MonkeyPatch,
     ) -> None:
-        class Suite(LitmusTest):
-            def build_suite(self) -> LitmusTest:
+        class Suite(TestComponent):
+            def build_suite(self) -> TestComponent:
                 return self.test("claim", self._passes)
 
             async def _passes(self, _utils: object) -> Verdict:
@@ -249,7 +249,7 @@ class TestInspectorJsonContract:
 
         monkeypatch.setattr(Path, "replace", fail_replace)
         with pytest.raises(OSError, match="publication failed"):
-            await Suite(name="rack").run(env={"LITMUS_ARTIFACT_ROOT": str(tmp_path)})
+            await Suite(name="rack").run(env={"HILT_ARTIFACT_ROOT": str(tmp_path)})
 
         run_roots = await asyncio.to_thread(lambda: list(tmp_path.iterdir()))
         assert len(run_roots) == 1
@@ -270,8 +270,8 @@ class TestInspectorJsonContract:
         tmp_path: Path,
         monkeypatch: pytest.MonkeyPatch,
     ) -> None:
-        class Suite(LitmusTest):
-            def build_suite(self) -> LitmusTest:
+        class Suite(TestComponent):
+            def build_suite(self) -> TestComponent:
                 return self.test("claim", self._passes)
 
             async def _passes(self, _utils: object) -> Verdict:
@@ -290,7 +290,7 @@ class TestInspectorJsonContract:
 
         monkeypatch.setattr(_ArtifactStore, "_persist_result_sync", blocked_persistence)
         suite = Suite(name="rack")
-        running = asyncio.create_task(suite.run(env={"LITMUS_ARTIFACT_ROOT": str(tmp_path)}))
+        running = asyncio.create_task(suite.run(env={"HILT_ARTIFACT_ROOT": str(tmp_path)}))
         await persistence_started.wait()
         try:
             running.cancel()
@@ -320,8 +320,8 @@ class TestInspectorJsonContract:
             def __str__(self) -> str:
                 return "ssh://fixture"
 
-        class Suite(LitmusTest):
-            def build_suite(self) -> LitmusTest:
+        class Suite(TestComponent):
+            def build_suite(self) -> TestComponent:
                 return self.test("voltage", self._fails)
 
             async def _fails(self, _utils: object) -> Verdict:

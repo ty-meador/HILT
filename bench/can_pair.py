@@ -44,7 +44,7 @@ def main() -> int:
     with _open(_PAIR[0]) as a, _open(_PAIR[1]) as b:
         for tx, rx, can_id, payload in (
             (a, b, 0x123, b"\x01\x02\x03"),
-            (b, a, 0x7FF, b"litmus"),
+            (b, a, 0x7FF, b"hilt"),
         ):
             try:
                 detail = _roundtrip(tx, rx, can_id, payload)

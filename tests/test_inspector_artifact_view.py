@@ -10,7 +10,7 @@ from typing import cast
 import pytest
 from tests.inspector_rack import device_row, record_seventy_dut_run, saved_bytes
 
-from litmus.inspector_artifact_view import (
+from hilt.inspector_artifact_view import (
     ArtifactModal,
     DiffRow,
     _render_lines,  # pyright: ignore[reportPrivateUsage]
@@ -18,11 +18,11 @@ from litmus.inspector_artifact_view import (
     diff_rows,
     single_rows,
 )
-from litmus.inspector_artifacts import ArtifactContent, ArtifactDiagnostic, ArtifactReader
-from litmus.inspector_selection import InspectorSelection
-from litmus.inspector_timeline import TimelineDiagnostic, TimelineRead, TimelineRecord
-from litmus.inspector_timeline_view import TimelineView
-from litmus.run_data import JsonValue
+from hilt.inspector_artifacts import ArtifactContent, ArtifactDiagnostic, ArtifactReader
+from hilt.inspector_selection import InspectorSelection
+from hilt.inspector_timeline import TimelineDiagnostic, TimelineRead, TimelineRecord
+from hilt.inspector_timeline_view import TimelineView
+from hilt.run_data import JsonValue
 
 
 def _capture(root: Path, number: int, kind: str, data: JsonValue) -> str:

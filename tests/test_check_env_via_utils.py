@@ -1,4 +1,4 @@
-"""``litmus/env-via-utils``: the environment is read through ``utils.env``.
+"""``hilt/env-via-utils``: the environment is read through ``utils.env``.
 
 ``utils.env`` is the snapshot ``RunResult`` records and a self-test injects. A read
 through ``os`` is outside both, so the run cannot be reproduced from its evidence.
@@ -8,11 +8,11 @@ import io
 from pathlib import Path
 from textwrap import dedent
 
-from litmus_check import SuiteModule, Violation
-from litmus_check.cli import EXIT_VIOLATIONS, LitmusCheckCommand
-from litmus_check.rules.env_via_utils import EnvViaUtilsRule
+from hilt_check import SuiteModule, Violation
+from hilt_check.cli import EXIT_VIOLATIONS, HiltCheckCommand
+from hilt_check.rules.env_via_utils import EnvViaUtilsRule
 
-CODE = "litmus/env-via-utils"
+CODE = "hilt/env-via-utils"
 
 
 def _check(source: str) -> list[Violation]:
@@ -29,7 +29,7 @@ class TestEnvViaUtilsFire:
         source = """
             import os
 
-            class Suite(LitmusTest):
+            class Suite(TestComponent):
                 async def configure(self, utils: TestUtils) -> dict[str, Any]:
                     return {"host": os.environ["HOST"]}
         """
@@ -43,7 +43,7 @@ class TestEnvViaUtilsFire:
         source = """
             import os
 
-            class Suite(LitmusTest):
+            class Suite(TestComponent):
                 async def configure(self, utils: TestUtils) -> dict[str, Any]:
                     host = os.environ.get("HOST", "")
                     user = os.getenv("USER")
@@ -56,7 +56,7 @@ class TestEnvViaUtilsFire:
             import os as operating_system
             from os import environ, getenv as read_env
 
-            class Suite(LitmusTest):
+            class Suite(TestComponent):
                 async def configure(self, utils: TestUtils) -> dict[str, Any]:
                     a = operating_system.environ["A"]
                     b = environ["B"]
@@ -69,7 +69,7 @@ class TestEnvViaUtilsFire:
         source = """
             import os
 
-            class Suite(LitmusTest):
+            class Suite(TestComponent):
                 async def _leaf(self, utils: TestUtils) -> Verdict:
                     if "DEBUG" in os.environ:
                         return PASS
@@ -81,7 +81,7 @@ class TestEnvViaUtilsFire:
 class TestEnvViaUtilsStaySilent:
     def test_utils_env_is_the_idiom(self) -> None:
         source = """
-            class Suite(LitmusTest):
+            class Suite(TestComponent):
                 async def configure(self, utils: TestUtils) -> dict[str, Any]:
                     host = utils.env.require("HOST")
                     port = utils.env.get("PORT", "22")
@@ -93,7 +93,7 @@ class TestEnvViaUtilsStaySilent:
         source = """
             import os
 
-            ROOT = os.environ.get("LITMUS_ARTIFACT_ROOT")
+            ROOT = os.environ.get("HILT_ARTIFACT_ROOT")
 
             def main() -> None:
                 print(os.getenv("STATION"))
@@ -106,7 +106,7 @@ class TestEnvViaUtilsStaySilent:
 
     def test_an_environ_attribute_on_another_object_is_not_os(self) -> None:
         source = """
-            class Suite(LitmusTest):
+            class Suite(TestComponent):
                 async def configure(self, utils: TestUtils) -> dict[str, Any]:
                     return {"snapshot": dict(utils.environ)}
         """
@@ -115,10 +115,10 @@ class TestEnvViaUtilsStaySilent:
 
 class TestEnvViaUtilsAtTheCommandLine:
     def test_seeded_fixture_is_caught_and_clean_fixture_is_not(self) -> None:
-        fixtures = Path(__file__).parent / "fixtures" / "litmus_check"
+        fixtures = Path(__file__).parent / "fixtures" / "hilt_check"
         out = io.StringIO()
 
-        status = LitmusCheckCommand(stdout=out, stderr=io.StringIO()).run(
+        status = HiltCheckCommand(stdout=out, stderr=io.StringIO()).run(
             ["--select", CODE, str(fixtures)]
         )
 

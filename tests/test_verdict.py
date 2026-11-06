@@ -8,7 +8,7 @@ import pickle
 
 import pytest
 
-from litmus import PASS, Verdict
+from hilt import PASS, Verdict
 
 
 class TestPassSentinel:

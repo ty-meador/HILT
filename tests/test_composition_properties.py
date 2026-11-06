@@ -8,21 +8,21 @@ from typing import Any, ClassVar, Literal, cast
 from hypothesis import example, given, settings
 from hypothesis import strategies as st
 
-from litmus import (
+from hilt import (
     PASS,
     AfterEachContext,
     BeforeEachContext,
     ContractViolation,
     ExternalIntegrationFailure,
-    LitmusTest,
     MissingVerdict,
     RunResult,
+    TestComponent,
     TestFailure,
     TestUtils,
     Verdict,
 )
-from litmus.lifecycle import State
-from litmus.results import NodeType, SummaryTreeNode
+from hilt.lifecycle import State
+from hilt.results import NodeType, SummaryTreeNode
 
 type _Path = tuple[str, ...]
 type _Kind = Literal["test", "sequence", "parallel"]
@@ -141,7 +141,7 @@ class _Execution:
         if path == self.hook_path and self.hook_phase == "after":
             raise self.cause
 
-    def compile(self, tree: _Tree, owner: LitmusTest, path: _Path = ("root",)) -> LitmusTest:
+    def compile(self, tree: _Tree, owner: TestComponent, path: _Path = ("root",)) -> TestComponent:
         """Build a fresh framework tree from the independent declaration."""
         if tree.kind == "test":
 
@@ -212,7 +212,7 @@ def _assert_evidence(tree: _Tree, result: RunResult, execution: _Execution) -> N
         assert payload["summary_tree"] == recorded.summary_tree.to_json()
 
 
-class _LocalContextSuite(LitmusTest):
+class _LocalContextSuite(TestComponent):
     cleanup_owners: ClassVar[dict[tuple[str, ...], str]] = {}
 
     def __init__(self, tree: _Tree, path: _Path, contexts: dict[_Path, Mapping[str, Any]]) -> None:
@@ -226,7 +226,7 @@ class _LocalContextSuite(LitmusTest):
         self.contexts[self.path] = utils.ctx
         return {"owner": "/".join(self.path), "visited": []}
 
-    def build_suite(self) -> LitmusTest:
+    def build_suite(self) -> TestComponent:
         if self.tree.kind == "test":
             return self.test("claim", self._claim)
         children = [
@@ -272,7 +272,7 @@ class TestCompositionProperties:
     async def test_terminal_algebra_and_evidence(self, tree: _Tree) -> None:
         expected = _fold(tree)
         execution = _Execution()
-        node = execution.compile(tree, LitmusTest(name="author"))
+        node = execution.compile(tree, TestComponent(name="author"))
         result = await node.run(before_each=execution.before, after_each=execution.after)
 
         _assert_evidence(tree, result, execution)
@@ -311,7 +311,7 @@ class TestCompositionProperties:
     async def test_hook_abort_reaches_every_ancestor(self, tree: _Tree, phase: str) -> None:
         hook_path = next(path for path, spec in _walk(tree) if spec.verdict == "hook")
         execution = _Execution(hook_path, phase)
-        node = execution.compile(tree, LitmusTest(name="author"))
+        node = execution.compile(tree, TestComponent(name="author"))
         result = await node.run(before_each=execution.before, after_each=execution.after)
 
         _assert_evidence(tree, result, execution)

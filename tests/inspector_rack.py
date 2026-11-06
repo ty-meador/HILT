@@ -1,6 +1,6 @@
 """Record one 70-DUT rack run and reopen it from saved bytes alone, for Inspector tests.
 
-The Inspector's acceptance is a saved 70-DUT rack inspectable without live ``LitmusTest``
+The Inspector's acceptance is a saved 70-DUT rack inspectable without live ``TestComponent``
 objects, source discovery, or the station that produced it (``docs/inspector.md``).
 Every Inspector test module proves that against the same shape of run; this helper is
 the one place that shape is written, so a screen test and a model test open the same
@@ -15,8 +15,8 @@ from pathlib import Path
 
 import pytest
 
-from litmus import PASS, Artifact, LitmusTest, TestFailure, TestUtils, Verdict
-from litmus.inspector_run import SavedRun, SavedRunReader
+from hilt import PASS, Artifact, TestComponent, TestFailure, TestUtils, Verdict
+from hilt.inspector_run import SavedRun, SavedRunReader
 
 DEVICE_COUNT = 70
 
@@ -31,8 +31,8 @@ def device_row(index: int) -> int:
     return 3 + 2 * index
 
 
-class _Device(LitmusTest):
-    def build_suite(self) -> LitmusTest:
+class _Device(TestComponent):
+    def build_suite(self) -> TestComponent:
         return self.test("voltage", self._voltage)
 
     async def _voltage(self, utils: TestUtils) -> Verdict:
@@ -43,8 +43,8 @@ class _Device(LitmusTest):
         raise AssertionError("device name required")
 
 
-class _Rack(LitmusTest):
-    def build_suite(self) -> LitmusTest:
+class _Rack(TestComponent):
+    def build_suite(self) -> TestComponent:
         return self.parallel("devices", [_Device(name=f"dut-{i:02d}") for i in range(DEVICE_COUNT)])
 
 
@@ -53,7 +53,7 @@ async def record_seventy_dut_run(tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 
     The move is what makes the test honest: every reference inside the run was written
     for the original location, and the reader must follow the recorded relocation
-    evidence rather than the path that no longer exists. ``LitmusTest.run`` is replaced
+    evidence rather than the path that no longer exists. ``TestComponent.run`` is replaced
     so any attempt to reconstruct the suite fails loudly.
     """
     rack = _Rack(name="rack")
@@ -66,7 +66,7 @@ async def record_seventy_dut_run(tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     def refuse_execution(*args: object, **kwargs: object) -> None:
         raise AssertionError("an Inspector test attempted suite execution")
 
-    monkeypatch.setattr(LitmusTest, "run", refuse_execution)
+    monkeypatch.setattr(TestComponent, "run", refuse_execution)
     saved = await SavedRunReader().read(moved / "result.json")
     assert isinstance(saved, SavedRun), saved
     return saved
@@ -77,7 +77,7 @@ def saved_bytes(run_root: Path) -> dict[Path, bytes]:
     return {path: path.read_bytes() for path in run_root.rglob("*") if path.is_file()}
 
 
-class _Mixed(LitmusTest):
+class _Mixed(TestComponent):
     """A small run with every recorded state, for failure navigation and the log pane.
 
     The sequence stops at the parallel's failure, so ``later`` is pending. Inside the
@@ -86,7 +86,7 @@ class _Mixed(LitmusTest):
     artifact, so the log pane has a capture number and an errors-only row to show.
     """
 
-    def build_suite(self) -> LitmusTest:
+    def build_suite(self) -> TestComponent:
         return self.sequence(
             "steps",
             [
@@ -145,18 +145,18 @@ async def record_mixed_run(
         raise AssertionError("an Inspector test attempted suite execution")
 
     if refuse_execution:
-        monkeypatch.setattr(LitmusTest, "run", refuse)
+        monkeypatch.setattr(TestComponent, "run", refuse)
     saved = await SavedRunReader().read(moved / "result.json")
     assert isinstance(saved, SavedRun), saved
     return saved
 
 
-def mixed_suite() -> LitmusTest:
+def mixed_suite() -> TestComponent:
     """A fresh instance of the mixed suite, the shape ``record_mixed_run`` saved."""
     return _Mixed(name="rack")
 
 
-def other_suite() -> LitmusTest:
+def other_suite() -> TestComponent:
     """A fresh rack suite: a different declared tree, for the Re-Run refusal."""
     return _Rack(name="rack")
 
@@ -165,10 +165,10 @@ PARK: dict[str, asyncio.Event | None] = {"event": None}
 """Set ``PARK["event"]`` to make the parked suite wait; it passes at once otherwise."""
 
 
-class _Parked(LitmusTest):
+class _Parked(TestComponent):
     """Passes at once when recording; on re-run, parks until the operator interrupts."""
 
-    def build_suite(self) -> LitmusTest:
+    def build_suite(self) -> TestComponent:
         return self.test("wait", self._wait)
 
     async def _wait(self, utils: TestUtils) -> Verdict:
@@ -180,7 +180,7 @@ class _Parked(LitmusTest):
         return PASS
 
 
-def parked_suite() -> LitmusTest:
+def parked_suite() -> TestComponent:
     """A fresh parked suite, the shape ``record_parked_run`` saved."""
     return _Parked(name="bench")
 

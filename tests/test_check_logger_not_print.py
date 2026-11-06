@@ -1,4 +1,4 @@
-"""``litmus/logger-not-print``: suite code logs through ``utils.logger``.
+"""``hilt/logger-not-print``: suite code logs through ``utils.logger``.
 
 Only the scoped logger reaches the timeline. ``print`` reaches stdout, which the
 framework does not capture and the Floor Technician never opens.
@@ -8,11 +8,11 @@ import io
 from pathlib import Path
 from textwrap import dedent
 
-from litmus_check import SuiteModule, Violation
-from litmus_check.cli import EXIT_VIOLATIONS, LitmusCheckCommand
-from litmus_check.rules.logger_not_print import LoggerNotPrintRule
+from hilt_check import SuiteModule, Violation
+from hilt_check.cli import EXIT_VIOLATIONS, HiltCheckCommand
+from hilt_check.rules.logger_not_print import LoggerNotPrintRule
 
-CODE = "litmus/logger-not-print"
+CODE = "hilt/logger-not-print"
 
 
 def _check(source: str) -> list[Violation]:
@@ -27,7 +27,7 @@ def _lines(source: str) -> list[int]:
 class TestLoggerNotPrintFire:
     def test_print_in_a_test_method_names_the_logger(self) -> None:
         source = """
-            class Suite(LitmusTest):
+            class Suite(TestComponent):
                 async def _leaf(self, utils: TestUtils) -> Verdict:
                     print("checking")
                     if utils.ctx["ok"]:
@@ -41,7 +41,7 @@ class TestLoggerNotPrintFire:
 
     def test_every_lifecycle_slot_is_covered(self) -> None:
         source = """
-            class Suite(LitmusTest):
+            class Suite(TestComponent):
                 def __init__(self, *, name: str) -> None:
                     super().__init__(name=name)
                     print("built")
@@ -57,7 +57,7 @@ class TestLoggerNotPrintFire:
 class TestLoggerNotPrintStaySilent:
     def test_the_scoped_logger_is_the_idiom(self) -> None:
         source = """
-            class Suite(LitmusTest):
+            class Suite(TestComponent):
                 async def _leaf(self, utils: TestUtils) -> Verdict:
                     utils.logger.info("checking %s", utils.ctx["target"])
                     if utils.ctx["ok"]:
@@ -82,7 +82,7 @@ class TestLoggerNotPrintStaySilent:
 
     def test_a_method_named_print_on_another_object_is_not_the_builtin(self) -> None:
         source = """
-            class Suite(LitmusTest):
+            class Suite(TestComponent):
                 async def _leaf(self, utils: TestUtils) -> Verdict:
                     report.print()
                     if utils.ctx["ok"]:
@@ -94,10 +94,10 @@ class TestLoggerNotPrintStaySilent:
 
 class TestLoggerNotPrintAtTheCommandLine:
     def test_seeded_fixture_is_caught_and_clean_fixture_is_not(self) -> None:
-        fixtures = Path(__file__).parent / "fixtures" / "litmus_check"
+        fixtures = Path(__file__).parent / "fixtures" / "hilt_check"
         out = io.StringIO()
 
-        status = LitmusCheckCommand(stdout=out, stderr=io.StringIO()).run(
+        status = HiltCheckCommand(stdout=out, stderr=io.StringIO()).run(
             ["--select", CODE, str(fixtures)]
         )
 
