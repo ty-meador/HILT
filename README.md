@@ -1,13 +1,15 @@
 ![HILT hero image](hero.png)
 # HILT
 
-**Hardware-in-the-loop tests that can't quietly lie, and failures a technician can
-triage at 2am without calling you.**
+**Python HIL testing with a pit of success: composable test components, guardrails
+that make a bad test hard to write, and an engine that won't let an unhandled
+failure pass silently.**
 
-HILT (Hardware-In-the-Loop Testing) is an opinionated test framework for Python. You write what you claim
-about the hardware. HILT enforces the verdict, records the evidence as the test
-runs, and gives the floor a terminal Inspector for reading it. The same building
-block scales from one bench DUT to a rack of seventy running concurrently.
+HILT (Hardware-In-the-Loop Testing) is a test framework for Python. A test is a
+component and a rack is a tree of them, built from the same unit you test one bench
+DUT with. You write what you claim about the hardware; HILT enforces the verdict,
+records the evidence as the test runs, and gives the floor a terminal Inspector for
+reading it, so a technician can triage a failure at 2am without calling you.
 
 > *The act of executing the test is the act of producing irrefutable evidence*
 

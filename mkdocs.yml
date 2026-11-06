@@ -1,6 +1,6 @@
 site_name: HILT
 site_url: https://gitlab.com/Tyler-Meador/HILT/-/tree/main/docs/
-site_description: React-for-hardware HIL testing framework
+site_description: "Python HIL testing with a pit of success: composable test components, guardrails that make a bad test hard to write, and an engine that won't let an unhandled failure pass silently."
 repo_url: https://gitlab.com/Tyler-Meador/HILT
 edit_uri: -/blob/main/docs/
 copyright: Copyright 2026 Tyler Meador
