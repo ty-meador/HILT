@@ -10,9 +10,13 @@ leave a fresh Unreleased section above it. Use the
 
 ## Unreleased
 
-The initial Python migration is unreleased. The six foundation phases below summarize
-merged behavior using today's API names, with links to the MRs that established it;
-they are not six published versions. Subsequent entries include the hardening and
+Nothing yet.
+
+## [1.0.0] - 2026-11-06
+
+The initial Python release. The six foundation phases below summarize merged behavior
+using today's API names, with links to the MRs that established it; they are not six
+published versions. Subsequent entries include the hardening and
 refinement merged through [!108](https://gitlab.com/Tyler-Meador/HILT/-/merge_requests/108)
 on 2026-09-06. The TypeScript repositories remain behavioral references, not a promise
 of feature parity: the Python Inspector is still separate work.
