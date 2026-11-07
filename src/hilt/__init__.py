@@ -1,6 +1,6 @@
 """hilt — Python HIL testing with a pit of success.
 
-Composable test components, guardrails that make a bad test hard to write, and an
+Composable tests, guardrails that make a bad test hard to write, and an
 engine that won't let an unhandled failure pass silently.
 
 `__all__` below is the public surface, and `docs/api-stability.md` is the policy that

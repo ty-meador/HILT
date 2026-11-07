@@ -1,7 +1,7 @@
 ![HILT hero image](hero.png)
 # HILT
 
-**Python HIL testing with a pit of success: composable test components, guardrails
+**Python HIL testing with a pit of success: composable tests, guardrails
 that make a bad test hard to write, and an engine that won't let an unhandled
 failure pass silently.**
 

@@ -1,7 +1,7 @@
 # HILT
 
 HILT (Hardware-In-the-Loop Testing) is Python HIL testing with a pit of success:
-composable test components, guardrails that make a bad test hard to write, and an
+composable tests, guardrails that make a bad test hard to write, and an
 engine that won't let an unhandled failure pass silently. A Floor Technician
 categorizes a failure and
 starts the right recovery protocol without reading suite source; a developer
