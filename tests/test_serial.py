@@ -639,6 +639,6 @@ class TestMissingExtra:
 
         monkeypatch.setattr(builtins, "__import__", fake_import)
         transport = SerialInterface(device="/dev/ttyUSB0")
-        with pytest.raises(ModuleNotFoundError, match="hilt\\[serial\\]"):
+        with pytest.raises(ModuleNotFoundError, match="hilt-core\\[serial\\]"):
             await transport.connect()
         assert transport.connected is False

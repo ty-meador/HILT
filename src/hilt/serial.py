@@ -8,7 +8,7 @@ Self-tests and the transport-contract suite import the module directly.
 Two placements, one contract: a local device node via `pyserial-asyncio`, or
 the same byte stream through an SSH hop — owned (`via`) when the console
 brings the hop up itself, borrowed (`tunnel`) when the exec router already did.
-`pyserial-asyncio` is an optional extra (`hilt[serial]`); importing this
+`pyserial-asyncio` is an optional extra (`hilt-core[serial]`); importing this
 module does not import it, and `import hilt` never imports this module. Via
 placement talks SSH only.
 """
@@ -54,7 +54,7 @@ _SETTLE_QUIET_SECONDS: Final[float] = 0.2
 _SETTLE_LIMIT_SECONDS: Final[float] = 2.0
 _MISSING_SERIAL_EXTRA: Final[str] = (
     "SerialInterface local placement requires the 'serial' extra; "
-    "install it with: pip install 'hilt[serial]'"
+    "install it with: pip install 'hilt-core[serial]'"
 )
 
 # CSI, OSC, and 2-byte ESC sequences. Applied to the accumulated decoded

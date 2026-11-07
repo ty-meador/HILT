@@ -1,6 +1,6 @@
 """hilt — Python HIL testing with a pit of success.
 
-Composable test components, guardrails that make a bad test hard to write, and an
+Composable tests, guardrails that make a bad test hard to write, and an
 engine that won't let an unhandled failure pass silently.
 
 `__all__` below is the public surface, and `docs/api-stability.md` is the policy that
@@ -64,7 +64,7 @@ from hilt.utils import RunEnv, RunSignal, ScopedLogger, TestUtils
 from hilt.verdict import PASS, Verdict
 
 try:
-    __version__ = _distribution_version("hilt")
+    __version__ = _distribution_version("hilt-core")
 except PackageNotFoundError:  # pragma: no cover - a source checkout that was never installed
     __version__ = "0.0.0+unknown"
 

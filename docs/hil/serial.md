@@ -288,7 +288,7 @@ for `use_shell`. The route is shared by the node and its descendants, so
 ## Packaging
 
 `pyserial-asyncio` is checked for Apache-2.0 compatibility at implementation time and
-lands as an optional extra: `pip install hilt[serial]`. Core `hilt` gains no
+lands as an optional extra: `pip install hilt-core[serial]`. Core `hilt` gains no
 new dependency and `import hilt` never imports `hilt.serial`: the default
 connector imports it on the first `use_serial` / `get_serial`, and a local open
 without the extra raises `ModuleNotFoundError` naming the install. `SerialInterface`

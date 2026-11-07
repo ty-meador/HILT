@@ -471,7 +471,7 @@ class TestResponseParsing:
         response = DeviceResponse(200, b'{"ready": true}')
 
         assert response.json() == {"ready": True}
-        with pytest.raises(ImportError, match=r"hilt\[yaml\]"):
+        with pytest.raises(ImportError, match=r"hilt-core\[yaml\]"):
             response.parse(response_type="yaml")
 
     def test_unknown_response_type_is_refused(self) -> None:
