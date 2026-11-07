@@ -64,7 +64,7 @@ from hilt.utils import RunEnv, RunSignal, ScopedLogger, TestUtils
 from hilt.verdict import PASS, Verdict
 
 try:
-    __version__ = _distribution_version("hilt")
+    __version__ = _distribution_version("pyhilt")
 except PackageNotFoundError:  # pragma: no cover - a source checkout that was never installed
     __version__ = "0.0.0+unknown"
 

@@ -30,7 +30,7 @@ class TestArtifactReader:
     def test_installed_schema_is_the_published_contract(self, name: str) -> None:
         relative = f"{name}-v1.schema.json"
         published = Path(__file__).resolve().parents[1] / "docs/schema" / relative
-        installed = distribution("hilt").locate_file(f"hilt_data/{relative}")
+        installed = distribution("pyhilt").locate_file(f"hilt_data/{relative}")
         assert installed.read_bytes() == published.read_bytes()
 
     @pytest.mark.parametrize("data", [None, {}, [], "", False, 0, "π"])
