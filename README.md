@@ -185,9 +185,10 @@ is the URL that belongs on a station label.
 
 ## Status
 
-HILT is at 0.0.x and the API is still moving. Semantic versioning starts at 1.0.0;
-until then [API stability](docs/api-stability.md) describes what may change and
-`CHANGELOG.md` records every change. Issues and merge requests are welcome.
+HILT is at 1.0.0 and the public API is a promise: suites written for 1.0 keep running
+on every 1.x. [API stability](docs/api-stability.md) states what the promise covers
+and how much warning a change carries, and `CHANGELOG.md` records every change.
+Issues and merge requests are welcome.
 
 ## License
 

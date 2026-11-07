@@ -10,7 +10,10 @@ leave a fresh Unreleased section above it. Use the
 
 ## Unreleased
 
-Nothing yet.
+### Fixed
+
+- README Status section said HILT was at 0.0.x with the API still moving; it now
+  states the 1.0.0 promise and points at `docs/api-stability.md` for what 1.x guarantees.
 
 ## [1.0.0] - 2026-11-06
 
