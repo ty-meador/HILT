@@ -356,7 +356,7 @@ The request never mutates the caller's headers or retains its JSON object.
 
 `DeviceResponse.json()` decodes the returned bytes. `parse(response_type="json")`
 is the format-selecting form; `response_type="yaml"` uses `yaml.safe_load` from the
-optional `hilt[yaml]` extra. Unknown formats raise `ValueError`, a missing YAML
+optional `hilt-core[yaml]` extra. Unknown formats raise `ValueError`, a missing YAML
 dependency raises `ImportError`, and parser errors propagate without a fallback.
 Parsing is explicit, independent of response status and headers; it preserves `body`
 and `status`, makes no request, and supplies no verdict. A malformed body remains a

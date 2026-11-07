@@ -96,7 +96,7 @@ request.
   in for a missing response.
   Issue #155 adds `json()` and `parse(response_type="json")` to decode those
   bytes explicitly; `parse(response_type="yaml")` uses `yaml.safe_load` and
-  requires the optional `hilt[yaml]` extra. Parser errors propagate unchanged,
+  requires the optional `hilt-core[yaml]` extra. Parser errors propagate unchanged,
   unsupported formats raise `ValueError`, and a missing YAML extra raises
   `ImportError`. Neither method changes status or bytes or interprets a status
   as a verdict. A malformed body remains a completed transfer.

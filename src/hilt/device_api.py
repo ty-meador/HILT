@@ -244,7 +244,7 @@ class DeviceResponse:
     def parse(self, response_type: Literal["json", "yaml"] = "json") -> Any:
         """Decode the body in the explicitly selected format; default is JSON.
 
-        YAML uses ``yaml.safe_load`` and requires the ``hilt[yaml]`` extra.
+        YAML uses ``yaml.safe_load`` and requires the ``hilt-core[yaml]`` extra.
         Parser errors propagate unchanged; an unknown ``response_type`` raises
         ``ValueError``. Parsing never sends a request or changes the response.
         """
@@ -254,7 +254,7 @@ class DeviceResponse:
             try:
                 import yaml
             except ImportError as error:
-                raise ImportError("YAML responses require the hilt[yaml] extra") from error
+                raise ImportError("YAML responses require the hilt-core[yaml] extra") from error
             return yaml.safe_load(self.body)
         raise ValueError("response_type must be 'json' or 'yaml'")
 
