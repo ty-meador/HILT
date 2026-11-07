@@ -14,7 +14,7 @@ Nothing yet.
 
 ## [1.0.0] - 2026-11-06
 
-The initial Python release. The distribution on PyPI is `pyhilt` (`pip install pyhilt`);
+The initial Python release. The distribution on PyPI is `hilt-core` (`pip install hilt-core`);
 the import package, console scripts, and rule codes stay `hilt`. PyPI refuses the bare
 name `hilt` as confusable with an existing project (issue #9). The six foundation phases
 below summarize merged behavior using today's API names, with links to the MRs that

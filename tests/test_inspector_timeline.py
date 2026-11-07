@@ -31,7 +31,7 @@ def _line(record: JsonObject) -> bytes:
 class TestTimelineReader:
     def test_installed_schema_is_the_published_contract(self) -> None:
         published = Path(__file__).resolve().parents[1] / "docs/schema/timeline-v1.schema.json"
-        installed = distribution("pyhilt").locate_file("hilt_data/timeline-v1.schema.json")
+        installed = distribution("hilt-core").locate_file("hilt_data/timeline-v1.schema.json")
         assert installed.read_bytes() == published.read_bytes()
 
     async def test_keeps_order_scope_pointer_and_additive_fields(self, tmp_path: Path) -> None:

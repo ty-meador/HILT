@@ -100,7 +100,7 @@ The same registry the CLI runs is a `python-lsp-server` plugin. Install the extr
 the core package stays dependency-light:
 
 ```sh
-uv pip install 'pyhilt[pylsp]'
+uv pip install 'hilt-core[pylsp]'
 # or, from a checkout: uv sync --extra pylsp
 ```
 

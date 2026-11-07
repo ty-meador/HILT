@@ -31,7 +31,7 @@ class RecordSchema:
 def _validator(kind: Literal["artifact", "result", "timeline"]) -> Draft202012Validator:
     # Cache by record kind, never by reader identity: cursor changes must not retain
     # a growing collection of reader instances merely to reuse three fixed schemas.
-    path = distribution("pyhilt").locate_file(f"hilt_data/{kind}-v1.schema.json")
+    path = distribution("hilt-core").locate_file(f"hilt_data/{kind}-v1.schema.json")
     schema = json.loads(path.read_text(encoding="utf-8"))
     Draft202012Validator.check_schema(schema)
     return Draft202012Validator(schema)

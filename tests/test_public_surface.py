@@ -132,7 +132,7 @@ class TestDunderAll:
         assert undocumented == []
 
     def test_version_is_the_installed_distribution(self) -> None:
-        assert hilt.__version__ == importlib.metadata.version("pyhilt")
+        assert hilt.__version__ == importlib.metadata.version("hilt-core")
         assert _SEMVER.match(hilt.__version__), hilt.__version__
 
 
