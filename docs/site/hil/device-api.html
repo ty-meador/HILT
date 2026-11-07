@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        
+        
+        <link rel="canonical" href="https://gitlab.com/Tyler-Meador/HILT/-/tree/main/docs/hil/device-api.html">
+        <link rel="shortcut icon" href="../img/favicon.ico">
+        <title>Device API (design note) - HILT</title>
+        <link href="../css/bootstrap.min.css" rel="stylesheet">
+        <link href="../css/fontawesome.min.css" rel="stylesheet">
+        <link href="../css/brands.min.css" rel="stylesheet">
+        <link href="../css/solid.min.css" rel="stylesheet">
+        <link href="../css/v4-font-face.min.css" rel="stylesheet">
+        <link href="../css/base.css" rel="stylesheet">
+        <link id="hljs-light" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" >
+        <link id="hljs-dark" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github-dark.min.css" disabled>
+        <link href="../assets/_mkdocstrings.css" rel="stylesheet">
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+        <script>hljs.highlightAll();</script> 
+    </head>
+
+    <body>
+        <div class="navbar fixed-top navbar-expand-lg navbar-dark bg-primary">
+            <div class="container">
+                <a class="navbar-brand" href="../index.html">HILT</a>
+                <!-- Expander button -->
+                <button type="button" class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#navbar-collapse" aria-controls="navbar-collapse" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <!-- Expanded navigation -->
+                <div id="navbar-collapse" class="navbar-collapse collapse">
+                        <!-- Main navigation -->
+                        <ul class="nav navbar-nav">
+                            <li class="nav-item">
+                                <a href="../index.html" class="nav-link">Home</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="../getting-started.html" class="nav-link">Getting started</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="../floor-technician.html" class="nav-link">Floor Technician</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="../overview.html" class="nav-link">Overview</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="../idioms.html" class="nav-link">Idioms</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="../utilities.html" class="nav-link">Utilities</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="../contracts.html" class="nav-link">Contracts</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="../inspector-json.html" class="nav-link">Inspector JSON</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="../inspector.html" class="nav-link">Inspector (target specification)</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="../measurements.html" class="nav-link">Measurements</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="../junit-xml.html" class="nav-link">JUnit XML</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="../hilt-run.html" class="nav-link">hilt run</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="../hilt-new.html" class="nav-link">hilt new</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="../hilt-check.html" class="nav-link">hilt-check</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="../api-stability.html" class="nav-link">API stability</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="../api.html" class="nav-link">API reference</a>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle active" aria-current="page" role="button" data-bs-toggle="dropdown"  aria-expanded="false">HIL interfaces</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="index.html" class="dropdown-item">Overview</a>
+</li>
+                                    
+<li>
+    <a href="gpio.html" class="dropdown-item">GPIO (design note)</a>
+</li>
+                                    
+<li>
+    <a href="pwm.html" class="dropdown-item">PWM (design note)</a>
+</li>
+                                    
+<li>
+    <a href="can.html" class="dropdown-item">CAN bus (design note)</a>
+</li>
+                                    
+<li>
+    <a href="i2c-spi.html" class="dropdown-item">I2C/SPI (design note)</a>
+</li>
+                                    
+<li>
+    <a href="device-api.html" class="dropdown-item active" aria-current="page">Device API (design note)</a>
+</li>
+                                    
+<li>
+    <a href="serial.html" class="dropdown-item">Serial/UART (design note)</a>
+</li>
+                                </ul>
+                            </li>
+                        </ul>
+
+                    <ul class="nav navbar-nav ms-md-auto">
+                        <li class="nav-item">
+                            <a href="#" class="nav-link" data-bs-toggle="modal" data-bs-target="#mkdocs_search_modal">
+                                <i class="fa fa-search"></i> Search
+                            </a>
+                        </li>
+                            <li class="nav-item">
+                                <a rel="prev" href="i2c-spi.html" class="nav-link">
+                                    <i class="fa fa-arrow-left"></i> Previous
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a rel="next" href="serial.html" class="nav-link">
+                                    Next <i class="fa fa-arrow-right"></i>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="https://gitlab.com/Tyler-Meador/HILT/-/blob/main/docs/hil/device-api.md" class="nav-link"><i class="fa-brands fa-gitlab"></i> Edit on GitLab</a>
+                            </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="container">
+            <div class="row">
+                    <div class="col-md-3"><div class="navbar-expand-md bs-sidebar hidden-print affix" role="complementary">
+    <div class="navbar-header">
+        <button type="button" class="navbar-toggler collapsed" data-bs-toggle="collapse" data-bs-target="#toc-collapse" title="Table of Contents">
+            <span class="fa fa-angle-down"></span>
+        </button>
+    </div>
+
+    
+    <div id="toc-collapse" class="navbar-collapse collapse card bg-body-tertiary">
+        <ul class="nav flex-column">
+            
+            <li class="nav-item" data-bs-level="1"><a href="#design-note-device-api-coaphttp-interface-contract" class="nav-link">Design note: Device API (CoAP/HTTP) interface contract</a>
+              <ul class="nav flex-column">
+            <li class="nav-item" data-bs-level="2"><a href="#why-not-an-exec-subclass" class="nav-link">Why not an exec subclass</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#the-device-request-contract" class="nav-link">The Device Request Contract</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#the-retry-as-evidence-contract" class="nav-link">The Retry-as-Evidence Contract</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#the-closed-session-and-timing-contract" class="nav-link">The Closed-Session and Timing Contract</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#redirects-credentials-and-the-legacy-action-helper" class="nav-link">Redirects, credentials, and the legacy action helper</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#lifecycle-and-hook-ownership-unchanged" class="nav-link">Lifecycle and hook ownership: unchanged</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#failure-vocabulary" class="nav-link">Failure vocabulary</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#mock-and-real-backends-one-contract-two-implementations" class="nav-link">Mock and real backends: one contract, two implementations</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#evidence" class="nav-link">Evidence</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#what-the-floor-technician-sees" class="nav-link">What the Floor Technician sees</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#signed-decisions-recorded-on-97" class="nav-link">Signed decisions recorded on #97</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+              </ul>
+            </li>
+        </ul>
+    </div>
+</div></div>
+                    <div class="col-md-9" role="main">
+
+<h1 id="design-note-device-api-coaphttp-interface-contract">Design note: Device API (CoAP/HTTP) interface contract<a class="headerlink" href="#design-note-device-api-coaphttp-interface-contract" title="Permanent link">&para;</a></h1>
+<p>Status: SIGNED — Ty approved this note in !130 on 2026-09-09; recorded on #97</p>
+<p>A CoAP or HTTP resource is not a command string. This note states the
+request and response shape, retry-as-evidence, timing, error taxonomy, and
+closed-session obligations that make a device API fit HILT's existing
+lifecycle. The <a href="index.html#the-three-rulings">three HIL rulings</a> govern it.
+<a href="https://gitlab.com/Tyler-Meador/HILT/-/merge_requests/130#note_3812484557">Ty's approval of the actual note</a>
+signs the obligations below. Implementation requires its own approved issue
+and Zavala's review under <a href="../api-stability.html">API stability</a>.</p>
+<p>This is the interface most likely to be waved through as "just <code>exec</code> with a
+URL." It is not. An HTTP call needs its own contract, error taxonomy, and
+safe-state, same as a pin or a bus.</p>
+<p>All names below (<code>DeviceApiInterface</code>, <code>HttpInterface</code>, <code>CoapInterface</code>,
+<code>DeviceRequest</code>, <code>DeviceResponse</code>, <code>DeviceApiOperationFailure</code>,
+<code>MockDeviceApi</code>, and the method names) are provisional. This note adds no
+public Python name and changes no stored record. The legacy
+<code>CoapInterface</code> is a design reference only — see below. The migration
+context is the preserved lifecycle and evidence contracts, with a new
+hardware contract for Ty to judge.</p>
+<h2 id="why-not-an-exec-subclass">Why not an <code>exec</code> subclass<a class="headerlink" href="#why-not-an-exec-subclass" title="Permanent link">&para;</a></h2>
+<p><code>exec</code> is a command contract: a string goes in, an <code>ExecResult</code> comes out,
+and a non-zero exit is data for the test method to judge. A device-API
+call is a typed resource operation: method, path, payload bytes, status,
+headers or CoAP options, and a body. None of that is a shell command.</p>
+<p>Forcing it through <code>exec</code> would mean either shelling out to <code>curl</code> /
+<code>wget</code> / the <code>coap</code> CLI (lossy, racy, and blind to in-flight cancellation)
+or smuggling an HTTP client inside a <code>RemoteInterface</code> subclass that
+answers <code>_exec</code> with a fake dialect — exactly the
+parallel-lifecycle-in-disguise <a href="index.html#the-three-rulings">ruling 1</a>
+forbids. A URL that has been stringified into <code>curl -X POST ...</code> has
+already lost the status as a first-class value, the header set, whether
+the body was truncated, and whether the client retried. <code>DeviceApiInterface</code>
+is its own ABC, structurally parallel to <code>RemoteInterface</code>
+(<code>src/hilt/remote.py</code>) and to the signed <a href="gpio.html"><code>GpioInterface</code></a> /
+<a href="pwm.html"><code>PwmInterface</code></a>: it owns <code>connect</code> / <code>disconnect</code> /
+<code>cancel_in_flight</code> in the same shape, and adds request-shaped operations
+in place of <code>exec</code>.</p>
+<p>The legacy TypeScript <code>CoapInterface</code> wrapped the <code>coap</code> CLI through
+<code>utils.exec</code> because the UDP-only <code>node-coap</code> package could not speak
+<code>coaps+tcp://</code> (RFC 8323). That was a toolchain constraint, not a
+contract. This port does not carry the CLI wrapper forward. A backend
+that can only shell out to <code>curl</code> or <code>coap</code> is a finding for Ty, not the
+shape of the interface.</p>
+<h2 id="the-device-request-contract">The Device Request Contract<a class="headerlink" href="#the-device-request-contract" title="Permanent link">&para;</a></h2>
+<p><strong>Framework obligation:</strong> Present CoAP and HTTP as one resource-request
+contract under HIL ruling 1. <code>DeviceApiInterface</code> is not an <code>exec</code>
+subclass and does not change where <code>utils.exec</code> routes. A handle is bound
+to one scheme, one base URL, and a declared timing envelope before it can
+request.</p>
+<ul>
+<li>HTTP and CoAP share the request/response shape (method, path, payload,
+  status, body). They are not one handle type. An <code>HttpInterface</code> cannot
+  speak CoAP; a <code>CoapInterface</code> cannot follow HTTP redirects. Scheme is
+  identity, fixed for the handle's lifetime: <code>http</code> / <code>https</code> for HTTP,
+  <code>coap</code> / <code>coaps</code> / <code>coaps+tcp</code> for CoAP. Flipping the scheme live is the
+  Device API instance of flipping a GPIO pin's direction.</li>
+<li>A provisional <code>DeviceRequest</code> carries <code>method</code> (GET, PUT, POST, DELETE;
+  CoAP may add the methods its backend declares), <code>path</code> (appended to the
+  declared base URL, never a second origin), <code>payload</code> (<code>bytes</code> or absent),
+  protocol options (HTTP headers, CoAP options), and <code>evidence_headers</code>
+  (the set of <em>request</em> header or option names whose <em>values</em> may appear
+  in the attempt log; default empty). For HTTP the name is the field
+  name, matched case-insensitively. For CoAP the name is the registered
+  option name (<code>Uri-Path</code>, <code>Content-Format</code>); an option number is not a
+  name and is refused at the call site. PATCH is not in that method set;
+  whether the first backend declares it as a non-idempotent sibling of
+  POST is a decision for Ty below, not a silent widening. Reject a
+  non-<code>bytes</code> payload, a path that is an absolute URL, a method the
+  backend did not declare, and a header or option name that is not a
+  string, at the call site, before the adapter is touched. Booleans are
+  not integers; a <code>dict</code> passed as <code>payload</code> is not a JSON body. The approved
+  convenience on #155 adds keyword-only <code>json=value</code>: serialize once to UTF-8
+  bytes and default the HTTP <code>Content-Type</code> to <code>application/json</code>, preserving an
+  explicitly supplied content type case-insensitively. Omission sends no JSON;
+  <code>json=None</code> sends null. Combining it with a non-<code>None</code> <code>payload</code> (including
+  empty bytes) is refused, as are unserializable values and non-finite numbers.
+  The wire payload remains bytes, and logs still record lengths, never body contents.</li>
+<li>A provisional <code>DeviceResponse</code> carries <code>status</code> (an HTTP status integer,
+  or a CoAP code as the dotted string <code>2.05</code> — see <code>CoapCode</code>), protocol
+  options (headers / CoAP options), and <code>body</code> (<code>bytes</code>). The wire integer
+  (<code>class &lt;&lt; 5 | detail</code>, so Content is <code>69</code>) stays inside the transport.
+  Issue #156.
+  JSON parsing is a convenience on top of those bytes, not the contract:
+  a body that is not JSON is still a successful transfer of bytes. The
+  interface does not invent an empty body, a 200, or a CoAP 2.05 to stand
+  in for a missing response.
+  Issue #155 adds <code>json()</code> and <code>parse(response_type="json")</code> to decode those
+  bytes explicitly; <code>parse(response_type="yaml")</code> uses <code>yaml.safe_load</code> and
+  requires the optional <code>hilt-core[yaml]</code> extra. Parser errors propagate unchanged,
+  unsupported formats raise <code>ValueError</code>, and a missing YAML extra raises
+  <code>ImportError</code>. Neither method changes status or bytes or interprets a status
+  as a verdict. A malformed body remains a completed transfer.</li>
+<li><strong>Status is data.</strong> HTTP 4xx / 5xx and CoAP 4.xx / 5.xx are fields on
+  the response, the way a non-zero <code>exit_code</code> is a field on <code>ExecResult</code>.
+  The interface does not raise <code>TestFailure</code> because a resource returned
+  404, and it does not raise because a resource returned 500. The test
+  method judges the status. Transport failure, protocol violation, and
+  timeout are the operational exceptions; a well-formed error response is
+  not one of them.</li>
+<li><code>request(req) -&gt; DeviceResponse</code> performs one application-level attempt
+  (see retries below). One handle carries one request at a time, in call
+  order. A <code>request</code> that arrives while another is on the wire waits its
+  turn; it does not collide, and it does not fail. A handle shared by the
+  leaves of a <code>parallel</code> therefore serialises them: the claims stay
+  independent, their requests do not, and a latency measured around
+  <code>request</code> on that handle includes the wait for siblings. A leaf that
+  must measure the DUT alone takes its own handle. The wait is bounded by
+  the node clock, not by the request ceiling, because a sibling ahead in
+  the queue is not the DUT being slow. Framework termination takes
+  precedence over the queue: a handle cancelled or closed while a request
+  waited its turn never sends it (see the closed-session contract below).
+  The only refusal left is re-entrancy — a backend's <code>_exchange</code> calling
+  <code>request</code> on the handle it is already mid-attempt on — and that is a
+  <code>ValueError</code> at the call site, a developer bug, not a queue.</li>
+<li>Each operation records the requested method, path, payload length,
+  request-header <em>names</em>, whether the adapter confirmed a response, the
+  status if one arrived, and the body length. Request-header <em>values</em>
+  stay out of that record unless the author listed the name in
+  <code>evidence_headers</code>. Response protocol options — HTTP response headers,
+  CoAP response options — are not in that list. Their values are never
+  recorded by the framework; carrying one into evidence is the author's
+  act, the same as a body. <code>evidence_headers</code> does not govern them. An
+  unconfirmed request never becomes the last-successful response in a
+  cache the next test method reads as truth. Unknown is explicit.</li>
+</ul>
+<p><strong>Developer obligation:</strong> Declare the scheme, base URL, and protocol
+parameters in <code>configure()</code>. Obtain the framework-managed handle through
+a provisional <code>utils.get_http(...)</code> or <code>utils.get_coap(...)</code>; return the
+handle and static inputs through configure's ctx. Keep <code>self</code> immutable,
+<code>build_suite()</code> pure, and later ctx reads read-only. Judge the DUT with
+the status and body actually returned (or with an independent
+observation), never by treating a 2xx as a passing device.</p>
+<p><strong>Consequence:</strong> The Floor Technician can tell which resource was
+addressed, what was sent, what status came back, and whether the transfer
+completed. A 404 cannot quietly become a missing payload in a record that
+claims the call succeeded, and a 200 cannot quietly become a verdict.</p>
+<h2 id="the-retry-as-evidence-contract">The Retry-as-Evidence Contract<a class="headerlink" href="#the-retry-as-evidence-contract" title="Permanent link">&para;</a></h2>
+<p><strong>Framework obligation:</strong> A retry is stimulus the DUT saw. Hiding it lies
+to the Floor Technician.</p>
+<ul>
+<li>Application-level retries default to <strong>zero</strong>. A handle that retries
+  without a declaration is refused at the call site. Each declared
+  attempt — including the first — is logged through the scoped logger
+  with attempt index, outcome (response status, operational failure, or
+  cancelled), and delay before the next attempt when one is scheduled.</li>
+<li>The retry budget is a count of application-level attempts, not a
+  duration. Delay between attempts is positive finite seconds, declared
+  with the count. Booleans and non-finite values are refused. The node's
+  <code>fail_after</code> / <code>abort_after</code> still bounds the whole sequence; a retry
+  loop cannot extend the node clock.</li>
+<li>Non-idempotent methods (POST, and any other method the backend declares
+  non-idempotent) refuse application retry unless the author sets an
+  explicit <code>retry_non_idempotent=True</code> on that call. GET / PUT / DELETE
+  may retry when a count is declared. The interface does not guess
+  idempotency from the path.</li>
+<li>Protocol-level reliability is not an application retry. HTTP/TCP
+  retransmits and CoAP CON retransmits belong to the backend's declared
+  request ceiling. CON retransmits that actually go on the wire are
+  counted in the attempt's evidence (the DUT saw them) but they do not
+  consume the application retry budget. A backend whose CON loop cannot
+  be bounded by the request ceiling, or cannot be cut by
+  <code>cancel_in_flight</code>, is a finding for Ty.</li>
+<li><code>cancel_in_flight</code> stops the in-flight attempt <em>and</em> the retry loop.
+  A cancelled retry does not start the next attempt. The record names how
+  many attempts ran and that the remainder were not started.</li>
+<li>One logical request holds the handle's turn from its first attempt to
+  its last. A retry never interleaves with a sibling's request, so the
+  attempt log for one request reads as one request.</li>
+</ul>
+<p><strong>Developer obligation:</strong> Leave retries at zero unless this bench has a
+named reason to repeat a request. When retries are declared, treat the
+attempt log as part of the evidence that will be read after a Fail —
+especially for POST. Do not wrap <code>request()</code> in a suite-owned retry loop
+to dodge the declaration; that is the same lie with worse artifacts.</p>
+<p><strong>Consequence:</strong> The timeline shows every request the DUT actually
+received from this handle. A pass that depended on the third try cannot
+be reconstructed as a single clean GET.</p>
+<h2 id="the-closed-session-and-timing-contract">The Closed-Session and Timing Contract<a class="headerlink" href="#the-closed-session-and-timing-contract" title="Permanent link">&para;</a></h2>
+<p><strong>Framework obligation:</strong> The safe state is a <strong>closed session</strong> — no
+further requests originating from this handle — enforced at the resource
+by the existing termination sweep. This specializes the signed GPIO
+<a href="gpio.html#the-gpio-interface-contract">ownership and cut rules</a> and the
+signed PWM
+<a href="pwm.html#the-pwm-safe-state-contract">disabled-output termination</a>. It
+introduces no Device API halt signal, event loop, lifecycle runner, or
+integration hook, and it does not invent a shutdown request.</p>
+<ul>
+<li>Register ownership as soon as acquisition can put a request on the
+  wire, so partial <code>configure()</code> failure cannot orphan a session.
+  Bring-up establishes and confirms the session (TLS handshake, CoAP
+  identity) before admitting the first <code>request</code>.</li>
+<li>An integration-hook failure or operator interrupt closes every open
+  Device API handle. A node deadline closes only resources opened by the
+  bounded subtree, under both <code>fail_after</code> (Fail) and <code>abort_after</code>
+  (node-local Aborted). An inherited adapter or borrowed hop remains its
+  owner's resource; unrelated siblings are untouched.</li>
+<li><code>cancel_in_flight()</code> is idempotent. It aborts the in-flight request at
+  the socket (HTTP: cancel the stream and close the connection; CoAP:
+  stop CON retransmits; a RST or connection-close is the protocol cancel,
+  analogous to I2C STOP, not a resource write), attempts the closed
+  state under the backend's latency ceiling, and records whether close
+  was confirmed. A repeated call cannot start a new request or replay the
+  last one. A closed handle remains closed; there is no automatic
+  reconnect.</li>
+<li>A request waiting its turn behind the aborted one is not sent. When its
+  turn comes on a cancelled or closed handle it fails with
+  <code>DeviceApiOperationFailure</code> naming that the handle was cancelled or
+  closed while the request was queued — an operational failure the author
+  catches and models as a verdict, never a <code>ValueError</code> and never a
+  silent request on a dead session. <code>disconnect()</code> treats waiters the same
+  way.</li>
+<li>The framework does not transmit a "safe" PUT, DELETE, or CoAP action
+  on abort. A DUT that needs a specific last request gets it from
+  authored <code>cleanup()</code>, which the hard cut does not wait for. Inventing
+  a <code>/shutdown</code> write at abort would be a stimulus the suite never
+  declared, written into a record the technician might trust.</li>
+<li>Request ceiling (including protocol-level CON/TCP reliability), retry
+  delay, bring-up/close ceiling, and the node's <code>fail_after</code> /
+  <code>abort_after</code> are separate clocks. An operation timeout names that
+  operation and its ceiling. It does not manufacture the <code>timeout</code>
+  evidence reserved for the winning node clock in the
+  <a href="../contracts.html#time-budget-contract">Time Budget Contract</a>. A long
+  poll cannot extend the node clock. The request ceiling starts when the
+  request takes its turn on the handle, not when it was queued: the wait
+  behind a sibling is bounded by the node clock alone.</li>
+<li>A backend whose shared session would let one node's close starve
+  another owner's in-flight request must refuse the conflicting
+  acquisition before either owner requests. It cannot sacrifice Group
+  Isolation to offer more nodes on one socket. Serialising requests on
+  one handle is not that: the handle has one owner, the node whose
+  <code>configure()</code> opened it, and the leaves queuing on it are that owner's
+  subtree, closed together when that owner's clock expires.</li>
+</ul>
+<p><strong>Developer obligation:</strong> Select a fixture for which "this node stops
+talking" is the intended safe state. Declare shared sessions honestly.
+Keep any required shutdown request in <code>cleanup()</code>; rely on framework
+ownership for termination. Never manually sequence another node's
+configure or cleanup.</p>
+<p><strong>Consequence:</strong> Ending the test stops this node's requests and records
+what could be confirmed. A technician is never asked to infer that a
+session is idle from Pass/Fail/Aborted alone, or from a DELETE nobody
+authored.</p>
+<h2 id="redirects-credentials-and-the-legacy-action-helper">Redirects, credentials, and the legacy action helper<a class="headerlink" href="#redirects-credentials-and-the-legacy-action-helper" title="Permanent link">&para;</a></h2>
+<p><strong>Framework obligation:</strong></p>
+<ul>
+<li>HTTP redirects are a declared policy, default <strong>do not follow</strong>.
+  Same-origin follow is an opt-in on the handle. Cross-host follow is
+  refused: a 302 to a second origin is data on the response, not a
+  silent second request, and it must not carry the original credentials.
+  A backend that auto-follows across hosts is refused at bring-up.</li>
+<li>Authentication material (Bearer tokens, basic passwords, client
+  certificates, CoAP DTLS PSKs) is declared in <code>configure()</code> and never
+  reaches evidence. Provenance names the credential <em>path</em> or slot, never
+  the value — the same containment SSH already proves. URL userinfo in
+  the declared base URL is withheld the same way.</li>
+<li>Attempt logs keep every request-header <em>name</em> and withhold every
+  <em>value</em> unless the author lists that name in <code>evidence_headers</code> on
+  the <code>DeviceRequest</code>. Default is empty: the safe case costs the author
+  no thought. A secret-name allowlist cannot deliver "never" —
+  <code>X-Device-Token</code>, <code>Api-Key</code>, and the next DUT's favorite all miss it.
+  Matching is case-insensitive for HTTP field names. For CoAP, the name
+  is the registered option name; an option number is not a name and is
+  refused at the call site — a guess that silently matches nothing would
+  look like a working redaction. Opting <code>Authorization</code> in is the
+  author's leak to stop, not a framework rewrite. Response protocol
+  option values are never recorded by the framework. <code>evidence_headers</code>
+  is a request-side opt-in; it does not cover <code>Set-Cookie</code>,
+  <code>WWW-Authenticate</code>, or a CoAP response option. Carrying a response
+  option into evidence is the author's act, the same as a body.
+  Response bodies still go to evidence when the author puts them there;
+  secrets in a body are the author's leak to stop, not a framework
+  rewrite of the payload.</li>
+<li>TLS / DTLS verification is on by default. Skipping it is a lab-only
+  declaration analogous to SSH <code>skip_host_verification</code>, logged as such
+  at bring-up.</li>
+<li>The legacy <code>performAction</code> helper (PUT an action id, poll until a
+  K2-specific status set) is <strong>application protocol</strong>. It is not part of
+  this contract. Authors who need a long-running device action compose
+  <code>request()</code> with the existing <code>wait_for</code>. Porting that helper into
+  <code>DeviceApiInterface</code> would bake one vendor's action DSL into the
+  framework the way decoding a J1939 PGN would bake an application
+  protocol into CAN.</li>
+</ul>
+<p><strong>Developer obligation:</strong> Do not follow redirects in suite code to dodge
+the handle policy. Do not log tokens. Do not opt a secret request header
+into <code>evidence_headers</code> unless the Floor Technician is meant to read
+that value. Do not treat <code>evidence_headers</code> as covering response
+headers or CoAP response options; those values never enter the attempt
+log, and putting one in a verdict is the author's act. Do not ask the
+framework for a <code>perform_action</code> sugar that hides the poll.</p>
+<p><strong>Consequence:</strong> A redirect cannot launder a second origin into a record
+that still names the declared base URL. An attempt log cannot carry a
+bearer token off the bench unless the author opted that header in. A
+<code>Set-Cookie</code> or <code>WWW-Authenticate</code> cannot walk into the attempt log
+because <code>evidence_headers</code> was assumed to cover the response. A K2
+action poll is visible as the requests it actually made.</p>
+<h2 id="lifecycle-and-hook-ownership-unchanged">Lifecycle and hook ownership: unchanged<a class="headerlink" href="#lifecycle-and-hook-ownership-unchanged" title="Permanent link">&para;</a></h2>
+<p>The <a href="index.html#the-three-rulings">HIL lifecycle ruling</a> applies unchanged.
+Concretely:</p>
+<ul>
+<li>Bring-up happens the same way <code>use_shell</code> brings up SSH: <code>configure()</code>
+  obtains a handle (provisionally <code>utils.get_http(...)</code> /
+  <code>utils.get_coap(...)</code>, mirroring <code>get_shell</code> / <code>get_gpio</code> / <code>get_pwm</code>),
+  and the framework's bookkeeping tracks what this node opened versus
+  what it inherited.</li>
+<li>Teardown order is the framework's: <code>cancel_in_flight</code> fires as part of
+  the same In-Flight Termination Contract sweep that already closes
+  <code>RemoteInterface</code> transports and silences signed GPIO/PWM resources.</li>
+<li><code>use_survey</code> / <code>use_audit</code> remain the observation hooks. A periodic
+  audit that GETs a health resource and raises <code>TestFailure</code> on an
+  unexpected status or body is the existing audit contract.</li>
+<li><code>before_each</code> / <code>after_each</code> remain the integrator's narrow context and
+  still cannot touch hardware.</li>
+</ul>
+<p>Hardware that needs the client to run its own concurrent receive loop
+outside survey/audit, that cannot honor a hard <code>cancel_in_flight</code> (a
+request that keeps running on the device after the socket is cut is the
+device's problem; a client that cannot cut the socket is a finding), or
+that requires the CLI-wrapper shape the legacy <code>CoapInterface</code> used, is
+a finding for Ty — not a reason to give Device API its own lifecycle.</p>
+<h2 id="failure-vocabulary">Failure vocabulary<a class="headerlink" href="#failure-vocabulary" title="Permanent link">&para;</a></h2>
+<p>No new terminal state is introduced, and no new exception root.
+<code>DeviceApiOperationFailure</code> derives from <code>HiltError</code>, not
+<code>TestFailure</code>, for the same reason GPIO's <code>PinSettleFailure</code> and PWM's
+<code>PwmOperationFailure</code> do: failure to complete a transfer does not
+identify the DUT as the cause.</p>
+<table>
+<thead>
+<tr>
+<th>Situation</th>
+<th>Raised as</th>
+<th>Terminal state</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Invalid method, path, payload, or retry declaration; <code>request</code> re-entered from inside the handle's own in-flight request</td>
+<td><code>TypeError</code> / <code>ValueError</code> at the call site</td>
+<td><code>ContractViolation</code> (Fail, <code>bug: true</code>) naming the exception if it escapes</td>
+</tr>
+<tr>
+<td>A second <code>request</code> while one is on the wire</td>
+<td>No exception: it waits its turn, logged as queued</td>
+<td>Whatever verdict the author writes; the measured latency includes the wait</td>
+</tr>
+<tr>
+<td>Handle cancelled or closed while a request waited its turn</td>
+<td><code>DeviceApiOperationFailure</code> naming the handle, method, path, and that it was queued, never sent</td>
+<td>Fail when the author catches it and states the verdict; a <code>ContractViolation</code> Fail (<code>bug: true</code>) when it escapes</td>
+</tr>
+<tr>
+<td>HTTP 4xx / 5xx or CoAP 4.xx / 5.xx on a well-formed response</td>
+<td>No exception: status and body are the result</td>
+<td>Whatever verdict the author writes. The interface does not guess Fail</td>
+</tr>
+<tr>
+<td>Connection refused, TLS/DTLS handshake failure, protocol violation, request exceeds its ceiling, close cannot be confirmed at bring-up</td>
+<td><code>DeviceApiOperationFailure</code> (provisional <code>HiltError</code>) naming the handle, operation, method, path, and ceiling</td>
+<td>Fail when the author catches it and states the verdict; a <code>ContractViolation</code> Fail (<code>bug: true</code>) when it escapes</td>
+</tr>
+<tr>
+<td>Backend cannot reach the adapter at bring-up</td>
+<td><code>ConnectionError</code> from the interface's own <code>connect</code></td>
+<td>Absorbed the way <code>RemoteInterface</code> connect failures are absorbed today</td>
+</tr>
+<tr>
+<td>Close cannot be confirmed during the safe-state sweep</td>
+<td>No exception; the run is already ending</td>
+<td>Terminal state unchanged; timeline records the unconfirmed close, naming the handle. Never a success line</td>
+</tr>
+<tr>
+<td>Integration hook throws mid-request</td>
+<td>Framework raises <code>ExternalIntegrationFailure</code></td>
+<td>Aborted; run-level halt closes every open handle</td>
+</tr>
+<tr>
+<td>Operator SIGINT/SIGTERM mid-run</td>
+<td>Framework raises <code>OperatorInterrupt</code></td>
+<td>Aborted; same run-level sweep</td>
+</tr>
+<tr>
+<td>A node's time budget expires while it holds a handle</td>
+<td>Framework settles the node per its declared budget</td>
+<td><code>fail_after</code> → Fail, <code>abort_after</code> → node-local Aborted; either way only that subtree's handles are closed</td>
+</tr>
+<tr>
+<td>Test returns without a verdict</td>
+<td>Existing <code>MissingVerdict</code></td>
+<td>Node-local Aborted. A completed <code>request</code> cannot supply the missing verdict</td>
+</tr>
+</tbody>
+</table>
+<p>Unknown is represented explicitly. A timed-out request is not a 200 with
+an empty body. An unconfirmed close is not an idle session.</p>
+<h2 id="mock-and-real-backends-one-contract-two-implementations">Mock and real backends: one contract, two implementations<a class="headerlink" href="#mock-and-real-backends-one-contract-two-implementations" title="Permanent link">&para;</a></h2>
+<p>The pattern is the one <code>RemoteInterface</code> / <code>MockTransport</code> / <code>SshInterface</code>
+already proves, and that signed GPIO/PWM reuse: <code>DeviceApiInterface</code> is
+the ABC; <code>HttpInterface</code> and <code>CoapInterface</code> are real backends;
+<code>MockDeviceApi</code> is the test double. Self-tests exercise mock and real
+against a shared contract suite so a bug in either backend is caught by
+the same assertions.</p>
+<p>Required proofs: refuse a non-<code>bytes</code> payload and an absolute-URL path
+before the adapter is touched; concurrent requests on one handle run one
+at a time in call order, and a cancel or close mid-queue fails the
+waiters as <code>DeviceApiOperationFailure</code> without sending them; a re-entered
+<code>request</code> is refused rather than deadlocked; status-as-data
+(4xx is a response, not an exception); retries default to zero and each
+declared attempt is evidenced; non-idempotent retry refused unless opted
+in; <code>cancel_in_flight</code> stops the retry loop; redirects do not follow
+cross-host; request-header values never appear in evidence unless the
+author opted that name into <code>evidence_headers</code>; a CoAP option number is
+refused as an <code>evidence_headers</code> name; response option values never
+appear in the attempt log; partial <code>configure()</code>
+cannot orphan a session; node cuts leave a sibling's in-flight request
+untouched; repeated <code>cancel_in_flight</code> cannot replay a POST; unconfirmed
+close produces only unconfirmed evidence. <code>MockDeviceApi</code> schedules
+<code>park</code>-style holds analogous to <code>MockTransport.park</code>, so lifecycle tests
+can abort mid-request without a server. A suite author never constructs
+either backend directly: <code>utils.get_http</code> / <code>utils.get_coap</code> resolve to
+whichever backend the run was configured with.</p>
+<p>Real-backend tests must verify transfers through independent observation
+(a second client, a capturing proxy); mock statuses cannot establish
+that a DUT saw the body.</p>
+<p>Core install stays dependency-light. HTTP and CoAP clients land as
+optional extras on the implementation issue; this note does not pick the
+library.</p>
+<h2 id="evidence">Evidence<a class="headerlink" href="#evidence" title="Permanent link">&para;</a></h2>
+<p>Responses that matter to the verdict travel with it exactly as the
+Evidence Contract already requires: <code>PASS({"status": 200, "whoami": ...})</code>
+or <code>TestFailure(..., evidence={"status": 404})</code>, declared with
+<code>@evidence(...)</code> when the method promises to carry it. Commanded
+requests are stimulus, not measurements. A body field that is parametric
+in the problem domain (a temperature in a JSON object, a firmware
+version) follows whatever protocol issue #85 settled in
+<code>docs/measurements.md</code>, referenced there rather than restated here. This
+note neither fills the reserved <code>measurements</code> slot nor decodes anyone's
+application protocol.</p>
+<p>Every handle declaration — scheme, base URL, retry policy, redirect
+policy, verification posture, ceilings — is logged through <code>utils.logger</code>
+at configuration time. Requests, retries, operational failures, and
+close attempts use that scoped logger to distinguish requested,
+responded, interrupted, and unconfirmed outcomes. Attempt index and
+status belong in that log even when the body does not. Request-header
+names belong there too; their values do not, unless the author listed
+that name in <code>evidence_headers</code>. Response option values do not belong
+there at all.</p>
+<h2 id="what-the-floor-technician-sees">What the Floor Technician sees<a class="headerlink" href="#what-the-floor-technician-sees" title="Permanent link">&para;</a></h2>
+<p>When a handle is closed, the node's <code>timeline.jsonl</code> (and its
+<code>timeline.log</code> twin) carries a log entry at the scope of the node that
+owned it, naming the handle and whether close was confirmed, immediately
+before that node's terminal entry — the same temporal-backbone placement
+the In-Flight Termination Contract already gives a hard-closed SSH
+transport and that signed GPIO/PWM reuse for idle/disable. The terminal
+entry is not always Aborted: a run-level halt and an <code>abort_after</code> expiry
+both settle Aborted, a <code>fail_after</code> expiry settles Fail, and the close
+sweep is owed under every one of them.</p>
+<p><code>result.json</code>'s <code>summary_tree</code> shows whichever state applies; there is no
+Device API-specific field, because a safe-state action is evidence of
+what the framework did to protect the session, not a verdict of its own.
+A technician reading the timeline sees why the run ended and — from the
+log line — that this node stopped requesting. Where the sweep could not
+confirm close, the timeline says exactly that, naming the handle. An
+unconfirmed close never leaves a success line behind. Retry lines, when
+present, sit with the request that produced them, so a Fail that landed
+on the third attempt cannot be read as a single call.</p>
+<h2 id="signed-decisions-recorded-on-97">Signed decisions recorded on #97<a class="headerlink" href="#signed-decisions-recorded-on-97" title="Permanent link">&para;</a></h2>
+<p>Ty signed these obligations:</p>
+<ol>
+<li>One resource-request contract, two backends. HTTP and CoAP share
+   method/path/payload/status/body. They are not one handle type, and
+   they are not <code>exec</code> with a URL. Status (including 4xx/5xx) is data.</li>
+<li>Typed <code>DeviceRequest</code> / <code>DeviceResponse</code>. Payload is <code>bytes</code>. Path is
+   relative to the declared base URL. JSON parsing is convenience, not
+   the contract.</li>
+<li>Retries are evidence. Default is zero. Each attempt is logged.
+   Non-idempotent retry is refused unless opted in. Abort cancels the
+   in-flight attempt and the remainder of the loop. CoAP CON retransmits
+   are protocol-level, bounded by the request ceiling, and counted in
+   that attempt's evidence.</li>
+<li>Legacy <code>CoapInterface</code> is reference only. The CLI-through-<code>exec</code>
+   wrapper is the trap this note closes. Legacy <code>performAction</code> is
+   application protocol and stays out of the framework; authors compose
+   <code>request()</code> with <code>wait_for</code>.</li>
+<li>Abort safe-state is a closed session (socket cancel / CON stop /
+   connection-close), not a framework-invented shutdown request.
+   Authored <code>cleanup()</code> may send a last request; the hard cut does not
+   wait for it and does not replace it.</li>
+<li>Redirects default to do-not-follow; cross-host follow is refused.
+   Shared sessions refuse conflicting ownership, same Group Isolation
+   posture as signed PWM. Attempt logs keep request-header names and
+   withhold every value unless the author lists that name in
+   <code>evidence_headers</code> (default empty). A secret-name allowlist cannot
+   keep <code>X-Device-Token</code> out of an artifact. Opting <code>Authorization</code> in
+   is the author's leak. For CoAP the name is the registered option
+   name, not an option number. Response option values are never
+   recorded by the framework; carrying one into evidence is the
+   author's act, the same as a body.</li>
+<li>PATCH stays undeclared. The declared HTTP methods are GET, PUT, POST,
+   DELETE. POST refuses application retry unless opted in. PATCH is the
+   same double-stimulus, and the signature of 2026-09-09 did not choose
+   between the two branches this decision offered, so it takes the branch
+   that adds nothing to the public surface: PATCH is refused at the call
+   site as an undeclared method. Declaring it is a later note against this
+   contract, not a widening of the first backend.</li>
+</ol>
+<p>The lifecycle, verdict, and evidence contracts above are constraints on
+that decision. If a required backend cannot satisfy them, the finding
+belongs on #97 with the affected guarantee named. It does not earn an
+alternate lifecycle or an exception enforced only by a linter.</p></div>
+            </div>
+        </div>
+
+        <footer class="col-md-12">
+            <hr>
+                <p>Copyright 2026 Tyler Meador</p>
+            <p>Documentation built with <a href="https://www.mkdocs.org/">MkDocs</a>.</p>
+        </footer>
+        <script src="../js/bootstrap.bundle.min.js"></script>
+        <script>
+            var base_url = "..",
+                shortcuts = {"help": 191, "next": 78, "previous": 80, "search": 83};
+        </script>
+        <script src="../js/base.js"></script>
+        <script src="../search/main.js"></script>
+
+        <div class="modal" id="mkdocs_search_modal" tabindex="-1" role="dialog" aria-labelledby="searchModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="searchModalLabel">Search</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>From here you can search these documents. Enter your search terms below.</p>
+                <form>
+                    <div class="form-group">
+                        <input type="search" class="form-control" placeholder="Search..." id="mkdocs-search-query" title="Type search term here">
+                    </div>
+                </form>
+                <div id="mkdocs-search-results" data-no-results-text="No results found"></div>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div><div class="modal" id="mkdocs_keyboard_modal" tabindex="-1" role="dialog" aria-labelledby="keyboardModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="keyboardModalLabel">Keyboard Shortcuts</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th style="width: 20%;">Keys</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="help shortcut"><kbd>?</kbd></td>
+                    <td>Open this help</td>
+                  </tr>
+                  <tr>
+                    <td class="next shortcut"><kbd>n</kbd></td>
+                    <td>Next page</td>
+                  </tr>
+                  <tr>
+                    <td class="prev shortcut"><kbd>p</kbd></td>
+                    <td>Previous page</td>
+                  </tr>
+                  <tr>
+                    <td class="search shortcut"><kbd>s</kbd></td>
+                    <td>Search</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div>
+
+    </body>
+</html>

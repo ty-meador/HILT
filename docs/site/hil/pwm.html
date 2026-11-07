@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        
+        
+        <link rel="canonical" href="https://gitlab.com/Tyler-Meador/HILT/-/tree/main/docs/hil/pwm.html">
+        <link rel="shortcut icon" href="../img/favicon.ico">
+        <title>PWM (design note) - HILT</title>
+        <link href="../css/bootstrap.min.css" rel="stylesheet">
+        <link href="../css/fontawesome.min.css" rel="stylesheet">
+        <link href="../css/brands.min.css" rel="stylesheet">
+        <link href="../css/solid.min.css" rel="stylesheet">
+        <link href="../css/v4-font-face.min.css" rel="stylesheet">
+        <link href="../css/base.css" rel="stylesheet">
+        <link id="hljs-light" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" >
+        <link id="hljs-dark" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github-dark.min.css" disabled>
+        <link href="../assets/_mkdocstrings.css" rel="stylesheet">
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+        <script>hljs.highlightAll();</script> 
+    </head>
+
+    <body>
+        <div class="navbar fixed-top navbar-expand-lg navbar-dark bg-primary">
+            <div class="container">
+                <a class="navbar-brand" href="../index.html">HILT</a>
+                <!-- Expander button -->
+                <button type="button" class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#navbar-collapse" aria-controls="navbar-collapse" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <!-- Expanded navigation -->
+                <div id="navbar-collapse" class="navbar-collapse collapse">
+                        <!-- Main navigation -->
+                        <ul class="nav navbar-nav">
+                            <li class="nav-item">
+                                <a href="../index.html" class="nav-link">Home</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="../getting-started.html" class="nav-link">Getting started</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="../floor-technician.html" class="nav-link">Floor Technician</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="../overview.html" class="nav-link">Overview</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="../idioms.html" class="nav-link">Idioms</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="../utilities.html" class="nav-link">Utilities</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="../contracts.html" class="nav-link">Contracts</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="../inspector-json.html" class="nav-link">Inspector JSON</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="../inspector.html" class="nav-link">Inspector (target specification)</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="../measurements.html" class="nav-link">Measurements</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="../junit-xml.html" class="nav-link">JUnit XML</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="../hilt-run.html" class="nav-link">hilt run</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="../hilt-new.html" class="nav-link">hilt new</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="../hilt-check.html" class="nav-link">hilt-check</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="../api-stability.html" class="nav-link">API stability</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="../api.html" class="nav-link">API reference</a>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle active" aria-current="page" role="button" data-bs-toggle="dropdown"  aria-expanded="false">HIL interfaces</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="index.html" class="dropdown-item">Overview</a>
+</li>
+                                    
+<li>
+    <a href="gpio.html" class="dropdown-item">GPIO (design note)</a>
+</li>
+                                    
+<li>
+    <a href="pwm.html" class="dropdown-item active" aria-current="page">PWM (design note)</a>
+</li>
+                                    
+<li>
+    <a href="can.html" class="dropdown-item">CAN bus (design note)</a>
+</li>
+                                    
+<li>
+    <a href="i2c-spi.html" class="dropdown-item">I2C/SPI (design note)</a>
+</li>
+                                    
+<li>
+    <a href="device-api.html" class="dropdown-item">Device API (design note)</a>
+</li>
+                                    
+<li>
+    <a href="serial.html" class="dropdown-item">Serial/UART (design note)</a>
+</li>
+                                </ul>
+                            </li>
+                        </ul>
+
+                    <ul class="nav navbar-nav ms-md-auto">
+                        <li class="nav-item">
+                            <a href="#" class="nav-link" data-bs-toggle="modal" data-bs-target="#mkdocs_search_modal">
+                                <i class="fa fa-search"></i> Search
+                            </a>
+                        </li>
+                            <li class="nav-item">
+                                <a rel="prev" href="gpio.html" class="nav-link">
+                                    <i class="fa fa-arrow-left"></i> Previous
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a rel="next" href="can.html" class="nav-link">
+                                    Next <i class="fa fa-arrow-right"></i>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="https://gitlab.com/Tyler-Meador/HILT/-/blob/main/docs/hil/pwm.md" class="nav-link"><i class="fa-brands fa-gitlab"></i> Edit on GitLab</a>
+                            </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="container">
+            <div class="row">
+                    <div class="col-md-3"><div class="navbar-expand-md bs-sidebar hidden-print affix" role="complementary">
+    <div class="navbar-header">
+        <button type="button" class="navbar-toggler collapsed" data-bs-toggle="collapse" data-bs-target="#toc-collapse" title="Table of Contents">
+            <span class="fa fa-angle-down"></span>
+        </button>
+    </div>
+
+    
+    <div id="toc-collapse" class="navbar-collapse collapse card bg-body-tertiary">
+        <ul class="nav flex-column">
+            
+            <li class="nav-item" data-bs-level="1"><a href="#design-note-pwm-interface-contract" class="nav-link">Design note: PWM interface contract</a>
+              <ul class="nav flex-column">
+            <li class="nav-item" data-bs-level="2"><a href="#the-pwm-transfer-contract" class="nav-link">The PWM Transfer Contract</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#the-pwm-ramp-and-timing-contract" class="nav-link">The PWM Ramp and Timing Contract</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#the-pwm-safe-state-contract" class="nav-link">The PWM Safe-State Contract</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#lifecycle-hooks-and-failure-vocabulary" class="nav-link">Lifecycle, hooks, and failure vocabulary</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#evidence-and-backend-acceptance" class="nav-link">Evidence and backend acceptance</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+              </ul>
+            </li>
+            
+            <li class="nav-item" data-bs-level="1"><a href="#86-this-note-neither-fills-the-reserved-measurements-slot-nor-redefines" class="nav-link">86; this note neither fills the reserved measurements slot nor redefines</a>
+              <ul class="nav flex-column">
+            <li class="nav-item" data-bs-level="2"><a href="#signed-decisions-recorded-on-94" class="nav-link">Signed decisions recorded on #94</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+              </ul>
+            </li>
+            
+            <li class="nav-item" data-bs-level="1"><a href="#94-with-the-affected-guarantee-named-it-does-not-earn-an-alternate-lifecycle" class="nav-link">94 with the affected guarantee named. It does not earn an alternate lifecycle</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+        </ul>
+    </div>
+</div></div>
+                    <div class="col-md-9" role="main">
+
+<h1 id="design-note-pwm-interface-contract">Design note: PWM interface contract<a class="headerlink" href="#design-note-pwm-interface-contract" title="Permanent link">&para;</a></h1>
+<p>Status: SIGNED — Ty approved this note in !125 on 2026-09-08; recorded on #94</p>
+<p>PWM controls a repeating output through its frequency and duty cycle. This note
+states the transfer, ramp, timing, and disabled-output obligations that make
+that control fit HILT's existing lifecycle. The <a href="index.html#the-three-rulings">three HIL rulings</a>
+govern it. <a href="https://gitlab.com/Tyler-Meador/HILT/-/merge_requests/125#note_3800005090">Ty's approval of the actual note</a>
+signs the obligations below. Implementation requires its own approved issue
+and Zavala's review under <a href="../api-stability.html">API stability</a>.</p>
+<p>All names below (<code>PwmInterface</code>, <code>PwmChannel</code>, <code>PwmOperationFailure</code>,
+<code>MockPwm</code>, and the method names) are provisional. This note adds no public
+Python name and changes no stored record. The legacy framework and language
+server supply no PWM behavior to carry forward; the migration context is the
+preserved lifecycle and evidence contracts, with a signed hardware contract
+for a later implementation.</p>
+<h2 id="the-pwm-transfer-contract">The PWM Transfer Contract<a class="headerlink" href="#the-pwm-transfer-contract" title="Permanent link">&para;</a></h2>
+<p><strong>Framework obligation:</strong> Present PWM as its own typed interface under HIL
+ruling 1. <code>PwmInterface</code> is not an <code>exec</code> subclass and does not change where
+<code>utils.exec</code> routes. Each named channel has a declared output polarity,
+frequency range, duty-cycle resolution, and disabled-output behavior before
+it can be enabled.</p>
+<ul>
+<li>Frequency is in hertz, positive and finite. Duty cycle is the fraction of
+  the period spent in the declared active polarity, from <code>0.0</code> through <code>1.0</code>
+  inclusive. Reject booleans, non-numbers, non-finite values, out-of-range
+  values, and unsupported frequency/duty pairs at runtime before any write.
+  A fraction and a percentage are not interchangeable: <code>50</code> is invalid.</li>
+<li>A provisional <code>set_output(channel, frequency_hz=..., duty_cycle=...)</code>
+  deliberately enables or updates the output. It validates the complete pair
+  before applying either member. The backend must describe its supported
+  pairs and update behavior, including shared timing resources; it cannot
+  silently clamp, round, or momentarily apply an undeclared combination.
+  A value the hardware cannot represent is refused, with the supported
+  resolution named, so the author can request a different value deliberately.</li>
+<li><code>disable(channel)</code> stops output generation. Neither a zero duty cycle nor
+  a lost controller connection counts as confirmation that output is disabled.
+  The inactive electrical behavior of a disabled channel is part of its
+  declaration; disabled does not claim that an attached load has lost power.</li>
+<li>Each operation records the requested setting and whether the controller
+  confirmed applying it. An acknowledgement is evidence of controller state,
+  not an independent measurement of the waveform at the DUT. A failure or
+  timeout leaves the unconfirmed setting explicitly unknown, never cached as
+  the last successful setting.</li>
+<li>One operation owns a channel at a time. A second write or ramp is refused
+  while one is active; it is not queued to surprise the next lifecycle phase.
+  Framework termination takes precedence over this admission rule. A backend
+  whose shared timer would let one channel's update or disable alter another
+  owner's channel must refuse the conflicting acquisition before touching
+  either owner's output. It cannot sacrifice Group Isolation to offer more channels.</li>
+</ul>
+<p><strong>Developer obligation:</strong> Declare the channel, polarity, supported settings,
+and disabled behavior in <code>configure()</code>. Obtain its framework-managed handle
+through a provisional <code>utils.get_pwm(...)</code>; return the handle and static
+inputs through configure's ctx. Keep <code>self</code> immutable, <code>build_suite()</code> pure,
+and later ctx reads read-only. Judge the DUT with actual observations, rather
+than treating a successful output request as a passing test.</p>
+<p><strong>Consequence:</strong> The Floor Technician can distinguish the stimulus requested,
+the controller's acknowledgement, and the DUT's response. A rejected request
+cannot quietly become a different stimulus in a record that claims otherwise.</p>
+<h2 id="the-pwm-ramp-and-timing-contract">The PWM Ramp and Timing Contract<a class="headerlink" href="#the-pwm-ramp-and-timing-contract" title="Permanent link">&para;</a></h2>
+<p><strong>Framework obligation:</strong> A provisional
+<code>ramp(channel, target_duty_cycle=..., duration=...)</code> changes duty at a fixed
+frequency. The channel must already be enabled with a confirmed starting
+setting. Duration is positive finite seconds, with booleans refused by the
+same numeric rule as transfer; target duty follows the transfer validation
+above. A frequency ramp is outside this proposal.</p>
+<ul>
+<li>The requested trajectory is linear from the confirmed starting duty to the
+  target over the declared duration. The backend states its update interval,
+  duty resolution, and worst-case scheduling deviation. Quantized intermediate
+  steps must remain within those declared bounds, progress monotonically, and
+  reach the representable target; they must not overshoot. Before starting,
+  refuse a trajectory that cannot meet the backend's declared envelope.</li>
+<li>Ramp duration and backend-operation deadline are separate quantities. The
+  former describes the requested change; the latter bounds how long the
+  controller may take to confirm it. As in the signed GPIO
+  <a href="gpio.html#the-gpio-interface-contract">stability-window/acquisition-deadline distinction</a>,
+  one number cannot describe both the work and the allowance to finish it.
+  The resolved ramp completion deadline must exceed its duration and include
+  the backend's declared scheduling and acknowledgement allowances. Both
+  values appear in evidence before the ramp starts.</li>
+<li>Ordinary output updates, disable operations, and bring-up also have positive
+  finite backend-declared latency ceilings. An operation timeout names that
+  operation and its ceiling. It does not manufacture the <code>timeout</code> evidence
+  reserved for the winning node clock in the
+  <a href="../contracts.html#time-budget-contract">Time Budget Contract</a>.</li>
+<li>The node's <code>fail_after</code> or <code>abort_after</code> bounds an awaited ramp like any
+  other work. A longer ramp or backend deadline cannot extend that clock.
+  Cancellation interrupts the resource's ramp; it does not wait for the target
+  duty or a graceful ramp-down before disabling output.</li>
+<li>A ramp settles only when its completion is confirmed or a failure/cut has
+  been recorded. An operational failure stops further ramp writes and attempts
+  bounded disable of that channel before settlement; failed confirmation stays
+  explicit. It cannot leave a detached task changing the output after it
+  settles. Blocking SDK work uses the existing framework executor
+  boundary. A late native completion must not re-enable or rewrite an output
+  after the framework has disabled it.</li>
+</ul>
+<p><strong>Developer obligation:</strong> Choose a supported trajectory and name the node
+budget for what expiry means to this test. Do not create a suite-owned timing
+loop, suppress <code>CancelledError</code>, or use an output ramp as a substitute for
+measuring the DUT's response. Catch operational failures and model their
+meaning at the test boundary.</p>
+<p><strong>Consequence:</strong> A completed ramp means the declared controller trajectory
+completed within its stated envelope. An interrupted ramp carries the point
+last confirmed and an explicit interruption, not a fabricated endpoint. The
+record keeps a slow controller distinct from a node that spent its budget.</p>
+<h2 id="the-pwm-safe-state-contract">The PWM Safe-State Contract<a class="headerlink" href="#the-pwm-safe-state-contract" title="Permanent link">&para;</a></h2>
+<p><strong>Framework obligation:</strong> The safe state is output disabled, enforced at the
+resource by the existing termination sweep. This specializes the signed GPIO
+<a href="gpio.html#the-gpio-interface-contract">ownership and cut rules</a>; it introduces
+no PWM halt signal, event loop, lifecycle runner, or integration hook.</p>
+<ul>
+<li>Register ownership as soon as acquisition can affect a channel, so partial
+  <code>configure()</code> failure cannot orphan an output. Bring-up establishes and
+  confirms disabled state before admitting the first enable operation.
+  Failure to establish it refuses use and records the unconfirmed state.</li>
+<li>An integration-hook failure or operator interrupt disables every output
+  owned by every open PWM interface. A node deadline disables only resources
+  opened by the bounded subtree, under both <code>fail_after</code> (Fail) and
+  <code>abort_after</code> (node-local Aborted). An inherited controller or borrowed hop
+  remains its owner's resource; unrelated siblings are untouched.</li>
+<li>Normal teardown disables owned outputs as well. The framework retains its
+  existing order: bounded authored cleanup and post-cleanup survey, then
+  release of owned resources before their borrowed transport. On a hard cut,
+  disable starts immediately through resource termination; it never waits for
+  authored cleanup to remember the channel.</li>
+<li><code>cancel_in_flight()</code> is idempotent and refuses further output work when the
+  cut begins. It cancels pending ramps at the controller, attempts the disable
+  under the declared backend bound, and records whether disable was confirmed.
+  A repeated call cannot restart a ramp or perform an enable. A closed handle
+  remains closed; there is no automatic reconnect or replay of its last duty.</li>
+<li>Loss of access can prevent confirmation. As the signed GPIO note requires,
+  the scoped timeline records that fact with the channel and operation named.
+  An unconfirmed disable never leaves a success line behind or rewrites the
+  original terminal state. A backend unable to stop autonomous output through
+  the existing resource-termination boundary is a finding for Ty before it
+  can be admitted; closing its control socket alone does not satisfy this note.</li>
+</ul>
+<p><strong>Developer obligation:</strong> Select a fixture for which the declared disabled
+output is the intended safe state. Declare shared controller resources
+honestly. Keep restoration in <code>cleanup()</code> but rely on framework ownership for
+termination; never manually sequence another node's configure or cleanup.</p>
+<p><strong>Consequence:</strong> Ending the test stops its output work and records what could
+be confirmed. A technician is never asked to infer electrical safety from a
+disconnected handle or from Pass, Fail, or Aborted alone.</p>
+<h2 id="lifecycle-hooks-and-failure-vocabulary">Lifecycle, hooks, and failure vocabulary<a class="headerlink" href="#lifecycle-hooks-and-failure-vocabulary" title="Permanent link">&para;</a></h2>
+<p>The <a href="index.html#the-three-rulings">HIL lifecycle ruling</a> applies unchanged.
+Framework bookkeeping owns connection flags, acquisition, release, and halt
+dispatch. <code>before_each</code>/<code>after_each</code> keep their pair invariant and their narrow
+context without hardware access. Constructor-registered surveys and audits
+remain the observation hooks: survey errors are logged and swallowed, audit
+errors fail their own scope, and <code>ExternalIntegrationFailure</code> is never
+swallowed. PWM transfer methods return operational results, never <code>PASS</code>.</p>
+<p>The proposed <code>PwmOperationFailure</code> derives from <code>HiltError</code>, not
+<code>TestFailure</code>, for the same reason GPIO's <code>PinSettleFailure</code> does: failure to
+apply a stimulus does not identify the DUT as the cause. It names the channel,
+operation, requested setting, last confirmed setting if known, and any
+backend ceiling that expired. Unknown is represented explicitly, never as
+zero duty or disabled output.</p>
+<table>
+<thead>
+<tr>
+<th>Situation</th>
+<th>Signal and existing classification</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Invalid setting, unsupported trajectory, or conflicting channel use</td>
+<td><code>TypeError</code> for a wrong type, <code>ValueError</code> for an invalid value or unsupported request; rejected before writes. Escaping configure/test code becomes a <code>ContractViolation</code>: Fail with the <code>CONTRACT VIOLATION</code> banner and <code>bug: true</code>.</td>
+</tr>
+<tr>
+<td>Controller unavailable during bring-up or an output request; backend operation exceeds its ceiling</td>
+<td><code>PwmOperationFailure</code>; the author handles the condition and may raise a modeled <code>TestFailure</code>. An unmodeled escape through configure/test code is a <code>ContractViolation</code> Fail, not an automatic hardware verdict. No silent retry or assumed setting.</td>
+</tr>
+<tr>
+<td>Independent observation shows the DUT missed its declared requirement</td>
+<td>Author raises <code>TestFailure(..., evidence=...)</code>; Fail under the existing verdict contract.</td>
+</tr>
+<tr>
+<td>Disable cannot be confirmed during finalization</td>
+<td>Scoped evidence names the unconfirmed channel; the established terminal state is preserved, as in GPIO's safe-state sweep.</td>
+</tr>
+<tr>
+<td>Integration hook throws or the operator interrupts</td>
+<td>Framework-owned <code>ExternalIntegrationFailure</code> or <code>OperatorInterrupt</code>; run-level Aborted and the full resource sweep.</td>
+</tr>
+<tr>
+<td>Node budget expires during transfer or ramp</td>
+<td>The winning clock supplies its existing structured evidence: <code>fail_after</code> produces Fail, <code>abort_after</code> node-local Aborted. Only the owned resources within the cut are disabled.</td>
+</tr>
+<tr>
+<td>Test returns without a verdict</td>
+<td>Existing <code>MissingVerdict</code>, node-local Aborted. A completed PWM operation cannot supply the missing verdict.</td>
+</tr>
+</tbody>
+</table>
+<p>This is one proposed operational exception under the existing root, not a new
+terminal state. Cancellation still propagates and outranks an attempted late
+return or substituted error at the child boundary.</p>
+<h2 id="evidence-and-backend-acceptance">Evidence and backend acceptance<a class="headerlink" href="#evidence-and-backend-acceptance" title="Permanent link">&para;</a></h2>
+<p>Configuration logs name the channel, owner, polarity, disabled behavior,
+supported resolution, and timing envelope. Transfers and ramps use the same
+scoped logger to distinguish requested, confirmed, interrupted, and
+unconfirmed outcomes. The safe-state entry names its cause and confirmation
+before evidence closes. <code>timeline.log</code> and <code>timeline.jsonl</code> remain the owning
+node's two views; <code>result.json</code> retains the existing state and failure shape.</p>
+<p>Readings that establish a verdict travel as JSON-safe <code>PASS(evidence)</code> or
+<code>TestFailure(..., evidence=...)</code>, with <code>@evidence(...)</code> when a pass owes those
+keys. Commanded frequency and duty are stimulus settings, not measured
+frequency and duty. Actual parametric observations follow the signed
+<a href="../measurements.html">#85 measurement design</a>, whose implementation remains</p>
+<h1 id="86-this-note-neither-fills-the-reserved-measurements-slot-nor-redefines">86; this note neither fills the reserved <code>measurements</code> slot nor redefines<a class="headerlink" href="#86-this-note-neither-fills-the-reserved-measurements-slot-nor-redefines" title="Permanent link">&para;</a></h1>
+<p>units, limits, or verdict evaluation. In-flight observations use the scoped
+log or <code>capture_artifact</code>, since a cancelled leaf has no verdict evidence.</p>
+<p><code>MockPwm</code> and a real backend must face the same contract suite, following the
+<code>RemoteInterface</code>/<code>MockTransport</code> precedent without inheriting command
+semantics. Required proofs include boundary/unsupported values before writes,
+atomic pair updates, exclusive channel ownership and shared-timer refusal,
+representable ramps within declared bounds, partial acquisition failure,
+normal teardown, and interruption at every ramp boundary. Parked operations
+must prove repeated cancellation cannot allow a late enable, node cuts leave
+an independent sibling unchanged, and unavailable disable produces only
+unconfirmed evidence. Real-backend tests must verify output behavior through
+independent observation; mock acknowledgements cannot establish it.</p>
+<h2 id="signed-decisions-recorded-on-94">Signed decisions recorded on #94<a class="headerlink" href="#signed-decisions-recorded-on-94" title="Permanent link">&para;</a></h2>
+<p>Ty approved these obligations with the note in !125 on 2026-09-08. The signature
+is also recorded on <a href="https://gitlab.com/Tyler-Meador/HILT/-/issues/94">#94</a>:</p>
+<ol>
+<li>Explicit frequency/duty pairs with refusal of unrepresentable requests,
+   rather than implicit rounding; fixed polarity and declared disabled behavior.</li>
+<li>Linear duty-only ramps at fixed frequency, with a backend-declared timing
+   envelope and a separate completion deadline; no detached ramp after settlement.</li>
+<li>Exclusive channel operations and refusal of independent ownership when
+   shared hardware cannot preserve node-local isolation and disable semantics.</li>
+<li>Operational write/bring-up failures as a modeled <code>HiltError</code> condition,
+   with unconfirmed finalization recorded under the signed GPIO rule. GPIO's
+   typed <code>UNAVAILABLE</code> read is not silently extended into a PWM write result.</li>
+</ol>
+<p>The lifecycle, verdict, and evidence contracts above are constraints on that
+decision. If a required backend cannot satisfy them, the finding belongs on</p>
+<h1 id="94-with-the-affected-guarantee-named-it-does-not-earn-an-alternate-lifecycle">94 with the affected guarantee named. It does not earn an alternate lifecycle<a class="headerlink" href="#94-with-the-affected-guarantee-named-it-does-not-earn-an-alternate-lifecycle" title="Permanent link">&para;</a></h1>
+<p>or an exception enforced only by a linter.</p></div>
+            </div>
+        </div>
+
+        <footer class="col-md-12">
+            <hr>
+                <p>Copyright 2026 Tyler Meador</p>
+            <p>Documentation built with <a href="https://www.mkdocs.org/">MkDocs</a>.</p>
+        </footer>
+        <script src="../js/bootstrap.bundle.min.js"></script>
+        <script>
+            var base_url = "..",
+                shortcuts = {"help": 191, "next": 78, "previous": 80, "search": 83};
+        </script>
+        <script src="../js/base.js"></script>
+        <script src="../search/main.js"></script>
+
+        <div class="modal" id="mkdocs_search_modal" tabindex="-1" role="dialog" aria-labelledby="searchModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="searchModalLabel">Search</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>From here you can search these documents. Enter your search terms below.</p>
+                <form>
+                    <div class="form-group">
+                        <input type="search" class="form-control" placeholder="Search..." id="mkdocs-search-query" title="Type search term here">
+                    </div>
+                </form>
+                <div id="mkdocs-search-results" data-no-results-text="No results found"></div>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div><div class="modal" id="mkdocs_keyboard_modal" tabindex="-1" role="dialog" aria-labelledby="keyboardModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="keyboardModalLabel">Keyboard Shortcuts</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th style="width: 20%;">Keys</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="help shortcut"><kbd>?</kbd></td>
+                    <td>Open this help</td>
+                  </tr>
+                  <tr>
+                    <td class="next shortcut"><kbd>n</kbd></td>
+                    <td>Next page</td>
+                  </tr>
+                  <tr>
+                    <td class="prev shortcut"><kbd>p</kbd></td>
+                    <td>Previous page</td>
+                  </tr>
+                  <tr>
+                    <td class="search shortcut"><kbd>s</kbd></td>
+                    <td>Search</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div>
+
+    </body>
+</html>

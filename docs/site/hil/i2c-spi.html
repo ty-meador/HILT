@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        
+        
+        <link rel="canonical" href="https://gitlab.com/Tyler-Meador/HILT/-/tree/main/docs/hil/i2c-spi.html">
+        <link rel="shortcut icon" href="../img/favicon.ico">
+        <title>I2C/SPI (design note) - HILT</title>
+        <link href="../css/bootstrap.min.css" rel="stylesheet">
+        <link href="../css/fontawesome.min.css" rel="stylesheet">
+        <link href="../css/brands.min.css" rel="stylesheet">
+        <link href="../css/solid.min.css" rel="stylesheet">
+        <link href="../css/v4-font-face.min.css" rel="stylesheet">
+        <link href="../css/base.css" rel="stylesheet">
+        <link id="hljs-light" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" >
+        <link id="hljs-dark" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github-dark.min.css" disabled>
+        <link href="../assets/_mkdocstrings.css" rel="stylesheet">
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+        <script>hljs.highlightAll();</script> 
+    </head>
+
+    <body>
+        <div class="navbar fixed-top navbar-expand-lg navbar-dark bg-primary">
+            <div class="container">
+                <a class="navbar-brand" href="../index.html">HILT</a>
+                <!-- Expander button -->
+                <button type="button" class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#navbar-collapse" aria-controls="navbar-collapse" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <!-- Expanded navigation -->
+                <div id="navbar-collapse" class="navbar-collapse collapse">
+                        <!-- Main navigation -->
+                        <ul class="nav navbar-nav">
+                            <li class="nav-item">
+                                <a href="../index.html" class="nav-link">Home</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="../getting-started.html" class="nav-link">Getting started</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="../floor-technician.html" class="nav-link">Floor Technician</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="../overview.html" class="nav-link">Overview</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="../idioms.html" class="nav-link">Idioms</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="../utilities.html" class="nav-link">Utilities</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="../contracts.html" class="nav-link">Contracts</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="../inspector-json.html" class="nav-link">Inspector JSON</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="../inspector.html" class="nav-link">Inspector (target specification)</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="../measurements.html" class="nav-link">Measurements</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="../junit-xml.html" class="nav-link">JUnit XML</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="../hilt-run.html" class="nav-link">hilt run</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="../hilt-new.html" class="nav-link">hilt new</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="../hilt-check.html" class="nav-link">hilt-check</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="../api-stability.html" class="nav-link">API stability</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="../api.html" class="nav-link">API reference</a>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle active" aria-current="page" role="button" data-bs-toggle="dropdown"  aria-expanded="false">HIL interfaces</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="index.html" class="dropdown-item">Overview</a>
+</li>
+                                    
+<li>
+    <a href="gpio.html" class="dropdown-item">GPIO (design note)</a>
+</li>
+                                    
+<li>
+    <a href="pwm.html" class="dropdown-item">PWM (design note)</a>
+</li>
+                                    
+<li>
+    <a href="can.html" class="dropdown-item">CAN bus (design note)</a>
+</li>
+                                    
+<li>
+    <a href="i2c-spi.html" class="dropdown-item active" aria-current="page">I2C/SPI (design note)</a>
+</li>
+                                    
+<li>
+    <a href="device-api.html" class="dropdown-item">Device API (design note)</a>
+</li>
+                                    
+<li>
+    <a href="serial.html" class="dropdown-item">Serial/UART (design note)</a>
+</li>
+                                </ul>
+                            </li>
+                        </ul>
+
+                    <ul class="nav navbar-nav ms-md-auto">
+                        <li class="nav-item">
+                            <a href="#" class="nav-link" data-bs-toggle="modal" data-bs-target="#mkdocs_search_modal">
+                                <i class="fa fa-search"></i> Search
+                            </a>
+                        </li>
+                            <li class="nav-item">
+                                <a rel="prev" href="can.html" class="nav-link">
+                                    <i class="fa fa-arrow-left"></i> Previous
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a rel="next" href="device-api.html" class="nav-link">
+                                    Next <i class="fa fa-arrow-right"></i>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="https://gitlab.com/Tyler-Meador/HILT/-/blob/main/docs/hil/i2c-spi.md" class="nav-link"><i class="fa-brands fa-gitlab"></i> Edit on GitLab</a>
+                            </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="container">
+            <div class="row">
+                    <div class="col-md-3"><div class="navbar-expand-md bs-sidebar hidden-print affix" role="complementary">
+    <div class="navbar-header">
+        <button type="button" class="navbar-toggler collapsed" data-bs-toggle="collapse" data-bs-target="#toc-collapse" title="Table of Contents">
+            <span class="fa fa-angle-down"></span>
+        </button>
+    </div>
+
+    
+    <div id="toc-collapse" class="navbar-collapse collapse card bg-body-tertiary">
+        <ul class="nav flex-column">
+            
+            <li class="nav-item" data-bs-level="1"><a href="#design-note-i2cspi-interface-contract" class="nav-link">Design note: I2C/SPI interface contract</a>
+              <ul class="nav flex-column">
+            <li class="nav-item" data-bs-level="2"><a href="#why-not-an-exec-subclass" class="nav-link">Why not an exec subclass</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#the-bus-transaction-contract" class="nav-link">The Bus Transaction Contract</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#the-i2c-addressing-and-arbitration-contract" class="nav-link">The I2C Addressing and Arbitration Contract</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#the-spi-chip-select-and-mode-contract" class="nav-link">The SPI Chip-Select and Mode Contract</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#the-released-bus-and-timing-contract" class="nav-link">The Released-Bus and Timing Contract</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#lifecycle-and-hook-ownership-unchanged" class="nav-link">Lifecycle and hook ownership: unchanged</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#failure-vocabulary" class="nav-link">Failure vocabulary</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#mock-and-real-backends-one-contract-two-implementations-per-bus" class="nav-link">Mock and real backends: one contract, two implementations per bus</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#evidence" class="nav-link">Evidence</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#what-the-floor-technician-sees" class="nav-link">What the Floor Technician sees</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#signed-decisions-recorded-on-96" class="nav-link">Signed decisions recorded on #96</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+              </ul>
+            </li>
+        </ul>
+    </div>
+</div></div>
+                    <div class="col-md-9" role="main">
+
+<h1 id="design-note-i2cspi-interface-contract">Design note: I2C/SPI interface contract<a class="headerlink" href="#design-note-i2cspi-interface-contract" title="Permanent link">&para;</a></h1>
+<p>Status: SIGNED — Ty approved this note in !129 on 2026-09-09; recorded on #96</p>
+<p>I2C and SPI carry register transactions, not command strings. This note
+states the transfer, addressing, arbitration, timing, and released-bus
+obligations that make both buses fit HILT's existing lifecycle. They are
+two interfaces under one contract shape, not one type with a protocol flag.
+The <a href="index.html#the-three-rulings">three HIL rulings</a> govern both.
+<a href="https://gitlab.com/Tyler-Meador/HILT/-/merge_requests/129#note_3812483928">Ty's approval of the actual note</a>
+signs the obligations below. Implementation requires its own approved issue
+and Zavala's review under <a href="../api-stability.html">API stability</a>.</p>
+<p>All names below (<code>I2cInterface</code>, <code>SpiInterface</code>, <code>I2cAddress</code>, <code>SpiMode</code>,
+<code>BusArbitrationFailure</code>, <code>BusOperationFailure</code>, <code>MockI2c</code>, <code>MockSpi</code>, and
+the method names) are provisional. This note adds no public Python name and
+changes no stored record. The legacy framework and language server supply no
+I2C/SPI behavior to carry forward; the migration context is the preserved
+lifecycle and evidence contracts, with a new hardware contract for Ty to
+judge.</p>
+<h2 id="why-not-an-exec-subclass">Why not an <code>exec</code> subclass<a class="headerlink" href="#why-not-an-exec-subclass" title="Permanent link">&para;</a></h2>
+<p>A register read is an addressed transaction: a 7- or 10-bit I2C address and
+a register pointer, or a SPI chip-select plus a command byte, then a
+bounded payload. None of that is a shell command. Forcing it through <code>exec</code>
+would mean shelling out to <code>i2cget</code>/<code>spidev</code> tools (lossy, racy, and blind
+to a stuck-low SDA) or smuggling a controller inside a <code>RemoteInterface</code>
+subclass that answers <code>_exec</code> with a fake dialect — exactly the
+parallel-lifecycle-in-disguise <a href="index.html#the-three-rulings">ruling 1</a>
+forbids. <code>I2cInterface</code> and <code>SpiInterface</code> are their own ABCs,
+structurally parallel to <code>RemoteInterface</code> (<code>src/hilt/remote.py</code>) and to
+the signed <a href="gpio.html"><code>GpioInterface</code></a> / <a href="pwm.html"><code>PwmInterface</code></a>: each owns
+<code>connect</code> / <code>disconnect</code> / <code>cancel_in_flight</code> in the same shape, and adds
+transaction-shaped operations in place of <code>exec</code>.</p>
+<p>They are not subclasses of each other. An I2C NACK is not a SPI 0xFF. A
+shared "bus transfer" ABC that pretended otherwise would lose the
+arbitration and chip-select contracts this note exists to name.</p>
+<h2 id="the-bus-transaction-contract">The Bus Transaction Contract<a class="headerlink" href="#the-bus-transaction-contract" title="Permanent link">&para;</a></h2>
+<p><strong>Framework obligation:</strong> Present each bus as its own typed interface under
+HIL ruling 1. Neither is an <code>exec</code> subclass; neither changes where
+<code>utils.exec</code> routes. A handle is bound to one adapter, one protocol, and a
+declared timing envelope before it can transfer.</p>
+<ul>
+<li>A <strong>transaction</strong> is atomic at the wire: I2C from START through STOP; SPI
+  for the whole time chip-select is asserted. The interface does not expose
+  a pile of unbound <code>read()</code> / <code>write()</code> calls that another node, or an
+  abort, can interleave mid-address.</li>
+<li>One in-flight transaction per handle. A second transfer is refused while
+  one is active; it is not queued to surprise the next lifecycle phase.
+  Framework termination takes precedence over this admission rule.</li>
+<li>Each operation records the requested address or chip-select, the
+  direction, the payload length, and whether the controller confirmed the
+  outcome. An unconfirmed transfer never becomes the last-successful value
+  in a cache the next test method reads as truth. Unknown is explicit.</li>
+<li>Payload is <code>bytes</code>. Reject a non-<code>bytes</code> payload, a negative length, and
+  a length above the backend-declared ceiling, at the call site, before the
+  adapter is touched. Booleans are not integers.</li>
+</ul>
+<p><strong>Developer obligation:</strong> Declare the adapter, protocol parameters, and
+every device this node will address in <code>configure()</code>. Obtain the
+framework-managed handle through a provisional <code>utils.get_i2c(...)</code> or
+<code>utils.get_spi(...)</code>; return the handle and static inputs through
+configure's ctx. Keep <code>self</code> immutable, <code>build_suite()</code> pure, and later ctx
+reads read-only. Judge the DUT with bytes actually returned (or with an
+independent observation), never by treating a successful ACK or a full-duplex
+clock-out as a passing device.</p>
+<p><strong>Consequence:</strong> The Floor Technician can tell which device was addressed,
+what was written, what came back, and whether the transaction completed.
+A NACK or a short read cannot quietly become a register value in a record
+that claims otherwise.</p>
+<h2 id="the-i2c-addressing-and-arbitration-contract">The I2C Addressing and Arbitration Contract<a class="headerlink" href="#the-i2c-addressing-and-arbitration-contract" title="Permanent link">&para;</a></h2>
+<p><strong>Framework obligation:</strong> I2C identity is an address, not a path.</p>
+<ul>
+<li>A provisional <code>I2cAddress</code> carries the 7-bit or 10-bit address and the
+  width. Reject an address that does not fit the declared width. 8-bit
+  "address plus R/W" encodings are refused: the R/W bit is the transfer's,
+  not the handle's.</li>
+<li>Provisional <code>write(address, data)</code>, <code>read(address, n)</code>, and
+  <code>write_read(address, tx, n)</code> each emit one START–STOP transaction.
+  <code>write_read</code> is a repeated-START, not two transactions the abort path
+  could split. There is no "hold the bus across calls" mode.</li>
+<li><strong>NACK on address</strong> (no device ACKed) and <strong>NACK on data</strong> (device ACKed
+  the address then rejected a byte) are distinct operational failures,
+  named in the error. Neither is a <code>TestFailure</code>. The interface does not
+  retry, does not clock out dummy bytes after a NACK, and does not return
+  a truncated payload as success.</li>
+<li><strong>Arbitration loss</strong> is an operational failure (<code>BusArbitrationFailure</code>).
+  Another master won the bus. The interface stops, does not retry, and
+  does not invent the bytes it did not finish sending. A backend whose
+  driver auto-retries arbitration in the background is refused at bring-up:
+  that is the I2C instance of a detached PWM ramp.</li>
+<li>Clock stretching is the slave's right within the backend-declared stretch
+  ceiling. Exceeding that ceiling is an operational timeout of the
+  transaction, not a node time-budget expiry.</li>
+</ul>
+<p><strong>Developer obligation:</strong> Name every address this node will talk to at
+configure time when the set is known. Catch address-NACK, data-NACK, and
+arbitration loss separately if they mean different things on this bench
+(missing DUT vs. register reject vs. a second tester). Do not busy-loop a
+NACK into existence of a device.</p>
+<p><strong>Consequence:</strong> A missing part, a device that refused a register, and a
+bus fight are three records, not one "I2C failed" blob.</p>
+<h2 id="the-spi-chip-select-and-mode-contract">The SPI Chip-Select and Mode Contract<a class="headerlink" href="#the-spi-chip-select-and-mode-contract" title="Permanent link">&para;</a></h2>
+<p><strong>Framework obligation:</strong> SPI identity is a chip-select plus a mode, not an
+address.</p>
+<ul>
+<li>A provisional <code>SpiDevice</code> declares the chip-select line, <code>SpiMode</code>
+  (CPOL/CPHA 0–3), bit order, and bits-per-word. Mode is fixed for the
+  handle's lifetime; flipping CPOL live is the SPI instance of flipping a
+  GPIO pin's direction.</li>
+<li>Provisional <code>transfer(tx) -&gt; rx</code> asserts chip-select, clocks <code>tx</code>,
+  returns <code>rx</code> of the same length, and deasserts chip-select. Full-duplex
+  is the default shape. A backend that can only half-duplex still returns
+  <code>bytes</code> of that length; it does not return <code>None</code> for the unobserved
+  side.</li>
+<li>There is no SPI NACK. MISO idle (typically 0xFF or 0x00) is <strong>data</strong>.
+  The framework must not interpret a repeating fill byte as "device
+  missing." Absence of a device, if the bench can know it, is a GPIO-level
+  or power-level observation, not a SPI protocol error.</li>
+<li>Chip-select is owned for the transaction. The interface does not leave
+  CS asserted across calls so an author can "optimize" two transfers. A
+  multi-message device that requires CS held uses one <code>transfer</code> covering
+  the whole sequence, or it is a finding for Ty.</li>
+</ul>
+<p><strong>Developer obligation:</strong> Declare mode, bit order, and chip-select in
+<code>configure()</code>. Do not decode 0xFF into "unplugged" inside the interface
+call; if that fill is a fault, the test method says so with a
+<code>TestFailure</code> naming the expected register contents.</p>
+<p><strong>Consequence:</strong> A disconnected MISO cannot be laundered into a protocol
+exception the Floor Technician would treat like an I2C NACK.</p>
+<h2 id="the-released-bus-and-timing-contract">The Released-Bus and Timing Contract<a class="headerlink" href="#the-released-bus-and-timing-contract" title="Permanent link">&para;</a></h2>
+<p><strong>Framework obligation:</strong> The safe state is a <strong>released bus</strong> — I2C lines
+idle after a STOP, SPI chip-select deasserted and clock at the mode's idle
+level — enforced at the resource by the existing termination sweep. This
+specializes the signed GPIO
+<a href="gpio.html#the-gpio-interface-contract">ownership and cut rules</a> and the
+signed PWM
+<a href="pwm.html#the-pwm-safe-state-contract">disabled-output termination</a>. It
+introduces no bus halt signal, event loop, lifecycle runner, or
+integration hook.</p>
+<ul>
+<li>Register ownership as soon as acquisition can drive a line, so partial
+  <code>configure()</code> failure cannot leave SDA held low or CS asserted. Bring-up
+  establishes and confirms the released state before admitting the first
+  transaction.</li>
+<li>An integration-hook failure or operator interrupt releases every open
+  I2C and SPI handle. A node deadline releases only resources opened by
+  the bounded subtree, under both <code>fail_after</code> (Fail) and <code>abort_after</code>
+  (node-local Aborted). An inherited adapter remains its owner's resource;
+  unrelated siblings are untouched.</li>
+<li><code>cancel_in_flight()</code> is idempotent. It aborts the in-flight transaction
+  at the controller (I2C: STOP if a START is open; SPI: deassert CS),
+  attempts the released state under the backend's latency ceiling, and
+  records whether release was confirmed. A repeated call cannot start a
+  new transaction or replay the last write. A closed handle remains
+  closed.</li>
+<li>The framework does not invent a "safe" register write on abort (clearing
+  an output register, putting a DAC to zero). A DUT that needs a specific
+  last write gets it from authored <code>cleanup()</code>, which the hard cut does
+  not wait for. Inventing a write at abort would be a stimulus the suite
+  never declared.</li>
+<li>Transaction ceiling (including I2C stretch bound) and bring-up/release
+  ceiling are each positive finite backend-declared bounds, separate from
+  the node's <code>fail_after</code> / <code>abort_after</code>. An operation timeout names that
+  operation and its ceiling. It does not manufacture the <code>timeout</code>
+  evidence reserved for the winning node clock in the
+  <a href="../contracts.html#time-budget-contract">Time Budget Contract</a>.</li>
+<li>A backend whose shared adapter would let one node's STOP or CS-deassert
+  starve another owner's in-flight transaction must refuse the conflicting
+  acquisition before either owner transfers. It cannot sacrifice Group
+  Isolation to offer more nodes on one bus.</li>
+</ul>
+<p><strong>Developer obligation:</strong> Select a fixture for which "this node releases
+the bus" is the intended safe state. Declare shared adapters honestly.
+Keep any required shutdown write in <code>cleanup()</code>; rely on framework
+ownership for termination.</p>
+<p><strong>Consequence:</strong> Ending the test stops this node's transactions and records
+what could be confirmed. A technician is never asked to infer that SDA is
+free, or that CS is high, from Pass/Fail/Aborted alone.</p>
+<h2 id="lifecycle-and-hook-ownership-unchanged">Lifecycle and hook ownership: unchanged<a class="headerlink" href="#lifecycle-and-hook-ownership-unchanged" title="Permanent link">&para;</a></h2>
+<p>The <a href="index.html#the-three-rulings">HIL lifecycle ruling</a> applies unchanged.
+Concretely:</p>
+<ul>
+<li>Bring-up happens the same way <code>use_shell</code> brings up SSH: <code>configure()</code>
+  obtains a handle (provisionally <code>utils.get_i2c(...)</code> / <code>utils.get_spi(...)</code>,
+  mirroring <code>get_shell</code> / <code>get_gpio</code> / <code>get_pwm</code>), and the framework's
+  bookkeeping tracks what this node opened versus what it inherited.</li>
+<li>Teardown order is the framework's: <code>cancel_in_flight</code> fires as part of
+  the same In-Flight Termination Contract sweep that already closes
+  <code>RemoteInterface</code> transports and silences signed GPIO/PWM resources.</li>
+<li><code>use_survey</code> / <code>use_audit</code> remain the observation hooks. A periodic
+  audit that reads a status register and raises <code>TestFailure</code> on an
+  unexpected value is the existing audit contract.</li>
+<li><code>before_each</code> / <code>after_each</code> remain the integrator's narrow context and
+  still cannot touch hardware.</li>
+</ul>
+<p>Hardware that needs the controller to run its own concurrent transfer loop
+outside survey/audit, or that cannot honor a hard <code>cancel_in_flight</code>
+(cannot issue STOP, cannot deassert CS), is a finding for Ty — not a
+reason to give either bus its own lifecycle.</p>
+<h2 id="failure-vocabulary">Failure vocabulary<a class="headerlink" href="#failure-vocabulary" title="Permanent link">&para;</a></h2>
+<p>No new terminal state is introduced, and no new exception root.
+<code>BusOperationFailure</code> and <code>BusArbitrationFailure</code> derive from
+<code>HiltError</code>, not <code>TestFailure</code>, for the same reason GPIO's
+<code>PinSettleFailure</code> and PWM's <code>PwmOperationFailure</code> do: failure to complete
+a transaction does not identify the DUT as the cause.</p>
+<table>
+<thead>
+<tr>
+<th>Situation</th>
+<th>Raised as</th>
+<th>Terminal state</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Invalid address, mode, payload, or conflicting in-flight use</td>
+<td><code>TypeError</code> / <code>ValueError</code> at the call site</td>
+<td><code>ContractViolation</code> (Fail, <code>bug: true</code>) if it escapes</td>
+</tr>
+<tr>
+<td>I2C NACK on address or data; transaction exceeds its ceiling (including stretch); SPI transfer exceeds its ceiling; release cannot be confirmed at bring-up</td>
+<td><code>BusOperationFailure</code> (provisional <code>HiltError</code>) naming the handle, operation, address or CS, and ceiling</td>
+<td>Fail when the author catches it and states the verdict; a <code>ContractViolation</code> Fail (<code>bug: true</code>) when it escapes</td>
+</tr>
+<tr>
+<td>I2C arbitration loss</td>
+<td><code>BusArbitrationFailure</code> (provisional <code>HiltError</code>)</td>
+<td>As above. Never an automatic DUT Fail</td>
+</tr>
+<tr>
+<td>SPI MISO fill (0xFF / 0x00)</td>
+<td>No exception: those bytes are the transfer result</td>
+<td>Whatever verdict the author writes. The interface does not guess "unplugged"</td>
+</tr>
+<tr>
+<td>Backend cannot reach the adapter at bring-up</td>
+<td><code>ConnectionError</code> from the interface's own <code>connect</code></td>
+<td>Absorbed the way <code>RemoteInterface</code> connect failures are absorbed today</td>
+</tr>
+<tr>
+<td>Release cannot be confirmed during the safe-state sweep</td>
+<td>No exception; the run is already ending</td>
+<td>Terminal state unchanged; timeline records the unconfirmed release, naming the handle. Never a success line</td>
+</tr>
+<tr>
+<td>Integration hook throws mid-transaction</td>
+<td>Framework raises <code>ExternalIntegrationFailure</code></td>
+<td>Aborted; run-level halt releases every open handle</td>
+</tr>
+<tr>
+<td>Operator SIGINT/SIGTERM mid-run</td>
+<td>Framework raises <code>OperatorInterrupt</code></td>
+<td>Aborted; same run-level sweep</td>
+</tr>
+<tr>
+<td>A node's time budget expires while it holds a handle</td>
+<td>Framework settles the node per its declared budget</td>
+<td><code>fail_after</code> → Fail, <code>abort_after</code> → node-local Aborted; either way only that subtree's handles are released</td>
+</tr>
+<tr>
+<td>Test returns without a verdict</td>
+<td>Existing <code>MissingVerdict</code></td>
+<td>Node-local Aborted. A completed transfer cannot supply the missing verdict</td>
+</tr>
+</tbody>
+</table>
+<p>Unknown is represented explicitly. A NACK is not a zero payload. An
+unconfirmed STOP is not a free bus.</p>
+<h2 id="mock-and-real-backends-one-contract-two-implementations-per-bus">Mock and real backends: one contract, two implementations per bus<a class="headerlink" href="#mock-and-real-backends-one-contract-two-implementations-per-bus" title="Permanent link">&para;</a></h2>
+<p>The pattern is the one <code>RemoteInterface</code> / <code>MockTransport</code> / <code>SshInterface</code>
+already proves, and that signed GPIO/PWM reuse: each ABC has a real
+backend (<code>smbus2</code> / <code>spidev</code> / a vendor SDK) and a mock (<code>MockI2c</code>,
+<code>MockSpi</code>). Self-tests exercise both against a shared contract suite.</p>
+<p>Required proofs, I2C: refuse bad addresses before START; one transaction
+in flight; address-NACK vs data-NACK named separately; arbitration loss
+stops and does not auto-retry; <code>write_read</code> is one repeated-START;
+partial <code>configure()</code> cannot leave SDA held; node cuts leave a sibling's
+transaction untouched; repeated <code>cancel_in_flight</code> issues at most one STOP
+and cannot replay a write; unconfirmed release produces only unconfirmed
+evidence.</p>
+<p>Required proofs, SPI: mode immutable; <code>transfer</code> length(tx) == length(rx);
+CS asserted only for that call; fill bytes are data; CS deasserted on
+abort even mid-clock; exclusive ownership of a shared adapter.</p>
+<p><code>MockI2c</code> / <code>MockSpi</code> schedule <code>park</code>-style holds analogous to
+<code>MockTransport.park</code>. A suite author never constructs either backend
+directly: <code>utils.get_i2c</code> / <code>utils.get_spi</code> resolve to whichever backend
+the run was configured with. Real-backend tests must verify transactions
+through independent observation (a second master, a logic analyzer);
+mock ACKs cannot establish that a DUT saw the register write.</p>
+<h2 id="evidence">Evidence<a class="headerlink" href="#evidence" title="Permanent link">&para;</a></h2>
+<p>Register values that matter to the verdict travel with it exactly as the
+Evidence Contract already requires: <code>PASS({"whoami": value})</code> or
+<code>TestFailure(..., evidence={"whoami": value})</code>, declared with
+<code>@evidence(...)</code> when the method promises to carry it. Commanded writes
+are stimulus, not measurements. A value that is parametric in the problem
+domain (a temperature register, a DAC code) follows whatever protocol
+issue #85 settled in <code>docs/measurements.md</code>, referenced there rather than
+restated here. This note neither fills the reserved <code>measurements</code> slot
+nor decodes anyone's application protocol.</p>
+<p>Every handle declaration — adapter, addresses or chip-selects, I2C width,
+SPI mode, ceilings — is logged through <code>utils.logger</code> at configuration
+time. Transfers, NACKs, arbitration loss, and release attempts use that
+scoped logger to distinguish requested, confirmed, interrupted, and
+unconfirmed outcomes.</p>
+<h2 id="what-the-floor-technician-sees">What the Floor Technician sees<a class="headerlink" href="#what-the-floor-technician-sees" title="Permanent link">&para;</a></h2>
+<p>When a handle is released, the node's <code>timeline.jsonl</code> (and its
+<code>timeline.log</code> twin) carries a log entry at the scope of the node that
+owned it, naming the handle and whether release was confirmed, immediately
+before that node's terminal entry — the same temporal-backbone placement
+the In-Flight Termination Contract already gives a hard-closed SSH
+transport and that signed GPIO/PWM reuse for idle/disable. The terminal
+entry is not always Aborted: a run-level halt and an <code>abort_after</code> expiry
+both settle Aborted, a <code>fail_after</code> expiry settles Fail, and the release
+sweep is owed under every one of them.</p>
+<p><code>result.json</code>'s <code>summary_tree</code> shows whichever state applies; there is no
+I2C- or SPI-specific field, because a safe-state action is evidence of
+what the framework did to protect the bus, not a verdict of its own. A
+technician reading the timeline sees why the run ended and — from the log
+line — that this node released the bus.
+Where the sweep could not confirm release (SDA still low, CS still
+asserted), the timeline says exactly that, naming the handle. An
+unconfirmed release never leaves a success line behind. That is the
+load-bearing line: a technician reaching into a rack trusts a record that
+says the bus is free.</p>
+<h2 id="signed-decisions-recorded-on-96">Signed decisions recorded on #96<a class="headerlink" href="#signed-decisions-recorded-on-96" title="Permanent link">&para;</a></h2>
+<p>The draft asks for a ruling on these concrete obligations before
+implementation:</p>
+<ol>
+<li>Two interfaces, one contract shape. I2C and SPI are not one type. A
+   NACK is not a 0xFF fill byte.</li>
+<li>Transactions are atomic (I2C START–STOP, including <code>write_read</code> as
+   repeated-START; SPI CS held only for one <code>transfer</code>). No unbound
+   read/write that another node can interleave.</li>
+<li>Address-NACK, data-NACK, and arbitration loss are named operational
+   <code>HiltError</code>s; no automatic retry.</li>
+<li>SPI MISO fill is data. Device-missing is not a SPI protocol error.</li>
+<li>Abort safe-state is a released bus (STOP / CS deassert), not a
+   framework-invented register write. Authored <code>cleanup()</code> may write a
+   last value; the hard cut does not wait for it and does not replace it.</li>
+<li>Shared adapters refuse conflicting ownership when one node's release
+   would starve another, same Group Isolation posture as signed PWM.</li>
+</ol>
+<p>The lifecycle, verdict, and evidence contracts above are constraints on
+that decision. If a required backend cannot satisfy them, the finding
+belongs on #96 with the affected guarantee named. It does not earn an
+alternate lifecycle or an exception enforced only by a linter.</p></div>
+            </div>
+        </div>
+
+        <footer class="col-md-12">
+            <hr>
+                <p>Copyright 2026 Tyler Meador</p>
+            <p>Documentation built with <a href="https://www.mkdocs.org/">MkDocs</a>.</p>
+        </footer>
+        <script src="../js/bootstrap.bundle.min.js"></script>
+        <script>
+            var base_url = "..",
+                shortcuts = {"help": 191, "next": 78, "previous": 80, "search": 83};
+        </script>
+        <script src="../js/base.js"></script>
+        <script src="../search/main.js"></script>
+
+        <div class="modal" id="mkdocs_search_modal" tabindex="-1" role="dialog" aria-labelledby="searchModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="searchModalLabel">Search</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>From here you can search these documents. Enter your search terms below.</p>
+                <form>
+                    <div class="form-group">
+                        <input type="search" class="form-control" placeholder="Search..." id="mkdocs-search-query" title="Type search term here">
+                    </div>
+                </form>
+                <div id="mkdocs-search-results" data-no-results-text="No results found"></div>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div><div class="modal" id="mkdocs_keyboard_modal" tabindex="-1" role="dialog" aria-labelledby="keyboardModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="keyboardModalLabel">Keyboard Shortcuts</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th style="width: 20%;">Keys</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="help shortcut"><kbd>?</kbd></td>
+                    <td>Open this help</td>
+                  </tr>
+                  <tr>
+                    <td class="next shortcut"><kbd>n</kbd></td>
+                    <td>Next page</td>
+                  </tr>
+                  <tr>
+                    <td class="prev shortcut"><kbd>p</kbd></td>
+                    <td>Previous page</td>
+                  </tr>
+                  <tr>
+                    <td class="search shortcut"><kbd>s</kbd></td>
+                    <td>Search</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div>
+
+    </body>
+</html>

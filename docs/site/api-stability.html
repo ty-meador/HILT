@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        
+        
+        <link rel="canonical" href="https://gitlab.com/Tyler-Meador/HILT/-/tree/main/docs/api-stability.html">
+        <link rel="shortcut icon" href="img/favicon.ico">
+        <title>API stability - HILT</title>
+        <link href="css/bootstrap.min.css" rel="stylesheet">
+        <link href="css/fontawesome.min.css" rel="stylesheet">
+        <link href="css/brands.min.css" rel="stylesheet">
+        <link href="css/solid.min.css" rel="stylesheet">
+        <link href="css/v4-font-face.min.css" rel="stylesheet">
+        <link href="css/base.css" rel="stylesheet">
+        <link id="hljs-light" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" >
+        <link id="hljs-dark" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github-dark.min.css" disabled>
+        <link href="assets/_mkdocstrings.css" rel="stylesheet">
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+        <script>hljs.highlightAll();</script> 
+    </head>
+
+    <body>
+        <div class="navbar fixed-top navbar-expand-lg navbar-dark bg-primary">
+            <div class="container">
+                <a class="navbar-brand" href="index.html">HILT</a>
+                <!-- Expander button -->
+                <button type="button" class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#navbar-collapse" aria-controls="navbar-collapse" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <!-- Expanded navigation -->
+                <div id="navbar-collapse" class="navbar-collapse collapse">
+                        <!-- Main navigation -->
+                        <ul class="nav navbar-nav">
+                            <li class="nav-item">
+                                <a href="index.html" class="nav-link">Home</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="getting-started.html" class="nav-link">Getting started</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="floor-technician.html" class="nav-link">Floor Technician</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="overview.html" class="nav-link">Overview</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="idioms.html" class="nav-link">Idioms</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="utilities.html" class="nav-link">Utilities</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="contracts.html" class="nav-link">Contracts</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="inspector-json.html" class="nav-link">Inspector JSON</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="inspector.html" class="nav-link">Inspector (target specification)</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="measurements.html" class="nav-link">Measurements</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="junit-xml.html" class="nav-link">JUnit XML</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="hilt-run.html" class="nav-link">hilt run</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="hilt-new.html" class="nav-link">hilt new</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="hilt-check.html" class="nav-link">hilt-check</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="api-stability.html" class="nav-link active" aria-current="page">API stability</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="api.html" class="nav-link">API reference</a>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">HIL interfaces</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="hil/index.html" class="dropdown-item">Overview</a>
+</li>
+                                    
+<li>
+    <a href="hil/gpio.html" class="dropdown-item">GPIO (design note)</a>
+</li>
+                                    
+<li>
+    <a href="hil/pwm.html" class="dropdown-item">PWM (design note)</a>
+</li>
+                                    
+<li>
+    <a href="hil/can.html" class="dropdown-item">CAN bus (design note)</a>
+</li>
+                                    
+<li>
+    <a href="hil/i2c-spi.html" class="dropdown-item">I2C/SPI (design note)</a>
+</li>
+                                    
+<li>
+    <a href="hil/device-api.html" class="dropdown-item">Device API (design note)</a>
+</li>
+                                    
+<li>
+    <a href="hil/serial.html" class="dropdown-item">Serial/UART (design note)</a>
+</li>
+                                </ul>
+                            </li>
+                        </ul>
+
+                    <ul class="nav navbar-nav ms-md-auto">
+                        <li class="nav-item">
+                            <a href="#" class="nav-link" data-bs-toggle="modal" data-bs-target="#mkdocs_search_modal">
+                                <i class="fa fa-search"></i> Search
+                            </a>
+                        </li>
+                            <li class="nav-item">
+                                <a rel="prev" href="hilt-check.html" class="nav-link">
+                                    <i class="fa fa-arrow-left"></i> Previous
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a rel="next" href="api.html" class="nav-link">
+                                    Next <i class="fa fa-arrow-right"></i>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="https://gitlab.com/Tyler-Meador/HILT/-/blob/main/docs/api-stability.md" class="nav-link"><i class="fa-brands fa-gitlab"></i> Edit on GitLab</a>
+                            </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="container">
+            <div class="row">
+                    <div class="col-md-3"><div class="navbar-expand-md bs-sidebar hidden-print affix" role="complementary">
+    <div class="navbar-header">
+        <button type="button" class="navbar-toggler collapsed" data-bs-toggle="collapse" data-bs-target="#toc-collapse" title="Table of Contents">
+            <span class="fa fa-angle-down"></span>
+        </button>
+    </div>
+
+    
+    <div id="toc-collapse" class="navbar-collapse collapse card bg-body-tertiary">
+        <ul class="nav flex-column">
+            
+            <li class="nav-item" data-bs-level="1"><a href="#api-stability" class="nav-link">API Stability</a>
+              <ul class="nav flex-column">
+            <li class="nav-item" data-bs-level="2"><a href="#the-public-surface" class="nav-link">The public surface</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#version-numbers" class="nav-link">Version numbers</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#deprecation" class="nav-link">Deprecation</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#the-changelog" class="nav-link">The changelog</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#changing-the-surface" class="nav-link">Changing the surface</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#reference" class="nav-link">Reference</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+              </ul>
+            </li>
+        </ul>
+    </div>
+</div></div>
+                    <div class="col-md-9" role="main">
+
+<h1 id="api-stability">API Stability<a class="headerlink" href="#api-stability" title="Permanent link">&para;</a></h1>
+<p>1.0.0 is a promise. This document states what the promise covers, how version numbers
+carry it, how a name leaves the surface, and where every change is announced. The
+developer reads it to know which names are safe to build a station on and how much
+warning a change carries. Suites written for 1.0 keep running on every 1.x, so the
+Floor Technician's stations do not break on an upgrade.</p>
+<p>The self-tests hold the framework to this document (<code>tests/test_public_surface.py</code>):
+the reference table below and <code>hilt.__all__</code> must name the same set, every example
+and every documented code block imports only that set from the package root, and
+<code>hilt.__version__</code> reports the installed distribution.</p>
+<h2 id="the-public-surface">The public surface<a class="headerlink" href="#the-public-surface" title="Permanent link">&para;</a></h2>
+<p><strong><code>hilt.__all__</code> is the public surface. Everything else is private.</strong></p>
+<ul>
+<li>A name is public if and only if it appears in <code>hilt.__all__</code>. Import it from
+  <code>hilt</code>; the module a name is defined in is an implementation detail and may move
+  without notice. <code>from hilt import TestComponent</code> is a promise; <code>from hilt.base
+  import TestComponent</code> is not.</li>
+<li>The documented attributes, methods, parameters, and raised exceptions of a public
+  name are part of the promise. "Documented" means named in this document, in
+  <code>docs/contracts.md</code>, <code>docs/idioms.md</code>, <code>docs/inspector-json.md</code>,
+  <code>docs/junit-xml.md</code>, or <code>docs/hilt-check.md</code>, or in the name's own docstring.</li>
+<li>A public object has no attribute of a private type. Every value a suite can read
+  from a public object carries a public type, so the reader can follow every name back
+  to its meaning. <code>ScopedLogger</code> is promised as its <code>logging.LoggerAdapter</code> base plus
+  the documented <code>scope</code> and <code>bread_crumbs</code> additions.</li>
+<li><code>hilt.__version__</code> is public: the installed distribution's version string.</li>
+<li>The invariants in <code>docs/contracts.md</code> are promises in their own right. A change that
+  weakens one is a breaking change even when no name moves.</li>
+<li>The records the framework emits (<code>result.json</code>, <code>timeline.jsonl</code>, the point-in-time
+  artifact envelope) are promised through their published JSON Schemas and
+  <code>format_version</code>, under the policy in <code>docs/inspector-json.md</code>.</li>
+<li>Three environment variables are public configuration, and the framework reads no
+  others: <code>HILT_ARTIFACT_ROOT</code>, the artifact root when <code>TestUtils</code> is given none;
+  <code>environment=DEBUG</code>, which publishes every variable despite an <code>env_allow</code> or
+  <code>env_deny</code> list and logs a warning saying so (<code>docs/inspector-json.md</code>); and
+  <code>SSH_AUTH_SOCK</code>, the SSH agent <code>get_shell</code> and <code>use_shell</code> fall back to when no
+  credential is given. The run environment as a whole is published as evidence under
+  <code>env_allow</code> / <code>env_deny</code>, not read as configuration.</li>
+<li>The <code>hilt run</code> command line is public in two respects: its exit status contract
+  (<code>0</code> Pass, <code>1</code> Fail, <code>2</code> Aborted, <code>3</code> usage error) and its <code>--json</code> record, which is
+  the <code>result.json</code> record under the same <code>format_version</code> policy
+  (<code>docs/hilt-run.md</code>). The <code>hilt.cli</code> module behind it is not.</li>
+<li>The <code>hilt new</code> command line is public in two respects: the files it writes (a
+  gated-PASS suite and a matching self-test stub) and its exit status (<code>0</code> wrote the
+  files, <code>3</code> usage error). The <code>hilt.scaffold</code> module behind it is not
+  (<code>docs/hilt-new.md</code>).</li>
+<li>The <code>hilt inspect</code> command line is public in three respects: its selection rule
+  (PATH is a run directory or its <code>result.json</code>; no PATH opens the most recently
+  modified <code>result.json</code> under <code>HILT_ARTIFACT_ROOT</code>, default <code>artifacts/</code>), its
+  exit status (<code>0</code> the Inspector was closed, <code>3</code> nothing to inspect, not a saved
+  version-1 run, or a <code>--suite</code> that cannot be loaded), and the rule that the Re-Run
+  tab executes only the suite the run recorded as <code>suite_target</code> or the one <code>--suite</code>
+  names, never one derived from evidence. The screen behind it,
+  <code>hilt.inspector_app</code>, and the re-run adapter, <code>hilt.inspector_rerun</code>, are not
+  (<code>docs/inspector.md</code>).</li>
+<li>The <code>hilt-check</code> command line is public in two respects: its exit status contract
+  and the rule codes it ships (<code>docs/hilt-check.md</code>). The Python API of the
+  <code>hilt_check</code> package is not.</li>
+</ul>
+<p>Private, with no promise attached:</p>
+<ul>
+<li>Any name beginning with an underscore, at any depth.</li>
+<li>Every submodule path. <code>hilt.lifecycle</code>, <code>hilt.routing</code>, <code>hilt.executor</code>,
+  <code>hilt.timeline</code>, <code>hilt.mock</code>, and the rest are the framework's organs; the
+  self-tests import from them, suites do not.</li>
+<li>Annotation-only aliases that appear in signatures but are not exported
+  (<code>WaitPredicate</code>, <code>HaltReason</code>, <code>ExecFn</code>). They are documented by their expansion.</li>
+<li>Directory and file names beneath the artifact root. <code>TestComponent.log_path</code> and the
+  <code>result</code> pointer in the timeline are the API; the layout that produces them is not.</li>
+<li>The transports, <code>RemoteInterface</code>, <code>SshInterface</code>, and <code>SerialInterface</code>. A suite
+  author never constructs a transport: <code>TestUtils.use_shell</code> and <code>TestUtils.get_shell</code>
+  open an SSH connection and hand back a <code>Shell</code>; <code>TestUtils.use_serial</code> and
+  <code>TestUtils.get_serial</code> do the same for a console by device path, and their
+  documented parameters are the promise the serial transport is reached through.
+  Transport authors and the self-tests import <code>hilt.remote</code>, <code>hilt.ssh</code>, and
+  <code>hilt.serial</code> directly; a transport contract for third parties is a design note
+  of its own (issues #91, #93–#97).</li>
+<li>The Device API backends, <code>DeviceApiInterface</code>, <code>HttpInterface</code>, <code>CoapInterface</code>,
+  and <code>MockDeviceApi</code>. A suite author never constructs one: <code>TestUtils.get_http</code>
+  and <code>TestUtils.get_coap</code> open the session and hand back a <code>DeviceApi</code>. Self-tests
+  import <code>hilt.device_api</code> directly.</li>
+<li><code>hilt.junit.JunitXml</code>. The runner owns the reporter: <code>hilt run --junit PATH</code>
+  is the promised way to a JUnit report. A harness adapter that imports
+  <code>hilt.junit</code> directly does so without the promise, as <code>docs/junit-xml.md</code> says.</li>
+<li>The self-test fixtures, the loopback sshd, and <code>MockTransport</code>. A transport double
+  for suite authors is a feature to be designed, not a side door into the test kit.</li>
+</ul>
+<h2 id="version-numbers">Version numbers<a class="headerlink" href="#version-numbers" title="Permanent link">&para;</a></h2>
+<p>The distribution version follows <a href="https://semver.org">Semantic Versioning 2.0.0</a>:
+<code>MAJOR.MINOR.PATCH</code>.</p>
+<p><strong>Before 1.0.0 (<code>0.y.z</code>)</strong> nothing is promised. A name may be renamed or removed in any
+release, without a deprecation period; the composition vocabulary ruling on issue #110
+(<code>case</code> and <code>group</code> removed outright, a <code>hilt-check</code> rule naming the replacement) is
+the precedent. Every such change still lands in <code>CHANGELOG.md</code> under the release that
+makes it, so the trail exists before the promise does.</p>
+<p><strong>From 1.0.0</strong> a release bumps exactly one component:</p>
+<table>
+<thead>
+<tr>
+<th>Component</th>
+<th>Bumped when</th>
+<th>Examples</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>MAJOR</strong></td>
+<td>A promise is broken.</td>
+<td>A name leaves <code>__all__</code>; a documented parameter, attribute, or return type changes incompatibly; a contract in <code>docs/contracts.md</code> weakens; a <code>format_version</code> bumps; <code>requires-python</code> rises; a <code>hilt-check</code> rule code is removed or renamed.</td>
+</tr>
+<tr>
+<td><strong>MINOR</strong></td>
+<td>The surface grows or a deprecation is announced.</td>
+<td>A new name in <code>__all__</code>; a new optional keyword parameter; a new field on a record within its <code>format_version</code>; a new <code>hilt-check</code> rule; a name marked deprecated.</td>
+</tr>
+<tr>
+<td><strong>PATCH</strong></td>
+<td>Behaviour is corrected without changing the surface.</td>
+<td>A bug fix that brings behaviour in line with a documented contract; a dependency bump that changes nothing a suite can observe; documentation.</td>
+</tr>
+</tbody>
+</table>
+<p>Two consequences the developer can rely on:</p>
+<ul>
+<li><strong>A fix is not a break.</strong> When a documented contract and the code disagree, the
+  document is the promise and the code is the bug. Correcting it is a PATCH even if a
+  suite depended on the wrong behaviour.</li>
+<li><strong>A <code>format_version</code> bump is a MAJOR.</strong> The Inspector and the harness that read a
+  station's records are part of the station. A new record version that an installed
+  consumer refuses is a break, whatever the Python surface did.</li>
+</ul>
+<p>Dependencies are private. <code>asyncssh</code> and anything else the framework imports may change
+major version in a MINOR or PATCH release as long as nothing a suite can observe
+changes; a dependency that becomes observable (a type in a public signature) becomes
+part of the promise at that moment and is documented as such.</p>
+<h2 id="deprecation">Deprecation<a class="headerlink" href="#deprecation" title="Permanent link">&para;</a></h2>
+<p>A public name is never removed in the MAJOR line that introduced it. It is deprecated
+first, and removed no sooner than the next MAJOR release and no sooner than two MINOR
+releases after the deprecation was announced. Both conditions hold at once.</p>
+<p>Announcing a deprecation is one MR that does all of the following:</p>
+<ol>
+<li><strong>The old spelling keeps working</strong>, with the documented behaviour, for the whole
+   deprecation period.</li>
+<li><strong>Calling it emits <code>DeprecationWarning</code></strong> through <code>warnings.warn</code> with
+   <code>stacklevel=2</code>, so the warning points at the suite's line, not the framework's. The
+   message names the replacement and the release that will remove the old spelling.</li>
+<li><strong>The reference table marks it</strong> with <code>Deprecated in x.y, removed in z.0</code> and the
+   replacement, and the section that documents the name says the same.</li>
+<li><strong><code>CHANGELOG.md</code> records it</strong> under <em>Deprecated</em> for the release that announces it,
+   and under <em>Removed</em> for the release that removes it.</li>
+<li><strong><code>hilt-check</code> gains a rule</strong> that flags the deprecated spelling and names the
+   replacement, in the pattern of <code>hilt/retired-names</code>, so the finding reaches the
+   developer's CI before it reaches a station log.</li>
+</ol>
+<p>The developer sees the warning in the self-tests of their own suite (pytest surfaces
+<code>DeprecationWarning</code> by default) and in <code>hilt-check</code> output; <code>hilt run</code> routes
+Python warnings through the run log so the station's console carries the notice as
+well.</p>
+<p>A removal at the next MAJOR deletes the code and the rule, moves the table row to the
+changelog's <em>Removed</em> list, and stops there: a removed name is not reused for something
+else within the following MAJOR line.</p>
+<h2 id="the-changelog">The changelog<a class="headerlink" href="#the-changelog" title="Permanent link">&para;</a></h2>
+<p><code>CHANGELOG.md</code> at the repository root follows
+<a href="https://keepachangelog.com/en/1.1.0/">Keep a Changelog</a>: an <em>Unreleased</em> section at
+the top, one section per release below it, entries grouped under <em>Added</em>, <em>Changed</em>,
+<em>Deprecated</em>, <em>Removed</em>, <em>Fixed</em>, and <em>Security</em>.</p>
+<p>Every MR that changes a public name, a documented contract, a record format, or a
+<code>hilt-check</code> rule adds its line to <em>Unreleased</em> in the same MR. A release renames
+<em>Unreleased</em> to the version and date and opens a fresh <em>Unreleased</em> above it. The
+changelog is the announcement; the GitLab issue is the ruling behind it.</p>
+<h2 id="changing-the-surface">Changing the surface<a class="headerlink" href="#changing-the-surface" title="Permanent link">&para;</a></h2>
+<p>A change to the public surface is a change to a promise, and the workflow in
+<code>STANDARDS.md</code> section 7 applies: it is raised as an issue for Ty's sign-off before
+its MR opens, stating how the change helps the developer help the Floor Technician.
+The MR then updates <code>hilt.__all__</code>, the reference table below, the section that
+documents the name, and <code>CHANGELOG.md</code> together. The public-surface self-test refuses
+an MR that updates one without the others.</p>
+<h2 id="reference">Reference<a class="headerlink" href="#reference" title="Permanent link">&para;</a></h2>
+<p>Every name in <code>hilt.__all__</code>, what it is, and where its contract is written. <em>Kind</em>
+is checked against the object by the self-tests.</p>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Kind</th>
+<th>What it is</th>
+<th>Described in</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>PASS</code></td>
+<td>constant</td>
+<td>The verdict. <code>return PASS</code> passes with no evidence; <code>return PASS({...})</code> passes and carries the readings that prove it.</td>
+<td><code>docs/overview.md</code> (Why HILT Rejects "Pass by Default"), <code>docs/idioms.md</code> (Evidence Travels With the Verdict), <code>docs/contracts.md</code> (Terminal State Contract)</td>
+</tr>
+<tr>
+<td><code>AfterEachContext</code></td>
+<td>class</td>
+<td>The narrow integration-hook context after a node settles: <code>BeforeEachContext</code> plus <code>result</code>.</td>
+<td><code>docs/idioms.md</code> (Integration Hooks), <code>docs/contracts.md</code> (Integration Hook Contract)</td>
+</tr>
+<tr>
+<td><code>AfterEachHook</code></td>
+<td>type alias</td>
+<td><code>Callable[[AfterEachContext], Awaitable[None]]</code>; the <code>after_each</code> parameter of <code>TestComponent.run</code>.</td>
+<td><code>docs/idioms.md</code> (Integration Hooks)</td>
+</tr>
+<tr>
+<td><code>ArpResolutionFailure</code></td>
+<td>class</td>
+<td><code>TestFailure</code> raised when the resolver cannot map a MAC address to an IP.</td>
+<td><code>docs/idioms.md</code> (ArpResolver — MAC to IP)</td>
+</tr>
+<tr>
+<td><code>ArpResolver</code></td>
+<td>class</td>
+<td>Resolve a MAC address to an IP through the node's current exec route; <code>mac</code>, <code>resolve</code>, <code>reacquire</code>, <code>ping</code>.</td>
+<td><code>docs/idioms.md</code> (ArpResolver — MAC to IP, ArpResolver with Via-Routing)</td>
+</tr>
+<tr>
+<td><code>Artifact</code></td>
+<td>class</td>
+<td>Immutable point-in-time evidence (<code>name</code>, <code>type</code>, <code>data</code>, <code>timestamp</code>) for <code>TestUtils.capture_artifact</code>.</td>
+<td><code>docs/idioms.md</code> (Point-in-Time Artifacts), <code>docs/inspector-json.md</code></td>
+</tr>
+<tr>
+<td><code>BeforeEachContext</code></td>
+<td>class</td>
+<td>The narrow integration-hook context before a node runs: <code>name</code>, <code>ancestor_names</code>, <code>bread_crumbs</code>, <code>logger</code>, <code>env</code>.</td>
+<td><code>docs/idioms.md</code> (Integration Hooks), <code>docs/contracts.md</code> (Integration Hook Contract)</td>
+</tr>
+<tr>
+<td><code>BeforeEachHook</code></td>
+<td>type alias</td>
+<td><code>Callable[[BeforeEachContext], Awaitable[None]]</code>; the <code>before_each</code> parameter of <code>TestComponent.run</code>.</td>
+<td><code>docs/idioms.md</code> (Integration Hooks)</td>
+</tr>
+<tr>
+<td><code>CoapCode</code></td>
+<td>class</td>
+<td>Named CoAP response codes as dotted strings (<code>CONTENT</code> is <code>2.05</code>, <code>CHANGED</code> is <code>2.04</code>, <code>NOT_FOUND</code> is <code>4.04</code>). A CoAP <code>DeviceResponse.status</code> is one of these strings; <code>from_wire</code> renders a code byte the same way.</td>
+<td><code>docs/idioms.md</code> (Device API — CoAP/HTTP), signed <code>docs/hil/device-api.md</code></td>
+</tr>
+<tr>
+<td><code>ContractViolation</code></td>
+<td>class</td>
+<td>A developer bug: suite code did something the verdict contract forbids. Records as Fail with <code>bug: true</code>.</td>
+<td><code>docs/overview.md</code> (Failure Taxonomy), <code>docs/contracts.md</code> (Failure Taxonomy Contract)</td>
+</tr>
+<tr>
+<td><code>DeviceApi</code></td>
+<td>class</td>
+<td>The session handle returned by <code>TestUtils.get_http</code> and <code>TestUtils.get_coap</code>; <code>request</code>, <code>scheme</code>, <code>base_url</code>.</td>
+<td><code>docs/idioms.md</code> (Device API — CoAP/HTTP), signed <code>docs/hil/device-api.md</code></td>
+</tr>
+<tr>
+<td><code>DeviceApiOperationFailure</code></td>
+<td>class</td>
+<td><code>HiltError</code> raised when a device-API transfer does not complete. Not a DUT verdict; HTTP 4xx/5xx is data on <code>DeviceResponse</code>.</td>
+<td><code>docs/idioms.md</code> (Device API — CoAP/HTTP), signed <code>docs/hil/device-api.md</code></td>
+</tr>
+<tr>
+<td><code>DeviceRequest</code></td>
+<td>class</td>
+<td>One resource operation: <code>method</code>, <code>path</code>, <code>payload</code> bytes or keyword-only <code>json=</code>, <code>headers</code>, retry declaration, <code>evidence_headers</code>.</td>
+<td><code>docs/contracts.md</code> (Device API Contract), <code>docs/idioms.md</code> (Device API — CoAP/HTTP), signed <code>docs/hil/device-api.md</code></td>
+</tr>
+<tr>
+<td><code>DeviceResponse</code></td>
+<td>class</td>
+<td>What a transfer returned: <code>status</code>, <code>body</code> bytes, <code>headers</code>; <code>json()</code> and <code>parse(response_type="json" or "yaml")</code> decode explicitly. Status is data: an HTTP integer, or a CoAP dotted code (<code>2.05</code>).</td>
+<td><code>docs/contracts.md</code> (Device API Contract), <code>docs/idioms.md</code> (Device API — CoAP/HTTP), signed <code>docs/hil/device-api.md</code></td>
+</tr>
+<tr>
+<td><code>EvidenceViolation</code></td>
+<td>class</td>
+<td><code>ContractViolation</code> raised by the child boundary when a verdict's evidence is not JSON, shadows a ctx key, or lacks a key <code>@evidence</code> declared; <code>key</code>.</td>
+<td><code>docs/idioms.md</code> (Evidence Travels With the Verdict), <code>docs/contracts.md</code> (Evidence Contract)</td>
+</tr>
+<tr>
+<td><code>ExecResult</code></td>
+<td>class</td>
+<td>What a command produced: <code>stdout</code>, <code>stderr</code>, <code>exit_code</code>, <code>truncated</code>, <code>captured_bytes</code>. <code>exec</code> never throws.</td>
+<td><code>docs/contracts.md</code> (Utils Contract)</td>
+</tr>
+<tr>
+<td><code>ExternalIntegrationFailure</code></td>
+<td>class</td>
+<td>A harness-level halt: an integration hook threw. Aborts the run.</td>
+<td><code>docs/overview.md</code> (Failure Taxonomy), <code>docs/contracts.md</code> (Integration Hook Contract)</td>
+</tr>
+<tr>
+<td><code>Failure</code></td>
+<td>type alias</td>
+<td>The union of <code>TestFailure</code>, <code>ExternalIntegrationFailure</code>, <code>OperatorInterrupt</code>, and <code>MissingVerdict</code>; the type of <code>RunResult.failure</code>.</td>
+<td><code>docs/contracts.md</code> (Failure Taxonomy Contract)</td>
+</tr>
+<tr>
+<td><code>FrameworkContractViolation</code></td>
+<td>class</td>
+<td>A framework bug: the second layer of the guard, unreachable by design. Exported so a log line can be followed.</td>
+<td><code>docs/contracts.md</code> (Failure Taxonomy Contract)</td>
+</tr>
+<tr>
+<td><code>HiltError</code></td>
+<td>class</td>
+<td>Root of the framework's exception taxonomy.</td>
+<td><code>docs/contracts.md</code> (Failure Taxonomy Contract)</td>
+</tr>
+<tr>
+<td><code>JsonObject</code></td>
+<td>type alias</td>
+<td><code>dict[str, JsonValue]</code>; the shape of <code>run_data</code>, of a node's <code>evidence</code>, and of <code>Artifact.data</code>.</td>
+<td><code>docs/idioms.md</code> (run_data — Automatic Structured Evidence)</td>
+</tr>
+<tr>
+<td><code>Measurement</code></td>
+<td>class</td>
+<td>One <code>utils.measure</code> call as recorded: <code>name</code>, <code>value</code>, <code>unit</code>, <code>limits</code>, <code>in_limits</code>, <code>timestamp</code>. Frozen; <code>in_limits</code> is evidence, never a verdict. <code>value</code> is <code>None</code> for a reading not taken, and such a reading is never inside its window.</td>
+<td><code>docs/measurements.md</code> (The call)</td>
+</tr>
+<tr>
+<td><code>MissingVerdict</code></td>
+<td>class</td>
+<td>No verdict was produced: the test method returned something other than <code>PASS</code>.</td>
+<td><code>docs/overview.md</code> (Failure Taxonomy), <code>docs/contracts.md</code> (Terminal State Contract)</td>
+</tr>
+<tr>
+<td><code>NodeType</code></td>
+<td>class</td>
+<td><code>StrEnum</code> discriminator on <code>RunResult.type</code> and <code>SummaryTreeNode.type</code>: <code>SUITE</code>, <code>TEST</code>, <code>PARALLEL</code>, <code>SEQUENCE</code>; the wire values are fixed by the result schema.</td>
+<td><code>docs/inspector-json.md</code> (Version 1 result)</td>
+</tr>
+<tr>
+<td><code>OperatorInterrupt</code></td>
+<td>class</td>
+<td>A harness-level halt: the operator interrupted the run. Aborts the run.</td>
+<td><code>docs/overview.md</code> (Failure Taxonomy), <code>docs/contracts.md</code> (Failure Taxonomy Contract)</td>
+</tr>
+<tr>
+<td><code>Phase</code></td>
+<td>class</td>
+<td>Ordered <code>StrEnum</code> of the six survey dispatch points, <code>PRE_CONFIGURE</code> through <code>POST_CLEANUP</code>; the <code>phases=</code> selection of <code>use_survey</code> and the artifact-name prefix.</td>
+<td><code>docs/idioms.md</code> (Constructor-Only Hooks), <code>docs/contracts.md</code> (Evidence Contract)</td>
+</tr>
+<tr>
+<td><code>RunEnv</code></td>
+<td>class</td>
+<td>The run environment on <code>TestUtils.env</code>: a read-only <code>Mapping[str, str]</code> plus <code>text</code>, <code>require</code>, <code>port</code>, <code>int</code>, and <code>float</code>, readers that Fail the run naming the bench variable to set.</td>
+<td><code>docs/idioms.md</code> (TestUtils Injection), <code>docs/hilt-run.md</code> (Selecting the suite)</td>
+</tr>
+<tr>
+<td><code>RunResult</code></td>
+<td>class</td>
+<td>Self-contained evidence for one settled node: <code>state</code>, <code>failure</code>, <code>timeout</code>, <code>ancestor_names</code>, <code>bread_crumbs</code>, <code>summary_tree</code>, <code>env</code>, <code>run_data</code>, <code>to_json</code>.</td>
+<td><code>docs/idioms.md</code> (RunResult Navigation), <code>docs/inspector-json.md</code>, <code>docs/contracts.md</code> (Evidence Contract)</td>
+</tr>
+<tr>
+<td><code>RunSignal</code></td>
+<td>class</td>
+<td>Read-only view of the halt signals affecting a node: <code>fired</code>, <code>reason</code>. <code>TestUtils.signal</code>.</td>
+<td><code>docs/idioms.md</code> (TestUtils Injection)</td>
+</tr>
+<tr>
+<td><code>ScopedLogger</code></td>
+<td>class</td>
+<td>The per-node logger on <code>TestUtils.logger</code> and the hook contexts; a <code>logging.LoggerAdapter</code> with <code>scope</code> and <code>bread_crumbs</code>.</td>
+<td><code>docs/idioms.md</code> (Logging), <code>docs/contracts.md</code> (Evidence Contract)</td>
+</tr>
+<tr>
+<td><code>Shell</code></td>
+<td>class</td>
+<td>The scoped exec handle returned by <code>TestUtils.use_shell</code>, <code>TestUtils.get_shell</code>, <code>TestUtils.use_serial</code>, and <code>TestUtils.get_serial</code>; the <code>via</code> argument to all four.</td>
+<td><code>docs/idioms.md</code> (SSH Device, SSH Tunneling), <code>docs/utilities.md</code> (Serial console), <code>docs/contracts.md</code> (Exec Routing Contract)</td>
+</tr>
+<tr>
+<td><code>Slot</code></td>
+<td>class</td>
+<td><code>StrEnum</code> of the lifecycle positions the framework calls suite code from; <code>RunResult.slot</code>.</td>
+<td><code>docs/inspector-json.md</code> (Version 1 result), <code>docs/contracts.md</code> (Lifecycle Contract)</td>
+</tr>
+<tr>
+<td><code>State</code></td>
+<td>class</td>
+<td><code>StrEnum</code> of the three terminal states, <code>PASS</code>, <code>FAIL</code>, <code>ABORTED</code>; <code>RunResult.state</code>. There is no fourth.</td>
+<td><code>docs/overview.md</code> (The Three Terminal States), <code>docs/contracts.md</code> (Terminal State Contract)</td>
+</tr>
+<tr>
+<td><code>SummaryTreeNode</code></td>
+<td>class</td>
+<td>Plain recursive snapshot of the run tree on <code>RunResult.summary_tree</code>; <code>evidence</code>, <code>evidence_declared</code>, <code>to_json</code>.</td>
+<td><code>docs/inspector-json.md</code> (Summary tree)</td>
+</tr>
+<tr>
+<td><code>TestComponent</code></td>
+<td>class</td>
+<td>The atom: a claim about hardware and the procedure that produces its evidence. <code>configure</code>, <code>build_suite</code>, <code>cleanup</code>, <code>run</code>, <code>main</code>, <code>test</code>, <code>sequence</code>, <code>parallel</code>, <code>use_survey</code>, <code>use_audit</code>, <code>name</code>, <code>log_path</code>, <code>run_data</code>, and the <code>redact_ctx</code> class attribute. Optionally parameterized as <code>TestComponent[CtxT]</code> to type the suite's own context; the bare name keeps today's meaning.</td>
+<td><code>docs/overview.md</code> (The Atom), <code>docs/idioms.md</code>, <code>docs/contracts.md</code> (Lifecycle Contract)</td>
+</tr>
+<tr>
+<td><code>TestFailure</code></td>
+<td>class</td>
+<td>A verdict of Fail: the hardware did not meet the spec. The exception a test method raises; <code>evidence=</code> carries the readings taken before it failed.</td>
+<td><code>docs/overview.md</code> (Failure Taxonomy), <code>docs/contracts.md</code> (Failure Taxonomy Contract)</td>
+</tr>
+<tr>
+<td><code>TestUtils</code></td>
+<td>class</td>
+<td>The scoped service object handed to every lifecycle method: <code>logger</code>, <code>ctx</code>, <code>env</code>, <code>signal</code>, <code>artifact_root</code>, <code>exec_route</code>, <code>exec</code>, <code>wait_for</code>, <code>capture_artifact</code>, <code>get_arp_resolver</code>, <code>use_shell</code>, <code>get_shell</code>, <code>use_serial</code>, <code>get_serial</code>, <code>get_http</code>, <code>get_coap</code>, <code>measure</code>. Optionally parameterized as <code>TestUtils[CtxT]</code> so <code>ctx</code> returns the suite's declared shape.</td>
+<td><code>docs/idioms.md</code> (TestUtils Injection), <code>docs/utilities.md</code> (Serial console), <code>docs/contracts.md</code> (Utils Contract)</td>
+</tr>
+<tr>
+<td><code>TimeoutEvidence</code></td>
+<td>class</td>
+<td>Structured evidence when a time budget cut a subtree: <code>reason</code>, <code>declared</code>, <code>budget_seconds</code>, <code>elapsed_seconds</code>, <code>clock</code>; <code>RunResult.timeout</code>.</td>
+<td><code>docs/idioms.md</code> (Time Budgets), <code>docs/contracts.md</code> (Time Budget Contract)</td>
+</tr>
+<tr>
+<td><code>Verdict</code></td>
+<td>class</td>
+<td>The return type of a test method: <code>PASS</code> or <code>PASS(evidence)</code>; <code>evidence</code>. Generic in the evidence shape, so <code>-&gt; Verdict[MyEvidence]</code> lets pyright check the payload.</td>
+<td><code>docs/overview.md</code> (Why HILT Rejects "Pass by Default"), <code>docs/idioms.md</code> (Evidence Travels With the Verdict), <code>docs/hilt-check.md</code> (<code>hilt/unannotated-interface</code>)</td>
+</tr>
+<tr>
+<td><code>evidence</code></td>
+<td>function</td>
+<td>Decorator naming the keys a test method's <code>PASS</code> must carry: <code>@evidence("k", ...)</code> or <code>@evidence(MyTypedDict)</code>. Static at class definition.</td>
+<td><code>docs/idioms.md</code> (Evidence Travels With the Verdict), <code>docs/hilt-check.md</code> (<code>hilt/evidence-fulfilled</code>, <code>hilt/evidence-shadows-ctx</code>)</td>
+</tr>
+<tr>
+<td><code>measure</code></td>
+<td>function</td>
+<td>Package-root spelling of <code>utils.measure</code>, resolved to the node whose <code>configure()</code> or test method is running and refused outside one. <code>utils.measure</code> is the documented home.</td>
+<td><code>docs/measurements.md</code> (The package-root alias)</td>
+</tr>
+</tbody>
+</table></div>
+            </div>
+        </div>
+
+        <footer class="col-md-12">
+            <hr>
+                <p>Copyright 2026 Tyler Meador</p>
+            <p>Documentation built with <a href="https://www.mkdocs.org/">MkDocs</a>.</p>
+        </footer>
+        <script src="js/bootstrap.bundle.min.js"></script>
+        <script>
+            var base_url = ".",
+                shortcuts = {"help": 191, "next": 78, "previous": 80, "search": 83};
+        </script>
+        <script src="js/base.js"></script>
+        <script src="search/main.js"></script>
+
+        <div class="modal" id="mkdocs_search_modal" tabindex="-1" role="dialog" aria-labelledby="searchModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="searchModalLabel">Search</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>From here you can search these documents. Enter your search terms below.</p>
+                <form>
+                    <div class="form-group">
+                        <input type="search" class="form-control" placeholder="Search..." id="mkdocs-search-query" title="Type search term here">
+                    </div>
+                </form>
+                <div id="mkdocs-search-results" data-no-results-text="No results found"></div>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div><div class="modal" id="mkdocs_keyboard_modal" tabindex="-1" role="dialog" aria-labelledby="keyboardModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="keyboardModalLabel">Keyboard Shortcuts</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th style="width: 20%;">Keys</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="help shortcut"><kbd>?</kbd></td>
+                    <td>Open this help</td>
+                  </tr>
+                  <tr>
+                    <td class="next shortcut"><kbd>n</kbd></td>
+                    <td>Next page</td>
+                  </tr>
+                  <tr>
+                    <td class="prev shortcut"><kbd>p</kbd></td>
+                    <td>Previous page</td>
+                  </tr>
+                  <tr>
+                    <td class="search shortcut"><kbd>s</kbd></td>
+                    <td>Search</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div>
+
+    </body>
+</html>

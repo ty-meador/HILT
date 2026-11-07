@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        
+        
+        <link rel="canonical" href="https://gitlab.com/Tyler-Meador/HILT/-/tree/main/docs/hil/can.html">
+        <link rel="shortcut icon" href="../img/favicon.ico">
+        <title>CAN bus (design note) - HILT</title>
+        <link href="../css/bootstrap.min.css" rel="stylesheet">
+        <link href="../css/fontawesome.min.css" rel="stylesheet">
+        <link href="../css/brands.min.css" rel="stylesheet">
+        <link href="../css/solid.min.css" rel="stylesheet">
+        <link href="../css/v4-font-face.min.css" rel="stylesheet">
+        <link href="../css/base.css" rel="stylesheet">
+        <link id="hljs-light" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" >
+        <link id="hljs-dark" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github-dark.min.css" disabled>
+        <link href="../assets/_mkdocstrings.css" rel="stylesheet">
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+        <script>hljs.highlightAll();</script> 
+    </head>
+
+    <body>
+        <div class="navbar fixed-top navbar-expand-lg navbar-dark bg-primary">
+            <div class="container">
+                <a class="navbar-brand" href="../index.html">HILT</a>
+                <!-- Expander button -->
+                <button type="button" class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#navbar-collapse" aria-controls="navbar-collapse" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <!-- Expanded navigation -->
+                <div id="navbar-collapse" class="navbar-collapse collapse">
+                        <!-- Main navigation -->
+                        <ul class="nav navbar-nav">
+                            <li class="nav-item">
+                                <a href="../index.html" class="nav-link">Home</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="../getting-started.html" class="nav-link">Getting started</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="../floor-technician.html" class="nav-link">Floor Technician</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="../overview.html" class="nav-link">Overview</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="../idioms.html" class="nav-link">Idioms</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="../utilities.html" class="nav-link">Utilities</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="../contracts.html" class="nav-link">Contracts</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="../inspector-json.html" class="nav-link">Inspector JSON</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="../inspector.html" class="nav-link">Inspector (target specification)</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="../measurements.html" class="nav-link">Measurements</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="../junit-xml.html" class="nav-link">JUnit XML</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="../hilt-run.html" class="nav-link">hilt run</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="../hilt-new.html" class="nav-link">hilt new</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="../hilt-check.html" class="nav-link">hilt-check</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="../api-stability.html" class="nav-link">API stability</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="../api.html" class="nav-link">API reference</a>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle active" aria-current="page" role="button" data-bs-toggle="dropdown"  aria-expanded="false">HIL interfaces</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="index.html" class="dropdown-item">Overview</a>
+</li>
+                                    
+<li>
+    <a href="gpio.html" class="dropdown-item">GPIO (design note)</a>
+</li>
+                                    
+<li>
+    <a href="pwm.html" class="dropdown-item">PWM (design note)</a>
+</li>
+                                    
+<li>
+    <a href="can.html" class="dropdown-item active" aria-current="page">CAN bus (design note)</a>
+</li>
+                                    
+<li>
+    <a href="i2c-spi.html" class="dropdown-item">I2C/SPI (design note)</a>
+</li>
+                                    
+<li>
+    <a href="device-api.html" class="dropdown-item">Device API (design note)</a>
+</li>
+                                    
+<li>
+    <a href="serial.html" class="dropdown-item">Serial/UART (design note)</a>
+</li>
+                                </ul>
+                            </li>
+                        </ul>
+
+                    <ul class="nav navbar-nav ms-md-auto">
+                        <li class="nav-item">
+                            <a href="#" class="nav-link" data-bs-toggle="modal" data-bs-target="#mkdocs_search_modal">
+                                <i class="fa fa-search"></i> Search
+                            </a>
+                        </li>
+                            <li class="nav-item">
+                                <a rel="prev" href="pwm.html" class="nav-link">
+                                    <i class="fa fa-arrow-left"></i> Previous
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a rel="next" href="i2c-spi.html" class="nav-link">
+                                    Next <i class="fa fa-arrow-right"></i>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="https://gitlab.com/Tyler-Meador/HILT/-/blob/main/docs/hil/can.md" class="nav-link"><i class="fa-brands fa-gitlab"></i> Edit on GitLab</a>
+                            </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="container">
+            <div class="row">
+                    <div class="col-md-3"><div class="navbar-expand-md bs-sidebar hidden-print affix" role="complementary">
+    <div class="navbar-header">
+        <button type="button" class="navbar-toggler collapsed" data-bs-toggle="collapse" data-bs-target="#toc-collapse" title="Table of Contents">
+            <span class="fa fa-angle-down"></span>
+        </button>
+    </div>
+
+    
+    <div id="toc-collapse" class="navbar-collapse collapse card bg-body-tertiary">
+        <ul class="nav flex-column">
+            
+            <li class="nav-item" data-bs-level="1"><a href="#design-note-can-bus-interface-contract" class="nav-link">Design note: CAN bus interface contract</a>
+              <ul class="nav flex-column">
+            <li class="nav-item" data-bs-level="2"><a href="#why-not-an-exec-subclass" class="nav-link">Why not an exec subclass</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#the-can-frame-transfer-contract" class="nav-link">The CAN Frame Transfer Contract</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#the-can-filter-contract" class="nav-link">The CAN Filter Contract</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#the-can-bus-off-and-recovery-contract" class="nav-link">The CAN Bus-Off and Recovery Contract</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#the-can-safe-state-and-timing-contract" class="nav-link">The CAN Safe-State and Timing Contract</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#lifecycle-and-hook-ownership-unchanged" class="nav-link">Lifecycle and hook ownership: unchanged</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#failure-vocabulary" class="nav-link">Failure vocabulary</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#mock-and-real-backends-one-contract-two-implementations" class="nav-link">Mock and real backends: one contract, two implementations</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#evidence" class="nav-link">Evidence</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#what-the-floor-technician-sees" class="nav-link">What the Floor Technician sees</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#signed-decisions-recorded-on-95" class="nav-link">Signed decisions recorded on #95</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+              </ul>
+            </li>
+        </ul>
+    </div>
+</div></div>
+                    <div class="col-md-9" role="main">
+
+<h1 id="design-note-can-bus-interface-contract">Design note: CAN bus interface contract<a class="headerlink" href="#design-note-can-bus-interface-contract" title="Permanent link">&para;</a></h1>
+<p>Status: SIGNED — Ty approved this note in !128 on 2026-09-09; recorded on #95</p>
+<p>A CAN frame is not a command string. This note states the transfer, filter,
+bus-off, timing, and silent-bus obligations that make a controller fit HILT's
+existing lifecycle. The <a href="index.html#the-three-rulings">three HIL rulings</a> govern
+it. <a href="https://gitlab.com/Tyler-Meador/HILT/-/merge_requests/128#note_3812483371">Ty's approval of the actual note</a>
+signs the obligations below. Implementation requires its own approved issue
+and Zavala's review under <a href="../api-stability.html">API stability</a>.</p>
+<p>All names below (<code>CanInterface</code>, <code>CanFrame</code>, <code>CanFilter</code>, <code>CanBusOff</code>,
+<code>CanOperationFailure</code>, <code>MockCan</code>, and the method names) are provisional. This
+note adds no public Python name and changes no stored record. The legacy
+framework and language server supply no CAN behavior to carry forward; the
+migration context is the preserved lifecycle and evidence contracts, with a
+new hardware contract for Ty to judge.</p>
+<h2 id="why-not-an-exec-subclass">Why not an <code>exec</code> subclass<a class="headerlink" href="#why-not-an-exec-subclass" title="Permanent link">&para;</a></h2>
+<p>A CAN frame has an arbitration identifier, an extended-id flag, a remote flag,
+and a payload of bytes. None of that is a shell command. Forcing frames
+through <code>exec</code> would mean either shelling out to <code>cansend</code>/<code>candump</code> (lossy,
+racy, and blind to bus-off) or smuggling a controller inside a
+<code>RemoteInterface</code> subclass that answers <code>_exec</code> with a fake dialect — exactly
+the parallel-lifecycle-in-disguise <a href="index.html#the-three-rulings">ruling 1</a>
+forbids. A frame that has been stringified has already lost the identifier
+width, the ACK, and the error counters. <code>CanInterface</code> is its own ABC,
+structurally parallel to <code>RemoteInterface</code> (<code>src/hilt/remote.py</code>) and to the
+signed <a href="gpio.html"><code>GpioInterface</code></a>: it owns <code>connect</code> / <code>disconnect</code> /
+<code>cancel_in_flight</code> in the same shape, and adds frame-shaped operations in
+place of <code>exec</code>.</p>
+<h2 id="the-can-frame-transfer-contract">The CAN Frame Transfer Contract<a class="headerlink" href="#the-can-frame-transfer-contract" title="Permanent link">&para;</a></h2>
+<p><strong>Framework obligation:</strong> Present CAN as its own typed interface under HIL
+ruling 1. <code>CanInterface</code> is not an <code>exec</code> subclass and does not change where
+<code>utils.exec</code> routes. A handle is bound to one controller, one bitrate (or
+bitrate pair, for a backend that also speaks CAN FD), and a declared
+payload ceiling before it can send or receive.</p>
+<ul>
+<li>A provisional <code>CanFrame</code> carries <code>arbitration_id</code> (non-negative int),
+  <code>extended</code> (11-bit vs 29-bit), <code>rtr</code> (remote transmission request), and
+  <code>data</code> (<code>bytes</code>). Classic CAN admits 0–8 data bytes. A CAN-FD backend
+  declares a larger ceiling (up to 64) and a bitrate switch; it does not
+  earn a second interface or a second lifecycle. Reject a negative id, an
+  id that does not fit the declared width, a payload longer than the
+  ceiling, a non-<code>bytes</code> payload, and a remote frame that also carries
+  data, at the call site, before the controller is touched.</li>
+<li><code>send(frame)</code> places one data or remote frame on the wire and waits for
+  the on-bus ACK bit. That ACK is evidence that <em>a</em> receiver on the bus
+  acknowledged the frame. It is not evidence that the DUT parsed it, acted
+  on it, or is even the node that ACKed. A send that the controller cannot
+  represent is refused; a send the bus does not ACK within the backend's
+  declared transmit ceiling is an operational failure, not a forged
+  success. The interface does not retry.</li>
+<li><code>receive(deadline=...)</code> returns the next frame that passes this handle's
+  declared filters, or fails if none arrives before the deadline. The
+  deadline is positive and finite seconds; booleans and non-finite values
+  are refused. There is no GPIO-style stability window: a CAN frame is
+  atomic. A timeout does not invent a frame, does not return empty <code>data</code>
+  with a sentinel id, and does not raise <code>TestFailure</code> — see the failure
+  vocabulary. Software matching on top of hardware filters is allowed;
+  dropping a frame the hardware already accepted is not a protocol error.</li>
+<li>One in-flight send and one in-flight receive per handle. A second <code>send</code>
+  or <code>receive</code> is refused while one is active; it is not queued to surprise
+  the next lifecycle phase. Framework termination takes precedence over
+  this admission rule.</li>
+<li>Each operation records the requested frame (id, flags, payload length;
+  payload bytes when they are JSON-safe and within evidence bounds) and
+  whether the controller confirmed the outcome. An unconfirmed send never
+  becomes the last-successful frame in a cache the next test method reads
+  as truth.</li>
+</ul>
+<p><strong>Developer obligation:</strong> Declare the controller, bitrate, payload ceiling,
+and filters in <code>configure()</code>. Obtain the framework-managed handle through a
+provisional <code>utils.get_can(...)</code>; return the handle and static inputs through
+configure's ctx. Keep <code>self</code> immutable, <code>build_suite()</code> pure, and later ctx
+reads read-only. Judge the DUT with frames actually received (or with an
+independent observation), never by treating a successful <code>send</code> ACK as a
+passing device.</p>
+<p><strong>Consequence:</strong> The Floor Technician can tell the frame the suite asked to
+put on the wire, whether the bus ACKed it, and what the DUT sent back. A
+missing ACK cannot quietly become a delivered command in a record that
+claims otherwise.</p>
+<h2 id="the-can-filter-contract">The CAN Filter Contract<a class="headerlink" href="#the-can-filter-contract" title="Permanent link">&para;</a></h2>
+<p><strong>Framework obligation:</strong> Acceptance filters are part of the handle's
+identity, declared before the first <code>receive</code>, not discovered by dumping the
+bus into the test method.</p>
+<ul>
+<li>A provisional <code>CanFilter</code> names an arbitration-id base, a mask, and
+  whether it matches standard, extended, or both. Hardware filters are
+  programmed at bring-up. A backend that cannot install the declared set
+  refuses the handle before any traffic is observed, naming the filters it
+  cannot honour.</li>
+<li>Filters are immutable for the handle's lifetime. Changing the mask
+  mid-run is the CAN instance of flipping a GPIO pin's direction live:
+  <code>TypeError</code> at the call site. A suite that needs a different window opens
+  a different declared handle.</li>
+<li>An open handle whose filters would accept every frame on a production
+  bus is legal but must be explicit — a wildcard filter is a declaration,
+  not a default. The default with no filters declared is "receive
+  nothing," so an author who forgot to say what they are listening for
+  does not silently subscribe to the whole network.</li>
+</ul>
+<p><strong>Developer obligation:</strong> State the filters that belong to this node. Do
+not compensate for a missing filter by busy-looping <code>receive</code> and
+discarding ids in suite code; that turns the test method into a sniffer
+and hides the contract from the Floor Technician.</p>
+<p><strong>Consequence:</strong> The record shows which ids this node was allowed to see.
+A pass that depended on a frame the handle was not declared to accept is
+not reconstructable from the artifacts.</p>
+<h2 id="the-can-bus-off-and-recovery-contract">The CAN Bus-Off and Recovery Contract<a class="headerlink" href="#the-can-bus-off-and-recovery-contract" title="Permanent link">&para;</a></h2>
+<p><strong>Framework obligation:</strong> Bus-off is a controller state, not a DUT verdict.
+When the transmit error counter crosses the bus-off threshold the
+controller stops driving the bus. That event is reported as an operational
+failure (<code>CanBusOff</code>, a <code>HiltError</code>) naming the handle and the last
+confirmed error counters if the backend can read them.</p>
+<ul>
+<li>Automatic recovery that resumes transmitting during the same run is
+  refused. A controller whose driver auto-recovers in the background would
+  put frames on the wire after the suite, or the abort path, has stopped
+  sending — the CAN instance of a detached PWM ramp. Bring-up may enable
+  a backend's recovery <em>into silent/stopped</em>, never into active TX, unless
+  the suite calls a provisional <code>recover()</code> deliberately.</li>
+<li><code>recover()</code> is a new operation, not an implicit retry of the failed
+  <code>send</code>. It is refused while a send or receive is in flight, refused after
+  <code>cancel_in_flight</code> has started, and records whether the controller
+  re-entered the declared active state. Failure to recover is the same
+  operational class, not a <code>TestFailure</code>.</li>
+<li>Error-passive and warning thresholds, when the backend exposes them, are
+  logged as evidence of controller health. They do not change control
+  flow. Only bus-off (unable to transmit) is a failure of <code>send</code>.</li>
+</ul>
+<p><strong>Developer obligation:</strong> Catch <code>CanBusOff</code> and decide what it means. A
+DUT that storms the bus, a terminator that fell off, and a second tester
+fighting this node all produce the same controller state. The framework
+must not choose among those. Do not treat recover-and-retry inside the
+test method as a substitute for naming the failure.</p>
+<p><strong>Consequence:</strong> Bus-off cannot masquerade as a green run, and it cannot
+masquerade as a DUT Fail the author never wrote. The Floor Technician sees
+a controller that stopped, not a verdict someone else invented.</p>
+<h2 id="the-can-safe-state-and-timing-contract">The CAN Safe-State and Timing Contract<a class="headerlink" href="#the-can-safe-state-and-timing-contract" title="Permanent link">&para;</a></h2>
+<p><strong>Framework obligation:</strong> The safe state is <strong>silence</strong> — no further frames
+originating from this handle — enforced at the resource by the existing
+termination sweep. This specializes the signed GPIO
+<a href="gpio.html#the-gpio-interface-contract">ownership and cut rules</a> and the signed
+PWM <a href="pwm.html#the-pwm-safe-state-contract">disabled-output termination</a>. It
+introduces no CAN halt signal, event loop, lifecycle runner, or integration
+hook, and it does not invent a shutdown frame.</p>
+<ul>
+<li>Register ownership as soon as acquisition can put a frame on the wire, so
+  partial <code>configure()</code> failure cannot orphan a transmitter. Bring-up
+  establishes and confirms the declared silent/stopped state before
+  admitting the first <code>send</code>.</li>
+<li>An integration-hook failure or operator interrupt silences every open
+  CAN handle. A node deadline silences only resources opened by the
+  bounded subtree, under both <code>fail_after</code> (Fail) and <code>abort_after</code>
+  (node-local Aborted). An inherited controller or borrowed hop remains
+  its owner's resource; unrelated siblings are untouched.</li>
+<li><code>cancel_in_flight()</code> is idempotent. It aborts a pending send or receive
+  at the controller, attempts to enter the declared silent state under the
+  backend's latency ceiling, and records whether silence was confirmed. A
+  repeated call cannot resume TX or replay the last frame. A closed handle
+  remains closed; there is no automatic reconnect.</li>
+<li>The framework does not transmit a "safe" or "shutdown" frame on abort.
+  A DUT that needs a specific last frame gets it from authored
+  <code>cleanup()</code>, which the hard cut does not wait for. Inventing a frame at
+  abort would be a stimulus the suite never declared, written into a
+  record the technician might trust.</li>
+<li>Transmit ACK ceiling, receive deadline, and bring-up/silence ceiling are
+  each positive finite backend-declared bounds, separate from the node's
+  <code>fail_after</code> / <code>abort_after</code>. An operation timeout names that operation
+  and its ceiling. It does not manufacture the <code>timeout</code> evidence reserved
+  for the winning node clock in the
+  <a href="../contracts.html#time-budget-contract">Time Budget Contract</a>. A longer
+  receive wait cannot extend the node clock.</li>
+<li>A backend whose shared adapter would let one node's silence or filter
+  change starve another owner's handle must refuse the conflicting
+  acquisition before either owner sends. It cannot sacrifice Group
+  Isolation to offer more nodes on one stick.</li>
+</ul>
+<p><strong>Developer obligation:</strong> Select a fixture for which "this node stops
+transmitting" is the intended safe state. Declare shared adapters honestly.
+Keep any required shutdown frame in <code>cleanup()</code>; rely on framework
+ownership for termination. Never manually sequence another node's
+configure or cleanup.</p>
+<p><strong>Consequence:</strong> Ending the test stops this node's frames and records what
+could be confirmed. A technician is never asked to infer bus safety from a
+disconnected handle, from Pass/Fail/Aborted alone, or from a shutdown
+frame nobody authored.</p>
+<h2 id="lifecycle-and-hook-ownership-unchanged">Lifecycle and hook ownership: unchanged<a class="headerlink" href="#lifecycle-and-hook-ownership-unchanged" title="Permanent link">&para;</a></h2>
+<p>The <a href="index.html#the-three-rulings">HIL lifecycle ruling</a> applies unchanged.
+Concretely:</p>
+<ul>
+<li>Bring-up happens the same way <code>use_shell</code> brings up SSH: a <code>configure()</code>
+  call obtains a <code>CanInterface</code> handle (provisionally <code>utils.get_can(...)</code>,
+  mirroring <code>get_shell</code> / <code>get_gpio</code> / <code>get_pwm</code>), and the framework's
+  existing bookkeeping tracks what this node opened versus what it
+  inherited.</li>
+<li>Teardown order is the framework's: <code>cancel_in_flight</code> on every opened
+  <code>CanInterface</code> fires as part of the same In-Flight Termination Contract
+  sweep that already closes <code>RemoteInterface</code> transports and silences
+  signed GPIO/PWM resources when <code>RunAbort</code> fires.</li>
+<li><code>use_survey</code> / <code>use_audit</code> remain the only hooks a suite registers to
+  observe the bus; a periodic audit that receives a watchdog frame and
+  raises <code>TestFailure</code> on an unexpected payload is the existing audit
+  contract, not a new hook kind.</li>
+<li><code>before_each</code> / <code>after_each</code> remain the integrator's narrow context and
+  still cannot touch hardware — a CAN controller is exactly the kind of
+  thing those hooks are barred from reaching.</li>
+</ul>
+<p>Hardware that needs the controller to run its own concurrent RX loop
+outside survey/audit, or that cannot honor a hard <code>cancel_in_flight</code>, is a
+finding for Ty — not a reason to give CAN its own lifecycle.</p>
+<h2 id="failure-vocabulary">Failure vocabulary<a class="headerlink" href="#failure-vocabulary" title="Permanent link">&para;</a></h2>
+<p>No new terminal state is introduced, and no new exception root.
+<code>CanOperationFailure</code> and <code>CanBusOff</code> derive from <code>HiltError</code>, not
+<code>TestFailure</code>, for the same reason GPIO's <code>PinSettleFailure</code> and PWM's
+<code>PwmOperationFailure</code> do: failure to put a frame on the wire, or a
+controller that has gone bus-off, does not identify the DUT as the cause.</p>
+<table>
+<thead>
+<tr>
+<th>Situation</th>
+<th>Raised as</th>
+<th>Terminal state</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Invalid frame, filter, deadline, or conflicting in-flight use</td>
+<td><code>TypeError</code> / <code>ValueError</code> at the call site</td>
+<td><code>ContractViolation</code> (Fail, <code>bug: true</code>) if it escapes</td>
+</tr>
+<tr>
+<td>Bus does not ACK a send within the transmit ceiling; receive deadline expires with no matching frame; silence cannot be confirmed at bring-up</td>
+<td><code>CanOperationFailure</code> (provisional <code>HiltError</code>) naming the handle, operation, requested frame or filter, and ceiling</td>
+<td>Fail when the author catches it and states the verdict; a <code>ContractViolation</code> Fail (<code>bug: true</code>) when it escapes</td>
+</tr>
+<tr>
+<td>Controller enters bus-off</td>
+<td><code>CanBusOff</code> (provisional <code>HiltError</code>)</td>
+<td>As above. Never an automatic DUT Fail</td>
+</tr>
+<tr>
+<td>Backend cannot reach the adapter at bring-up</td>
+<td><code>ConnectionError</code> from the interface's own <code>connect</code></td>
+<td>Absorbed the way <code>RemoteInterface</code> connect failures are absorbed today</td>
+</tr>
+<tr>
+<td>Silence cannot be confirmed during the safe-state sweep</td>
+<td>No exception; the run is already ending</td>
+<td>Terminal state unchanged; timeline records the unconfirmed silence, naming the handle. Never a success line</td>
+</tr>
+<tr>
+<td>Integration hook throws while frames are in flight</td>
+<td>Framework raises <code>ExternalIntegrationFailure</code></td>
+<td>Aborted; run-level halt silences every open <code>CanInterface</code></td>
+</tr>
+<tr>
+<td>Operator SIGINT/SIGTERM mid-run</td>
+<td>Framework raises <code>OperatorInterrupt</code></td>
+<td>Aborted; same run-level sweep</td>
+</tr>
+<tr>
+<td>A node's time budget expires while it holds a handle</td>
+<td>Framework settles the node per its declared budget</td>
+<td><code>fail_after</code> → Fail, <code>abort_after</code> → node-local Aborted; either way only that subtree's handles are silenced</td>
+</tr>
+<tr>
+<td>Test returns without a verdict</td>
+<td>Existing <code>MissingVerdict</code></td>
+<td>Node-local Aborted. A completed <code>send</code> cannot supply the missing verdict</td>
+</tr>
+</tbody>
+</table>
+<p>Unknown is represented explicitly. A timed-out <code>receive</code> is not an empty
+frame. An unconfirmed silence is not a quiet bus.</p>
+<h2 id="mock-and-real-backends-one-contract-two-implementations">Mock and real backends: one contract, two implementations<a class="headerlink" href="#mock-and-real-backends-one-contract-two-implementations" title="Permanent link">&para;</a></h2>
+<p>The pattern is the one <code>RemoteInterface</code> / <code>MockTransport</code> / <code>SshInterface</code>
+already proves, and that signed GPIO/PWM reuse: <code>CanInterface</code> is the ABC;
+a real backend (SocketCAN, a USB-CAN adapter, a vendor SDK) and a
+<code>MockCan</code> test double both implement the same
+<code>connect</code> / <code>_send</code> / <code>_receive</code> / <code>_cancel_in_flight</code> methods. Self-tests
+exercise both against a shared contract suite so a bug in either backend
+is caught by the same assertions.</p>
+<p>Required proofs: refuse unrepresentable frames before TX; exclusive
+in-flight send/receive; immutable filters; wildcard-vs-declared receive;
+ACK timeout; receive deadline with no invented frame; bus-off stops TX and
+does not auto-resume; <code>recover()</code> is explicit; partial <code>configure()</code>
+cannot orphan a transmitter; node cuts leave an independent sibling
+transmitting; repeated <code>cancel_in_flight</code> cannot replay a frame; unconfirmed
+silence produces only unconfirmed evidence. <code>MockCan</code> schedules
+<code>park</code>-style holds analogous to <code>MockTransport.park</code>, so lifecycle tests
+can abort mid-ACK without hardware. A suite author never constructs either
+backend directly: <code>utils.get_can(...)</code> resolves to whichever backend the
+run was configured with.</p>
+<p>Real-backend tests must verify frames through independent observation
+(a second SocketCAN interface, a logger); mock ACKs cannot establish that
+a DUT saw the payload.</p>
+<h2 id="evidence">Evidence<a class="headerlink" href="#evidence" title="Permanent link">&para;</a></h2>
+<p>Frames that matter to the verdict travel with it exactly as the Evidence
+Contract already requires: <code>PASS({"response_id": frame.arbitration_id})</code> or
+<code>TestFailure(..., evidence={"response_id": ...})</code>, declared up front with
+<code>@evidence(...)</code> when the method promises to carry it. Commanded frames are
+stimulus, not measurements. A payload that is numeric in the problem domain
+(RPM on a J1939 PGN, a voltage packed in two bytes) follows whatever
+protocol issue #85 settled in <code>docs/measurements.md</code>, referenced there
+rather than restated here. This note neither fills the reserved
+<code>measurements</code> slot nor decodes anyone's application protocol.</p>
+<p>Every handle declaration — bitrate, payload ceiling, filters, silent-state
+— is logged through <code>utils.logger</code> at configuration time, the same way
+<code>ExecRouting</code> logs a connection's provenance. Sends, receives, bus-off,
+recover, and silence attempts use that scoped logger to distinguish
+requested, ACKed, received, interrupted, and unconfirmed outcomes.</p>
+<h2 id="what-the-floor-technician-sees">What the Floor Technician sees<a class="headerlink" href="#what-the-floor-technician-sees" title="Permanent link">&para;</a></h2>
+<p>When a handle is silenced, the node's <code>timeline.jsonl</code> (and its
+<code>timeline.log</code> twin) carries a log entry at the scope of the node that
+owned it, naming the handle and whether silence was confirmed, immediately
+before that node's terminal entry — the same temporal-backbone placement
+the In-Flight Termination Contract already gives a hard-closed SSH
+transport and that signed GPIO/PWM reuse for idle/disable. The terminal
+entry is not always Aborted: a run-level halt and an <code>abort_after</code> expiry
+both settle Aborted, a <code>fail_after</code> expiry settles Fail, and the silence
+sweep is owed under every one of them.</p>
+<p><code>result.json</code>'s <code>summary_tree</code> shows whichever state applies; there is no
+CAN-specific field, because a safe-state action is evidence of what the
+framework did to protect the bus, not a verdict of its own. A technician
+reading the timeline sees why the run ended and — from the log line —
+that this node stopped transmitting. Where the sweep could not confirm
+silence, the timeline says exactly that, naming the handle. An unconfirmed
+silence never leaves a success line behind.</p>
+<h2 id="signed-decisions-recorded-on-95">Signed decisions recorded on #95<a class="headerlink" href="#signed-decisions-recorded-on-95" title="Permanent link">&para;</a></h2>
+<p>The draft asks for a ruling on these concrete obligations before
+implementation:</p>
+<ol>
+<li>Frames as a typed value (id, extended, rtr, payload bytes), not an
+   <code>exec</code> string; Classic CAN 0–8 bytes, CAN-FD as a backend-declared
+   ceiling under the same contract, not a fork.</li>
+<li><code>send</code> confirms the on-bus ACK bit only; a DUT response is a later
+   <code>receive</code>. No silent retry.</li>
+<li>Filters declared in <code>configure()</code>, immutable for the handle's lifetime;
+   the no-filter default is receive-nothing, not subscribe-everything.</li>
+<li>Bus-off is a <code>HiltError</code> operational condition; no automatic TX
+   resume during the run; <code>recover()</code> is an explicit later operation.</li>
+<li>Abort safe-state is silence, not a framework-invented shutdown frame.
+   Authored <code>cleanup()</code> may send a last frame; the hard cut does not wait
+   for it and does not replace it.</li>
+<li>Shared adapters refuse conflicting ownership when one node's silence
+   would starve another, same Group Isolation posture as signed PWM.</li>
+</ol>
+<p>The lifecycle, verdict, and evidence contracts above are constraints on
+that decision. If a required backend cannot satisfy them, the finding
+belongs on #95 with the affected guarantee named. It does not earn an
+alternate lifecycle or an exception enforced only by a linter.</p></div>
+            </div>
+        </div>
+
+        <footer class="col-md-12">
+            <hr>
+                <p>Copyright 2026 Tyler Meador</p>
+            <p>Documentation built with <a href="https://www.mkdocs.org/">MkDocs</a>.</p>
+        </footer>
+        <script src="../js/bootstrap.bundle.min.js"></script>
+        <script>
+            var base_url = "..",
+                shortcuts = {"help": 191, "next": 78, "previous": 80, "search": 83};
+        </script>
+        <script src="../js/base.js"></script>
+        <script src="../search/main.js"></script>
+
+        <div class="modal" id="mkdocs_search_modal" tabindex="-1" role="dialog" aria-labelledby="searchModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="searchModalLabel">Search</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>From here you can search these documents. Enter your search terms below.</p>
+                <form>
+                    <div class="form-group">
+                        <input type="search" class="form-control" placeholder="Search..." id="mkdocs-search-query" title="Type search term here">
+                    </div>
+                </form>
+                <div id="mkdocs-search-results" data-no-results-text="No results found"></div>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div><div class="modal" id="mkdocs_keyboard_modal" tabindex="-1" role="dialog" aria-labelledby="keyboardModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="keyboardModalLabel">Keyboard Shortcuts</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th style="width: 20%;">Keys</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="help shortcut"><kbd>?</kbd></td>
+                    <td>Open this help</td>
+                  </tr>
+                  <tr>
+                    <td class="next shortcut"><kbd>n</kbd></td>
+                    <td>Next page</td>
+                  </tr>
+                  <tr>
+                    <td class="prev shortcut"><kbd>p</kbd></td>
+                    <td>Previous page</td>
+                  </tr>
+                  <tr>
+                    <td class="search shortcut"><kbd>s</kbd></td>
+                    <td>Search</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div>
+
+    </body>
+</html>

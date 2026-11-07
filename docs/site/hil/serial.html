@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        
+        
+        <link rel="canonical" href="https://gitlab.com/Tyler-Meador/HILT/-/tree/main/docs/hil/serial.html">
+        <link rel="shortcut icon" href="../img/favicon.ico">
+        <title>Serial/UART (design note) - HILT</title>
+        <link href="../css/bootstrap.min.css" rel="stylesheet">
+        <link href="../css/fontawesome.min.css" rel="stylesheet">
+        <link href="../css/brands.min.css" rel="stylesheet">
+        <link href="../css/solid.min.css" rel="stylesheet">
+        <link href="../css/v4-font-face.min.css" rel="stylesheet">
+        <link href="../css/base.css" rel="stylesheet">
+        <link id="hljs-light" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" >
+        <link id="hljs-dark" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github-dark.min.css" disabled>
+        <link href="../assets/_mkdocstrings.css" rel="stylesheet">
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+        <script>hljs.highlightAll();</script> 
+    </head>
+
+    <body>
+        <div class="navbar fixed-top navbar-expand-lg navbar-dark bg-primary">
+            <div class="container">
+                <a class="navbar-brand" href="../index.html">HILT</a>
+                <!-- Expander button -->
+                <button type="button" class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#navbar-collapse" aria-controls="navbar-collapse" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <!-- Expanded navigation -->
+                <div id="navbar-collapse" class="navbar-collapse collapse">
+                        <!-- Main navigation -->
+                        <ul class="nav navbar-nav">
+                            <li class="nav-item">
+                                <a href="../index.html" class="nav-link">Home</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="../getting-started.html" class="nav-link">Getting started</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="../floor-technician.html" class="nav-link">Floor Technician</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="../overview.html" class="nav-link">Overview</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="../idioms.html" class="nav-link">Idioms</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="../utilities.html" class="nav-link">Utilities</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="../contracts.html" class="nav-link">Contracts</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="../inspector-json.html" class="nav-link">Inspector JSON</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="../inspector.html" class="nav-link">Inspector (target specification)</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="../measurements.html" class="nav-link">Measurements</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="../junit-xml.html" class="nav-link">JUnit XML</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="../hilt-run.html" class="nav-link">hilt run</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="../hilt-new.html" class="nav-link">hilt new</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="../hilt-check.html" class="nav-link">hilt-check</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="../api-stability.html" class="nav-link">API stability</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="../api.html" class="nav-link">API reference</a>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle active" aria-current="page" role="button" data-bs-toggle="dropdown"  aria-expanded="false">HIL interfaces</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="index.html" class="dropdown-item">Overview</a>
+</li>
+                                    
+<li>
+    <a href="gpio.html" class="dropdown-item">GPIO (design note)</a>
+</li>
+                                    
+<li>
+    <a href="pwm.html" class="dropdown-item">PWM (design note)</a>
+</li>
+                                    
+<li>
+    <a href="can.html" class="dropdown-item">CAN bus (design note)</a>
+</li>
+                                    
+<li>
+    <a href="i2c-spi.html" class="dropdown-item">I2C/SPI (design note)</a>
+</li>
+                                    
+<li>
+    <a href="device-api.html" class="dropdown-item">Device API (design note)</a>
+</li>
+                                    
+<li>
+    <a href="serial.html" class="dropdown-item active" aria-current="page">Serial/UART (design note)</a>
+</li>
+                                </ul>
+                            </li>
+                        </ul>
+
+                    <ul class="nav navbar-nav ms-md-auto">
+                        <li class="nav-item">
+                            <a href="#" class="nav-link" data-bs-toggle="modal" data-bs-target="#mkdocs_search_modal">
+                                <i class="fa fa-search"></i> Search
+                            </a>
+                        </li>
+                            <li class="nav-item">
+                                <a rel="prev" href="device-api.html" class="nav-link">
+                                    <i class="fa fa-arrow-left"></i> Previous
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a rel="next" class="nav-link disabled">
+                                    Next <i class="fa fa-arrow-right"></i>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="https://gitlab.com/Tyler-Meador/HILT/-/blob/main/docs/hil/serial.md" class="nav-link"><i class="fa-brands fa-gitlab"></i> Edit on GitLab</a>
+                            </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="container">
+            <div class="row">
+                    <div class="col-md-3"><div class="navbar-expand-md bs-sidebar hidden-print affix" role="complementary">
+    <div class="navbar-header">
+        <button type="button" class="navbar-toggler collapsed" data-bs-toggle="collapse" data-bs-target="#toc-collapse" title="Table of Contents">
+            <span class="fa fa-angle-down"></span>
+        </button>
+    </div>
+
+    
+    <div id="toc-collapse" class="navbar-collapse collapse card bg-body-tertiary">
+        <ul class="nav flex-column">
+            
+            <li class="nav-item" data-bs-level="1"><a href="#serialuart-console-transport" class="nav-link">Serial/UART console transport</a>
+              <ul class="nav flex-column">
+            <li class="nav-item" data-bs-level="2"><a href="#serial-prompt-contract" class="nav-link">Serial Prompt Contract</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#serial-line-discipline-contract" class="nav-link">Serial Line Discipline Contract</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#serial-exit-status-contract" class="nav-link">Serial Exit-Status Contract</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#serial-abort-contract" class="nav-link">Serial Abort Contract</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#serial-turn-contract" class="nav-link">Serial Turn Contract</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#error-taxonomy-mapping" class="nav-link">Error-taxonomy mapping</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#via-composition-placement-2" class="nav-link">Via composition (placement 2)</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#routing-use_serial-and-get_serial" class="nav-link">Routing: use_serial and get_serial</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#packaging" class="nav-link">Packaging</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#conformance-the-shared-transport-contract-suite" class="nav-link">Conformance: the shared transport-contract suite</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+              </ul>
+            </li>
+        </ul>
+    </div>
+</div></div>
+                    <div class="col-md-9" role="main">
+
+<h1 id="serialuart-console-transport">Serial/UART console transport<a class="headerlink" href="#serialuart-console-transport" title="Permanent link">&para;</a></h1>
+<p><strong>Status: SIGNED — Ty, 2026-09-10</strong> ("all approved", recorded on #91). Implementation
+lands with the MR that carries this status change.</p>
+<p><strong>Amendment SIGNED — Ty, 2026-10-18 (#150, merged as !184):</strong> the Serial Turn
+Contract below changes the transport's concurrency contract (one command on the
+wire at a time, queued in call order). Ty ruled "queue", not "refuse".</p>
+<p>Ty ruled <strong>both</strong> placements on 2026-09-05: <code>SerialInterface</code> as a local peer of
+<code>SshInterface</code> (console header on the HILT host), and the same transport reached
+through the existing <code>via</code> hop (a console server, or a Pi with a USB-UART, driven
+over SSH). One transport, two placements. This note specifies the transport's
+contract once — prompt detection, timeouts, line discipline, exit-status recovery,
+output bounding, safe-state on abort — and gives <code>via</code> composition its own
+section, per Ty's scoping note on the issue. Serial is a transport, not a new HIL
+contract: it slots in beside <code>SshInterface</code> behind <code>RemoteInterface</code>, matching
+<code>remote.py</code>'s own framing ("SSH, and later serial/UART, are peers behind this
+class"). Blocked on #90 (closed): the shared transport-contract suite this design
+must pass before any implementation MR opens.</p>
+<p><code>SerialInterface(RemoteInterface)</code> opens a local device node (<code>/dev/ttyUSB0</code>, a
+Windows <code>COM</code> port) via <code>pyserial-asyncio</code>; it never dials a socket. <code>address</code> is
+<code>None</code> — matching <code>RemoteInterface</code>'s own note that "a UART on a local device node
+has no address" — so <code>connect()</code> rejects <code>host</code>/<code>port</code> with <code>TypeError</code>, same as
+any unaddressed transport. <code>endpoint</code> is the device basename.</p>
+<p>A suite reaches it the way it reaches SSH: <code>utils.use_serial(device=...)</code> in
+<code>configure()</code> declares the console as the node's exec route, <code>utils.get_serial</code>
+opens one as an auxiliary endpoint, both hand back a <code>Shell</code>, and the framework
+owns the close (see "Routing" below). The transport itself is constructed only by
+the router and the self-tests.</p>
+<pre><code class="language-python">await utils.use_serial(device=&quot;/dev/ttyUSB0&quot;, baud=115200)
+</code></pre>
+<h2 id="serial-prompt-contract">Serial Prompt Contract<a class="headerlink" href="#serial-prompt-contract" title="Permanent link">&para;</a></h2>
+<p><strong>Framework obligation:</strong> A console is a byte stream, not a request/response
+protocol — <code>exec</code> recognizes a command's end by the shell's prompt reappearing,
+never by an EOF or a status arriving on the wire. <code>prompt</code> (a regex, default a
+bare POSIX prompt) is matched against the tail of decoded output; <code>login_prompt</code> /
+<code>password_prompt</code>, when configured, are answered during <code>connect()</code> before the
+transport reads until <code>prompt</code> matches — a console already at a shell is
+unaffected. <code>login_timeout</code> (default 10s, connect-time only) bounds that
+resolution; expiry raises <code>ConnectionError</code> naming the last bytes seen,
+<code>connect()</code> raising whatever <code>_connect</code> raises, matching <code>RemoteInterface</code>.
+<code>prompt_timeout</code> (default 30s, fixed at construction) bounds how long <code>exec</code>
+waits for the prompt after sending a command — the transport's own safety net, not
+a substitute for <code>fail_after</code>/<code>abort_after</code>: a wedged console is a resource the
+transport cannot leave parked forever even with no ancestor budget declared.
+<code>prompt_timeout</code> and an ancestor's <code>fail_after</code>/<code>abort_after</code> are independent
+clocks racing the same await; whichever fires first decides the state, exactly as
+the Time Budget Contract already specifies. An echoed line unchanged across two
+read cycles is named in the eventual timeout's message, distinguishing "wedged,
+frozen" from "slow, still producing bytes" without the Floor Technician opening
+the suite.</p>
+<p><strong>Developer obligation:</strong> Supply <code>prompt</code> (and <code>login_prompt</code>/<code>password_prompt</code>
+where the console logs in) at construction for anything but a bare POSIX shell —
+guessing a prompt at runtime is how a stuck read gets misread as a fast command.
+Set <code>prompt_timeout</code> shorter than any <code>fail_after</code> wrapping this node's <code>exec</code>
+calls when a wedge should surface on its own evidence line rather than only as an
+ancestor's <code>TimeoutEvidence</code>.</p>
+<p><strong>Consequence:</strong> <code>exec</code> never raises for a command's own completion. Expiry
+settles like a killed command — <code>ExecResult.settled(partial_output, "prompt
+timeout", None)</code>, <code>exit_code == -1</code>, partial output kept as evidence — never an
+exception the suite must catch. If the harness's own clock wins the race instead,
+the coroutine is cancelled (<code>CancelledError</code> propagates, never swallowed) and
+<code>cancel_in_flight</code> runs the Serial Abort Contract below.</p>
+<h2 id="serial-line-discipline-contract">Serial Line Discipline Contract<a class="headerlink" href="#serial-line-discipline-contract" title="Permanent link">&para;</a></h2>
+<p><strong>Framework obligation:</strong> The wire is raw bytes with none of an SSH channel's
+structure (separate stdout/stderr, a real exit status). <code>_exec</code> normalizes before
+matching the prompt or handing bytes to <code>ExecResult.settled</code>: input is written as
+bare <code>\r</code> (real-terminal <code>Enter</code>, since some bootloader shells ignore <code>\n</code> alone),
+output CRLF is normalized to <code>\n</code>; exactly one leading echoed line matching the
+command just sent is stripped before that normalization (strip-if-present — a
+console with echo already off is unaffected); ANSI/VT100 escapes are stripped on
+the accumulated decoded buffer, so an escape split across two reads still
+resolves and a colorized prompt cannot defeat the <code>prompt</code> regex; decoding is
+UTF-8 with <code>errors="replace"</code>, matching <code>ExecResult.settled</code>'s existing path for
+every transport.</p>
+<p><strong>Developer obligation:</strong> Read <code>ExecResult.stdout</code> with <code>\n</code> line endings and no
+local echo, the same as any other transport's result — do not special-case
+serial output in suite code for line endings or echo.</p>
+<p><strong>Consequence:</strong> A suite calling <code>result.stdout.splitlines()</code> does not need to
+know the transport was serial. A DUT's binary or non-UTF-8 output is evidence,
+not a dead channel.</p>
+<h2 id="serial-exit-status-contract">Serial Exit-Status Contract<a class="headerlink" href="#serial-exit-status-contract" title="Permanent link">&para;</a></h2>
+<p><strong>Framework obligation:</strong> A raw console has no exit-status side-channel — no
+equivalent of asyncssh's <code>process.exit_status</code>. The transport appends a sentinel
+to what it sends and parses it back out of the reply:</p>
+<pre><code>&lt;command&gt;; echo &quot;__HILT_RC__=$?&quot;
+</code></pre>
+<p>Once the prompt reappears, the transport scans for <code>__HILT_RC__=&lt;digits&gt;</code>,
+strips that one line from <code>ExecResult.stdout</code>, and parses the digits as
+<code>exit_code</code>. A sentinel that never appears — echo suppression failed, the shell
+died mid-command — settles as <code>exit_code == -1</code> via <code>ExecResult.settled(...,
+None)</code>, the same "no real status exists" path every transport shares, with the
+raw captured text kept as evidence rather than discarded: the documented <code>-1</code>
+case ("killed by a signal, or aborted before an exit status existed") with a lost
+sentinel standing in for the signal-kill. Stdout and the sentinel-bearing reply
+together are bounded by <code>hilt.executor.BoundedCapture</code> and
+<code>DEFAULT_EXEC_OUTPUT_BUDGET</code> unmodified — the same named ceiling <code>LocalExec</code> and
+<code>SshInterface</code> already share. Hitting the budget sets <code>truncated=True</code>, stops
+accepting bytes, and triggers the Serial Abort Contract below (there is no
+process to SIGTERM on the other end of a UART, only a wire to interrupt); the
+port stays open afterward, matching "the SSH session stays up" for the
+equivalent case.</p>
+<p><strong>Developer obligation:</strong> Read <code>ExecResult.stderr</code> as transport-generated
+messages only (<code>"prompt timeout"</code>, <code>"transport closed"</code>) — never a slice of the
+DUT's own output. A console has one combined byte stream, not separate
+stdout/stderr descriptors; everything the DUT writes settles into <code>stdout</code>. A
+suite ported from an SSH-backed console that greps <code>stderr</code> for DUT error text
+needs to read <code>stdout</code> instead — the one place the two transports are not
+drop-in interchangeable.</p>
+<p><strong>Consequence:</strong> Every <code>ExecResult</code> this transport produces is a real, bounded
+value a suite can treat exactly like any other transport's result — a missing or
+truncated status is evidence, never a raised exception.</p>
+<h2 id="serial-abort-contract">Serial Abort Contract<a class="headerlink" href="#serial-abort-contract" title="Permanent link">&para;</a></h2>
+<p><strong>Framework obligation:</strong> <code>cancel_in_flight</code> is the load-bearing halt ("kill
+every in-flight operation as hard as the protocol allows... a later <code>exec</code>
+rejects"). A serial line has no socket to destroy the way
+<code>SshInterface._abort_client</code> does, so the sequence is protocol-shaped: send a
+<code>BREAK</code> condition (a real UART primitive) to interrupt whatever runs in the
+foreground on most bootloader and kernel consoles; send <code>Ctrl-C</code> (<code>\x03</code>) for a
+foreground shell command a BREAK alone misses; close the port unconditionally,
+whether or not the prompt reappeared after those two — no graceful wait, matching
+SSH's "graceful hangup is not used on either path" and the In-Flight Termination
+Contract's "closed HARD immediately... not at the next polling boundary." This
+contract does not fork that one; it names what "closed hard" means on a
+protocol with no socket to abort. The connected flag clears even if the
+BREAK/Ctrl-C sends themselves raise, same <code>try</code>/<code>finally</code> pattern as
+<code>RemoteInterface.cancel_in_flight</code>.</p>
+<p><strong>Developer obligation:</strong> None beyond the existing <code>RemoteInterface</code> contract —
+abort is framework-owned and idempotent; suite code never calls
+<code>cancel_in_flight</code> itself.</p>
+<p><strong>Consequence:</strong> Any <code>exec</code> still parked when the sequence runs settles with
+<code>stderr</code> naming <code>"transport closed"</code> — the same cause string
+<code>_name_transport_death</code> gives SSH, so a Floor Technician's grep for a dead
+resource does not need to know which transport produced it. An <code>exec</code> still
+queued behind it settles the same way without ever reaching the wire (Serial
+Turn Contract below). A 30-minute console session in progress when the run
+aborts does not keep mutating hardware after the sequence completes.</p>
+<h2 id="serial-turn-contract">Serial Turn Contract<a class="headerlink" href="#serial-turn-contract" title="Permanent link">&para;</a></h2>
+<p><strong>Framework obligation:</strong> <code>exec</code> on one <code>SerialInterface</code> runs one command at a
+time, in call order. A console carries one byte stream and no channel per
+caller — unlike an SSH session, which opens a channel per <code>exec</code> — so two callers
+writing back to back would both read the same reply. The transport holds an
+<code>asyncio.Lock</code> around each command's write-and-read; a caller that arrives while
+another is on the wire waits its turn, and waiters are served in the order they
+called. This is the turn a shared <code>DeviceApi</code> handle takes per request (bench
+finding F13), applied to the console, and it is what makes a <code>use_serial</code> route
+safe under <code>self.parallel()</code>: the leaves run concurrently, their commands go out
+one at a time.</p>
+<p><code>prompt_timeout</code> bounds only the command's own wait for the prompt once it is on
+the wire, never its time in the queue — a sibling ahead in the queue is not the
+DUT being slow, and the node clock bounds the whole wait. A command still queued
+when <code>cancel_in_flight</code> or <code>disconnect</code> lands never reaches the wire: it settles
+<code>exit_code == -1</code> with <code>stderr</code> <code>"transport closed"</code>, the same evidence an
+in-flight command gets from the Serial Abort Contract. The halt itself takes no
+turn — BREAK, Ctrl-C, and the close go out past whatever holds the lock, so the
+halt never waits.</p>
+<p><strong>Developer obligation:</strong> Know what the leaves share. Queued leaves share one
+shell, so its state travels between them: a <code>cd</code>, an exported variable, or a
+background job started in one leaf is visible to the next. That is the cost
+particular to a console — a <code>DeviceApi</code> handle shares a session, not a shell.
+Claims that need isolation want one console each (<code>get_serial(device=...)</code> per
+leaf, or one <code>use_serial</code> per child suite), and a latency measured around
+<code>utils.exec</code> on a shared console includes the wait for siblings.</p>
+<p><strong>Consequence:</strong> The F13 shape on a console — one <code>use_serial(device=...)</code> in
+<code>configure()</code>, <code>utils.exec</code> in every <code>parallel</code> leaf — comes back with each
+leaf's own verdict. Before this contract the second caller's read collided with
+the first's: <code>utils.exec</code> raised <code>asyncio.StreamReader</code>'s <code>RuntimeError</code> through
+the node, a false <code>ContractViolation</code> beside a false <code>"prompt timeout"</code> on a
+board that was healthy (issue #150).</p>
+<h2 id="error-taxonomy-mapping">Error-taxonomy mapping<a class="headerlink" href="#error-taxonomy-mapping" title="Permanent link">&para;</a></h2>
+<p>The transport raises nothing shaped like a verdict — only <code>ConnectionError</code>
+(protocol-level reject, absorbed by <code>TestUtils.exec</code>/<code>Shell.exec</code> into
+<code>exit_code == -1</code>) or whatever <code>_connect</code> propagates from a failed login.</p>
+<ul>
+<li><strong><code>exec</code> while not connected</strong> → <code>ConnectionError</code>, absorbed to <code>-1</code>.</li>
+<li><strong>Login/prompt never resolves at connect</strong> → <code>ConnectionError</code> from <code>_connect</code>.
+  A suite that wraps <code>connect()</code> in <code>configure()</code> and re-raises as <code>TestFailure</code>
+  makes the hardware-vs-infrastructure call itself — the framework never guesses
+  (Terminal State Contract: "not knowable from code... the human triager's call").</li>
+<li><strong>Prompt timeout / sentinel not found</strong> → <code>ExecResult</code> with <code>exit_code == -1</code>,
+  raw text kept as evidence; a suite treating this as a Fail raises <code>TestFailure</code>
+  from the reading, not the transport.</li>
+<li><strong><code>cancel_in_flight</code> / abort</strong> → parked <code>exec</code> settles <code>-1</code>,
+  <code>stderr="transport closed"</code> — framework-decided, never a suite choice.</li>
+<li><strong>A suite bug</strong> (bad regex type, wrong argument) → propagates uncaught into
+  <code>TestComponent</code>'s existing bug boundary: unmodeled exception → <code>ContractViolation</code>,
+  "CONTRACT VIOLATION IN <code>&lt;name&gt;</code>".</li>
+</ul>
+<p>Nothing here adds a new type to <code>hilt.errors</code>. The transport speaks the two
+vocabularies every <code>RemoteInterface</code> already speaks — <code>ConnectionError</code> at the
+protocol layer, <code>ExecResult</code> at the command layer.</p>
+<h2 id="via-composition-placement-2">Via composition (placement 2)<a class="headerlink" href="#via-composition-placement-2" title="Permanent link">&para;</a></h2>
+<p>The device path names a node on the <em>remote</em> box, not the HILT host, so
+<code>SerialInterface</code> cannot open it as a local file descriptor the way placement 1
+does. The resolution reuses the seam <code>RemoteInterface</code> already has for this:
+<code>hop</code> and <code>endpoint</code> let a transport name its place in the topology independent
+of how its bytes move ("an owned via hop and a borrowed tunnel answer alike").
+<code>SerialInterface</code> takes a <code>via: SshInterface | None</code> constructor argument,
+structurally matching <code>SshInterface</code>'s own <code>via</code> (SSH only — a console has no
+other kind of hop): when given, the "wire" is not a local pyserial handle but the
+stdin/stdout of a bridging command run <strong>through the hop's own <code>exec</code></strong> and kept
+open as a long-lived remote process. Every contract above — prompt, timeouts,
+line discipline, sentinel, abort — operates on that bytestream identically;
+placement only changes where the bytes originate. <code>cancel_in_flight</code> for
+placement 2 sends BREAK/Ctrl-C into the bridging process's stdin, then
+hard-cancels that exec through the hop — never the hop's own
+<code>cancel_in_flight()</code>, which would take down every other consumer of that SSH
+connection (Exec Routing Contract: a router "must not disconnect, cancel, or
+collapse its hop").</p>
+<p><strong>Borrowed hops.</strong> When the exec router supplies the hop — an inherited
+<code>use_shell</code> route, or an explicit <code>via=jump</code> <code>Shell</code> — that hop is already live
+and belongs to the router, so the console takes it through <code>tunnel=</code> rather than
+<code>via=</code>: it must arrive connected, a failed bridge leaves it standing, and
+<code>disconnect</code> closes only the bridge. <code>via</code> and <code>tunnel</code> are mutually exclusive,
+the same two channels <code>SshInterface</code> has, with the same ownership rule.</p>
+<p><strong>Routing line.</strong> <code>route_label</code>'s existing chain-walk needs no new rendering
+code: placement 1 renders <code>exec routing: via ttyUSB0 (declared via use_serial)</code> —
+no network in the picture; placement 2 renders <code>exec routing: via bastion -&gt;
+console-pi -&gt; ttyUSB0 (declared via use_serial)</code> — test-host-first, exactly as any
+SSH chain renders today.</p>
+<h2 id="routing-use_serial-and-get_serial">Routing: <code>use_serial</code> and <code>get_serial</code><a class="headerlink" href="#routing-use_serial-and-get_serial" title="Permanent link">&para;</a></h2>
+<p><code>TestUtils.use_serial</code> and <code>TestUtils.get_serial</code> are <code>use_shell</code> and <code>get_shell</code>
+for a device path. A device path and baud rate are not a <code>host</code>/<code>username</code> pair,
+so the console has its own request (<code>SerialOpenRequest</code>) and its own connector seam
+(<code>SerialConnector</code>, the mirror of <code>SshConnector</code>), and the router treats what comes
+back exactly as it treats an SSH remote: <code>ExecRouter.for_ssh</code> attaches it, the
+<code>opened</code> set records it, <code>disconnect_opened</code> closes it after the post-cleanup
+survey, and the run-level abort sweep hard-closes it on an operator Ctrl-C. The
+parameters are the transport's constructor arguments (<code>device</code>, <code>baud</code>, <code>prompt</code>,
+<code>login_prompt</code>, <code>password_prompt</code>, <code>username</code>, <code>password</code>, <code>login_timeout</code>,
+<code>prompt_timeout</code>, <code>bridge_command</code>, <code>output_budget</code>) plus the routing trio <code>via</code>,
+<code>inherit</code>, <code>propagate</code>.</p>
+<p>Two shapes, not four: <code>use_serial(device=...)</code> opens and binds; <code>use_serial()</code> with
+no arguments reads the active route. The policy-only shapes (<code>inherit=False</code>,
+<code>propagate=False</code>) stay with <code>use_shell</code>, and <code>use_serial</code> refuses them with a
+<code>TypeError</code> that says so. The declaring form is admitted only while <code>configure()</code>
+runs, under the same <code>ContractViolation</code> as <code>use_shell</code>, and <code>hilt-check</code>'s
+<code>hilt/shell-in-configure</code> reads <code>use_serial(...)</code> with arguments the same way.
+<code>via</code> must resolve to an SSH hop (a <code>Shell</code> from <code>use_shell</code> or <code>get_shell</code>): a
+console has no other tunnel to borrow, and the connector names <code>use_serial</code> in the
+<code>TypeError</code> when handed anything else — naming the hop it was handed and the
+<code>inherit=False</code> escape, since under a <code>use_serial</code> parent that hop was inherited,
+not passed. A local <code>Shell</code> as <code>via</code> is a direct open on the test host, as it is
+for <code>use_shell</code>. The route is shared by the node and its descendants, so
+<code>parallel</code> leaves under it take turns on the one console (Serial Turn Contract).</p>
+<p><code>bench/suites/serial_console.py</code> is the shape in use: one <code>use_serial</code> in
+<code>configure()</code>, <code>utils.exec</code> in every claim, no handle in ctx, no <code>cleanup()</code>.</p>
+<h2 id="packaging">Packaging<a class="headerlink" href="#packaging" title="Permanent link">&para;</a></h2>
+<p><code>pyserial-asyncio</code> is checked for Apache-2.0 compatibility at implementation time and
+lands as an optional extra: <code>pip install hilt-core[serial]</code>. Core <code>hilt</code> gains no
+new dependency and <code>import hilt</code> never imports <code>hilt.serial</code>: the default
+connector imports it on the first <code>use_serial</code> / <code>get_serial</code>, and a local open
+without the extra raises <code>ModuleNotFoundError</code> naming the install. <code>SerialInterface</code>
+stays off <code>hilt.__all__</code>, same policy as <code>RemoteInterface</code>, <code>SshInterface</code>, and
+<code>JunitXml</code> today ("stay private by test-pinned ruling") — the promised way to a
+console is <code>use_serial</code> / <code>get_serial</code>; self-tests and the transport-contract suite
+import the module directly.</p>
+<h2 id="conformance-the-shared-transport-contract-suite">Conformance: the shared transport-contract suite<a class="headerlink" href="#conformance-the-shared-transport-contract-suite" title="Permanent link">&para;</a></h2>
+<p><code>tests/test_transport_contract.py</code> parametrizes every assertion over a
+<code>TRANSPORTS</code> tuple of fixtures; "serial/UART is the next name on that list" per
+the suite's own docstring. A <code>serial_peer</code> fixture joins <code>mock_peer</code> and
+<code>ssh_peer</code>, backed by a <strong>pty-based fake console</strong>: <code>pty.openpty()</code> gives a real
+master/slave pair, and a small in-process script on the slave end plays a
+login-and-shell console — echoing input, answering <code>success</code>/<code>fail</code>/<code>block</code>
+(parked until cancelled) the same way the other two fixtures do, and emitting the
+<code>__HILT_RC__=</code> sentinel itself so the suite exercises real parsing rather than a
+stub. This keeps the suite honest about actual line discipline (real CRLF, a real
+echo) while staying fully in-process — no UART hardware required for <code>make
+check</code>. <code>wait_in_flight</code> follows the existing <code>_wait_ssh_in_flight</code> shape (a short
+sleep) since the parked command is a real subprocess, not a future the fixture
+can poll.</p>
+<p>Every existing assertion applies unchanged: connect/disconnect idempotence,
+exec-never-throws, <code>cancel_in_flight</code> idempotence and the <code>"transport closed"</code>
+cause name, connected-flag ownership. Adding this fixture and naming it in
+<code>TRANSPORTS</code> is the entire integration cost the suite's docstring promises
+("adding a transport is adding a fixture").</p></div>
+            </div>
+        </div>
+
+        <footer class="col-md-12">
+            <hr>
+                <p>Copyright 2026 Tyler Meador</p>
+            <p>Documentation built with <a href="https://www.mkdocs.org/">MkDocs</a>.</p>
+        </footer>
+        <script src="../js/bootstrap.bundle.min.js"></script>
+        <script>
+            var base_url = "..",
+                shortcuts = {"help": 191, "next": 78, "previous": 80, "search": 83};
+        </script>
+        <script src="../js/base.js"></script>
+        <script src="../search/main.js"></script>
+
+        <div class="modal" id="mkdocs_search_modal" tabindex="-1" role="dialog" aria-labelledby="searchModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="searchModalLabel">Search</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>From here you can search these documents. Enter your search terms below.</p>
+                <form>
+                    <div class="form-group">
+                        <input type="search" class="form-control" placeholder="Search..." id="mkdocs-search-query" title="Type search term here">
+                    </div>
+                </form>
+                <div id="mkdocs-search-results" data-no-results-text="No results found"></div>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div><div class="modal" id="mkdocs_keyboard_modal" tabindex="-1" role="dialog" aria-labelledby="keyboardModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="keyboardModalLabel">Keyboard Shortcuts</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th style="width: 20%;">Keys</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="help shortcut"><kbd>?</kbd></td>
+                    <td>Open this help</td>
+                  </tr>
+                  <tr>
+                    <td class="next shortcut"><kbd>n</kbd></td>
+                    <td>Next page</td>
+                  </tr>
+                  <tr>
+                    <td class="prev shortcut"><kbd>p</kbd></td>
+                    <td>Previous page</td>
+                  </tr>
+                  <tr>
+                    <td class="search shortcut"><kbd>s</kbd></td>
+                    <td>Search</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div>
+
+    </body>
+</html>

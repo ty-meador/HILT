@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        
+        
+        <link rel="canonical" href="https://gitlab.com/Tyler-Meador/HILT/-/tree/main/docs/floor-technician.html">
+        <link rel="shortcut icon" href="img/favicon.ico">
+        <title>Floor Technician - HILT</title>
+        <link href="css/bootstrap.min.css" rel="stylesheet">
+        <link href="css/fontawesome.min.css" rel="stylesheet">
+        <link href="css/brands.min.css" rel="stylesheet">
+        <link href="css/solid.min.css" rel="stylesheet">
+        <link href="css/v4-font-face.min.css" rel="stylesheet">
+        <link href="css/base.css" rel="stylesheet">
+        <link id="hljs-light" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" >
+        <link id="hljs-dark" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github-dark.min.css" disabled>
+        <link href="assets/_mkdocstrings.css" rel="stylesheet">
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+        <script>hljs.highlightAll();</script> 
+    </head>
+
+    <body>
+        <div class="navbar fixed-top navbar-expand-lg navbar-dark bg-primary">
+            <div class="container">
+                <a class="navbar-brand" href="index.html">HILT</a>
+                <!-- Expander button -->
+                <button type="button" class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#navbar-collapse" aria-controls="navbar-collapse" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <!-- Expanded navigation -->
+                <div id="navbar-collapse" class="navbar-collapse collapse">
+                        <!-- Main navigation -->
+                        <ul class="nav navbar-nav">
+                            <li class="nav-item">
+                                <a href="index.html" class="nav-link">Home</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="getting-started.html" class="nav-link">Getting started</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="floor-technician.html" class="nav-link active" aria-current="page">Floor Technician</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="overview.html" class="nav-link">Overview</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="idioms.html" class="nav-link">Idioms</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="utilities.html" class="nav-link">Utilities</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="contracts.html" class="nav-link">Contracts</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="inspector-json.html" class="nav-link">Inspector JSON</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="inspector.html" class="nav-link">Inspector (target specification)</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="measurements.html" class="nav-link">Measurements</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="junit-xml.html" class="nav-link">JUnit XML</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="hilt-run.html" class="nav-link">hilt run</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="hilt-new.html" class="nav-link">hilt new</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="hilt-check.html" class="nav-link">hilt-check</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="api-stability.html" class="nav-link">API stability</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="api.html" class="nav-link">API reference</a>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">HIL interfaces</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="hil/index.html" class="dropdown-item">Overview</a>
+</li>
+                                    
+<li>
+    <a href="hil/gpio.html" class="dropdown-item">GPIO (design note)</a>
+</li>
+                                    
+<li>
+    <a href="hil/pwm.html" class="dropdown-item">PWM (design note)</a>
+</li>
+                                    
+<li>
+    <a href="hil/can.html" class="dropdown-item">CAN bus (design note)</a>
+</li>
+                                    
+<li>
+    <a href="hil/i2c-spi.html" class="dropdown-item">I2C/SPI (design note)</a>
+</li>
+                                    
+<li>
+    <a href="hil/device-api.html" class="dropdown-item">Device API (design note)</a>
+</li>
+                                    
+<li>
+    <a href="hil/serial.html" class="dropdown-item">Serial/UART (design note)</a>
+</li>
+                                </ul>
+                            </li>
+                        </ul>
+
+                    <ul class="nav navbar-nav ms-md-auto">
+                        <li class="nav-item">
+                            <a href="#" class="nav-link" data-bs-toggle="modal" data-bs-target="#mkdocs_search_modal">
+                                <i class="fa fa-search"></i> Search
+                            </a>
+                        </li>
+                            <li class="nav-item">
+                                <a rel="prev" href="getting-started.html" class="nav-link">
+                                    <i class="fa fa-arrow-left"></i> Previous
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a rel="next" href="overview.html" class="nav-link">
+                                    Next <i class="fa fa-arrow-right"></i>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="https://gitlab.com/Tyler-Meador/HILT/-/blob/main/docs/floor-technician.md" class="nav-link"><i class="fa-brands fa-gitlab"></i> Edit on GitLab</a>
+                            </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="container">
+            <div class="row">
+                    <div class="col-md-3"><div class="navbar-expand-md bs-sidebar hidden-print affix" role="complementary">
+    <div class="navbar-header">
+        <button type="button" class="navbar-toggler collapsed" data-bs-toggle="collapse" data-bs-target="#toc-collapse" title="Table of Contents">
+            <span class="fa fa-angle-down"></span>
+        </button>
+    </div>
+
+    
+    <div id="toc-collapse" class="navbar-collapse collapse card bg-body-tertiary">
+        <ul class="nav flex-column">
+            
+            <li class="nav-item" data-bs-level="1"><a href="#floor-technician-guide-reading-a-result-without-reading-source" class="nav-link">Floor Technician guide — reading a result without reading source</a>
+              <ul class="nav flex-column">
+            <li class="nav-item" data-bs-level="2"><a href="#where-to-look" class="nav-link">Where to look</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#sixty-second-recovery-protocol" class="nav-link">Sixty-second recovery protocol</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#how-to-find-the-node-that-matters" class="nav-link">How to find the node that matters</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#every-field-from-this-side-of-the-bench" class="nav-link">Every field, from this side of the bench</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#operator-interrupt-in-the-file" class="nav-link">Operator interrupt, in the file</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#two-records-two-version-numbers" class="nav-link">Two records, two version numbers</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#what-this-page-is-not" class="nav-link">What this page is not</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+              </ul>
+            </li>
+        </ul>
+    </div>
+</div></div>
+                    <div class="col-md-9" role="main">
+
+<h1 id="floor-technician-guide-reading-a-result-without-reading-source">Floor Technician guide — reading a result without reading source<a class="headerlink" href="#floor-technician-guide-reading-a-result-without-reading-source" title="Permanent link">&para;</a></h1>
+<p>This is the station page. You opened a run because something stopped the line.
+You do not need the suite source, a Slack thread, or a software engineer to
+categorize what happened. You need <code>result.json</code>, the scoped log next to it, and
+the recovery protocol below.</p>
+<p>The Inspector TUI is not in this port yet. Until it is, you read the same two
+records the Inspector will: the structural tree in <code>result.json</code>, and the
+temporal log at each node's <code>log_path</code>. Every field below is the field in
+<code>docs/inspector-json.md</code>, explained from this side of the bench.</p>
+<p><strong>Clock rule.</strong> A station whose system clock is not on NTP cannot produce
+trustworthy evidence. Do not execute tests on it. The log is used as chronology
+in customer disputes.</p>
+<h2 id="where-to-look">Where to look<a class="headerlink" href="#where-to-look" title="Permanent link">&para;</a></h2>
+<p>A completed run always writes a timestamped directory under
+<code>HILT_ARTIFACT_ROOT</code> (or <code>./artifacts</code> if that variable was not set). Inside
+that directory:</p>
+<table>
+<thead>
+<tr>
+<th>You want</th>
+<th>File</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>The verdict and the tree</td>
+<td><code>result.json</code> at the run-directory root</td>
+</tr>
+<tr>
+<td>What happened, in order, for a node</td>
+<td>that node's <code>timeline.jsonl</code> (the Inspector record) and <code>timeline.log</code> (the same events as readable lines)</td>
+</tr>
+<tr>
+<td>A captured screenshot, dump, or similar</td>
+<td>the path in an artifact-pointer log line</td>
+</tr>
+<tr>
+<td>A CI-flavored projection of the same tree</td>
+<td>the JUnit XML the runner wrote with <code>--junit</code>, if anyone asked for one. It is not a second record.</td>
+</tr>
+</tbody>
+</table>
+<p><code>result.json</code> is present for Pass, Fail, <strong>and</strong> Aborted. Absence of the file
+means the invocation never reached a run (usage error, exit 3) — there is no
+hardware story to read.</p>
+<p>The last entry in the root node's timeline points at <code>result.json</code> with artifact
+name <code>result</code> and type <code>run-result</code>. You do not have to guess the run directory
+name from the clock.</p>
+<h2 id="sixty-second-recovery-protocol">Sixty-second recovery protocol<a class="headerlink" href="#sixty-second-recovery-protocol" title="Permanent link">&para;</a></h2>
+<p>Open <code>result.json</code>. Read <code>state</code> at the root, then <code>failure</code>. That pair is the
+category. Then follow the protocol. A human still makes the final call; the
+framework's job is to make the call obvious.</p>
+<table>
+<thead>
+<tr>
+<th>Root <code>state</code></th>
+<th>What <code>failure</code> looks like</th>
+<th>Category</th>
+<th>What you do</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Pass</code></td>
+<td><code>failure</code> is <code>null</code></td>
+<td>The claim held</td>
+<td>Ship. You are done.</td>
+</tr>
+<tr>
+<td><code>Fail</code></td>
+<td><code>name</code> is <code>TestFailure</code> (or a suite-authored subclass), <code>bug</code> absent or <code>false</code></td>
+<td><strong>Hardware.</strong> The unit did not meet a check the suite named.</td>
+<td>Pull the unit. Follow the station protocol for that failure name. The <code>fail_message</code> is written in your language; <code>expected</code> / <code>received</code> are the comparison when there is one.</td>
+</tr>
+<tr>
+<td><code>Fail</code></td>
+<td><code>banner</code> is <code>CONTRACT VIOLATION</code>, or <code>bug</code> is <code>true</code></td>
+<td><strong>Author.</strong> The suite broke its contract. This is not the unit.</td>
+<td>Do not scrap the unit on this evidence. Escalate to the suite author. The message names the node and the fix.</td>
+</tr>
+<tr>
+<td><code>Fail</code></td>
+<td><code>banner</code> is <code>FRAMEWORK CONTRACT VIOLATION</code></td>
+<td><strong>Framework.</strong> Should be unreachable.</td>
+<td>Escalate to the framework maintainers with the full run directory. Not the unit, not the suite author.</td>
+</tr>
+<tr>
+<td><code>Aborted</code></td>
+<td><code>name</code> is <code>ExternalIntegrationFailure</code></td>
+<td><strong>Integration / harness.</strong> The shop-floor DB, the coordinator, the hook around the suite.</td>
+<td>Fix the harness. Re-run. The unit was not judged.</td>
+</tr>
+<tr>
+<td><code>Aborted</code></td>
+<td><code>name</code> is <code>MissingVerdict</code>, or <code>bug</code> is <code>true</code> with <code>state</code> <code>Aborted</code></td>
+<td><strong>Author.</strong> The test method returned nothing the framework will accept as a verdict.</td>
+<td>Escalate to the suite author. Do not treat this as a hardware Fail.</td>
+</tr>
+<tr>
+<td><code>Aborted</code></td>
+<td><code>name</code> is <code>OperatorInterrupt</code>, <code>operator</code> is <code>true</code></td>
+<td><strong>Operator.</strong> Someone sent SIGINT or SIGTERM.</td>
+<td>The rack was stopped on purpose. Not a Fail, not a harness outage. Re-run when the line is ready. <code>signal</code> names which one.</td>
+</tr>
+<tr>
+<td><code>Aborted</code></td>
+<td><code>timeout.declared</code> is <code>abort_after</code></td>
+<td><strong>Budget.</strong> The node's abort clock fired.</td>
+<td>The framework refused to forge a Fail. Read <code>timeout.clock</code> for which node declared the budget, then decide with the log whether the unit hung or the budget was tight.</td>
+</tr>
+</tbody>
+</table>
+<p>A <code>TestFailure</code> raised from <code>configure()</code> means <strong>the device did not reach a
+testable state</strong>. Hardware vs infrastructure is <strong>not knowable from the file</strong>.
+You decide that, using the message, the survey artifacts, and what you can see
+on the bench.</p>
+<p>Do not collapse Fail and Aborted. A Fail says check the hardware. An Aborted
+says no verdict was produced — check the harness, the author, or the operator,
+not the unit, unless you have other evidence.</p>
+<h2 id="how-to-find-the-node-that-matters">How to find the node that matters<a class="headerlink" href="#how-to-find-the-node-that-matters" title="Permanent link">&para;</a></h2>
+<p>The root object is one node. The tree of everything that ran is
+<code>summary_tree</code>. Walk <code>children</code> in declaration order.</p>
+<p>Use <strong><code>ancestor_names</code></strong> as the node's identity. It is the root-to-this path as
+an array of names. Names may contain <code>/</code>, so the array is the durable form.</p>
+<p>Use <strong><code>bread_crumbs</code></strong> only to display that path. It is exactly
+<code>ancestor_names</code> joined with <code>/</code>. Do not parse it back into names.</p>
+<p>A node whose <code>summary_tree</code> <code>state</code> is <code>null</code> never ran (a sequence stopped
+before it). That is not a fourth terminal state. It has no log and no failure.
+The declared tree is still complete, so you can see what was skipped.</p>
+<h2 id="every-field-from-this-side-of-the-bench">Every field, from this side of the bench<a class="headerlink" href="#every-field-from-this-side-of-the-bench" title="Permanent link">&para;</a></h2>
+<h3 id="the-root-result-resultjson">The root result (<code>result.json</code>)<a class="headerlink" href="#the-root-result-resultjson" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>What you do with it</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>format_version</code></td>
+<td>Read this first. Version <code>1</code> is this page. A number you do not know is not a result you can guess at — refuse it and get a decoder that names the versions it accepts.</td>
+</tr>
+<tr>
+<td><code>state</code></td>
+<td>The root verdict: <code>Pass</code>, <code>Fail</code>, or <code>Aborted</code>. This is the first word of the recovery protocol.</td>
+</tr>
+<tr>
+<td><code>failure</code></td>
+<td>Why this node is not Pass, or <code>null</code>. Shape below.</td>
+</tr>
+<tr>
+<td><code>timeout</code></td>
+<td><code>null</code> unless a time budget determined or contributed to this state. Shape below.</td>
+</tr>
+<tr>
+<td><code>test_case</code></td>
+<td>Stable name of this node. The root's name is usually the suite class name.</td>
+</tr>
+<tr>
+<td><code>type</code></td>
+<td>The node's shape in the suite: <code>suite</code>, <code>test</code>, <code>parallel</code>, or <code>sequence</code>. A <code>test</code> is one claim. A <code>sequence</code> stops at the first failure. A <code>parallel</code> runs children together and keeps the worst state.</td>
+</tr>
+<tr>
+<td><code>ancestor_names</code></td>
+<td>Identity. Root-to-this, inclusive.</td>
+</tr>
+<tr>
+<td><code>bread_crumbs</code></td>
+<td>Display path only.</td>
+</tr>
+<tr>
+<td><code>summary_tree</code></td>
+<td>The whole declared tree, rooted here. This is the structural view.</td>
+</tr>
+<tr>
+<td><code>physical_location</code></td>
+<td>Station / slot name from <code>PHYSICAL_LOCATION</code>, or <code>unknown</code> if that variable was not in the run environment.</td>
+</tr>
+<tr>
+<td><code>env</code></td>
+<td>The run environment as the run declared it. Secrets in an unfiltered environment are in this object verbatim — that is an operator obligation, not a framework rewrite. With <code>environment=DEBUG</code> the allow/deny list is ignored and a warning is in the log.</td>
+</tr>
+<tr>
+<td><code>run_data</code></td>
+<td>Suite-authored evidence snapshot: what <code>configure()</code> provided, minus anything that is not JSON. Version 1 always has a <code>measurements</code> array: the numbers this node recorded with <code>utils.measure</code>, or empty. Other keys are the suite's. The readings a claim took, and the numbers it measured, are on that claim's node in <code>summary_tree</code>, not here.</td>
+</tr>
+<tr>
+<td><code>suite_target</code></td>
+<td>Which suite produced this run, as <code>hilt run</code> was told it: the file or module, <code>::</code>, the class. This is what the Inspector's Re-Run tab executes when you press Enter on a node, so the check you run at the bench is the code that ran in production. <code>null</code> means the run was not started by <code>hilt run</code>; open the Inspector with <code>--suite</code> if you need to re-run from it.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="a-summary-tree-node">A summary-tree node<a class="headerlink" href="#a-summary-tree-node" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>What you do with it</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>name</code></td>
+<td>This node's name. Combine with parent names via <code>ancestor_names</code> on the matching <code>RunResult</code> when you have one; in the tree, the path is the walk from the root.</td>
+</tr>
+<tr>
+<td><code>type</code></td>
+<td>Same discriminator as the root: <code>suite</code>, <code>test</code>, <code>parallel</code>, <code>sequence</code>.</td>
+</tr>
+<tr>
+<td><code>state</code></td>
+<td>Terminal state, or <code>null</code> if this step did not run.</td>
+</tr>
+<tr>
+<td><code>failure</code></td>
+<td>Failure for <strong>this</strong> node, or <code>null</code>. A parent can be Fail because a child is; look at the child that actually failed.</td>
+</tr>
+<tr>
+<td><code>timeout</code></td>
+<td>Time-budget evidence for <strong>this</strong> node, or <code>null</code>.</td>
+</tr>
+<tr>
+<td><code>log_path</code></td>
+<td>POSIX path of this node's <code>timeline.jsonl</code>, relative to the run directory. <code>null</code> means the records rolled up into an ancestor, or the node never ran. Resolve it against the run directory you opened. The root always has one.</td>
+</tr>
+<tr>
+<td><code>children</code></td>
+<td>Ordered children. Groups keep declaration order after settlement.</td>
+</tr>
+<tr>
+<td><code>evidence</code></td>
+<td>The readings this claim handed back with its verdict, or <code>null</code>. Read it beside the failure: a Fail with <code>evidence</code> shows you what the unit measured.</td>
+</tr>
+<tr>
+<td><code>evidence_declared</code></td>
+<td>The readings this claim promised to take on a pass, or <code>null</code>. A name listed here that is missing from <code>evidence</code> is a reading that was <strong>not taken</strong>: the claim failed, aborted, or never ran before it got there. It is not a reading of zero.</td>
+</tr>
+<tr>
+<td><code>measurements</code></td>
+<td>The numbers this claim recorded, with their windows, or <code>null</code> if it never ran. An entry with <code>in_limits: false</code> is a reading outside its window. An entry with <code>value: null</code> is a reading the claim tried to take and the device did not give; it is <strong>not</strong> a reading of zero. Read <code>state</code> beside either: it is not a Fail unless <code>state</code> says Fail. The cases are in <code>docs/measurements.md</code>, "What the Floor Technician reads".</td>
+</tr>
+</tbody>
+</table>
+<h3 id="the-failure-object">The failure object<a class="headerlink" href="#the-failure-object" title="Permanent link">&para;</a></h3>
+<p>Failures keep their framework name so you can tell the cases apart. Unknown
+fields are additive; read what you know.</p>
+<table>
+<thead>
+<tr>
+<th>What you see</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>name</code></td>
+<td>The failure class: <code>TestFailure</code>, a suite subclass (<code>DimmFailure</code>, …), <code>ContractViolation</code>, <code>FrameworkContractViolation</code>, <code>ExternalIntegrationFailure</code>, <code>MissingVerdict</code>, <code>OperatorInterrupt</code>, <code>ArpResolutionFailure</code>.</td>
+</tr>
+<tr>
+<td><code>fail_message</code></td>
+<td>The sentence you read out loud. Hardware copy for a <code>TestFailure</code>; a banner plus a fix for a contract break; "operator interrupted…" for a Ctrl-C.</td>
+</tr>
+<tr>
+<td><code>state</code></td>
+<td><code>Fail</code> or <code>Aborted</code>, matching the taxonomy.</td>
+</tr>
+<tr>
+<td><code>expected</code> / <code>received</code></td>
+<td>Present only when the suite supplied a comparison. Omitted, not nulled, when the failure is self-evident. <code>received</code> is what the suite observed.</td>
+</tr>
+<tr>
+<td><code>banner</code></td>
+<td><code>CONTRACT VIOLATION</code> (author) or <code>FRAMEWORK CONTRACT VIOLATION</code> (maintainers).</td>
+</tr>
+<tr>
+<td><code>bug</code></td>
+<td><code>true</code> means broken software, not broken hardware.</td>
+</tr>
+<tr>
+<td><code>node</code></td>
+<td>Which node broke the contract.</td>
+</tr>
+<tr>
+<td><code>cause</code></td>
+<td>Nested failure or a <code>{name, message}</code> for a plain exception. Follow it; do not stop at the wrapper.</td>
+</tr>
+<tr>
+<td><code>hook</code></td>
+<td><code>before_each</code> or <code>after_each</code> on an <code>ExternalIntegrationFailure</code>. That is the harness hook that threw.</td>
+</tr>
+<tr>
+<td><code>operator</code></td>
+<td><code>true</code> on <code>OperatorInterrupt</code>. The operator stopped the rack.</td>
+</tr>
+<tr>
+<td><code>signal</code></td>
+<td><code>SIGINT</code>, <code>SIGTERM</code>, or <code>signal N</code>.</td>
+</tr>
+<tr>
+<td><code>returned</code></td>
+<td>What a <code>MissingVerdict</code> node actually returned instead of PASS.</td>
+</tr>
+<tr>
+<td><code>key</code> / <code>owner</code></td>
+<td>On a context contract break: the ctx key that was never published, or that a claim tried to write after <code>configure()</code>, and which <code>configure()</code> owns it.</td>
+</tr>
+<tr>
+<td><code>key</code></td>
+<td>On an evidence contract break: the reading a <code>PASS</code> did not carry, could not be written as JSON, or that collided with a ctx key. The claim is broken software, not a bad unit.</td>
+</tr>
+<tr>
+<td><code>evidence</code></td>
+<td>On a <code>TestFailure</code>: the readings the claim took before it failed, when it handed them over.</td>
+</tr>
+<tr>
+<td><code>mac</code> / <code>host</code></td>
+<td>On <code>ArpResolutionFailure</code>: the MAC that was not in the table, and which host was asked.</td>
+</tr>
+</tbody>
+</table>
+<p>Live handles (an open SSH session, a dict with a weird key) degrade to a
+string rather than making the file unreadable. If <code>received</code> looks like
+<code>&lt;SshInterface host=dut-12&gt;</code>, that is the degraded form, not a missing value.</p>
+<h3 id="the-timeout-object">The timeout object<a class="headerlink" href="#the-timeout-object" title="Permanent link">&para;</a></h3>
+<p><code>timeout</code> is <code>null</code> when no deadline contributed. Otherwise:</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>What you do with it</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>reason</code></td>
+<td>Always <code>timeout</code>. This object exists because a clock fired.</td>
+</tr>
+<tr>
+<td><code>declared</code></td>
+<td>Which clock won: <code>fail_after</code> or <code>abort_after</code>.</td>
+</tr>
+<tr>
+<td><code>budget_seconds</code></td>
+<td>How long that clock was willing to wait.</td>
+</tr>
+<tr>
+<td><code>elapsed_seconds</code></td>
+<td>How long the node had actually been active when it fired.</td>
+</tr>
+<tr>
+<td><code>clock</code></td>
+<td>Root-to-declaring-node path of the winning clock. The budget may have been declared on a parent.</td>
+</tr>
+</tbody>
+</table>
+<p><code>fail_after</code> also puts a hardware-facing <code>TestFailure</code> in <code>failure</code>.
+<code>abort_after</code> may leave <code>failure</code> null — the timeout record <strong>is</strong> the reason
+the node is Aborted. Do not report those two the same way.</p>
+<h3 id="the-timeline-timelinejsonl">The timeline (<code>timeline.jsonl</code>)<a class="headerlink" href="#the-timeline-timelinejsonl" title="Permanent link">&para;</a></h3>
+<p>One complete JSON object per line. You may read it while a run is still live;
+keep every complete line after an interrupt. <code>timeline.log</code> is the same events
+as escaped human lines.</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>What you do with it</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>format_version</code></td>
+<td>Timeline schema version; currently <code>1</code>. Independent of the result's version.</td>
+</tr>
+<tr>
+<td><code>timestamp</code></td>
+<td>Timezone-aware UTC, ending in <code>Z</code>. This is the chronology.</td>
+</tr>
+<tr>
+<td><code>scope</code></td>
+<td>Root-to-emitting-node path. Same idea as <code>ancestor_names</code>.</td>
+</tr>
+<tr>
+<td><code>level</code></td>
+<td>Logging level (<code>info</code>, <code>warning</code>, <code>error</code>, …).</td>
+</tr>
+<tr>
+<td><code>message</code></td>
+<td>The line. Newlines stay escaped inside the JSON.</td>
+</tr>
+<tr>
+<td><code>artifact_name</code></td>
+<td>Present only on pointer lines. The captured artifact's name, or <code>result</code> for the root result.</td>
+</tr>
+<tr>
+<td><code>artifact_path</code></td>
+<td>Absolute path of that file. Open it.</td>
+</tr>
+<tr>
+<td><code>artifact_type</code></td>
+<td>What kind of capture, or <code>run-result</code> for <code>result.json</code>.</td>
+</tr>
+<tr>
+<td><code>artifact_timestamp</code></td>
+<td>When that evidence was taken, UTC.</td>
+</tr>
+</tbody>
+</table>
+<p>Ordinary log lines omit the four <code>artifact_*</code> fields rather than setting them
+to null. A pointer line has all four.</p>
+<p>Pending nodes create no files. Leaves roll their records into the nearest
+ancestor that owns a log. If a node has a terminal <code>state</code> and <code>log_path</code> is
+null, read the nearest ancestor that has a <code>log_path</code>.</p>
+<h2 id="operator-interrupt-in-the-file">Operator interrupt, in the file<a class="headerlink" href="#operator-interrupt-in-the-file" title="Permanent link">&para;</a></h2>
+<p>A Ctrl-C or a SIGTERM during a live run is <strong>not</strong> a Fail and <strong>not</strong> a harness
+outage.</p>
+<p>In <code>result.json</code>:</p>
+<ul>
+<li>root <code>state</code> is <code>Aborted</code></li>
+<li><code>failure.name</code> is <code>OperatorInterrupt</code></li>
+<li><code>failure.operator</code> is <code>true</code></li>
+<li><code>failure.signal</code> is <code>SIGINT</code> or <code>SIGTERM</code></li>
+<li><code>failure.fail_message</code> contains <code>operator</code></li>
+</ul>
+<p>In the timeline: the same story in order, including any artifacts flushed
+before the signal. The run directory is still the record; <code>result.json</code> is
+still written.</p>
+<p>If <code>operator</code> is missing or false, it was not the operator. Do not guess.</p>
+<h2 id="two-records-two-version-numbers">Two records, two version numbers<a class="headerlink" href="#two-records-two-version-numbers" title="Permanent link">&para;</a></h2>
+<p><code>result.json</code> and <code>timeline.jsonl</code> each carry their own <code>format_version</code>. They
+move independently. The tree points at the log through <code>log_path</code>.</p>
+<p>Within version 1, new fields may appear. Ignore fields you do not know; do not
+fail the read. A changed meaning, a renamed field, or a moved file would bump
+the number. From 1.0.0 that bump is a contract change. Before 1.0.0 the record
+may still change in place under version 1.</p>
+<p>The published schemas live next to this guide:</p>
+<ul>
+<li><a href="schema/result-v1.schema.json"><code>docs/schema/result-v1.schema.json</code></a></li>
+<li><a href="schema/timeline-v1.schema.json"><code>docs/schema/timeline-v1.schema.json</code></a></li>
+</ul>
+<p>You do not have to validate against them on the station. They exist so a
+decoder can refuse a version it was not written for, loudly.</p>
+<h2 id="what-this-page-is-not">What this page is not<a class="headerlink" href="#what-this-page-is-not" title="Permanent link">&para;</a></h2>
+<p>It is not the authoring guide (<code>docs/idioms.md</code>, <code>docs/contracts.md</code>). It is
+not the runner's exit-code table (<code>docs/hilt-run.md</code>) — though exit <code>0</code>/<code>1</code>/<code>2</code>
+match Pass/Fail/Aborted, and exit <code>3</code> means there is no <code>result.json</code> because
+no run happened. It is not the Inspector TUI; when that lands, it will consume
+exactly these files.</p></div>
+            </div>
+        </div>
+
+        <footer class="col-md-12">
+            <hr>
+                <p>Copyright 2026 Tyler Meador</p>
+            <p>Documentation built with <a href="https://www.mkdocs.org/">MkDocs</a>.</p>
+        </footer>
+        <script src="js/bootstrap.bundle.min.js"></script>
+        <script>
+            var base_url = ".",
+                shortcuts = {"help": 191, "next": 78, "previous": 80, "search": 83};
+        </script>
+        <script src="js/base.js"></script>
+        <script src="search/main.js"></script>
+
+        <div class="modal" id="mkdocs_search_modal" tabindex="-1" role="dialog" aria-labelledby="searchModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="searchModalLabel">Search</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>From here you can search these documents. Enter your search terms below.</p>
+                <form>
+                    <div class="form-group">
+                        <input type="search" class="form-control" placeholder="Search..." id="mkdocs-search-query" title="Type search term here">
+                    </div>
+                </form>
+                <div id="mkdocs-search-results" data-no-results-text="No results found"></div>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div><div class="modal" id="mkdocs_keyboard_modal" tabindex="-1" role="dialog" aria-labelledby="keyboardModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="keyboardModalLabel">Keyboard Shortcuts</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th style="width: 20%;">Keys</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="help shortcut"><kbd>?</kbd></td>
+                    <td>Open this help</td>
+                  </tr>
+                  <tr>
+                    <td class="next shortcut"><kbd>n</kbd></td>
+                    <td>Next page</td>
+                  </tr>
+                  <tr>
+                    <td class="prev shortcut"><kbd>p</kbd></td>
+                    <td>Previous page</td>
+                  </tr>
+                  <tr>
+                    <td class="search shortcut"><kbd>s</kbd></td>
+                    <td>Search</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div>
+
+    </body>
+</html>

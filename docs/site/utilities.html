@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        
+        
+        <link rel="canonical" href="https://gitlab.com/Tyler-Meador/HILT/-/tree/main/docs/utilities.html">
+        <link rel="shortcut icon" href="img/favicon.ico">
+        <title>Utilities - HILT</title>
+        <link href="css/bootstrap.min.css" rel="stylesheet">
+        <link href="css/fontawesome.min.css" rel="stylesheet">
+        <link href="css/brands.min.css" rel="stylesheet">
+        <link href="css/solid.min.css" rel="stylesheet">
+        <link href="css/v4-font-face.min.css" rel="stylesheet">
+        <link href="css/base.css" rel="stylesheet">
+        <link id="hljs-light" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" >
+        <link id="hljs-dark" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github-dark.min.css" disabled>
+        <link href="assets/_mkdocstrings.css" rel="stylesheet">
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+        <script>hljs.highlightAll();</script> 
+    </head>
+
+    <body>
+        <div class="navbar fixed-top navbar-expand-lg navbar-dark bg-primary">
+            <div class="container">
+                <a class="navbar-brand" href="index.html">HILT</a>
+                <!-- Expander button -->
+                <button type="button" class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#navbar-collapse" aria-controls="navbar-collapse" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <!-- Expanded navigation -->
+                <div id="navbar-collapse" class="navbar-collapse collapse">
+                        <!-- Main navigation -->
+                        <ul class="nav navbar-nav">
+                            <li class="nav-item">
+                                <a href="index.html" class="nav-link">Home</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="getting-started.html" class="nav-link">Getting started</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="floor-technician.html" class="nav-link">Floor Technician</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="overview.html" class="nav-link">Overview</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="idioms.html" class="nav-link">Idioms</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="utilities.html" class="nav-link active" aria-current="page">Utilities</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="contracts.html" class="nav-link">Contracts</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="inspector-json.html" class="nav-link">Inspector JSON</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="inspector.html" class="nav-link">Inspector (target specification)</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="measurements.html" class="nav-link">Measurements</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="junit-xml.html" class="nav-link">JUnit XML</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="hilt-run.html" class="nav-link">hilt run</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="hilt-new.html" class="nav-link">hilt new</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="hilt-check.html" class="nav-link">hilt-check</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="api-stability.html" class="nav-link">API stability</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="api.html" class="nav-link">API reference</a>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">HIL interfaces</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="hil/index.html" class="dropdown-item">Overview</a>
+</li>
+                                    
+<li>
+    <a href="hil/gpio.html" class="dropdown-item">GPIO (design note)</a>
+</li>
+                                    
+<li>
+    <a href="hil/pwm.html" class="dropdown-item">PWM (design note)</a>
+</li>
+                                    
+<li>
+    <a href="hil/can.html" class="dropdown-item">CAN bus (design note)</a>
+</li>
+                                    
+<li>
+    <a href="hil/i2c-spi.html" class="dropdown-item">I2C/SPI (design note)</a>
+</li>
+                                    
+<li>
+    <a href="hil/device-api.html" class="dropdown-item">Device API (design note)</a>
+</li>
+                                    
+<li>
+    <a href="hil/serial.html" class="dropdown-item">Serial/UART (design note)</a>
+</li>
+                                </ul>
+                            </li>
+                        </ul>
+
+                    <ul class="nav navbar-nav ms-md-auto">
+                        <li class="nav-item">
+                            <a href="#" class="nav-link" data-bs-toggle="modal" data-bs-target="#mkdocs_search_modal">
+                                <i class="fa fa-search"></i> Search
+                            </a>
+                        </li>
+                            <li class="nav-item">
+                                <a rel="prev" href="idioms.html" class="nav-link">
+                                    <i class="fa fa-arrow-left"></i> Previous
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a rel="next" href="contracts.html" class="nav-link">
+                                    Next <i class="fa fa-arrow-right"></i>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="https://gitlab.com/Tyler-Meador/HILT/-/blob/main/docs/utilities.md" class="nav-link"><i class="fa-brands fa-gitlab"></i> Edit on GitLab</a>
+                            </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="container">
+            <div class="row">
+                    <div class="col-md-3"><div class="navbar-expand-md bs-sidebar hidden-print affix" role="complementary">
+    <div class="navbar-header">
+        <button type="button" class="navbar-toggler collapsed" data-bs-toggle="collapse" data-bs-target="#toc-collapse" title="Table of Contents">
+            <span class="fa fa-angle-down"></span>
+        </button>
+    </div>
+
+    
+    <div id="toc-collapse" class="navbar-collapse collapse card bg-body-tertiary">
+        <ul class="nav flex-column">
+            
+            <li class="nav-item" data-bs-level="1"><a href="#utilities" class="nav-link">Utilities</a>
+              <ul class="nav flex-column">
+            <li class="nav-item" data-bs-level="2"><a href="#logging-and-the-timeline" class="nav-link">Logging and the timeline</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#runresult-navigation" class="nav-link">RunResult navigation</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#arpresolver-mac-to-ip" class="nav-link">ArpResolver: MAC to IP</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#ssh-use_shell-and-get_shell" class="nav-link">SSH: use_shell and get_shell</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#serial-console-use_serial-and-get_serial" class="nav-link">Serial console: use_serial and get_serial</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#device-api-coap-and-http" class="nav-link">Device API: CoAP and HTTP</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#wait_for" class="nav-link">wait_for</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#utilsexec" class="nav-link">utils.exec</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+              </ul>
+            </li>
+        </ul>
+    </div>
+</div></div>
+                    <div class="col-md-9" role="main">
+
+<h1 id="utilities">Utilities<a class="headerlink" href="#utilities" title="Permanent link">&para;</a></h1>
+<h2 id="logging-and-the-timeline">Logging and the timeline<a class="headerlink" href="#logging-and-the-timeline" title="Permanent link">&para;</a></h2>
+<ul>
+<li><code>utils.logger</code> is scoped per node. Every entry is captured in artifacts.</li>
+<li><code>discrete_log_file=True</code> (the default on class-based tests) gives the node its own log file; <code>False</code> rolls entries into the parent logger. Inline <code>self.test()</code> bodies default to <code>False</code>.</li>
+<li>Every full run creates a timestamped directory under the configured artifact root. A logging owner streams both <code>timeline.log</code> for humans and versioned <code>timeline.jsonl</code> for the Inspector, flushing both on every entry. Treat <code>TestComponent.log_path</code> as the authoritative path; directory names are not an API.</li>
+<li>While a durable timeline is attached, <code>utils.logger.isEnabledFor(...)</code> is true at every level so developer-side guards cannot suppress the chronology. Process logging handlers still apply their own level policy.</li>
+</ul>
+<h3 id="point-in-time-artifacts">Point-in-time artifacts<a class="headerlink" href="#point-in-time-artifacts" title="Permanent link">&para;</a></h3>
+<p>Construct an immutable <code>Artifact</code> and pass it to <code>utils.capture_artifact()</code>. The method persists the JSON artifact under <code>HILT_ARTIFACT_ROOT</code>, then emits a structured pointer through the same scoped logger that records the surrounding test events. <code>Artifact</code> deliberately has no <code>write()</code> method: a file without its pointer would be absent from the chronology.</p>
+<pre><code class="language-python">from hilt import Artifact
+
+snapshot = Artifact(
+    name=&quot;pre-flash&quot;, type=&quot;hardware-survey&quot;, data={&quot;firmware&quot;: &quot;2.4.1&quot;, &quot;healthy&quot;: True}
+)
+artifact_path = await utils.capture_artifact(snapshot)
+</code></pre>
+<p>Names and types accept letters, numbers, dashes, and underscores. Payloads must be JSON serializable. Capture is async, never overwrites, and returns the absolute path recorded in the pointer entry.</p>
+<h2 id="runresult-navigation">RunResult navigation<a class="headerlink" href="#runresult-navigation" title="Permanent link">&para;</a></h2>
+<p>Every <code>RunResult</code> carries the node's position in the tree:</p>
+<ul>
+<li><code>ancestor_names: list[str]</code>, root-to-this inclusive. Use for programmatic aggregation (DB keys, leaf identity).</li>
+<li><code>bread_crumbs: str</code>, <code>"/".join(ancestor_names)</code> precomputed. Use for display, log lines, error messages.</li>
+<li><code>summary_tree: SummaryTreeNode</code>, a snapshot of this node's subtree at completion, so an integrator can reconstruct the full Inspector tree from the root's <code>RunResult</code> alone.</li>
+</ul>
+<p>The versioned payload is defined in <a href="inspector-json.html"><code>inspector-json.md</code></a>. A full <code>run()</code> also persists the root payload as <code>result.json</code> in the run's artifact directory. Suites consume the returned <code>RunResult</code> when they need the live value; they never write the canonical Inspector file themselves.</p>
+<h2 id="arpresolver-mac-to-ip">ArpResolver: MAC to IP<a class="headerlink" href="#arpresolver-mac-to-ip" title="Permanent link">&para;</a></h2>
+<p>Create one via <code>utils.get_arp_resolver()</code> in <code>configure()</code>, call <code>resolve()</code>, and return both the resolved data and the resolver into ctx. Test methods read the IP and the resolver from <code>utils.ctx</code>. <code>arp.ping(utils)</code> checks reachability. <code>arp.reacquire(utils)</code> after anything that may change the IP (reboot, flash, DHCP churn) returns the new address and the resolver remembers it, so a later <code>ping</code> dials the address it last resolved while ctx stays as <code>configure()</code> left it. Carry the new address as evidence on the verdict if the Floor Technician should see it.</p>
+<p><code>ArpResolutionFailure</code> is not a <code>TestFailure</code>. Catch it in <code>configure</code> and re-raise as <code>TestFailure</code> so a missing ARP entry is a verdict. Uncaught, it is a developer bug: the suite did not model the failure mode.</p>
+<pre><code class="language-python">arp = utils.get_arp_resolver(mac=self._mac)
+try:
+    resolved = await arp.resolve()
+except ArpResolutionFailure as error:
+    raise TestFailure(
+        f&quot;{error.mac} did not appear on the network&quot;, error.mac, error.host
+    ) from error
+return {**resolved, &quot;arp&quot;: arp}
+</code></pre>
+<p>The resolver is scoped to the node's current exec route and its cache is keyed by the routing label, so a device composed under a gateway resolves through the hop with no change to the device's code. <code>hilt run ...::DutDevice</code> reads the test host's ARP table; <code>hilt run ...::Gateway</code> runs the same class through the hop. See <code>examples/networked_device.py</code>.</p>
+<h2 id="ssh-use_shell-and-get_shell">SSH: <code>use_shell</code> and <code>get_shell</code><a class="headerlink" href="#ssh-use_shell-and-get_shell" title="Permanent link">&para;</a></h2>
+<p><code>use_shell</code> answers "where does <code>utils.exec</code> go": it rebinds the routing for this node and its descendants. <code>get_shell</code> hands you an additional interface without touching the routing. Both are framework-managed; no <code>cleanup()</code> override is needed, and the shell is disconnected after the post-cleanup survey.</p>
+<p>Open the device's shell in <code>configure()</code> with <code>use_shell</code> when one connection must be shared across all of the device's leaves. See <code>examples/remote_device_ssh.py</code>. The pi-hole dogfood suite (<code>examples/pi_hole_server.py</code>) is the same class-owned hop plus phase-boundary surveys that tail service logs for the Floor Technician.</p>
+<h3 id="tunneling">Tunneling<a class="headerlink" href="#tunneling" title="Permanent link">&para;</a></h3>
+<p>Pass the <code>Shell</code> an earlier <code>get_shell()</code> returned as the <code>via</code> argument to the next one to tunnel the new connection through it.</p>
+<pre><code class="language-python">jump = await utils.get_shell(host=jump_host, username=jump_user)
+target = await utils.get_shell(host=target_host, username=target_user, via=jump)
+</code></pre>
+<p>See <code>examples/ssh_tunneling.py</code>.</p>
+<h2 id="serial-console-use_serial-and-get_serial">Serial console: <code>use_serial</code> and <code>get_serial</code><a class="headerlink" href="#serial-console-use_serial-and-get_serial" title="Permanent link">&para;</a></h2>
+<p><code>use_serial(device=...)</code> is <code>use_shell(host=...)</code> for a console reached by its device path: it opens the port, binds <code>utils.exec</code> to it for this node and its descendants, and the framework closes the port after the post-cleanup survey and from the abort sweep. <code>get_serial(device=...)</code> hands you an additional console without touching the routing. Both return a <code>Shell</code>; <code>use_serial()</code> with no arguments reads the active route from any slot, and the declaring form is admitted only in <code>configure()</code>, under the same <code>ContractViolation</code> as <code>use_shell</code>. No <code>cleanup()</code> override is needed and no transport is imported.</p>
+<pre><code class="language-python">async def configure(self, utils: TestUtils) -&gt; dict[str, Any]:
+    await utils.use_serial(
+        device=utils.env.require(&quot;SERIAL_DEVICE&quot;),
+        baud=utils.env.int(&quot;SERIAL_BAUD&quot;, default=115200),
+    )
+    return {}
+</code></pre>
+<p>The line settings are the transport's: <code>prompt</code> (a regex; <code>None</code> is a bare POSIX prompt), <code>login_prompt</code> / <code>password_prompt</code> with <code>username</code> / <code>password</code> for a console that logs in, <code>login_timeout</code> for connect, <code>prompt_timeout</code> for how long one <code>exec</code> waits for the prompt before settling <code>exit_code == -1</code> with the text so far as evidence. A console's <code>stderr</code> is transport-generated only (<code>"prompt timeout"</code>, <code>"transport closed"</code>); everything the DUT writes lands in <code>stdout</code>. The contract is <code>docs/hil/serial.md</code>.</p>
+<p>A console behind a hop (a console server, a Pi with a USB-UART) is the same call: pass an SSH <code>Shell</code> as <code>via</code>, or declare <code>use_shell(host=...)</code> on the parent and let the console inherit the route. The device path then names a node on the hop box and the bytes bridge through it (<code>bridge_command</code> overrides the default <code>stty</code> + <code>cat</code> bridge). A serial console accepts no other kind of hop; passing one is a <code>TypeError</code> naming the call. The policy-only shapes (<code>inherit=False</code>, <code>propagate=False</code>) belong to <code>use_shell</code>. <code>pyserial-asyncio</code> is the <code>hilt-core[serial]</code> extra; a local open without it raises <code>ModuleNotFoundError</code> naming the install.</p>
+<h2 id="device-api-coap-and-http">Device API: CoAP and HTTP<a class="headerlink" href="#device-api-coap-and-http" title="Permanent link">&para;</a></h2>
+<p>A device API is not <code>exec</code> with a URL. Open a session from <code>configure()</code> with <code>utils.get_http</code> or <code>utils.get_coap</code>, then <code>request</code> a typed <code>DeviceRequest</code>. The response's <code>status</code> is data; HTTP 4xx/5xx is not an exception. Catch <code>DeviceApiOperationFailure</code> when the transfer itself did not complete (timeout, refused connection) and model it as a <code>TestFailure</code>.</p>
+<p>Retries default to zero and each declared attempt is logged. POST refuses retry unless <code>retry_non_idempotent=True</code>. Attempt logs keep header names and withhold every value unless the author lists that name in <code>evidence_headers</code>. Abort closes the session; it does not invent a shutdown PUT.</p>
+<pre><code class="language-python">api = await utils.get_http(base_url=&quot;https://dut.local&quot;)
+response = await api.request(DeviceRequest(method=&quot;GET&quot;, path=&quot;/whoami&quot;))
+if response.status != 200:
+    raise TestFailure(&quot;whoami rejected&quot;, 200, response.status)
+return PASS({&quot;status&quot;: response.status})
+</code></pre>
+<p>The backends stay off the public surface, the way <code>SshInterface</code> does.</p>
+<h2 id="wait_for"><code>wait_for</code><a class="headerlink" href="#wait_for" title="Permanent link">&para;</a></h2>
+<p><code>looking_for</code> is required and must be plain language: it is the Floor Technician's primary diagnostic string when a wait times out. Both placements raise <code>TestFailure</code>; where the call sits decides what the timeout means, and that is a lifecycle question answered on the idioms page. The call returns the predicate's truthy value (<code>True</code> stays <code>True</code>), so a claim that needs the observation returns it from the predicate instead of writing into a closure. The runnable <a href="https://gitlab.com/Tyler-Meador/HILT/-/blob/main/examples/wait_for_patterns.py"><code>examples/wait_for_patterns.py</code></a> shows both placements and how polling observations flow through scoped logs, surveys, artifacts, <code>run_data</code>, and the root <code>summary_tree</code> without another evidence API.</p>
+<h2 id="utilsexec"><code>utils.exec</code><a class="headerlink" href="#utilsexec" title="Permanent link">&para;</a></h2>
+<p>Never throws. Returns <code>stdout</code>, <code>stderr</code>, and <code>exit_code</code>; output is bounded and truncation is recorded as evidence. Where it lands is the parent's decision (idioms, root 4).</p></div>
+            </div>
+        </div>
+
+        <footer class="col-md-12">
+            <hr>
+                <p>Copyright 2026 Tyler Meador</p>
+            <p>Documentation built with <a href="https://www.mkdocs.org/">MkDocs</a>.</p>
+        </footer>
+        <script src="js/bootstrap.bundle.min.js"></script>
+        <script>
+            var base_url = ".",
+                shortcuts = {"help": 191, "next": 78, "previous": 80, "search": 83};
+        </script>
+        <script src="js/base.js"></script>
+        <script src="search/main.js"></script>
+
+        <div class="modal" id="mkdocs_search_modal" tabindex="-1" role="dialog" aria-labelledby="searchModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="searchModalLabel">Search</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>From here you can search these documents. Enter your search terms below.</p>
+                <form>
+                    <div class="form-group">
+                        <input type="search" class="form-control" placeholder="Search..." id="mkdocs-search-query" title="Type search term here">
+                    </div>
+                </form>
+                <div id="mkdocs-search-results" data-no-results-text="No results found"></div>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div><div class="modal" id="mkdocs_keyboard_modal" tabindex="-1" role="dialog" aria-labelledby="keyboardModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="keyboardModalLabel">Keyboard Shortcuts</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th style="width: 20%;">Keys</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="help shortcut"><kbd>?</kbd></td>
+                    <td>Open this help</td>
+                  </tr>
+                  <tr>
+                    <td class="next shortcut"><kbd>n</kbd></td>
+                    <td>Next page</td>
+                  </tr>
+                  <tr>
+                    <td class="prev shortcut"><kbd>p</kbd></td>
+                    <td>Previous page</td>
+                  </tr>
+                  <tr>
+                    <td class="search shortcut"><kbd>s</kbd></td>
+                    <td>Search</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div>
+
+    </body>
+</html>

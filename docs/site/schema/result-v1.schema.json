@@ -1,0 +1,238 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://gitlab.com/Tyler-Meador/HILT/-/raw/main/docs/schema/result-v1.schema.json",
+  "title": "hilt result record, format_version 1",
+  "description": "The root RunResult.to_json() payload written to result.json in a run directory. The structural view of a run: the summary tree with a per-node link into the temporal view (timeline.jsonl). Framework-owned objects stay open so a consumer accepts fields added within version 1 by a later release; docs/inspector-json.md carries the policy.",
+  "type": "object",
+  "required": [
+    "format_version",
+    "state",
+    "failure",
+    "timeout",
+    "test_case",
+    "type",
+    "ancestor_names",
+    "bread_crumbs",
+    "summary_tree",
+    "physical_location",
+    "env",
+    "run_data"
+  ],
+  "properties": {
+    "format_version": {
+      "const": 1,
+      "description": "Result-record schema version. A consumer reads this field first and refuses a version it was not written for."
+    },
+    "state": {
+      "$ref": "#/$defs/state",
+      "description": "The terminal state of the root node."
+    },
+    "failure": {
+      "anyOf": [{ "$ref": "#/$defs/failure" }, { "type": "null" }],
+      "description": "JSON-safe framework failure recorded on the root node, including nested causes. Null on Pass."
+    },
+    "timeout": {
+      "anyOf": [{ "$ref": "#/$defs/timeout" }, { "type": "null" }],
+      "description": "Structured time-budget evidence when a deadline determined or contributed to the state."
+    },
+    "test_case": {
+      "type": "string",
+      "description": "Stable name of the root node."
+    },
+    "type": {
+      "$ref": "#/$defs/nodeType"
+    },
+    "ancestor_names": {
+      "type": "array",
+      "items": { "type": "string" },
+      "minItems": 1,
+      "description": "Root-to-this path, inclusive. The durable node identity; names may contain '/'."
+    },
+    "bread_crumbs": {
+      "type": "string",
+      "description": "Display path, exactly ancestor_names joined with '/'."
+    },
+    "summary_tree": {
+      "$ref": "#/$defs/summaryTreeNode",
+      "description": "Recursive snapshot rooted at this node."
+    },
+    "physical_location": {
+      "type": "string",
+      "description": "PHYSICAL_LOCATION from the run environment, or 'unknown' when absent."
+    },
+    "env": {
+      "type": "object",
+      "additionalProperties": { "type": "string" },
+      "description": "Environment snapshot taken at run start, filtered by the run's allow or deny list. No variable is guaranteed present."
+    },
+    "run_data": {
+      "type": "object",
+      "required": ["measurements"],
+      "properties": {
+        "measurements": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/measurement" },
+          "description": "Framework-owned: one entry per utils.measure call on this node, in call order; empty when the node measured nothing. An authored ctx entry with this name cannot populate or replace it. Aggregation, SPC, and Cpk are the consumer's, not the record's."
+        }
+      },
+      "additionalProperties": true,
+      "description": "Detached structured evidence snapshot. Suite-authored keys beyond the framework-owned slot are permitted."
+    },
+    "suite_target": {
+      "type": ["string", "null"],
+      "description": "The loader target that produced the run, as hilt run resolved it: an absolute suite file or module name, '::', and the suite class name. Null when the run was started without one, in which case hilt inspect cannot offer the Re-Run tab unless --suite names the suite. Added within version 1; a consumer written before it treats the field as additive."
+    }
+  },
+  "$defs": {
+    "measurement": {
+      "type": "object",
+      "required": ["name", "value", "unit", "limits", "in_limits", "timestamp"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "value": {
+          "type": ["number", "null"],
+          "description": "The reading as passed, or null when the suite tried to take it and could not (issue #159). Never a string, boolean, or non-finite number. A consumer charting the series skips null; it is a hole, not a zero."
+        },
+        "unit": { "type": ["string", "null"] },
+        "limits": {
+          "anyOf": [
+            {
+              "type": "object",
+              "required": ["low", "high"],
+              "properties": {
+                "low": { "type": ["number", "null"] },
+                "high": { "type": ["number", "null"] }
+              },
+              "additionalProperties": false
+            },
+            { "type": "null" }
+          ]
+        },
+        "in_limits": { "type": ["boolean", "null"] },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timezone-aware UTC timestamp ending in 'Z', matching the timeline's own timestamp field."
+        }
+      },
+      "additionalProperties": true,
+      "description": "One utils.measure call. in_limits is evidence: it never decides the node's state. A null value with limits carries in_limits false: a reading not taken is never inside its window."
+    },
+    "state": {
+      "type": "string",
+      "enum": ["Pass", "Fail", "Aborted"],
+      "description": "The three terminal states. There is no fourth; a pending node is represented by null where nullability is allowed."
+    },
+    "nodeType": {
+      "type": "string",
+      "enum": ["suite", "test", "parallel", "sequence"],
+      "description": "Framework-owned node-shape discriminator; the composition vocabulary of build_suite."
+    },
+    "failure": {
+      "type": "object",
+      "required": ["name", "fail_message", "state"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "The failure class name: TestFailure, ContractViolation, FrameworkContractViolation, MissingVerdict, ExternalIntegrationFailure, OperatorInterrupt, or a suite-defined TestFailure subclass."
+        },
+        "fail_message": { "type": "string" },
+        "state": {
+          "type": "string",
+          "enum": ["Fail", "Aborted"],
+          "description": "The terminal state this failure produces on its node."
+        },
+        "expected": { "description": "JSON-safe rendering of the expected value, when the failure carried a comparison." },
+        "received": { "description": "JSON-safe rendering of the received value, when the failure carried a comparison." },
+        "banner": { "type": "string", "description": "Escalation banner on contract violations and missing verdicts." },
+        "node": { "type": "string", "description": "Name of the node a contract violation or missing verdict happened in." },
+        "bug": { "const": true, "description": "Present and true when broken code, not hardware, produced the failure." },
+        "cause": { "description": "JSON-safe rendering of the underlying exception, when there is one." },
+        "returned": { "description": "JSON-safe rendering of the non-verdict a node returned." },
+        "hook": {
+          "type": "string",
+          "enum": ["before_each", "after_each"],
+          "description": "Which integration hook threw."
+        },
+        "operator": { "const": true, "description": "Present and true when the operator interrupted the run." },
+        "signal": { "type": "string", "description": "Name of the POSIX signal that interrupted the run." }
+      },
+      "additionalProperties": true,
+      "description": "A framework failure rendered through its to_json() method. Open: a TestFailure subclass may add fields, and a reader falls back on name, fail_message, and state."
+    },
+    "timeout": {
+      "type": "object",
+      "required": ["reason", "declared", "budget_seconds", "elapsed_seconds", "clock"],
+      "properties": {
+        "reason": { "const": "timeout" },
+        "declared": {
+          "type": "string",
+          "enum": ["fail_after", "abort_after"],
+          "description": "The winning declaration."
+        },
+        "budget_seconds": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "description": "Positive finite duration declared on the winning clock."
+        },
+        "elapsed_seconds": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Active window time consumed when that clock fired."
+        },
+        "clock": {
+          "type": "string",
+          "description": "Root-to-declaring-node path of the winning clock."
+        }
+      },
+      "description": "Evidence emitted when a time-budget clock cut a subtree."
+    },
+    "summaryTreeNode": {
+      "type": "object",
+      "required": ["name", "type", "state", "failure", "timeout", "log_path", "children", "evidence", "evidence_declared", "measurements"],
+      "properties": {
+        "name": { "type": "string", "description": "Stable node name." },
+        "type": { "$ref": "#/$defs/nodeType" },
+        "state": {
+          "anyOf": [{ "$ref": "#/$defs/state" }, { "type": "null" }],
+          "description": "Terminal state, or null when the node was declared but never ran."
+        },
+        "failure": {
+          "anyOf": [{ "$ref": "#/$defs/failure" }, { "type": "null" }],
+          "description": "JSON-safe failure for this exact node."
+        },
+        "timeout": {
+          "anyOf": [{ "$ref": "#/$defs/timeout" }, { "type": "null" }],
+          "description": "Structured time-budget evidence for this exact node."
+        },
+        "log_path": {
+          "type": ["string", "null"],
+          "description": "POSIX path of this node's timeline.jsonl relative to the run directory. Null when the node never ran or its records rolled up into an ancestor; the root always carries one."
+        },
+        "children": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/summaryTreeNode" },
+          "description": "Ordered child nodes; groups retain declaration order after settlement."
+        },
+        "evidence": {
+          "type": ["object", "null"],
+          "additionalProperties": true,
+          "description": "The readings this leaf's verdict carried (PASS(evidence) or TestFailure(..., evidence=...)), validated entry by entry and detached. Null on a node that is not a leaf, that never ran, or whose verdict carried none (issue #118)."
+        },
+        "evidence_declared": {
+          "type": ["array", "null"],
+          "items": {"type": "string"},
+          "description": "The keys the leaf's @evidence declaration promised on PASS, in declaration order. A declared key absent from evidence is a reading that was not taken. Null when the node is not a leaf or declared nothing."
+        },
+        "measurements": {
+          "anyOf": [
+            { "type": "array", "items": { "$ref": "#/$defs/measurement" } },
+            { "type": "null" }
+          ],
+          "description": "Every utils.measure call this node recorded, in call order, on every node that ran (empty when it measured nothing). Null when the node never ran, matching state. Published here because result.json is the root's record and a leaf's run_data never reaches it (issue #86)."
+        }
+      },
+      "description": "One node of the structural view."
+    }
+  }
+}

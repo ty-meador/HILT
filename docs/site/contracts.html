@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        
+        
+        <link rel="canonical" href="https://gitlab.com/Tyler-Meador/HILT/-/tree/main/docs/contracts.html">
+        <link rel="shortcut icon" href="img/favicon.ico">
+        <title>Contracts - HILT</title>
+        <link href="css/bootstrap.min.css" rel="stylesheet">
+        <link href="css/fontawesome.min.css" rel="stylesheet">
+        <link href="css/brands.min.css" rel="stylesheet">
+        <link href="css/solid.min.css" rel="stylesheet">
+        <link href="css/v4-font-face.min.css" rel="stylesheet">
+        <link href="css/base.css" rel="stylesheet">
+        <link id="hljs-light" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" >
+        <link id="hljs-dark" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github-dark.min.css" disabled>
+        <link href="assets/_mkdocstrings.css" rel="stylesheet">
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+        <script>hljs.highlightAll();</script> 
+    </head>
+
+    <body>
+        <div class="navbar fixed-top navbar-expand-lg navbar-dark bg-primary">
+            <div class="container">
+                <a class="navbar-brand" href="index.html">HILT</a>
+                <!-- Expander button -->
+                <button type="button" class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#navbar-collapse" aria-controls="navbar-collapse" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <!-- Expanded navigation -->
+                <div id="navbar-collapse" class="navbar-collapse collapse">
+                        <!-- Main navigation -->
+                        <ul class="nav navbar-nav">
+                            <li class="nav-item">
+                                <a href="index.html" class="nav-link">Home</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="getting-started.html" class="nav-link">Getting started</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="floor-technician.html" class="nav-link">Floor Technician</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="overview.html" class="nav-link">Overview</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="idioms.html" class="nav-link">Idioms</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="utilities.html" class="nav-link">Utilities</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="contracts.html" class="nav-link active" aria-current="page">Contracts</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="inspector-json.html" class="nav-link">Inspector JSON</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="inspector.html" class="nav-link">Inspector (target specification)</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="measurements.html" class="nav-link">Measurements</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="junit-xml.html" class="nav-link">JUnit XML</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="hilt-run.html" class="nav-link">hilt run</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="hilt-new.html" class="nav-link">hilt new</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="hilt-check.html" class="nav-link">hilt-check</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="api-stability.html" class="nav-link">API stability</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="api.html" class="nav-link">API reference</a>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">HIL interfaces</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="hil/index.html" class="dropdown-item">Overview</a>
+</li>
+                                    
+<li>
+    <a href="hil/gpio.html" class="dropdown-item">GPIO (design note)</a>
+</li>
+                                    
+<li>
+    <a href="hil/pwm.html" class="dropdown-item">PWM (design note)</a>
+</li>
+                                    
+<li>
+    <a href="hil/can.html" class="dropdown-item">CAN bus (design note)</a>
+</li>
+                                    
+<li>
+    <a href="hil/i2c-spi.html" class="dropdown-item">I2C/SPI (design note)</a>
+</li>
+                                    
+<li>
+    <a href="hil/device-api.html" class="dropdown-item">Device API (design note)</a>
+</li>
+                                    
+<li>
+    <a href="hil/serial.html" class="dropdown-item">Serial/UART (design note)</a>
+</li>
+                                </ul>
+                            </li>
+                        </ul>
+
+                    <ul class="nav navbar-nav ms-md-auto">
+                        <li class="nav-item">
+                            <a href="#" class="nav-link" data-bs-toggle="modal" data-bs-target="#mkdocs_search_modal">
+                                <i class="fa fa-search"></i> Search
+                            </a>
+                        </li>
+                            <li class="nav-item">
+                                <a rel="prev" href="utilities.html" class="nav-link">
+                                    <i class="fa fa-arrow-left"></i> Previous
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a rel="next" href="inspector-json.html" class="nav-link">
+                                    Next <i class="fa fa-arrow-right"></i>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="https://gitlab.com/Tyler-Meador/HILT/-/blob/main/docs/contracts.md" class="nav-link"><i class="fa-brands fa-gitlab"></i> Edit on GitLab</a>
+                            </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="container">
+            <div class="row">
+                    <div class="col-md-3"><div class="navbar-expand-md bs-sidebar hidden-print affix" role="complementary">
+    <div class="navbar-header">
+        <button type="button" class="navbar-toggler collapsed" data-bs-toggle="collapse" data-bs-target="#toc-collapse" title="Table of Contents">
+            <span class="fa fa-angle-down"></span>
+        </button>
+    </div>
+
+    
+    <div id="toc-collapse" class="navbar-collapse collapse card bg-body-tertiary">
+        <ul class="nav flex-column">
+            
+            <li class="nav-item" data-bs-level="1"><a href="#developer-framework-contracts" class="nav-link">Developer-Framework Contracts</a>
+              <ul class="nav flex-column">
+            <li class="nav-item" data-bs-level="2"><a href="#lifecycle-contract" class="nav-link">Lifecycle Contract</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#terminal-state-contract" class="nav-link">Terminal State Contract</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#time-budget-contract" class="nav-link">Time Budget Contract</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#failure-taxonomy-contract" class="nav-link">Failure Taxonomy Contract</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#evidence-contract" class="nav-link">Evidence Contract</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#temporal-backbone-contract" class="nav-link">Temporal Backbone Contract</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#audit-contract" class="nav-link">Audit Contract</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#integration-hook-contract" class="nav-link">Integration Hook Contract</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#in-flight-termination-contract" class="nav-link">In-Flight Termination Contract</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#group-isolation-contract" class="nav-link">Group Isolation Contract</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#utils-contract" class="nav-link">Utils Contract</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#exec-routing-contract" class="nav-link">Exec Routing Contract</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#device-api-contract" class="nav-link">Device API Contract</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#composability-contract" class="nav-link">Composability Contract</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+              </ul>
+            </li>
+        </ul>
+    </div>
+</div></div>
+                    <div class="col-md-9" role="main">
+
+<h1 id="developer-framework-contracts">Developer-Framework Contracts<a class="headerlink" href="#developer-framework-contracts" title="Permanent link">&para;</a></h1>
+<p>The contracts below define the mutual obligations between the developer and the framework.
+These are non-negotiable invariants. Any API change must preserve every contract listed here.</p>
+<p>In the Python port, tier-1 enforcement of these contracts lives in the child-boundary
+wrapper (<code>src/hilt/lifecycle.py</code>, <code>ChildBoundary</code>): every call the framework makes into
+suite code passes through it, and per-slot policy (<code>SLOT_POLICIES</code>) is declared once and
+read nowhere else. Nothing that protects hardware or verdict integrity may live only in
+static analysis.</p>
+<hr />
+<h2 id="lifecycle-contract">Lifecycle Contract<a class="headerlink" href="#lifecycle-contract" title="Permanent link">&para;</a></h2>
+<p><strong>Developer obligation:</strong> Implement <code>configure()</code>, <code>build_suite()</code>, and <code>cleanup()</code> with the correct intent.
+- <code>configure()</code> — put the test in a known state and return what the tests will read. Readiness gates and polling live here. The return is a plain dict (or a local <code>TypedDict</code> under pyright strict; the framework annotation is <code>Mapping[str, Any]</code>) whose entries become <code>utils.ctx</code> for test methods, hooks, <code>cleanup()</code>, and all descendant tests. Ctx does not change after that: a <code>[]</code> read of a key <code>configure()</code> did not provide, and any write once it has returned, is a <code>ContractViolation</code> naming the test and the key, not a hardware Fail. <code>.get()</code> and <code>in</code> read an optional key (issues #112, #118).
+- <code>build_suite()</code> — pure table-of-contents composition. Return a <code>TestComponent</code> built from <code>self.test()</code> / <code>self.sequence()</code> / <code>self.parallel()</code>. Test methods (private class methods passed to <code>self.test()</code>) carry the actual verdict logic — return <code>PASS</code>, or <code>PASS(evidence)</code> with the readings, to pass; raise <code>TestFailure</code> (optionally with <code>evidence=</code>) to fail intentionally.
+- <code>cleanup()</code> — restore state. Must not throw (errors are swallowed and logged). It reads ctx and does not write it; a value it must restore was captured in <code>configure()</code>.</p>
+<p><strong>Framework obligation:</strong> Execute configure → build_suite → cleanup in order, guaranteed.
+- If <code>configure()</code> raises a <code>TestFailure</code>: cleanup runs, test methods never run, the test lands in <code>Fail</code>. The verdict means "the device did not reach a testable state" — whether the underlying cause is hardware or infrastructure is <strong>not knowable from code</strong> and is the human triager's call.
+- If <code>configure()</code> raises anything else: wrapped as a <code>ContractViolation</code> ("CONTRACT VIOLATION IN <name>: ... escaped the node", recorded as Fail with <code>bug: true</code>) — configure must signal verdicts via <code>TestFailure</code>.
+- If a test method raises a plain exception: wrapped as a <code>ContractViolation</code> the same way — a developer contract violation, not a hardware failure.
+- A cancellation already delivered to suite code outranks any return value or different
+  exception produced after a pathological catch. The child boundary restores the
+  cancellation before classifying that settlement, so an aborted run cannot forge a
+  hardware or bug verdict.
+- <code>cleanup()</code> always runs regardless of any prior outcome — after configure failure and after abort. Framework finalization shields it from caller cancellation within its own bounded timeout; repeated cancellation cannot abandon that wait, and the original cancellation is re-raised after cleanup settles or exhausts the evidence budget.
+- The evidence budget is 30 seconds, granted <strong>per node</strong>, not per run. Each node's cleanup draws its own allowance, so a deep tree tearing down after an abort can spend up to N × 30 seconds before the abort reaches the operator — plan teardown depth with that ceiling in mind. A cleanup that exhausts its allowance is a <code>ContractViolation</code> charged to that node.
+- Lifecycle execution order is enforced at runtime by the child boundary — the type system is not the enforcer.</p>
+<hr />
+<h2 id="terminal-state-contract">Terminal State Contract<a class="headerlink" href="#terminal-state-contract" title="Permanent link">&para;</a></h2>
+<p><strong>Framework obligation:</strong> Every run of a <code>TestComponent</code> resolves to exactly one of three peer terminal states. The states are distinct categories with distinct recovery protocols — the framework does not collapse them. There is no hidden fourth: a call that settles without producing a terminal state (a successful <code>configure</code>, a completed <code>cleanup</code>) reports no state at all rather than inventing one.</p>
+<ol>
+<li><strong>Pass</strong> — a test method returned a <code>Verdict</code>: the bare <code>PASS</code>, or <code>PASS(evidence)</code> carrying its readings. The check is <code>isinstance(result, Verdict)</code>; a <code>Verdict</code> is obtained only by importing <code>PASS</code> or calling it, so nothing a suite constructs can forge one. A pass without its declared evidence is not a pass: when the method carries <code>@evidence(...)</code>, a <code>PASS</code> that does not carry every declared key is a <code>ContractViolation</code> (developer-bug Fail), never a green run (issue #118).</li>
+<li><strong>Fail</strong> — a test method raised a <code>TestFailure</code> (or subclass): the DUT produced a verdict and the verdict was negative. OR the developer didn't model a failure mode: a plain exception → <code>ContractViolation</code> Fail (<code>bug: true</code>).</li>
+<li><strong>Aborted</strong> — no verdict was produced. Peer to Pass/Fail, <strong>NOT</strong> a flavor of failure. Three causes:</li>
+<li><strong>Harness-level (integration):</strong> a <code>before_each</code>/<code>after_each</code> integration hook threw; the error is wrapped as <code>ExternalIntegrationFailure</code> and the run halts before a verdict could be produced.</li>
+<li><strong>Harness-level (operator):</strong> SIGINT or SIGTERM arrived while a run was live; the failure is <code>OperatorInterrupt</code> so the Floor Technician reads that the operator stopped the rack. The same run-abort path fires as a hook throw: Aborted everywhere, transports hard-closed, <code>RunResult</code> returned.</li>
+<li><strong>Node-local:</strong> a test method returned anything other than the <code>PASS</code> sentinel — <code>None</code> fall-through or an explicit wrong value (<code>MissingVerdict</code>). No verdict exists, so the framework refuses to forge Fail (or Pass) on its behalf. Siblings are unaffected. <em>(Deliberate deviation from the TypeScript original, which folded this into the contract-violation/Fail path.)</em></li>
+</ol>
+<p><strong>Developer obligation:</strong> Recognize the taxonomy. A <code>TestFailure</code> means "the DUT failed a check"; an <code>ExternalIntegrationFailure</code> means "the harness around the test broke"; an <code>OperatorInterrupt</code> means "the operator stopped the rack." Never conflate them — the Floor Technician's recovery protocol depends on knowing which. A <code>KeyboardInterrupt</code> raised from suite code is not an operator signal: the child boundary still passes it through unrecorded.</p>
+<p><strong>Framework obligation:</strong> When a descendant's hook throws, the <code>ExternalIntegrationFailure</code> propagates up through every ancestor class-intact. Sequences and parallel nodes do not rewrap it. Every ancestor's state cascades to Aborted.</p>
+<hr />
+<h2 id="time-budget-contract">Time Budget Contract<a class="headerlink" href="#time-budget-contract" title="Permanent link">&para;</a></h2>
+<p><strong>Framework obligation:</strong> Any node may declare a time budget by naming the terminal
+state it produces on expiry: <code>fail_after=</code> (seconds) or <code>abort_after=</code> (seconds).
+Exactly one name, or neither. Both on one node is a <code>ContractViolation</code> at composition
+time. A node with neither has no deadline of its own and is bounded only by its
+ancestors. Durations must be positive, finite numbers; booleans, zero, negatives,
+infinities, NaN, and non-numbers are rejected before execution.</p>
+<ul>
+<li>The pair is part of the <code>TestComponent</code> fractal atom. It is accepted by authored-node
+  construction, <code>self.test()</code>, <code>self.parallel()</code>, <code>self.sequence()</code>, and root <code>run()</code>.
+  Every node is a suite, so every placement reads the same way: this suite completes
+  within the budget or the named state is raised. Construction and <code>run()</code> are two
+  ways to declare the root's one budget, not a way to attach two clocks to one node.</li>
+<li>The window opens when the node enters <code>configure</code> and closes when its test method, or
+  its last child, settles. Leaves, parallel nodes, and sequences open the equivalent
+  window at their test/child boundary. Cleanup runs after the cut on its own
+  finalization budget. Root-owned <code>before_each</code> and <code>after_each</code> integration hooks are
+  outside every declared node window; time spent in them cannot spend an ancestor's
+  hardware-verdict budget.</li>
+<li>A budget bounds the whole subtree. Every declared clock remains active while its
+  subtree does test work. Descendants inherit all ancestor bounds and may only tighten
+  them. The clock that fires first decides the state; a descendant's longer declaration
+  can never loosen an ancestor's remaining time. A <code>wait_for</code> timeout longer than the
+  effective enclosing budget never fires—the budget wins. Concurrent descendants are
+  separate active lineages: one sibling entering an excluded hook or cleanup cannot
+  pause an ancestor clock while another sibling is still doing timed work. The clock
+  stalls only while no descendant lineage is inside its timed window.</li>
+<li>Expiry settles every descendant still running with the winning clock's declared
+  state. <code>fail_after</code> renders Fail with a structured <code>TestFailure</code> naming the budget.
+  <code>abort_after</code> renders node-local Aborted without forging a failure verdict. Descendants
+  already settled retain their verdicts, and a composite follows the ordinary terminal
+  aggregation rule: any Aborted outranks Fail.</li>
+<li>Deadline Aborted is node-local. It never fires the shared run halt and never cascades
+  beyond the bounded subtree. Siblings outside that subtree are untouched under the
+  Group Isolation Contract. Expiry is never classified as a BUG.</li>
+<li>Expiry cancels the coroutine and hard-cancels at the resource every transport the cut
+  node itself opened. An inherited route is never in that owned set and is not touched;
+  it remains the parent's, available to the parent and to every sibling behind it.</li>
+<li>A parent whose <code>configure()</code> opens the hop owns its own configure window. If that
+  window expires, the Fail or Aborted state and its timeout evidence are the parent's,
+  and the children it never composed render as the Lifecycle Contract says for a parent
+  that never reached a testable state.</li>
+<li>Every cut node carries structured <code>timeout</code> evidence with <code>reason="timeout"</code>, the
+  declared name, the declared budget in seconds, active elapsed seconds, and the
+  root-to-node path of the clock that fired. This evidence appears on <code>RunResult</code>, in
+  every affected <code>summary_tree</code> node, and in their JSON forms.</li>
+</ul>
+<p><strong>Developer obligation:</strong> Choose the name for what “took too long” means at that step.
+<code>fail_after</code> says the hardware did not do its job in time; <code>abort_after</code> says the
+harness gave up and no verdict exists. Never swallow <code>asyncio.CancelledError</code>; doing so
+would obstruct every deadline declared above the await.</p>
+<p><strong>Consequence:</strong> Fail at a deadline sends the Floor Technician to the hardware. Aborted
+at a deadline sends them to the harness. The composition names that distinction, and
+the record identifies the exact clock and budget without requiring the suite source.</p>
+<hr />
+<h2 id="failure-taxonomy-contract">Failure Taxonomy Contract<a class="headerlink" href="#failure-taxonomy-contract" title="Permanent link">&para;</a></h2>
+<p><strong>Framework obligation:</strong> Every failure must be traceable to one of the following root causes, made obvious by signal:
+1. <strong>DUT failed a check</strong> — <code>TestFailure</code> from a test method or from <code>configure()</code>. State = Fail. A <code>TestFailure</code> from <code>configure()</code> carries an extra ambiguity: the device did not reach a testable state, but whether the cause is hardware or infrastructure cannot be determined from code. The framework surfaces the <code>looking_for</code> / failure message; the human triager decides.
+2. <strong>Hardware lying</strong> — survey artifacts expose mismatch between claimed and actual state.
+3. <strong>Test method bug</strong> — a plain exception from a test method or from <code>configure()</code> → all failure modes modeled by the developer must raise <code>TestFailure</code>. Anything else raised is a bug. Full stop. A missing verdict (non-PASS return) is likewise a contract violation, rendered as node-local Aborted because no verdict exists to report.
+4. <strong>External integration failure</strong> — <code>ExternalIntegrationFailure</code> from a <code>before_each</code>/<code>after_each</code> hook. State = Aborted.
+5. <strong>Operator interrupt</strong> — <code>OperatorInterrupt</code> from SIGINT/SIGTERM during a live <code>run()</code>. State = Aborted. The failure names the operator and the signal.</p>
+<p><strong>Developer obligation:</strong> Use the right signal for the right category.
+- Raise <code>TestFailure</code> for any verdict — from a test method or from <code>configure()</code> — never a plain exception.
+- Use survey hooks to capture device-reported state at phase boundaries.
+- Use <code>configure()</code> for environment/readiness gating. A timeout there is a <code>TestFailure</code> whose cause (hardware vs. infrastructure) is for the human to determine — the framework will not pretend to know.
+- Let the framework raise <code>ExternalIntegrationFailure</code> — developers do not construct or raise it directly. It is raised automatically when a <code>before_each</code>/<code>after_each</code> hook throws anything.</p>
+<hr />
+<h2 id="evidence-contract">Evidence Contract<a class="headerlink" href="#evidence-contract" title="Permanent link">&para;</a></h2>
+<p><strong>Framework obligation:</strong> Every run produces scoped, structured evidence automatically.
+- Logging is scoped to the current leaf test.
+- Survey and audit hooks share the same automatic artifact contract: every non-<code>None</code>
+  return is faithfully recorded as an Artifact, including empty dicts, lists, and
+  strings. Python resolves an explicit <code>return None</code>, a delegated call that returns
+  <code>None</code>, and a fall-through to the same runtime value, so <code>None</code> writes only an
+  informational log entry and no automatic artifact. When <code>None</code> itself is meaningful
+  evidence, the SE must make that intent explicit with
+  <code>await utils.capture_artifact(Artifact(..., data=None))</code> inside the hook.
+  - Once a hook returns a non-<code>None</code> observation, its automatic artifact publication is
+    shielded from shutdown within its own 30-second evidence budget. Repeated
+    cancellation cannot orphan an accepted observation after the hardware was read.
+  - Survey dispatch points are the six members of <code>Phase</code>, in order: <code>pre-configure</code>,
+    <code>post-configure</code>, <code>pre-test</code>, <code>post-test</code>, <code>pre-cleanup</code>, and <code>post-cleanup</code>,
+    limited to the phases the lifecycle reaches. The artifact name identifies the
+    dispatch point and registered-hook index; audit names identify both the hook and
+    interval dispatch. Both use artifact type <code>survey</code>, keeping one Inspector evidence
+    contract.
+  - <code>use_survey(fn, phases=...)</code> schedules a survey at a subset of those points; the
+    default is all six, and an empty selection is a <code>ValueError</code> at registration. A
+    boundary the survey is not scheduled at writes one debug line and no artifact, so
+    the run directory holds one artifact per boundary the survey was meant to observe.
+  - Order is not reach. The phases are totally ordered, but after a failed <code>configure</code>
+    the engine skips <code>post-configure</code>, <code>pre-test</code>, and <code>post-test</code> and still fires
+    <code>pre-cleanup</code> and <code>post-cleanup</code>, with <code>utils.exec</code> on the test host if <code>use_shell</code>
+    never returned. A survey that reads the device therefore guards on
+    <code>utils.exec_route</code>, not on the phase; the phase says when, the route says where.
+- Log artifacts are co-located with their node.
+- <strong>Evidence travels with the verdict</strong> (issue #118). A leaf's readings leave its test method as <code>PASS(evidence)</code> or <code>TestFailure(..., evidence=...)</code>. The child boundary validates the payload entry by entry before it is recorded: a value that is not JSON, a key that shadows a ctx entry or the framework-owned <code>measurements</code> slot, or a key <code>@evidence</code> declared that <code>PASS</code> did not carry is a <code>ContractViolation</code> naming the leaf and the key. Nothing is stripped silently. A failure is not held to the declaration; it records what it was handed.
+- A leaf's <code>RunResult.run_data</code> is the JSON-safe view of its ctx plus the evidence its verdict carried, flat. A non-leaf node's <code>run_data</code> is the ctx view alone. Every <code>summary_tree</code> node carries <code>evidence</code> (what the leaf's verdict carried, or null) and <code>evidence_declared</code> (the <code>@evidence</code> declaration, or null); a declared key absent from <code>evidence</code> is a reading that was not taken, shown by name.
+- All serializable values (primitives, plain dicts, lists) <code>configure()</code> returned appear in <code>run_data</code>, except under a key the suite's <code>redact_ctx</code> claims (issue #154): that key appears with the value <code>&lt;REDACTED&gt;</code>, whatever it holds. The claims read the real value from <code>utils.ctx</code>; the record does not carry it.
+  - Functions, class instances, and live handles (e.g. SSH connections) are stripped from the ctx view; they are the objects a run works through, not evidence.
+  - Context annotations do not bypass this filter. A <code>TypedDict</code> is an ordinary dict at runtime, and each value still has to satisfy the same serialization rules.
+  - Filtering is all-or-nothing for each top-level ctx entry. A nested instance, handle,
+    function, cycle, non-string mapping key, or non-finite float strips that complete
+    entry; the framework never emits partial evidence or silently coerces it.
+  - <code>run_data</code> is a detached snapshot taken when the node settles. An aborted leaf
+    contributes no evidence; readings in hand when a time budget fires are lost by
+    design, and the scoped log and point-in-time artifacts remain for in-flight
+    observation.
+  - <code>run_data["measurements"]</code> is framework-owned: the readings <code>utils.measure</code>
+    recorded on this node, in call order, written when the node settles. An authored
+    ctx entry with that name cannot populate or replace the slot, and a <code>run_data</code>
+    override cannot drop it. Aggregation, SPC, and Cpk are the consumer's, not the
+    record's.
+- <strong>Measurement Contract</strong> (issue #86, <code>docs/measurements.md</code>). A limit is evidence,
+  never a verdict: <code>utils.measure</code> records <code>in_limits</code> and touches neither the node's
+  state nor its failure. A <code>None</code> value is admitted as a reading not taken (issue
+  #159): recorded with <code>value: null</code>, never inside its window, so a claim gated on the
+  window fails through its own gate. The framework refuses, as a <code>ContractViolation</code>
+  naming the node and the measurement: an empty name, a <code>bool</code>, <code>NaN</code>, or infinite
+  value, a non-text unit, or a window that bounds nothing or runs backwards; the same name
+  recorded twice in one node; a call from outside <code>configure()</code> or the test method
+  (<code>cleanup</code>, surveys, audits, hooks, or after the node settled); and <code>hilt.measure</code>
+  where no node's slot is executing. The record is sealed on every terminal state,
+  Aborted included, and published on the node's <code>run_data</code> and on every <code>summary_tree</code>
+  node (<code>null</code> when the node never ran). A measurement does not satisfy an <code>@evidence</code>
+  declaration.
+- Every <code>RunResult</code> includes <code>ancestor_names: list[str]</code> (path from root) and <code>bread_crumbs: str</code> (joined for display), plus a <code>summary_tree</code> snapshot of the node's subtree state at completion. Downstream integrators can reconstruct the full Inspector tree from the root's RunResult alone.
+- <code>TestFailure</code>, <code>ExternalIntegrationFailure</code>, and <code>OperatorInterrupt</code> all implement <code>to_json()</code>. Serializing a <code>RunResult</code> produces clean JSON for downstream integrators without any custom serializer.
+- <strong>Provenance.</strong> Every executed node records one <code>exec routing: &lt;where&gt; (&lt;why&gt;)</code> line — <code>where</code> is <code>local</code> or <code>via &lt;chain&gt;</code>, <code>why</code> names the call that put it there (<code>declared via use_shell</code>, <code>inherited from parent</code>, <code>declared via use_shell(inherit=False)</code>). A node that never declared a route renders <code>where</code> alone. The line is emitted after <code>configure</code> returns, since <code>use_shell</code> lives there and the route is not final until it does.
+- Every transport the router opens records its provenance lines as it comes up. SSH renders <code>ssh connect: &lt;user&gt;@&lt;host&gt;:&lt;port&gt; auth=&lt;label&gt; via=&lt;chain&gt;</code>; <code>via=direct</code> means the connection dials out from the test host itself. When host-key verification is skipped, SSH records a second line, <code>ssh host-key verification skipped: &lt;host&gt;:&lt;port&gt;</code>, so the Floor Technician can see that verification was off without opening the suite.
+- Via chains are rendered <strong>in full and test-host-first</strong> (<code>bastion -&gt; edge -&gt; dut</code>), never summarized to the last hop.
+- The credential path is named exactly — <code>key-file(/path)</code>, <code>agent(/socket)</code>, <code>password</code>, <code>key</code>, <code>none</code> — and the credential's <em>value</em> never appears. What is logged is what was dialed: the resolution order is declared once, in <code>SshInterface._auth_choice</code>, and both the connect options and the provenance line read it. A password, private-key bytes, and the contents of a key file never reach the scoped log, <code>run_data</code>, the env snapshot, <code>RunResult.to_json()</code>, or a failure repr.
+- <strong>A suite's own secret is held to the same standard</strong> (issue #154). <code>redact_ctx</code> on the suite class names the ctx keys that are not for the record, exactly or as regular expressions matched against the whole key; a subclass adds to its bases' entries and never replaces them. A string under a redacted key is masked as <code>&lt;REDACTED&gt;</code> wherever it appears, run-wide: every scoped-log record, including one the author writes by hand; a failure's <code>str()</code>, <code>repr()</code>, and <code>to_json()</code>, down its cause chain, once the child boundary has recorded it; evidence on a verdict; captured artifacts; <code>run_data</code>; and therefore <code>RunResult.to_json()</code> and every file in the run directory. Only a string is a needle; a number or a handle under a redacted key is shown as <code>&lt;REDACTED&gt;</code> in the ctx view and nothing more. The env snapshot stays verbatim (issue #53): a secret that is also in the environment is kept off the record with <code>env_deny</code>. Masking begins when the value enters ctx, by any write path (<code>configure()</code>'s return, <code>[]=</code>, <code>update</code>, <code>setdefault</code>, <code>|=</code>), so a value logged inside <code>configure()</code> before it enters ctx is the author's to keep quiet. Masking is plain substring replacement, so a very short secret (a two-character token, a numeric sid such as <code>200</code>) also masks unrelated text that happens to contain it; that fails closed and is accepted.
+- <strong>Consequence:</strong> the Floor Technician reconstructs the run's topology and its auth decisions from the artifacts alone, without opening the suite source.</p>
+<p><strong>Developer obligation:</strong> Instrument appropriately.
+- Use <code>utils.logger</code> (never <code>print</code>) so evidence is captured in artifacts.
+- Use <code>self.use_survey()</code> for periodic state snapshots; use
+  <code>await utils.capture_artifact(artifact)</code> for point-in-time captures. <code>Artifact</code> is a
+  write-free value on the public surface: the utility method is the only framework API
+  that persists it, and it always emits the chronological pointer after publication.
+- Return structured data from <code>use_survey</code> / <code>use_audit</code> hooks to capture it as an artifact.
+- Hand readings back with the verdict: <code>PASS({...})</code> or <code>TestFailure(..., evidence={...})</code>. Declare with <code>@evidence(...)</code> what a pass must carry, beside the method that keeps the promise.</p>
+<hr />
+<h2 id="temporal-backbone-contract">Temporal Backbone Contract<a class="headerlink" href="#temporal-backbone-contract" title="Permanent link">&para;</a></h2>
+<p><strong>Framework obligation:</strong> Every full <code>run()</code> creates one timestamped run directory
+beneath the configured artifact root before the root lifecycle begins. Point-in-time
+artifacts and every per-node timeline live beneath that directory, so a run's evidence
+is self-contained and cannot overwrite a neighboring run.</p>
+<ul>
+<li>Every executed node that owns a discrete log streams the same records into two files:
+  <code>timeline.log</code>, the human line view, and <code>timeline.jsonl</code>, the versioned Inspector
+  record. Both files are flushed after every entry; an interrupted process therefore
+  preserves every complete entry already accepted by the logger.</li>
+<li>The JSON Lines record carries one complete object per physical line with
+  <code>format_version</code>, UTC <code>timestamp</code>, root-to-leaf <code>scope</code>, <code>level</code>, and <code>message</code>.
+  Artifact-pointer records also carry <code>artifact_name</code>, <code>artifact_path</code>,
+  <code>artifact_type</code>, and <code>artifact_timestamp</code>.</li>
+<li>A logging node opens its files lazily on its first record and closes them when that
+  node reaches its terminal boundary. A declared node that never executes opens
+  nothing.</li>
+<li>Authored suites, sequences, and parallel nodes own a log by default. Leaves roll up
+  to the nearest owning ancestor. Sequences, parallel nodes, and composed suites may opt
+  into the same roll-up with <code>discrete_log_file=False</code>; a root still owns the run log.</li>
+<li><code>TestComponent.log_path</code> exposes the owning node's absolute <code>timeline.jsonl</code> path after
+  execution. It remains <code>None</code> for pending nodes and nodes whose records roll up.</li>
+<li>Every <code>summary_tree</code> node carries the same link as <code>log_path</code>, rendered as a POSIX
+  path relative to the run directory, so the structural record reaches the temporal
+  record without the live objects. It is <code>null</code> for pending nodes and nodes whose
+  records roll up; the nearest ancestor with a link holds their chronology.</li>
+<li>On Pass, Fail, and Aborted, root <code>run()</code> atomically publishes the root
+  <code>RunResult.to_json()</code> as <code>result.json</code> at the run-directory root before returning.
+  The root timeline's final entry points to that file; a failed publication cannot
+  expose a partial replacement or a pointer to evidence that was not published.</li>
+</ul>
+<p>The persisted chronology and root result are framework-owned. Developer code continues
+to use only <code>utils.logger</code> and <code>utils.capture_artifact()</code>; it never opens or edits
+timeline or result files.</p>
+<p><strong>Developer obligation:</strong> Do not write directly into the run directory or depend on its
+timestamped directory name. Treat <code>log_path</code> and captured artifact paths as opaque
+evidence references.</p>
+<p>The private <code>_run_lifecycle()</code> entry point is not a full run and therefore does not
+create a timestamped run directory. Framework self-tests that invoke it directly may
+leave point-in-time artifacts at the configured base root; authored suites use <code>run()</code>.</p>
+<hr />
+<h2 id="audit-contract">Audit Contract<a class="headerlink" href="#audit-contract" title="Permanent link">&para;</a></h2>
+<p><strong>Framework obligation:</strong> When <code>self.use_audit(interval=..., fn=...)</code> is called in the constructor, the framework runs <code>fn</code> concurrently with the test methods on the specified interval.
+- Multiple audit hooks are supported — each runs on its own interval.
+- Every audit interval is validated during construction as positive and finite. An
+  invalid registration cannot survive long enough to touch hardware.
+- Audit start/stop is framework-controlled, not caller-controlled: the loop begins immediately before the first test method runs and ends immediately after the last test method returns. No delayed start, no manual trigger. The lifecycle contract (test in runnable state before <code>configure()</code> returns) guarantees the audit's preconditions are met by start.
+- If the audit <code>fn</code> raises a <code>TestFailure</code>, the running test method is immediately cancelled and the test fails with the audit's failure.
+- Audit errors are <strong>not swallowed</strong> — unlike survey hooks, a throwing audit is a real failure. Survey and cleanup errors are swallowed to protect the hardware verdict; <code>ExternalIntegrationFailure</code> is exempt from swallowing everywhere — swallowing it would kill the halt signal.
+- Audit follows the same artifact contract as survey (see Evidence Contract above).
+- Cancellation is cooperative and asyncio-native. The run-level abort (<code>RunAbort</code> in <code>lifecycle.py</code>) fires when an integration hook aborts the run; a throwing audit cancels the in-flight test method; test-method completion stops the audit loop. Suite code must let <code>asyncio.CancelledError</code> propagate — swallowing it breaks the wind-down.
+- The read-only <code>utils.signal</code> combines the run-level integration halt with the nearest
+  authored audit scope. Audit scope is inherited only by that node's composed suite: an
+  audit failure cancels its own in-flight work and produces Fail without cancelling an
+  independent parallel sibling. If an audit verdict and suite completion occur in the same
+  event-loop turn, the audit verdict wins; evidence is not discarded by timing luck.
+- Every started descendant cancelled by an audit still seals its result and dispatches
+  its paired <code>after_each</code>. An unsettled descendant carries the audit's <code>TestFailure</code>
+  class-intact; a descendant already dispatching <code>after_each</code> retains the verdict that
+  hook received. Audit cancellation never becomes a run-wide integration halt.
+- <code>utils.exec</code> threads cancellation to the underlying child process. When a cancellation fires, in-flight shell commands are killed (SIGTERM) immediately — no zombie processes outlive the test.</p>
+<p><strong>Developer obligation:</strong>
+- Call <code>self.use_audit()</code> in the constructor with both <code>interval</code> and <code>fn</code> — both are required parameters.
+- Yield to the event loop (<code>await</code>) inside any long-running loop in a test method so cancellation can be delivered, and never suppress <code>asyncio.CancelledError</code>.
+- Use <code>use_audit</code> for active monitoring that can fail the test (e.g. thermal runaway, watchdog). Use <code>use_survey</code> for passive state snapshots at phase boundaries that never affect the verdict.
+- Raise <code>TestFailure</code> from the audit <code>fn</code> to fail the test. Return data to continue — it is always recorded as evidence.</p>
+<hr />
+<h2 id="integration-hook-contract">Integration Hook Contract<a class="headerlink" href="#integration-hook-contract" title="Permanent link">&para;</a></h2>
+<p><strong>Framework obligation:</strong> <code>before_each</code> and <code>after_each</code> are optional integration hooks registered at the root <code>run()</code> call. The framework threads them down to every executed descendant and dispatches them around every node's lifecycle.</p>
+<ul>
+<li><code>before_each</code> fires immediately before a node's lifecycle begins.</li>
+<li><code>after_each</code> fires immediately after a node's lifecycle completes, receiving the node's <code>RunResult</code>.</li>
+<li><strong>Pair invariant:</strong> <code>after_each</code> fires EVEN IF <code>before_each</code> threw. An integrator writing a "started" row in <code>before_each</code> always gets a "finished" row in <code>after_each</code> — no orphan records in the external system.</li>
+<li>Throw from either hook → framework wraps as <code>ExternalIntegrationFailure</code> → the shared run-abort fires → every in-flight framework→user await across the tree unwinds at its own framework boundary → every in-flight transport is closed via <code>cancel_in_flight()</code> → enclosing node transitions to Aborted. The integrator's own error class arrives intact as the failure's cause. An operator SIGINT/SIGTERM during a live run takes this same halt path, with <code>OperatorInterrupt</code> as the reason.</li>
+<li>Hooks receive a deliberately narrow context (<code>BeforeEachContext</code> / <code>AfterEachContext</code>): node name, ancestor chain, breadcrumbs, scoped logger, env snapshot. NOT <code>exec</code>, <code>get_shell</code>, or <code>capture_artifact</code>. Integration hooks are for external coordination, not for exercising the hardware.</li>
+<li>Unpaired registration (only <code>before_each</code> or only <code>after_each</code>) emits a loud warning at run start unless <code>allow_unpaired_hooks=True</code> is passed. The pairing enforces the started/finished symmetry.</li>
+</ul>
+<p><strong>Developer obligation:</strong> Do not register <code>before_each</code>/<code>after_each</code> inside your <code>TestComponent</code> subclasses. These hooks are the integrator's contract with the outside world, not part of the test's own lifecycle. Use <code>use_survey</code> / <code>use_audit</code> for per-test observation; use <code>before_each</code> / <code>after_each</code> only when composing HILT into a larger harness.</p>
+<hr />
+<h2 id="in-flight-termination-contract">In-Flight Termination Contract<a class="headerlink" href="#in-flight-termination-contract" title="Permanent link">&para;</a></h2>
+<p><strong>Framework obligation:</strong> When the run-level abort fires (an integration hook throws anywhere in the tree, or the operator sends SIGINT/SIGTERM to a live run), every framework-managed transport is closed HARD immediately — not at the next polling boundary. Cancelling the coroutine is not enough; the framework cancels the RESOURCE.</p>
+<p>The operator-signal handler is installed by <code>run()</code>/<code>main()</code> only while that run is live, on the running loop, and removed on the way out so a library caller never leaks it. The first signal fires <code>RunAbort</code> with an <code>OperatorInterrupt</code> and hard-closes transports; a second signal inside the finalization window exits the process immediately.</p>
+<ul>
+<li><code>SshInterface</code> destroys its underlying asyncssh connection, closing every open channel and failing every pending <code>exec</code> stream at the socket level.</li>
+<li>Recursively propagates through <code>via</code> chains — a jump-host tunnel and everything tunneled through it collapse together.</li>
+<li><code>RemoteInterface</code> subclasses expose <code>cancel_in_flight()</code> for any transport type that needs aggressive close semantics.</li>
+<li>Long-running user operations (firmware flashes, long-polling requests, multi-step SSH scripts) in flight when the abort fires receive a dead resource, causing their own awaitables to fail and settle harmlessly in the event loop.</li>
+</ul>
+<p><strong>Consequence:</strong> A 30-minute firmware flash in progress when <code>before_each</code> throws does NOT continue to mutate the hardware. This is load-bearing for manufacturing test integrity — the halt signal means "stop touching the hardware," and the framework enforces that at the transport layer.</p>
+<hr />
+<h2 id="group-isolation-contract">Group Isolation Contract<a class="headerlink" href="#group-isolation-contract" title="Permanent link">&para;</a></h2>
+<p><strong>Framework obligation:</strong> <code>TestGroup</code> runs its children concurrently under <code>asyncio.TaskGroup</code>, and the child boundary guarantees the TaskGroup semantics are correct: Fail and node-local Aborted are <em>returned</em> by the boundary, never raised — one child's failure cannot escape into the TaskGroup and cancel healthy siblings. Only a harness-level halt propagates, and the TaskGroup then cancelling everything is exactly right, because that is what Aborted means.</p>
+<hr />
+<h2 id="utils-contract">Utils Contract<a class="headerlink" href="#utils-contract" title="Permanent link">&para;</a></h2>
+<p><strong>Framework obligation:</strong> <code>TestUtils</code> is the single, fully-scoped utility surface passed to every lifecycle method.</p>
+<ul>
+<li><code>utils.exec</code> never throws. It returns an <code>ExecResult(stdout, stderr, exit_code, truncated, captured_bytes)</code> — a non-zero exit code is data for the test method to judge, not an exception. Signal-killed, aborted, and closed-transport commands settle as <code>exit_code=-1</code>. A <code>ConnectionError</code> from <code>RemoteInterface.exec</code> is absorbed here; the protocol stays loud, the author-facing surface stays total. <code>CancelledError</code> still propagates.</li>
+<li>Stdout and stderr together are bounded by one named <code>output_budget</code> (default 4 MiB), applied identically by the local executor and <code>SshInterface</code>. The budget is configured at the run seed (<code>TestComponent.run(output_budget=...)</code> / <code>TestUtils(output_budget=...)</code>) or at <code>LocalExec</code> / <code>SshInterface</code> construction — never as a process-global. Exceeding it terminates the command the same way abort does (SIGTERM the host process group; SIGTERM then close that SSH channel, session stays up) and settles with the bytes actually received, <code>truncated=True</code>, and <code>captured_bytes</code> equal to what was kept. Truncation is evidence, never an exception. The scoped log names it (<code>exec output truncated: captured N bytes (budget B)</code>). Streaming reads preserve interrupted output: decode happens only at settlement, with replacement for a cut in the middle of a UTF-8 sequence.</li>
+</ul>
+<p><strong>Developer obligation:</strong> Use only <code>utils.*</code> inside lifecycle methods — never import framework internals directly into test logic.</p>
+<hr />
+<h2 id="exec-routing-contract">Exec Routing Contract<a class="headerlink" href="#exec-routing-contract" title="Permanent link">&para;</a></h2>
+<p><strong>Framework obligation:</strong> <code>use_shell</code> is the only writer of the node's exec router. <code>get_shell</code> may open extra endpoints and may read <code>inherit</code> to pick a tunnel; it never assigns the router or the propagate flag.</p>
+<ul>
+<li>Four <code>use_shell</code> shapes: connection (<code>host</code> + <code>username</code>), connection with explicit <code>via</code>, policy-only <code>inherit=False</code> (force local), and bare <code>use_shell()</code> (return the active handle).</li>
+<li>Explicit <code>via</code> always wins. <code>inherit=False</code> on a connection form skips the parent's hop.</li>
+<li><strong>Declared in <code>configure()</code>, nowhere else.</strong> A declaring <code>use_shell</code> (<code>host</code>, <code>via</code>, <code>inherit=False</code>, <code>propagate=False</code>) is admitted only while this node's own <code>configure()</code> is running; from a test method, <code>cleanup</code>, a survey, an audit, or a helper they call, it raises <code>ContractViolation</code> before the router is touched. The <code>exec routing:</code> line is written when <code>configure</code> returns and the FT reads it as the truth for the node's whole run; a route moved later would make that line a lie for every command after the move. The bare <code>use_shell()</code> reads the active handle and may be called from any slot.</li>
+<li><strong>A second declaration.</strong> <code>configure()</code> may declare more than once, since no command has yet run under the route being replaced: open a jump host, then route through it. The last declaration is the route; every shell opened on the way stays <code>opened</code> on this node and is not torn down early.</li>
+<li><strong>Ownership.</strong> The node whose <code>configure()</code> opened a shell, through <code>use_shell</code> or <code>get_shell</code>, owns it. The framework closes it at that node's cleanup (after the post-cleanup survey, before the hop it tunnels through), never earlier and never from another node.</li>
+<li><strong>Hooks and audits observe the route; they do not set it.</strong> They read <code>utils.exec_route</code> and exec through what <code>configure()</code> committed to. A survey runs at phases before <code>configure()</code> and after <code>cleanup()</code>, and an audit runs concurrently with the test method, so neither has a moment at which one route could be declared once. <code>get_shell</code> stays open to them: an auxiliary endpoint changes nothing the routing line states.</li>
+<li><code>propagate=False</code> on <code>use_shell</code> stops this node's router from flowing to children; they start local. <code>propagate</code> on <code>get_shell</code> is a documented no-op.</li>
+<li><strong>The parent owns the route.</strong> A route is owned by the node whose <code>configure()</code> declared it and is inherited by every node that node composes, down the tree, until a descendant declares <code>inherit=False</code> (or the owner declared <code>propagate=False</code>). A device class never takes a routing argument: a gateway is a parent whose <code>configure()</code> opens the hop and whose <code>build_suite()</code> composes the devices behind it, and those devices are routed by being its children. The <code>TestComponent</code> constructor has no <code>via=</code>; the only <code>via</code> is the tunnel argument to <code>use_shell</code> / <code>get_shell</code>, declared inside <code>configure()</code> by the node that owns the route (issue #137).</li>
+<li>Children inherit the route through run params (<code>RouterRunParams</code>), never through ctx. ctx is instance-local domain data, not infrastructure.</li>
+<li>
+<p>Routed tunnels are borrowed; the router owns hop lifecycle. Every hop the router resolves — an explicit <code>via=</code> Shell or an inherited route — is already live, so the connector threads it through the transport's borrowed <code>tunnel=</code> channel, never the owned <code>via=</code> one. The opened interface must not disconnect, cancel, or collapse its hop. What a node opened is recorded on the node (<code>opened</code>), stays connected through the node's post-cleanup survey, and closes after that survey and before the hop it tunnels through — the parent's hop closes at the same point of the parent's own lifecycle, after every child is done with it (issue #115), so a survey that execs at post-cleanup reads the device, not a closed transport; a hard abort on the hop kills everything tunneled through it at the socket (In-Flight Termination Contract). A dead hop at open time is an error, not something the router silently brings up.</p>
+</li>
+<li>
+<p>Local exec and every SSH session this router opens share the run's <code>output_budget</code> (see the Utils Contract). A fat command is truncated and killed at the resource; it does not take the rest of the rack with it.</p>
+</li>
+<li>A transport's address is fixed while it is live. <code>connect(host, port)</code> re-points an addressed transport only through a closed handle; asking a live one for a different address is refused, never silently replaced. After a flash or DHCP churn the flow is <code>disconnect()</code>, reacquire, <code>connect(new_ip)</code>. There is no self-healing: a socket the framework killed stays dead (In-Flight Termination Contract), and an unexpected drop reaches the author as a <code>ConnectionError</code> on the next <code>exec</code>, not as a quiet redial.</li>
+<li><code>utils.exec_route</code> states where <code>utils.exec</code> lands at the moment it is read: <code>local</code> for the test host, otherwise the endpoint of the hop the route attaches to (the last name in the <code>exec routing:</code> chain). It is derived from the router, never stored, so it is right in a survey at every phase, including the pre-configure dispatch before <code>use_shell</code> has run and the pre-cleanup dispatch after a <code>configure</code> that failed before it.</li>
+<li>The router logs what it opens and where every node's exec lands (see the Evidence Contract). A transport that hides its hop hides the topology: <code>endpoint</code>, <code>hop</code>, and <code>route_label</code> on <code>RemoteInterface</code> are how a transport states its place in the chain, and <code>provenance_lines</code> (starting with <code>connect_provenance</code>) are the lines the router records for it.</li>
+</ul>
+<p><strong>Developer obligation:</strong> Declare in <code>configure()</code>, and only there, where this node's <code>utils.exec</code> lands when it should be somewhere other than the test host; a test method, survey, or audit that needs a different endpoint reads <code>use_shell()</code> or opens one with <code>get_shell</code>. Do not stuff SSH handles into ctx and expect routing to notice.</p>
+<hr />
+<h2 id="device-api-contract">Device API Contract<a class="headerlink" href="#device-api-contract" title="Permanent link">&para;</a></h2>
+<p><strong>Framework obligation:</strong> <code>DeviceApiInterface</code> is a contract, not an <code>exec</code>
+subclass (<a href="hil/index.html#the-three-rulings">HIL ruling 1</a>). The guarantees live
+in the signed <a href="hil/device-api.html">Device API design note</a>; this page does not
+restate them.</p>
+<p><code>DeviceRequest(..., json=value)</code> is the JSON body convenience (issue #155): it
+serializes once to UTF-8 <code>payload</code> bytes and supplies <code>Content-Type: application/json</code>
+unless the request already declares a content type, matched case-insensitively.
+<code>json=None</code> sends JSON null; omitting <code>json</code> leaves the raw-payload API unchanged.
+Combining <code>json</code> with a non-<code>None</code> <code>payload</code>, even empty bytes, is a <code>ValueError</code> before
+any transfer. Non-serializable values and non-finite numbers are refused at construction.
+The request never mutates the caller's headers or retains its JSON object.</p>
+<p><code>DeviceResponse.json()</code> decodes the returned bytes. <code>parse(response_type="json")</code>
+is the format-selecting form; <code>response_type="yaml"</code> uses <code>yaml.safe_load</code> from the
+optional <code>hilt-core[yaml]</code> extra. Unknown formats raise <code>ValueError</code>, a missing YAML
+dependency raises <code>ImportError</code>, and parser errors propagate without a fallback.
+Parsing is explicit, independent of response status and headers; it preserves <code>body</code>
+and <code>status</code>, makes no request, and supplies no verdict. A malformed body remains a
+completed transfer for the suite to judge. Body contents never enter attempt logs.
+A CoAP <code>status</code> is the dotted code (<code>"2.05"</code>, a <code>CoapCode</code> constant). An HTTP
+<code>status</code> stays an integer (issue #156).</p>
+<p><strong>Developer obligation:</strong> Implement <code>DeviceApiInterface</code> as that note specifies.</p>
+<hr />
+<h2 id="composability-contract">Composability Contract<a class="headerlink" href="#composability-contract" title="Permanent link">&para;</a></h2>
+<p><strong>Framework obligation:</strong> Any <code>TestComponent</code> or subclass thereof can be composed indefinitely in any shape the SE deems appropriate.</p>
+<p><strong>Developer obligation:</strong> Leaves must be self-contained — declare their own readiness preconditions in <code>configure()</code>, not in the parent sequence.</p></div>
+            </div>
+        </div>
+
+        <footer class="col-md-12">
+            <hr>
+                <p>Copyright 2026 Tyler Meador</p>
+            <p>Documentation built with <a href="https://www.mkdocs.org/">MkDocs</a>.</p>
+        </footer>
+        <script src="js/bootstrap.bundle.min.js"></script>
+        <script>
+            var base_url = ".",
+                shortcuts = {"help": 191, "next": 78, "previous": 80, "search": 83};
+        </script>
+        <script src="js/base.js"></script>
+        <script src="search/main.js"></script>
+
+        <div class="modal" id="mkdocs_search_modal" tabindex="-1" role="dialog" aria-labelledby="searchModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="searchModalLabel">Search</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>From here you can search these documents. Enter your search terms below.</p>
+                <form>
+                    <div class="form-group">
+                        <input type="search" class="form-control" placeholder="Search..." id="mkdocs-search-query" title="Type search term here">
+                    </div>
+                </form>
+                <div id="mkdocs-search-results" data-no-results-text="No results found"></div>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div><div class="modal" id="mkdocs_keyboard_modal" tabindex="-1" role="dialog" aria-labelledby="keyboardModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="keyboardModalLabel">Keyboard Shortcuts</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th style="width: 20%;">Keys</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="help shortcut"><kbd>?</kbd></td>
+                    <td>Open this help</td>
+                  </tr>
+                  <tr>
+                    <td class="next shortcut"><kbd>n</kbd></td>
+                    <td>Next page</td>
+                  </tr>
+                  <tr>
+                    <td class="prev shortcut"><kbd>p</kbd></td>
+                    <td>Previous page</td>
+                  </tr>
+                  <tr>
+                    <td class="search shortcut"><kbd>s</kbd></td>
+                    <td>Search</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div>
+
+    </body>
+</html>

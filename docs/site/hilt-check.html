@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        
+        
+        <link rel="canonical" href="https://gitlab.com/Tyler-Meador/HILT/-/tree/main/docs/hilt-check.html">
+        <link rel="shortcut icon" href="img/favicon.ico">
+        <title>hilt-check - HILT</title>
+        <link href="css/bootstrap.min.css" rel="stylesheet">
+        <link href="css/fontawesome.min.css" rel="stylesheet">
+        <link href="css/brands.min.css" rel="stylesheet">
+        <link href="css/solid.min.css" rel="stylesheet">
+        <link href="css/v4-font-face.min.css" rel="stylesheet">
+        <link href="css/base.css" rel="stylesheet">
+        <link id="hljs-light" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" >
+        <link id="hljs-dark" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github-dark.min.css" disabled>
+        <link href="assets/_mkdocstrings.css" rel="stylesheet">
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+        <script>hljs.highlightAll();</script> 
+    </head>
+
+    <body>
+        <div class="navbar fixed-top navbar-expand-lg navbar-dark bg-primary">
+            <div class="container">
+                <a class="navbar-brand" href="index.html">HILT</a>
+                <!-- Expander button -->
+                <button type="button" class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#navbar-collapse" aria-controls="navbar-collapse" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <!-- Expanded navigation -->
+                <div id="navbar-collapse" class="navbar-collapse collapse">
+                        <!-- Main navigation -->
+                        <ul class="nav navbar-nav">
+                            <li class="nav-item">
+                                <a href="index.html" class="nav-link">Home</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="getting-started.html" class="nav-link">Getting started</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="floor-technician.html" class="nav-link">Floor Technician</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="overview.html" class="nav-link">Overview</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="idioms.html" class="nav-link">Idioms</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="utilities.html" class="nav-link">Utilities</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="contracts.html" class="nav-link">Contracts</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="inspector-json.html" class="nav-link">Inspector JSON</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="inspector.html" class="nav-link">Inspector (target specification)</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="measurements.html" class="nav-link">Measurements</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="junit-xml.html" class="nav-link">JUnit XML</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="hilt-run.html" class="nav-link">hilt run</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="hilt-new.html" class="nav-link">hilt new</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="hilt-check.html" class="nav-link active" aria-current="page">hilt-check</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="api-stability.html" class="nav-link">API stability</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="api.html" class="nav-link">API reference</a>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">HIL interfaces</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="hil/index.html" class="dropdown-item">Overview</a>
+</li>
+                                    
+<li>
+    <a href="hil/gpio.html" class="dropdown-item">GPIO (design note)</a>
+</li>
+                                    
+<li>
+    <a href="hil/pwm.html" class="dropdown-item">PWM (design note)</a>
+</li>
+                                    
+<li>
+    <a href="hil/can.html" class="dropdown-item">CAN bus (design note)</a>
+</li>
+                                    
+<li>
+    <a href="hil/i2c-spi.html" class="dropdown-item">I2C/SPI (design note)</a>
+</li>
+                                    
+<li>
+    <a href="hil/device-api.html" class="dropdown-item">Device API (design note)</a>
+</li>
+                                    
+<li>
+    <a href="hil/serial.html" class="dropdown-item">Serial/UART (design note)</a>
+</li>
+                                </ul>
+                            </li>
+                        </ul>
+
+                    <ul class="nav navbar-nav ms-md-auto">
+                        <li class="nav-item">
+                            <a href="#" class="nav-link" data-bs-toggle="modal" data-bs-target="#mkdocs_search_modal">
+                                <i class="fa fa-search"></i> Search
+                            </a>
+                        </li>
+                            <li class="nav-item">
+                                <a rel="prev" href="hilt-new.html" class="nav-link">
+                                    <i class="fa fa-arrow-left"></i> Previous
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a rel="next" href="api-stability.html" class="nav-link">
+                                    Next <i class="fa fa-arrow-right"></i>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="https://gitlab.com/Tyler-Meador/HILT/-/blob/main/docs/hilt-check.md" class="nav-link"><i class="fa-brands fa-gitlab"></i> Edit on GitLab</a>
+                            </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="container">
+            <div class="row">
+                    <div class="col-md-3"><div class="navbar-expand-md bs-sidebar hidden-print affix" role="complementary">
+    <div class="navbar-header">
+        <button type="button" class="navbar-toggler collapsed" data-bs-toggle="collapse" data-bs-target="#toc-collapse" title="Table of Contents">
+            <span class="fa fa-angle-down"></span>
+        </button>
+    </div>
+
+    
+    <div id="toc-collapse" class="navbar-collapse collapse card bg-body-tertiary">
+        <ul class="nav flex-column">
+            
+            <li class="nav-item" data-bs-level="1"><a href="#hilt-check-tier-3-static-analysis" class="nav-link">hilt-check — Tier 3 Static Analysis</a>
+              <ul class="nav flex-column">
+            <li class="nav-item" data-bs-level="2"><a href="#skippable-by-design" class="nav-link">Skippable by design</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#usage" class="nav-link">Usage</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#rules" class="nav-link">Rules</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#adding-a-rule" class="nav-link">Adding a rule</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#editor-the-pylsp-adapter" class="nav-link">Editor — the pylsp adapter</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#what-this-tier-is-not" class="nav-link">What this tier is not</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+              </ul>
+            </li>
+        </ul>
+    </div>
+</div></div>
+                    <div class="col-md-9" role="main">
+
+<h1 id="hilt-check-tier-3-static-analysis">hilt-check — Tier 3 Static Analysis<a class="headerlink" href="#hilt-check-tier-3-static-analysis" title="Permanent link">&para;</a></h1>
+<p><code>hilt-check</code> is the third tier of the enforcement stack described in
+<a href="overview.html#the-three-tier-enforcement-stack">overview.md</a>. It reads authored suite
+files as Python ASTs and reports departures from the declarative idiom.</p>
+<h2 id="skippable-by-design">Skippable by design<a class="headerlink" href="#skippable-by-design" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Tier</th>
+<th>Mechanism</th>
+<th>Guarantees</th>
+<th>Skippable?</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>Runtime IoC wrapping</td>
+<td>Verdict contract, failure taxonomy, lifecycle order, immutable-self freeze</td>
+<td>Never</td>
+</tr>
+<tr>
+<td>2</td>
+<td><code>__init_subclass__</code> at import</td>
+<td>Structural contract: sealed internals, lifecycle signatures, hook shape</td>
+<td>Never</td>
+</tr>
+<tr>
+<td>3</td>
+<td><code>hilt-check</code></td>
+<td>Declarative syntax: pure <code>build_suite</code>, gated <code>PASS</code>, immutable-self idiom, constructor-only hooks, live composition names, ctx provenance, fulfilled evidence, routes declared in <code>configure</code>, measurements named once and recorded where a node runs, one source per <code>configure()</code> value</td>
+<td><strong>Yes</strong></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Nothing that protects hardware or verdict integrity lives only here.</strong> Every rule
+below either has a tier-1 or tier-2 counterpart that holds whether or not the linter
+ever runs, or guards a style alone and says so in its row. A suite that skips
+<code>hilt-check</code> loses early, readable feedback at edit time; it does not lose a guard.
+That is the whole reason this tier may be skipped and the other two may not.</p>
+<h2 id="usage">Usage<a class="headerlink" href="#usage" title="Permanent link">&para;</a></h2>
+<pre><code class="language-sh">uv run hilt-check suites/                 # check a directory (recursive)
+uv run hilt-check suites/blade.py other/  # files and directories mix freely
+uv run hilt-check --list-rules            # the rule catalogue
+uv run hilt-check --select hilt/gated-pass suites/
+uv run hilt-check --ignore hilt/pure-build-suite suites/
+uv run hilt-check --format json suites/   # machine-readable report
+python -m hilt_check suites/              # same command without the script
+</code></pre>
+<p>Output is one line per finding, <code>path:line:col: code message</code>, followed by a count.</p>
+<h3 id="exit-status-the-ci-contract">Exit status — the CI contract<a class="headerlink" href="#exit-status-the-ci-contract" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Status</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>0</code></td>
+<td>Every checked file is clean.</td>
+</tr>
+<tr>
+<td><code>1</code></td>
+<td>At least one rule violation.</td>
+</tr>
+<tr>
+<td><code>2</code></td>
+<td>A file could not be checked (missing path, unreadable, invalid Python), or the invocation was wrong (unknown rule code, no paths).</td>
+</tr>
+</tbody>
+</table>
+<p>A path that cannot be parsed is an error, never silence: a suite that did not parse
+was not checked. Unknown rule codes fail the same way so a typo in a CI job cannot
+quietly disable a rule. <code>make check</code> runs the tool over <code>examples/</code>, which is the
+scaffolding suite authors copy from, so the examples always demonstrate the idiom.</p>
+<h2 id="rules">Rules<a class="headerlink" href="#rules" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Code</th>
+<th>Idiom</th>
+<th>Runtime counterpart (the guarantee)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>hilt/gated-pass</code></td>
+<td>Every <code>return PASS</code> sits inside an <code>if</code> branch or <code>match</code> arm; the pass predicate is visible where the PASS is.</td>
+<td>Tier 1: the child boundary accepts only the <code>PASS</code> identity and refuses to forge a verdict.</td>
+</tr>
+<tr>
+<td><code>hilt/pure-build-suite</code></td>
+<td><code>build_suite</code> is one <code>return</code> of composition calls: no other statements, no conditionals, filtered comprehensions, lambdas, <code>await</code>, or walrus inside; an unfiltered comprehension enumerates leaves (one per core, rail, or channel) and is allowed.</td>
+<td>Tier 2: <code>__init_subclass__</code> requires <code>build_suite</code> with the right shape; tier 1 refuses anything but a <code>TestComponent</code> from it.</td>
+</tr>
+<tr>
+<td><code>hilt/immutable-self</code></td>
+<td><code>self.&lt;attr&gt;</code> is assigned or deleted only in <code>__init__</code>; runtime state returns from <code>configure()</code> into <code>utils.ctx</code>.</td>
+<td>Tier 1: the instance freezes after the most-derived <code>__init__</code>; assignment raises <code>AttributeError</code>.</td>
+</tr>
+<tr>
+<td><code>hilt/constructor-hooks</code></td>
+<td><code>use_survey</code> and <code>use_audit</code> are called only in <code>__init__</code>; hooks are identity, not runtime state.</td>
+<td>Tier 1: both registrars raise <code>ContractViolation</code> on a frozen instance.</td>
+</tr>
+<tr>
+<td><code>hilt/unannotated-interface</code></td>
+<td>Functions and methods inside suite classes annotate every explicit parameter and return; methods passed to <code>self.test</code> declare <code>-&gt; Verdict</code>.</td>
+<td>Tier 1 for the <code>-&gt; Verdict</code> half: the child boundary accepts only the <code>PASS</code> identity and refuses to forge a verdict. The parameter half is authoring clarity only; an annotation guards nothing at runtime.</td>
+</tr>
+<tr>
+<td><code>hilt/raise-test-failure</code></td>
+<td>A test method raises <code>TestFailure</code>, not a plain <code>ValueError</code> / <code>RuntimeError</code> / <code>Exception</code>.</td>
+<td>Tier 1: the failure taxonomy classifies any non-<code>TestFailure</code> exception escaping a test method as a developer-bug Fail.</td>
+</tr>
+<tr>
+<td><code>hilt/method-reference</code></td>
+<td><code>self.test</code> takes a method reference, not a <code>lambda</code> or nested def.</td>
+<td>Tier 2: method references passed to <code>test</code> are auto-bound; the wrapper is unnecessary.</td>
+</tr>
+<tr>
+<td><code>hilt/retired-names</code></td>
+<td><code>self.case</code> and <code>self.group</code> are gone; compose with <code>self.test</code>, <code>self.sequence</code>, and <code>self.parallel</code> (issue #110).</td>
+<td>Tier 1: the attributes no longer exist, so <code>build_suite</code> raises <code>AttributeError</code> before any hardware is touched; the rule names the replacement instead.</td>
+</tr>
+<tr>
+<td><code>hilt/no-verdict-in-cleanup</code></td>
+<td><code>cleanup</code> does not <code>return PASS</code> or <code>raise TestFailure</code>; it restores hardware state.</td>
+<td>Tier 1: cleanup's return is discarded and its exceptions are swallowed.</td>
+</tr>
+<tr>
+<td><code>hilt/ctx-provenance</code></td>
+<td>Every <code>utils.ctx["k"]</code> read in a test method, hook, <code>configure</code>, or <code>cleanup</code> names a key that <code>configure()</code> returns (its dict literal or <code>TypedDict</code>), and ctx is never written: no subscript assignment, <code>update</code>, <code>setdefault</code>, <code>pop</code>, or <code>clear</code> anywhere in the suite. A reading travels with the verdict, and <code>.get()</code> is how an optional key is read (issues #112, #118).</td>
+<td>Tier 1: a <code>[]</code> read of a key <code>configure()</code> did not provide, and any write after <code>configure()</code> returns, raise <code>ContractViolation</code> naming the test and the key; <code>get</code> and <code>in</code> never do.</td>
+</tr>
+<tr>
+<td><code>hilt/shell-in-configure</code></td>
+<td><code>utils.use_shell(...)</code> or <code>utils.use_serial(...)</code> with arguments, the call that declares where this node's <code>utils.exec</code> lands, appears only in <code>configure()</code>; the bare <code>use_shell()</code> / <code>use_serial()</code> read and <code>get_shell</code> / <code>get_serial</code> may appear anywhere (issue #76).</td>
+<td>Tier 1: a declaring call (<code>host</code>, <code>via</code>, <code>inherit=False</code>, <code>propagate=False</code>) from any slot but <code>configure</code> raises <code>ContractViolation</code> before the router is touched, so the <code>exec routing:</code> line written after <code>configure</code> is the route every command of the node ran under.</td>
+</tr>
+<tr>
+<td><code>hilt/evidence-fulfilled</code></td>
+<td>Every <code>return PASS({...})</code> in a method decorated <code>@evidence(...)</code> carries every declared key, and such a method never returns bare <code>PASS</code> (issue #118).</td>
+<td>Tier 1: the child boundary holds every <code>PASS</code> to the declaration; a missing key is a <code>ContractViolation</code> naming the leaf and the key, a developer-bug Fail.</td>
+</tr>
+<tr>
+<td><code>hilt/evidence-shadows-ctx</code></td>
+<td>No key <code>@evidence</code> declares (a literal, or a same-module <code>TypedDict</code> field) is a key the class's <code>configure()</code> returns (its dict literal, <code>dict(k=...)</code>, a local literal it builds, its return <code>TypedDict</code>, or a same-module base's keys) or the framework-owned <code>measurements</code> slot. Ctx and evidence land on one record, so the reading cannot reuse the name of the limit or target it was judged against; the finding sits on the declaring literal, where the rename happens (bench finding F14, issue #161). A clash with a key only an enclosing suite's ctx provides is out of a single file's reach and left to tier 1.</td>
+<td>Tier 1: the child boundary refuses a payload key that is in the node's ctx or is <code>measurements</code> as a <code>ContractViolation</code> naming the leaf and the key; nothing is stripped silently.</td>
+</tr>
+<tr>
+<td><code>hilt/measurement-name-unique</code></td>
+<td>Two <code>measure(...)</code> calls, either spelling, with the same literal name inside one <code>configure</code> or test method; a measurement's series is keyed on its name, so the second call would overwrite or fork it (issue #132).</td>
+<td>Tier 1: the duplicate-name guard in <code>TestUtils.measure</code> and <code>hilt.measure</code> raises <code>ContractViolation</code> naming the node and the measurement.</td>
+</tr>
+<tr>
+<td><code>hilt/measurement-in-node</code></td>
+<td>A <code>measure(...)</code> call, either spelling, inside <code>cleanup</code>, a method registered with <code>use_survey</code>/<code>use_audit</code>, a <code>before_each</code>/<code>after_each</code> hook (by name, or passed under either keyword), or outside any function; a reading belongs to the node whose <code>configure()</code> or test method is running (issue #133).</td>
+<td>Tier 1: the outside-a-node guard raises <code>ContractViolation</code> naming the node and the measurement for <code>hilt.measure</code> with nothing bound and for either spelling from <code>cleanup</code>, a survey, an audit, a hook, or after the node settled.</td>
+</tr>
+<tr>
+<td><code>hilt/no-input-fallback</code></td>
+<td>Inside <code>configure()</code>, a value is identity from the constructor or discovered through <code>utils</code>, never one with the other as fallback: no <code>self._ip or await utils.get_arp_resolver(...).resolve()</code>, no conditional expression choosing between them, no local name bound from a <code>self</code> attribute by one assignment and from <code>get_arp_resolver</code> / <code>use_shell</code> / <code>get_shell</code> / <code>use_serial</code> / <code>get_serial</code> / <code>get_http</code> / <code>get_coap</code> by another. Identity fed into discovery and identity read from <code>utils.env</code> stay (issues #142, #144, #147).</td>
+<td>None, by design: a fallback is a style the ruling forbids, not a guard on hardware or a verdict. The runtime records which utility provided a value either way; the rule moves the ruling to the editor.</td>
+</tr>
+<tr>
+<td><code>hilt/env-via-utils</code></td>
+<td>Suite code reads the environment through <code>utils.env</code> (<code>utils.env["K"]</code>, <code>.get</code>, <code>.require</code>), never <code>os.environ</code> or <code>os.getenv</code>, under any import alias; <code>utils.env</code> is the run's recorded, injectable snapshot and <code>os.environ</code> is invisible to the evidence.</td>
+<td>None can exist: <code>os.environ</code> is the interpreter's. The rule is the only gate, so it stays narrow and names the replacement.</td>
+</tr>
+<tr>
+<td><code>hilt/logger-not-print</code></td>
+<td>Suite code logs through <code>utils.logger</code>, whose entries land in the run's timeline; a builtin <code>print</code> inside a <code>TestComponent</code> subclass reaches only the process's stdout, which the framework does not capture.</td>
+<td>None: the framework cannot intercept the builtin without changing what <code>print</code> means everywhere, so the rule is the gate.</td>
+</tr>
+<tr>
+<td><code>hilt/model-resolution-failure</code></td>
+<td>An awaited <code>.resolve()</code> / <code>.reacquire(...)</code> / <code>.request(...)</code> inside a suite class sits in a <code>try</code> with a handler that raises <code>TestFailure</code>; <code>ArpResolutionFailure</code> and <code>DeviceApiOperationFailure</code> are not verdicts, and the suite models the miss instead of leaking it. In <code>cleanup</code>, which gives no verdict and must not throw, the handler instead raises nothing and logs the miss, the shape <code>hilt/no-verdict-in-cleanup</code> also accepts (issue #153).</td>
+<td>Tier 1: the failure taxonomy classifies the escaping exception as a <code>ContractViolation</code> Fail ("CONTRACT VIOLATION IN ..."), which is correct and unhelpful; the rule moves the fix to the editor and names the exception to catch. From <code>cleanup</code> the exception is logged and swallowed, and the rest of the teardown does not run.</td>
+</tr>
+<tr>
+<td><code>hilt/no-swallowed-cancel</code></td>
+<td>Inside an <code>async</code> method, a <code>try</code> whose body awaits is not guarded by a bare <code>except</code>, <code>except BaseException</code>, or <code>except CancelledError</code> that fails to re-raise with a bare <code>raise</code>; <code>contextlib.suppress</code> never names either. <code>asyncio.CancelledError</code> is the abort signal, and a handler that swallows it mints a verdict after the harness gave up. Catch <code>Exception</code> for the failure you modeled.</td>
+<td>Tier 1: the cancellation discipline of issue #38 shields evidence collection and expects suite code to propagate; this rule is the editor-time half.</td>
+</tr>
+</tbody>
+</table>
+<p>Run <code>hilt-check --list-rules</code> for the catalogue shipped in the installed version.
+Each rule's module docstring under <code>tools/hilt_check/rules/</code> states exactly what it
+flags, what it leaves alone, and why.</p>
+<h2 id="adding-a-rule">Adding a rule<a class="headerlink" href="#adding-a-rule" title="Permanent link">&para;</a></h2>
+<p>The registry is extensible without touching the CLI:</p>
+<ol>
+<li>Add a module under <code>tools/hilt_check/rules/</code>.</li>
+<li>Define a class deriving from <code>hilt_check.Rule</code> with a stable <code>code</code>
+   (<code>hilt/&lt;kebab-name&gt;</code>), a one-line <code>summary</code>, and a <code>check(module)</code> method that
+   yields <code>Violation</code> values via <code>module.violation(node, code, message)</code>.</li>
+<li>Land its tests in <code>tests/</code> alongside the others, with a seeded fixture under
+   <code>tests/fixtures/hilt_check/</code> so the CLI is proven end to end.</li>
+</ol>
+<p><code>RuleRegistry.discover()</code> imports every module in the package and instantiates every
+concrete <code>Rule</code> subclass it finds. <code>SuiteModule</code> carries the structural queries a rule
+needs — enclosing function, method, and class, the methods a class registers by
+reference (<code>use_survey</code>, <code>use_audit</code>, <code>test</code>), and a static answer to "is this class a
+<code>TestComponent</code>" — so a rule is only its own idiom.</p>
+<p>A rule's <code>code</code> is a contract with suite authors' <code>--ignore</code> flags; rename it only with
+a note in the changelog of the MR that does so.</p>
+<h2 id="editor-the-pylsp-adapter">Editor — the pylsp adapter<a class="headerlink" href="#editor-the-pylsp-adapter" title="Permanent link">&para;</a></h2>
+<p>The same registry the CLI runs is a <code>python-lsp-server</code> plugin. Install the extra so
+the core package stays dependency-light:</p>
+<pre><code class="language-sh">uv pip install 'hilt-core[pylsp]'
+# or, from a checkout: uv sync --extra pylsp
+</code></pre>
+<p><code>python-lsp-server</code> discovers the plugin via the <code>pylsp</code> entry point. Every rule in
+<code>hilt-check --list-rules</code> is published as a diagnostic on the open buffer (unsaved
+contents included). Two rules offer a quick-fix:</p>
+<table>
+<thead>
+<tr>
+<th>Code</th>
+<th>Action</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>hilt/gated-pass</code></td>
+<td>Wrap the <code>return PASS</code> in an explicit pass predicate. Preceding <code>if ...: raise</code> guards are inverted into that predicate only when they sit flush against the return in its own block (a return in a loop's or <code>try</code>'s <code>else:</code> or in <code>finally:</code> never borrows the body's guards), load no name bound at the insertion point, and contain no call. Every other shape gets <code>if False:</code> plus a <code>TestFailure</code> raise — a leftover scaffold cannot return PASS.</td>
+</tr>
+<tr>
+<td><code>hilt/method-reference</code></td>
+<td>Replace a trivial <code>lambda</code> (<code>lambda u: self._claim(u)</code>) with the method reference. A lambda that carries extra logic is left alone — that logic belongs in a real method.</td>
+</tr>
+</tbody>
+</table>
+<p>Disable the plugin in pylsp config with <code>plugins.hilt_check.enabled: false</code>.</p>
+<h2 id="what-this-tier-is-not">What this tier is not<a class="headerlink" href="#what-this-tier-is-not" title="Permanent link">&para;</a></h2>
+<ul>
+<li>It is not a type checker. Suites are held to the same annotation standard as the
+  framework (STANDARDS.md §2); <code>hilt/unannotated-interface</code> makes the interface
+  explicit, and pyright strict remains the authority on whether those types agree.</li>
+<li>It is not a second checker. The editor plugin is the CLI's registry with an LSP
+  surface; a finding in the editor is the same finding <code>hilt-check</code> would print.</li>
+<li>It is not a guard. See the table above.</li>
+</ul></div>
+            </div>
+        </div>
+
+        <footer class="col-md-12">
+            <hr>
+                <p>Copyright 2026 Tyler Meador</p>
+            <p>Documentation built with <a href="https://www.mkdocs.org/">MkDocs</a>.</p>
+        </footer>
+        <script src="js/bootstrap.bundle.min.js"></script>
+        <script>
+            var base_url = ".",
+                shortcuts = {"help": 191, "next": 78, "previous": 80, "search": 83};
+        </script>
+        <script src="js/base.js"></script>
+        <script src="search/main.js"></script>
+
+        <div class="modal" id="mkdocs_search_modal" tabindex="-1" role="dialog" aria-labelledby="searchModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="searchModalLabel">Search</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>From here you can search these documents. Enter your search terms below.</p>
+                <form>
+                    <div class="form-group">
+                        <input type="search" class="form-control" placeholder="Search..." id="mkdocs-search-query" title="Type search term here">
+                    </div>
+                </form>
+                <div id="mkdocs-search-results" data-no-results-text="No results found"></div>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div><div class="modal" id="mkdocs_keyboard_modal" tabindex="-1" role="dialog" aria-labelledby="keyboardModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="keyboardModalLabel">Keyboard Shortcuts</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th style="width: 20%;">Keys</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="help shortcut"><kbd>?</kbd></td>
+                    <td>Open this help</td>
+                  </tr>
+                  <tr>
+                    <td class="next shortcut"><kbd>n</kbd></td>
+                    <td>Next page</td>
+                  </tr>
+                  <tr>
+                    <td class="prev shortcut"><kbd>p</kbd></td>
+                    <td>Previous page</td>
+                  </tr>
+                  <tr>
+                    <td class="search shortcut"><kbd>s</kbd></td>
+                    <td>Search</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div>
+
+    </body>
+</html>

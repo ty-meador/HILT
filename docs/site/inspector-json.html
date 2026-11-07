@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        
+        
+        <link rel="canonical" href="https://gitlab.com/Tyler-Meador/HILT/-/tree/main/docs/inspector-json.html">
+        <link rel="shortcut icon" href="img/favicon.ico">
+        <title>Inspector JSON - HILT</title>
+        <link href="css/bootstrap.min.css" rel="stylesheet">
+        <link href="css/fontawesome.min.css" rel="stylesheet">
+        <link href="css/brands.min.css" rel="stylesheet">
+        <link href="css/solid.min.css" rel="stylesheet">
+        <link href="css/v4-font-face.min.css" rel="stylesheet">
+        <link href="css/base.css" rel="stylesheet">
+        <link id="hljs-light" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" >
+        <link id="hljs-dark" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github-dark.min.css" disabled>
+        <link href="assets/_mkdocstrings.css" rel="stylesheet">
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+        <script>hljs.highlightAll();</script> 
+    </head>
+
+    <body>
+        <div class="navbar fixed-top navbar-expand-lg navbar-dark bg-primary">
+            <div class="container">
+                <a class="navbar-brand" href="index.html">HILT</a>
+                <!-- Expander button -->
+                <button type="button" class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#navbar-collapse" aria-controls="navbar-collapse" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <!-- Expanded navigation -->
+                <div id="navbar-collapse" class="navbar-collapse collapse">
+                        <!-- Main navigation -->
+                        <ul class="nav navbar-nav">
+                            <li class="nav-item">
+                                <a href="index.html" class="nav-link">Home</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="getting-started.html" class="nav-link">Getting started</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="floor-technician.html" class="nav-link">Floor Technician</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="overview.html" class="nav-link">Overview</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="idioms.html" class="nav-link">Idioms</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="utilities.html" class="nav-link">Utilities</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="contracts.html" class="nav-link">Contracts</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="inspector-json.html" class="nav-link active" aria-current="page">Inspector JSON</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="inspector.html" class="nav-link">Inspector (target specification)</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="measurements.html" class="nav-link">Measurements</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="junit-xml.html" class="nav-link">JUnit XML</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="hilt-run.html" class="nav-link">hilt run</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="hilt-new.html" class="nav-link">hilt new</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="hilt-check.html" class="nav-link">hilt-check</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="api-stability.html" class="nav-link">API stability</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="api.html" class="nav-link">API reference</a>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">HIL interfaces</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="hil/index.html" class="dropdown-item">Overview</a>
+</li>
+                                    
+<li>
+    <a href="hil/gpio.html" class="dropdown-item">GPIO (design note)</a>
+</li>
+                                    
+<li>
+    <a href="hil/pwm.html" class="dropdown-item">PWM (design note)</a>
+</li>
+                                    
+<li>
+    <a href="hil/can.html" class="dropdown-item">CAN bus (design note)</a>
+</li>
+                                    
+<li>
+    <a href="hil/i2c-spi.html" class="dropdown-item">I2C/SPI (design note)</a>
+</li>
+                                    
+<li>
+    <a href="hil/device-api.html" class="dropdown-item">Device API (design note)</a>
+</li>
+                                    
+<li>
+    <a href="hil/serial.html" class="dropdown-item">Serial/UART (design note)</a>
+</li>
+                                </ul>
+                            </li>
+                        </ul>
+
+                    <ul class="nav navbar-nav ms-md-auto">
+                        <li class="nav-item">
+                            <a href="#" class="nav-link" data-bs-toggle="modal" data-bs-target="#mkdocs_search_modal">
+                                <i class="fa fa-search"></i> Search
+                            </a>
+                        </li>
+                            <li class="nav-item">
+                                <a rel="prev" href="contracts.html" class="nav-link">
+                                    <i class="fa fa-arrow-left"></i> Previous
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a rel="next" href="inspector.html" class="nav-link">
+                                    Next <i class="fa fa-arrow-right"></i>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="https://gitlab.com/Tyler-Meador/HILT/-/blob/main/docs/inspector-json.md" class="nav-link"><i class="fa-brands fa-gitlab"></i> Edit on GitLab</a>
+                            </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="container">
+            <div class="row">
+                    <div class="col-md-3"><div class="navbar-expand-md bs-sidebar hidden-print affix" role="complementary">
+    <div class="navbar-header">
+        <button type="button" class="navbar-toggler collapsed" data-bs-toggle="collapse" data-bs-target="#toc-collapse" title="Table of Contents">
+            <span class="fa fa-angle-down"></span>
+        </button>
+    </div>
+
+    
+    <div id="toc-collapse" class="navbar-collapse collapse card bg-body-tertiary">
+        <ul class="nav flex-column">
+            
+            <li class="nav-item" data-bs-level="1"><a href="#inspector-json-contract" class="nav-link">Inspector JSON Contract</a>
+              <ul class="nav flex-column">
+            <li class="nav-item" data-bs-level="2"><a href="#version-1-result" class="nav-link">Version 1 result</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#version-1-timeline" class="nav-link">Version 1 timeline</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#two-records-two-version-fields" class="nav-link">Two records, two version fields</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#versioning-policy" class="nav-link">Versioning policy</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#published-schemas" class="nav-link">Published schemas</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#summary-tree-node" class="nav-link">Summary tree node</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#failure-shape" class="nav-link">Failure shape</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#timeout-shape" class="nav-link">Timeout shape</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+              </ul>
+            </li>
+        </ul>
+    </div>
+</div></div>
+                    <div class="col-md-9" role="main">
+
+<h1 id="inspector-json-contract">Inspector JSON Contract<a class="headerlink" href="#inspector-json-contract" title="Permanent link">&para;</a></h1>
+<p>Floor Technicians reading a run should start at <code>docs/floor-technician.md</code>. This
+page is the consumer contract those fields live in.</p>
+<p>The Inspector TUI is outside the Python port's current scope. Its input contract is
+not. Every completed node produces a <code>RunResult</code>, and <code>RunResult.to_json()</code> returns a
+plain Python object that <code>json.dumps()</code> accepts without an encoder. The root result is
+self-contained: consumers do not need the live <code>TestComponent</code> objects to reconstruct the
+run tree. CI that already speaks JUnit XML consumes a projection of the same tree
+(<code>docs/junit-xml.md</code>); that reporter is not a second evidence record.</p>
+<p>Every full <code>TestComponent.run()</code> atomically writes the root <code>RunResult.to_json()</code> payload
+to <code>result.json</code> in the timestamped run directory beneath <code>HILT_ARTIFACT_ROOT</code>. The
+file is present for Pass, Fail, and Aborted outcomes. Its absolute path is published by
+the final entry in the root node's timeline, with artifact name <code>result</code> and artifact
+type <code>run-result</code>; consumers do not need to derive the run directory name.</p>
+<h2 id="version-1-result">Version 1 result<a class="headerlink" href="#version-1-result" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>JSON type</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>format_version</code></td>
+<td>integer</td>
+<td>Schema version; currently <code>1</code>.</td>
+</tr>
+<tr>
+<td><code>state</code></td>
+<td>string</td>
+<td>One terminal state: <code>Pass</code>, <code>Fail</code>, or <code>Aborted</code>.</td>
+</tr>
+<tr>
+<td><code>failure</code></td>
+<td>object or null</td>
+<td>JSON-safe framework failure, including nested causes.</td>
+</tr>
+<tr>
+<td><code>timeout</code></td>
+<td>object or null</td>
+<td>Structured time-budget evidence when a deadline determined or contributed to this state.</td>
+</tr>
+<tr>
+<td><code>test_case</code></td>
+<td>string</td>
+<td>Stable name of this node.</td>
+</tr>
+<tr>
+<td><code>type</code></td>
+<td>string</td>
+<td><code>suite</code>, <code>test</code>, <code>parallel</code>, or <code>sequence</code>: the node shape, in the vocabulary of <code>build_suite</code>.</td>
+</tr>
+<tr>
+<td><code>ancestor_names</code></td>
+<td>array of strings</td>
+<td>Root-to-this path, inclusive.</td>
+</tr>
+<tr>
+<td><code>bread_crumbs</code></td>
+<td>string</td>
+<td>Display path, exactly <code>ancestor_names.join("/")</code>.</td>
+</tr>
+<tr>
+<td><code>summary_tree</code></td>
+<td>object</td>
+<td>Recursive snapshot rooted at this node.</td>
+</tr>
+<tr>
+<td><code>physical_location</code></td>
+<td>string</td>
+<td><code>PHYSICAL_LOCATION</code>, or <code>unknown</code> when absent.</td>
+</tr>
+<tr>
+<td><code>env</code></td>
+<td>object</td>
+<td>Environment snapshot taken at the start of the run, filtered per the run's allow or deny list; see below.</td>
+</tr>
+<tr>
+<td><code>run_data</code></td>
+<td>object</td>
+<td>Detached structured evidence snapshot: the JSON-safe view of the node's ctx, plus, on a leaf, the evidence its verdict carried. It always contains a framework-owned <code>measurements</code> array: one entry per <code>utils.measure</code> call on this node, in call order, empty when the node measured nothing.</td>
+</tr>
+<tr>
+<td><code>suite_target</code></td>
+<td>string or null</td>
+<td>The loader target that produced the run, as <code>hilt run</code> resolved it: an absolute suite file or module name, <code>::</code>, and the suite class name. <code>hilt inspect</code> loads this suite for its Re-Run tab, so the technician re-runs a node with the code that ran in production; <code>--suite</code> overrides it. <code>null</code> when the run was started without one, from a developer's own harness. Added within version 1 on 2026-09-10; a consumer written before it treats the field as additive.</td>
+</tr>
+</tbody>
+</table>
+<p>A measurement entry is <code>{name, value, unit, limits, in_limits, timestamp}</code> as
+<code>docs/measurements.md</code> defines it: <code>value</code> is a number, or <code>null</code> when the suite tried
+to take the reading and could not (issue #159; a hole in the series, never a zero),
+<code>limits</code> is <code>{low, high}</code> with <code>null</code> for an open side or <code>null</code> altogether,
+<code>in_limits</code> is <code>true</code>, <code>false</code> (always <code>false</code> for a <code>null</code> value against a window), or
+<code>null</code> when no window was given, and <code>timestamp</code> is UTC ending in <code>Z</code>. <code>in_limits</code> is
+evidence, never a verdict;
+version 1 defines no aggregation, SPC, or Cpk, and an integrator must not infer them
+from the entries. Because <code>result.json</code> is the root's record, the entries a leaf
+recorded reach the file through <code>measurements</code> on its <code>summary_tree</code> node, not
+through this <code>run_data</code>.</p>
+<p>Python-only lifecycle details such as the internal slot and raw return value are not
+part of this payload. Consumers must treat unknown fields as additive and select a
+decoder by <code>format_version</code> (see <a href="#versioning-policy">Versioning policy</a>).</p>
+<h3 id="the-env-snapshot-is-filtered-by-the-run-not-by-the-schema">The <code>env</code> snapshot is filtered by the run, not by the schema<a class="headerlink" href="#the-env-snapshot-is-filtered-by-the-run-not-by-the-schema" title="Permanent link">&para;</a></h3>
+<p>Version 1 publishes the run environment as the run declared it. <code>TestComponent.run()</code> and
+<code>TestUtils</code> accept <strong>either</strong> <code>env_allow</code> <strong>or</strong> <code>env_deny</code> (both is a <code>ValueError</code>): a
+list of regular expressions matched with <code>re.search</code> against each variable's <em>name</em>.
+<code>TOKEN</code> therefore matches <code>GITLAB_TOKEN</code>; anchor as <code>^HOME$</code> for an exact name. With an
+allow list only matching names are published; with a deny list matching names are
+withheld. Values are never hashed or rewritten — a variable is either present verbatim
+or absent.</p>
+<p>With neither list the snapshot is verbatim: every value present at run start, including
+tokens or credentials injected by CI or the shell, is serialized into the artifact.
+Keeping secrets out of an unfiltered run environment is the operator's obligation.</p>
+<p><strong>DEBUG override.</strong> When the source environment carries <code>environment=DEBUG</code>, the
+declared list is ignored and every variable is published. The run logs a warning —
+<code>DEBUG mode detected, ignoring provided &lt;allow|deny&gt; list and including ALL environment
+variables</code> — so the artifact's extra content is explained in its own timeline.</p>
+<p>The filter is applied once, at the root, and every node and every <code>RunResult</code> sees the
+same filtered view. <code>PHYSICAL_LOCATION</code> and <code>HILT_ARTIFACT_ROOT</code> are read from that
+view, so an allow list must let them through to keep their effect. Decoders must not
+assume any particular variable is present (ruling on issue #53, 2026-09-03).</p>
+<h2 id="version-1-timeline">Version 1 timeline<a class="headerlink" href="#version-1-timeline" title="Permanent link">&para;</a></h2>
+<p>Each <code>run()</code> creates a timestamped directory directly beneath
+<code>HILT_ARTIFACT_ROOT</code>. Point-in-time artifacts are stored at that run-directory root.
+Every executed node that owns a discrete log receives a child directory containing:</p>
+<ul>
+<li><code>timeline.log</code> — a streamed human view with one escaped line per entry;</li>
+<li><code>timeline.jsonl</code> — the authoritative Inspector record, with one complete JSON object
+  per physical line.</li>
+</ul>
+<p>Both files are flushed after each entry. Consumers may read the JSON Lines file while a
+run is active and retain every complete line after interruption. The child-directory
+name is framework-owned and must be treated as opaque; use <code>TestComponent.log_path</code> rather
+than reconstructing it.</p>
+<p>Every version-1 timeline object contains these fields:</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>JSON type</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>format_version</code></td>
+<td>integer</td>
+<td>Timeline-record schema version; currently <code>1</code>.</td>
+</tr>
+<tr>
+<td><code>timestamp</code></td>
+<td>string</td>
+<td>Timezone-aware UTC timestamp ending in <code>Z</code>.</td>
+</tr>
+<tr>
+<td><code>scope</code></td>
+<td>array of strings</td>
+<td>Root-to-emitting-node path, inclusive.</td>
+</tr>
+<tr>
+<td><code>level</code></td>
+<td>string</td>
+<td>Lowercase Python logging level name.</td>
+</tr>
+<tr>
+<td><code>message</code></td>
+<td>string</td>
+<td>Fully rendered log message. Newlines remain escaped within the JSON line.</td>
+</tr>
+</tbody>
+</table>
+<p>An artifact-pointer entry additionally contains all four fields below. They are absent
+from ordinary records rather than set to null.</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>JSON type</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>artifact_name</code></td>
+<td>string</td>
+<td>Captured artifact name, or <code>result</code> for the root result.</td>
+</tr>
+<tr>
+<td><code>artifact_path</code></td>
+<td>string</td>
+<td>Absolute path of the published artifact or root <code>result.json</code>.</td>
+</tr>
+<tr>
+<td><code>artifact_type</code></td>
+<td>string</td>
+<td>Captured artifact type, or <code>run-result</code> for the root result.</td>
+</tr>
+<tr>
+<td><code>artifact_timestamp</code></td>
+<td>string</td>
+<td>The evidence timestamp in UTC; for the root result, its publication time.</td>
+</tr>
+</tbody>
+</table>
+<p>Authored suites, sequences, and parallel nodes own a log by default. Leaves roll their
+records into the nearest owning ancestor. A sequence, parallel node, or composed suite
+constructed with <code>discrete_log_file=False</code> also rolls up. Pending nodes create no files.</p>
+<h2 id="two-records-two-version-fields">Two records, two version fields<a class="headerlink" href="#two-records-two-version-fields" title="Permanent link">&para;</a></h2>
+<p>A run therefore produces two versioned records, and each carries its own
+<code>format_version</code>:</p>
+<table>
+<thead>
+<tr>
+<th>Record</th>
+<th>Where it lives</th>
+<th>Version field</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Result</td>
+<td><code>result.json</code> at the run-directory root; the serialized root <code>RunResult.to_json()</code> and structural view rooted at <code>summary_tree</code></td>
+<td><code>format_version</code> on the result object</td>
+</tr>
+<tr>
+<td>Timeline</td>
+<td><code>timeline.jsonl</code> beneath the run directory; the temporal view</td>
+<td><code>format_version</code> on every JSON Lines object</td>
+</tr>
+</tbody>
+</table>
+<p>The two version numbers move independently. The summary tree links the structural view
+to the temporal view through each node's <code>log_path</code> (ruling on issue #106, 2026-09-04:
+the link is additive within result version 1). An Inspector selects a node in the tree,
+resolves <code>log_path</code> against the run directory, and reads that node's chronology.</p>
+<h2 id="versioning-policy">Versioning policy<a class="headerlink" href="#versioning-policy" title="Permanent link">&para;</a></h2>
+<p><code>format_version</code> is an integer on every record the framework emits: the result, every
+timeline line, and the envelope <code>Artifact.to_json()</code> writes for point-in-time evidence.
+One rule governs all of them.</p>
+<ol>
+<li><strong>Additive within a version.</strong> Adding a field to a framework-owned object keeps the
+   number. So does adding a key that the record already declares open (<code>env</code>,
+   <code>run_data</code>, and the failure object). A consumer must accept fields it does not know
+   and must not fail on them; it reads what it was written for and ignores the rest.</li>
+<li><strong>Breaking bumps the version.</strong> Removing or renaming a field, changing a field's JSON
+   type or nullability, changing the meaning of an existing value, adding a member to a
+   closed set (<code>state</code>, <code>type</code>, <code>declared</code>, the failure <code>state</code>), moving or renaming
+   <code>result.json</code> or <code>timeline.jsonl</code>, or changing the one-object-per-line rule bumps the
+   number. A bump is a contract change and follows the workflow in <code>STANDARDS.md</code>
+   section 7: it is raised as an issue and ruled on before its MR opens.</li>
+<li><strong>Consumers declare what they accept.</strong> A decoder reads <code>format_version</code> before any
+   other field, accepts the versions it was written for, and refuses every other version
+   loudly, with an error that names the version found and the versions accepted. A
+   best-effort read of an unknown version is a silent misreading and is not permitted.
+   Within an accepted version the decoder validates against the published schema for
+   that version.</li>
+<li><strong>The records version independently.</strong> Bumping the result does not bump the
+   timeline, and the reverse. The per-node <code>log_path</code> link is additive within result
+   version 1 (ruling on issue #106, 2026-09-04).</li>
+<li><strong>Every change amends the schema in the same MR.</strong> A field added within version 1
+   appears in the version-1 schema and in this document before the framework emits it.
+   The self-tests close every framework-owned object against its schema, so an emitted
+   field the schema does not name is a red gate, not a silent contract change. A bump
+   publishes a new schema file and leaves the previous one in place: a run directory
+   written under version 1 stays readable by a version-1 consumer for as long as the
+   record exists.</li>
+</ol>
+<p>Before 1.0.0 the record may change in place under version 1, because no consumer
+exists to break; the <code>type</code> vocabulary was renamed this way to match the composition
+vocabulary (ruling on issue #111, 2026-09-06), and <code>measurements[].value</code> became
+nullable this way for a reading not taken (ruling on issue #159, 2026-10-20). From
+1.0.0 rule 2 applies as written.</p>
+<h2 id="published-schemas">Published schemas<a class="headerlink" href="#published-schemas" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Record</th>
+<th>Schema</th>
+<th>Draft</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Result</td>
+<td><a href="schema/result-v1.schema.json"><code>docs/schema/result-v1.schema.json</code></a></td>
+<td>JSON Schema 2020-12</td>
+</tr>
+<tr>
+<td>Timeline</td>
+<td><a href="schema/timeline-v1.schema.json"><code>docs/schema/timeline-v1.schema.json</code></a></td>
+<td>JSON Schema 2020-12</td>
+</tr>
+<tr>
+<td>Artifact envelope</td>
+<td><a href="schema/artifact-v1.schema.json"><code>docs/schema/artifact-v1.schema.json</code></a></td>
+<td>JSON Schema 2020-12</td>
+</tr>
+</tbody>
+</table>
+<p>The published files are the consumer contract, and they are open: framework-owned
+objects do not forbid additional properties, so a consumer validating with the file
+shipped in one release accepts the additive fields of a later release within the same
+version. Three objects are open by design and stay open under the self-tests as well:
+the failure object (a <code>TestFailure</code> subclass may add fields), <code>env</code> (station-defined
+names), and <code>run_data</code> (suite evidence beyond the framework-owned <code>measurements</code>
+slot). The measurement object itself is open as well, so a field added to it within
+version 1 is accepted by a consumer validating with this file.</p>
+<p><code>tests/test_inspector_schema.py</code> validates every emitted <code>result.json</code> and every emitted
+timeline line against these files on each gate run, first as published and then with
+every framework-owned object closed. It also validates emitted point-in-time captures
+against the artifact-envelope schema with the envelope closed. That schema describes
+the existing <code>Artifact.to_json()</code> shape: <code>format_version</code>, <code>name</code>, <code>type</code>, <code>timestamp</code>,
+and <code>data</code>. The observation may be any JSON value, including explicit null. Additive
+envelope fields remain acceptable to consumers; the payload is never closed. The
+internal Inspector capture reader consumes this envelope under the same version policy.
+The root <code>run-result</code> pointer instead uses the result schema; it is not an envelope.</p>
+<h2 id="summary-tree-node">Summary tree node<a class="headerlink" href="#summary-tree-node" title="Permanent link">&para;</a></h2>
+<p>Every <code>summary_tree</code> node contains exactly these version-1 fields:</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>JSON type</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>name</code></td>
+<td>string</td>
+<td>Stable node name.</td>
+</tr>
+<tr>
+<td><code>type</code></td>
+<td>string</td>
+<td>The same node-type discriminator used by <code>RunResult</code>.</td>
+</tr>
+<tr>
+<td><code>state</code></td>
+<td>string or null</td>
+<td>Terminal state, or null when a declared sequence step did not run.</td>
+</tr>
+<tr>
+<td><code>failure</code></td>
+<td>object or null</td>
+<td>JSON-safe failure for this exact node.</td>
+</tr>
+<tr>
+<td><code>timeout</code></td>
+<td>object or null</td>
+<td>Structured time-budget evidence for this exact node.</td>
+</tr>
+<tr>
+<td><code>log_path</code></td>
+<td>string or null</td>
+<td>POSIX path of this node's <code>timeline.jsonl</code>, relative to the run directory. Null when the node never ran or when its records rolled up into an ancestor.</td>
+</tr>
+<tr>
+<td><code>children</code></td>
+<td>array</td>
+<td>Ordered child nodes. Groups retain declaration order after settlement.</td>
+</tr>
+<tr>
+<td><code>evidence</code></td>
+<td>object or null</td>
+<td>The readings this leaf's verdict carried: <code>PASS({...})</code> or <code>TestFailure(..., evidence={...})</code>, validated entry by entry and detached. Null on a node that is not a leaf, that never ran, or whose verdict carried none.</td>
+</tr>
+<tr>
+<td><code>evidence_declared</code></td>
+<td>array of string or null</td>
+<td>The keys the leaf's <code>@evidence</code> declaration promised on <code>PASS</code>, in declaration order. A declared key absent from <code>evidence</code> is a reading that was not taken; show it by name. Null when the node is not a leaf or declared nothing.</td>
+</tr>
+<tr>
+<td><code>measurements</code></td>
+<td>array or null</td>
+<td>Every <code>utils.measure</code> call this node recorded, in call order, as measurement objects (<code>docs/measurements.md</code>). An array on every node that ran, empty when it measured nothing; null when the node never ran, matching <code>state</code>. A measurement does not satisfy an <code>@evidence</code> declaration and <code>in_limits: false</code> is not a Fail.</td>
+</tr>
+</tbody>
+</table>
+<p>A null tree state means pending/unreached; it is not a fourth terminal state. A stopped
+sequence retains its unexecuted descendants with null states, so the root snapshot
+still describes the full declared tree.</p>
+<p><code>log_path</code> is relative so that a run directory copied to another machine keeps every
+link intact. Consumers resolve it against the run directory they opened, the same
+directory that holds the point-in-time artifacts. A node with a terminal <code>state</code> and a
+null <code>log_path</code> rolled its records into an ancestor; the nearest ancestor with a
+non-null <code>log_path</code> holds them, and the root always carries one. A node whose <code>state</code>
+is null never ran and has no chronology anywhere.</p>
+<h2 id="failure-shape">Failure shape<a class="headerlink" href="#failure-shape" title="Permanent link">&para;</a></h2>
+<p>Failures use their framework <code>to_json()</code> methods. <code>TestFailure</code> and its subclasses
+retain the failure name, message, state, comparisons, and bug metadata. An
+<code>ExternalIntegrationFailure</code> retains its hook and JSON-safe cause. <code>OperatorInterrupt</code>
+retains <code>operator: true</code> and the signal name so a Ctrl-C is not mistaken for a hook
+failure. Arbitrary exception
+objects and live values degrade to descriptive JSON-safe forms rather than making
+serialization fail and masking the evidence.</p>
+<h2 id="timeout-shape">Timeout shape<a class="headerlink" href="#timeout-shape" title="Permanent link">&para;</a></h2>
+<p>When no deadline contributed to a node's state, <code>timeout</code> is null. Otherwise it carries
+these fields:</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>JSON type</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>reason</code></td>
+<td>string</td>
+<td>Always <code>timeout</code>.</td>
+</tr>
+<tr>
+<td><code>declared</code></td>
+<td>string</td>
+<td>The winning declaration: <code>fail_after</code> or <code>abort_after</code>.</td>
+</tr>
+<tr>
+<td><code>budget_seconds</code></td>
+<td>number</td>
+<td>Positive finite duration declared on the winning clock.</td>
+</tr>
+<tr>
+<td><code>elapsed_seconds</code></td>
+<td>number</td>
+<td>Active window time consumed when that clock fired.</td>
+</tr>
+<tr>
+<td><code>clock</code></td>
+<td>string</td>
+<td>Root-to-declaring-node path of the winning clock.</td>
+</tr>
+</tbody>
+</table>
+<p>For <code>fail_after</code>, <code>failure</code> also contains the hardware-facing <code>TestFailure</code>. For
+<code>abort_after</code>, <code>failure</code> may be null because the framework does not forge a verdict;
+the timeout record carries the reason for the node-local Aborted state.</p>
+<p>Integrators should use <code>ancestor_names</code> as the durable node identity and
+<code>bread_crumbs</code> only for display. Names may contain <code>/</code>; the array is therefore the
+canonical representation.</p></div>
+            </div>
+        </div>
+
+        <footer class="col-md-12">
+            <hr>
+                <p>Copyright 2026 Tyler Meador</p>
+            <p>Documentation built with <a href="https://www.mkdocs.org/">MkDocs</a>.</p>
+        </footer>
+        <script src="js/bootstrap.bundle.min.js"></script>
+        <script>
+            var base_url = ".",
+                shortcuts = {"help": 191, "next": 78, "previous": 80, "search": 83};
+        </script>
+        <script src="js/base.js"></script>
+        <script src="search/main.js"></script>
+
+        <div class="modal" id="mkdocs_search_modal" tabindex="-1" role="dialog" aria-labelledby="searchModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="searchModalLabel">Search</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>From here you can search these documents. Enter your search terms below.</p>
+                <form>
+                    <div class="form-group">
+                        <input type="search" class="form-control" placeholder="Search..." id="mkdocs-search-query" title="Type search term here">
+                    </div>
+                </form>
+                <div id="mkdocs-search-results" data-no-results-text="No results found"></div>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div><div class="modal" id="mkdocs_keyboard_modal" tabindex="-1" role="dialog" aria-labelledby="keyboardModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="keyboardModalLabel">Keyboard Shortcuts</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th style="width: 20%;">Keys</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="help shortcut"><kbd>?</kbd></td>
+                    <td>Open this help</td>
+                  </tr>
+                  <tr>
+                    <td class="next shortcut"><kbd>n</kbd></td>
+                    <td>Next page</td>
+                  </tr>
+                  <tr>
+                    <td class="prev shortcut"><kbd>p</kbd></td>
+                    <td>Previous page</td>
+                  </tr>
+                  <tr>
+                    <td class="search shortcut"><kbd>s</kbd></td>
+                    <td>Search</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div>
+
+    </body>
+</html>

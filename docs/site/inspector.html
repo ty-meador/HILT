@@ -1,0 +1,888 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        
+        
+        <link rel="canonical" href="https://gitlab.com/Tyler-Meador/HILT/-/tree/main/docs/inspector.html">
+        <link rel="shortcut icon" href="img/favicon.ico">
+        <title>Inspector (target specification) - HILT</title>
+        <link href="css/bootstrap.min.css" rel="stylesheet">
+        <link href="css/fontawesome.min.css" rel="stylesheet">
+        <link href="css/brands.min.css" rel="stylesheet">
+        <link href="css/solid.min.css" rel="stylesheet">
+        <link href="css/v4-font-face.min.css" rel="stylesheet">
+        <link href="css/base.css" rel="stylesheet">
+        <link id="hljs-light" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" >
+        <link id="hljs-dark" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github-dark.min.css" disabled>
+        <link href="assets/_mkdocstrings.css" rel="stylesheet">
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+        <script>hljs.highlightAll();</script> 
+    </head>
+
+    <body>
+        <div class="navbar fixed-top navbar-expand-lg navbar-dark bg-primary">
+            <div class="container">
+                <a class="navbar-brand" href="index.html">HILT</a>
+                <!-- Expander button -->
+                <button type="button" class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#navbar-collapse" aria-controls="navbar-collapse" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <!-- Expanded navigation -->
+                <div id="navbar-collapse" class="navbar-collapse collapse">
+                        <!-- Main navigation -->
+                        <ul class="nav navbar-nav">
+                            <li class="nav-item">
+                                <a href="index.html" class="nav-link">Home</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="getting-started.html" class="nav-link">Getting started</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="floor-technician.html" class="nav-link">Floor Technician</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="overview.html" class="nav-link">Overview</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="idioms.html" class="nav-link">Idioms</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="utilities.html" class="nav-link">Utilities</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="contracts.html" class="nav-link">Contracts</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="inspector-json.html" class="nav-link">Inspector JSON</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="inspector.html" class="nav-link active" aria-current="page">Inspector (target specification)</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="measurements.html" class="nav-link">Measurements</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="junit-xml.html" class="nav-link">JUnit XML</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="hilt-run.html" class="nav-link">hilt run</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="hilt-new.html" class="nav-link">hilt new</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="hilt-check.html" class="nav-link">hilt-check</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="api-stability.html" class="nav-link">API stability</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="api.html" class="nav-link">API reference</a>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">HIL interfaces</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="hil/index.html" class="dropdown-item">Overview</a>
+</li>
+                                    
+<li>
+    <a href="hil/gpio.html" class="dropdown-item">GPIO (design note)</a>
+</li>
+                                    
+<li>
+    <a href="hil/pwm.html" class="dropdown-item">PWM (design note)</a>
+</li>
+                                    
+<li>
+    <a href="hil/can.html" class="dropdown-item">CAN bus (design note)</a>
+</li>
+                                    
+<li>
+    <a href="hil/i2c-spi.html" class="dropdown-item">I2C/SPI (design note)</a>
+</li>
+                                    
+<li>
+    <a href="hil/device-api.html" class="dropdown-item">Device API (design note)</a>
+</li>
+                                    
+<li>
+    <a href="hil/serial.html" class="dropdown-item">Serial/UART (design note)</a>
+</li>
+                                </ul>
+                            </li>
+                        </ul>
+
+                    <ul class="nav navbar-nav ms-md-auto">
+                        <li class="nav-item">
+                            <a href="#" class="nav-link" data-bs-toggle="modal" data-bs-target="#mkdocs_search_modal">
+                                <i class="fa fa-search"></i> Search
+                            </a>
+                        </li>
+                            <li class="nav-item">
+                                <a rel="prev" href="inspector-json.html" class="nav-link">
+                                    <i class="fa fa-arrow-left"></i> Previous
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a rel="next" href="measurements.html" class="nav-link">
+                                    Next <i class="fa fa-arrow-right"></i>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="https://gitlab.com/Tyler-Meador/HILT/-/blob/main/docs/inspector.md" class="nav-link"><i class="fa-brands fa-gitlab"></i> Edit on GitLab</a>
+                            </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="container">
+            <div class="row">
+                    <div class="col-md-3"><div class="navbar-expand-md bs-sidebar hidden-print affix" role="complementary">
+    <div class="navbar-header">
+        <button type="button" class="navbar-toggler collapsed" data-bs-toggle="collapse" data-bs-target="#toc-collapse" title="Table of Contents">
+            <span class="fa fa-angle-down"></span>
+        </button>
+    </div>
+
+    
+    <div id="toc-collapse" class="navbar-collapse collapse card bg-body-tertiary">
+        <ul class="nav flex-column">
+            
+            <li class="nav-item" data-bs-level="1"><a href="#hilt-inspector-target-specification" class="nav-link">HILT Inspector — target specification</a>
+              <ul class="nav flex-column">
+            <li class="nav-item" data-bs-level="2"><a href="#what-the-inspector-reads" class="nav-link">What the Inspector reads</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#opening-a-run" class="nav-link">Opening a run</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#the-screen-layout" class="nav-link">The screen layout</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#the-tabs" class="nav-link">The tabs</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#the-main-workflow-diagnosing-a-failure" class="nav-link">The main workflow: diagnosing a failure</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#the-timeline-and-its-owner" class="nav-link">The timeline and its owner</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#artifacts-the-evidence-behind-the-verdict" class="nav-link">Artifacts — the evidence behind the verdict</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#key-bindings-quick-reference" class="nav-link">Key bindings quick reference</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#things-that-need-careful-reading" class="nav-link">Things that need careful reading</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#implementation-acceptance" class="nav-link">Implementation acceptance</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#migration-references" class="nav-link">Migration references</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+              </ul>
+            </li>
+        </ul>
+    </div>
+</div></div>
+                    <div class="col-md-9" role="main">
+
+<h1 id="hilt-inspector-target-specification">HILT Inspector — target specification<a class="headerlink" href="#hilt-inspector-target-specification" title="Permanent link">&para;</a></h1>
+<p>This is the first deliverable of <a href="https://gitlab.com/Tyler-Meador/HILT/-/issues/89">#89</a>.
+It carries the legacy Floor Technician guide into the Python port, adjusted for the
+signed decisions on <a href="https://gitlab.com/Tyler-Meador/HILT/-/issues/88">#88</a>,
+<a href="https://gitlab.com/Tyler-Meador/HILT/-/issues/106">#106</a>, and
+<a href="https://gitlab.com/Tyler-Meador/HILT/-/issues/107">#107</a>.
+It specifies the terminal UI, which <code>hilt inspect</code> now opens. The
+<a href="floor-technician.html">Floor Technician guide</a> remains the station page for reading the
+evidence by hand. The
+<a href="https://gitlab.com/Tyler-Meador/HILT/-/merge_requests/119#note_3796094775">review rulings on !119</a>
+set the implementation order: Inspect first, Run as a separate increment behind its
+own decision. Ty ruled on that increment on 2026-09-10: the Re-Run tab ships, the
+Failures list is folded into Inspect as a key that hides passing rows, and the cut
+between the two tabs is the one the legacy tool drew. Inspect is the archive of the
+production run and executes nothing. Re-Run is the bench, where a node is executed
+again with the code that ran in production and nothing it produces persists.</p>
+<p>The internal timeline reader (<code>hilt.inspector_timeline.TimelineReader</code>) is implemented
+as a foundation for the log pane. It asynchronously reads a selected timeline path,
+validates each version-1 object against the packaged published schema, and returns
+records and line-numbered diagnostics in physical order. Additive fields and recorded
+scopes and pointers survive unchanged. A complete final JSON object is readable without
+a trailing newline; an unfinished final object or UTF-8 sequence produces a truncation
+diagnostic. Malformed complete records, duplicate keys, non-finite numbers, and
+unsupported versions are explicit diagnostics, and later valid records remain readable.
+Missing or unreadable logs produce a file-level unavailable diagnostic. These are reader
+observations, never test verdicts. The timeline reader does not open artifact pointers
+or resolve tree ownership. Its <code>read_reference(run_root, reference)</code> boundary opens
+a recorded POSIX <code>log_path</code> only beneath the selected run directory, preserving the
+complete relative path after a move. Empty, absolute, traversing, missing, non-file,
+and symlink-escaping references produce unavailable diagnostics. The read retains the
+recorded reference and the resolved source path; a reference that cannot resolve has
+no source path. It never searches another directory for a matching basename. Timeline
+and capture readers share one checked, cached loader for the packaged schemas; evidence
+is read afresh on every call. The operator's selected run directory may itself use
+symlinks or <code>..</code>; the reader resolves that directory before containing recorded links.</p>
+<p>The internal capture reader (<code>hilt.inspector_artifacts.ArtifactReader</code>) now reads
+absolute pointers beneath an opened run root. An explicit, established original root
+enables relocation while preserving the full relative tail; without that mapping a
+pointer outside the opened root is unavailable. The reader checks resolved containment,
+refuses non-file targets, and never falls back to the original run or a basename match.
+It validates the artifact envelope or root result against its packaged version-1 schema,
+retaining additive fields and explicit null observations. Missing files, malformed JSON,
+and unsupported versions are diagnostics that retain the recorded reference. JSON parsing
+is shared with the timeline reader, so duplicate keys and non-finite values are refused
+consistently. The original-root mapping remains an input to this internal component;
+the saved-run loader establishes it from publication evidence.</p>
+<p>The internal tree reader (<code>hilt.inspector_tree.TreeReader</code>) now opens a selected
+result through that validated result boundary. It resolves the operator's selection
+before deriving the run root, so a symlink such as <code>latest/result.json</code> or a path with
+<code>..</code> opens the same saved evidence as its direct path. References inside saved records
+still obey the capture reader's traversal and containment checks.
+<code>read_selected()</code> retains the resolved run directory alongside the validated tree;
+<code>read()</code> returns just that tree through the same selection boundary. Unresolvable
+operator paths produce unavailable diagnostics in either form.
+Its <code>InspectorTree</code> preserves every recorded node in declaration preorder, including
+pending descendants, and keeps full name components rather than splitting display
+breadcrumbs. Stable row indices keep duplicate names distinct. Inspect selection and
+the Failures projection share the same rows: previous/next failure includes Fail and
+Aborted, skips Pass and pending, and does not wrap. The model retains failure causes,
+timeout fields, and additive evidence; declared readings absent from evidence are
+exposed by name, while null and zero remain present observations.</p>
+<p>For an executed selection, the model identifies its own or nearest ancestor's recorded
+timeline link. A pending selection has no owner and must render <strong>not run</strong>. An owner
+identifies a recorded link, not proof the file is available: the model opens no timeline,
+and its caller must still enforce run-root containment and report unavailable files.</p>
+<p>The internal selection model (<code>hilt.inspector_selection.InspectorSelection</code>) joins
+that tree to contained timeline loading for both Inspect and Failures. Its caller supplies
+the validated tree and the opened directory containing that same result, then navigates
+through the selection model. Selection clears the previous chronology before I/O, keeps
+the claim and its recorded owner together, and reads only through <code>read_reference</code>.
+Every request has its own identity: a delayed load cannot overwrite a later selection,
+even if the cursor returned to the same row. Pending rows render <strong>not run</strong>; executed
+rows with no owner or an unreadable file render <strong>log unavailable</strong>. Complete records,
+their scopes, partial reads, and decoding diagnostics remain intact. Reselection reads
+evidence afresh. Cancellation and reader defects propagate to the caller and return only
+the affected current load to idle; they never restore an earlier log or become verdicts.</p>
+<p>The internal saved-run loader (<code>hilt.inspector_run.SavedRunReader</code>) now opens a
+validated result, its contained root timeline, and a capture reader for that same run.
+It uses <code>TreeReader.read_selected()</code> so selection errors and the resolved run boundary
+have one owner. The tree's chronology ownership also governs this opening: a pending
+root supplies no timeline or relocation origin, even if a damaged record gives it a link.
+It establishes the original root only from one final root-scoped pointer with
+<code>artifact_type="run-result"</code>, <code>artifact_name="result"</code>, and an absolute,
+non-traversing path to <code>result.json</code>. The result's ancestor names must agree with its
+tree root; full name components are compared without splitting breadcrumbs, and a
+disagreement names the result defect instead of directing the technician to the log. A missing,
+damaged, ambiguous, or misplaced publication leaves the original root explicitly
+unavailable while preserving the saved tree and timeline diagnostics. Complete records
+without a trailing newline remain readable. The loader never guesses from a basename
+or timestamp, reads the original station, or edits saved pointers. Reopening reads the
+evidence afresh. Without a mapping, captures already beneath the opened root remain
+readable, but pointers outside it cannot relocate.</p>
+<p>The internal timeline presentation model (<code>hilt.inspector_timeline_view.TimelineView</code>)
+pages a completed selection's chronology without changing its recorded data. It opens
+at the tail with filtering off; toggling errors returns to the first page. The filter
+retains Python <code>error</code> and <code>critical</code> records (case-insensitively) and every reader
+diagnostic. Custom levels have no inferred severity and remain in the full view.
+Each page retains physical line numbers, scopes, timestamps, and additive fields.
+Resizing changes the number of records per page and clamps the current page; an empty
+projection has one empty page. The terminal supplies that size after reserving its
+header and controls. This model counts records, not wrapped terminal lines.</p>
+<p>Structured pointers receive one-based numbers across the complete loaded chronology,
+before paging or filtering. Lookup keeps the same target even when its row is hidden;
+message text never supplies a path. An empty recorded path remains numbered so the
+capture reader can diagnose it. All numbers remain addressable, including those above
+the <code>1</code>–<code>9</code> direct shortcuts. The returned record supplies the pointer fields to the
+saved run's capture reader, including the distinct <code>run-result</code> decoding kind. A new
+completed selection read gets a fresh presentation model; selection/load state remains
+owned by <code>InspectorSelection</code>. The moved 70-DUT test exercises this composition without
+executing suite code or changing saved bytes.</p>
+<p>The internal artifact navigation model
+(<code>hilt.inspector_artifact_navigation.ArtifactNavigation</code>) now groups the complete
+timeline's numbered pointers by recorded type. Types follow first appearance; captures
+within a type retain chronology order. Opening selects exactly the requested number,
+including one above nine or hidden by a filter; an invalid number is rejected instead
+of opening another capture. Single-view type navigation wraps and selects the new
+type's first capture, while capture navigation clamps at either end.</p>
+<p>Diff selection requires at least two captures of the same type. It starts with the
+single-view capture on the left and the first other capture on the right. The bracket
+actions cycle the left target and the arrow actions cycle the right target within that
+type. When a move reaches the other target, the two sides swap; they never collapse
+onto one capture. Leaving diff restores the original single-view selection. Targets
+retain their timeline number, full pointer record, recorded reference, and decoding
+kind for the existing contained capture reader. Empty paths remain selectable and
+produce that reader's unavailable diagnostic. A moved 70-DUT test opens null and named
+captures and the root result without suite execution or saved-byte changes.</p>
+<p>The internal artifact modal model (<code>hilt.inspector_artifact_view.ArtifactModal</code>)
+joins that selection to the saved run's capture reader and pages what it reads. A
+capture is printed in its recorded key order, so two captures of one type line up; an
+unavailable or undecodable capture shows the reader's diagnostic with the recorded
+reference and is never replaced by another file. In diff mode the two captures are
+aligned row by row and one page cursor moves both sides together, as the artifact
+table above specifies; a singleton type stays single without a reload, and every
+change of selection returns to the first page because a capture is read from its top.
+A delayed read never replaces a newer selection, in the pattern of the selection model.
+The shared 70-DUT recording in <code>tests/inspector_rack.py</code> proves the composition without
+suite execution or saved-byte changes.</p>
+<p>The main view (<code>hilt.inspector_app.InspectorApp</code>) is the first terminal screen,
+built on Textual by Ty's ruling of 2026-09-09. It renders the tab row, the tree, and
+the chronology pane from the models above and forwards the quick-reference keys, one
+model call per key: Inspect and Re-Run share one cursor, the chronology loads on
+cursor movement without Enter and names its owner when the node's records rolled up,
+the owner's row carries the cyan arrow, arrows jump between Fail and Aborted rows
+without wrapping, <code>h</code> hides passing rows, <code>n</code>/<code>p</code> page, and <code>f</code> filters to errors while
+a truncation marker stays in place. Tree depth is drawn with the legacy glyphs (<code>├─</code>,
+<code>└─</code>, <code>│</code>), computed over the rows on screen so a hidden branch still closes on its
+last visible child. The plain text of every redraw is kept on the app so the
+self-tests drive it against the recorded runs in <code>tests/inspector_rack.py</code> and a
+screenshot can be read back against this guide.</p>
+<p>The re-run session (<code>hilt.inspector_rerun.RerunSession</code>) is the adapter behind the
+Re-Run tab. It receives a suite factory from the command line, never a suite derived
+from evidence; loads it on the tab's first opening, off the event loop; refuses a
+suite whose declared tree differs from the saved one, naming the first row that
+differs; executes the pressed node through <code>TestComponent.run(subtree=...)</code>, the sealed
+lifecycle with every leaf outside that subtree left pending; reads the result back
+through the same saved-run reader the archive uses, so the tab shows a re-run's
+states and chronology with the same code paths; and keeps that evidence under a
+scratch directory emptied per node on each re-run and removed when the Inspector
+closes. Interrupting a live re-run raises the operator signal, so the framework's own
+termination contract settles the node Aborted with bounded cleanup.</p>
+<p>The artifact modal screen (<code>hilt.inspector_app.ArtifactScreen</code>) opens from a digit
+in the log pane over the capture carrying that number and owns the artifact keys until
+<code>b</code> closes it: <code>[</code> and <code>]</code> move between types or the left side of a comparison, the
+arrows between captures of the type or the right side, <code>n</code> and <code>p</code> page both sides
+together, <code>d</code> enters and leaves the comparison. It renders the modal model only: one
+capture as its lines, a comparison as two aligned columns with differing rows
+highlighted, a diagnostic as the reader's words with the recorded reference.</p>
+<p>The entry point is <code>hilt inspect [PATH]</code> (<code>hilt.cli</code>): PATH is a run directory or
+its <code>result.json</code>; without PATH the most recently modified <code>result.json</code> under the
+artifact root opens (<code>HILT_ARTIFACT_ROOT</code>, default <code>artifacts/</code>; <code>--artifact-root DIR</code>
+overrides), the legacy discovery rule carried over. Nothing under the root, or a
+selection that is not a saved version-1 run, is refused with the reader's diagnostic on
+stderr and exit status 3. Opening runs no suite code. <code>--suite TARGET</code> names the suite
+the Re-Run tab executes, in the form <code>hilt run</code> accepts, and is loaded at the prompt
+so a wrong target is exit 3 there; without it the tab uses the <code>suite_target</code> the run
+recorded, loaded only when the tab is first opened.</p>
+<p>The Inspector serves the person at the station when a test stops the line. Its test of
+success is concrete: find what happened, categorize it, and begin the station's recovery
+protocol within sixty seconds, without opening suite source.</p>
+<h2 id="what-the-inspector-reads">What the Inspector reads<a class="headerlink" href="#what-the-inspector-reads" title="Permanent link">&para;</a></h2>
+<p>Inspect mode replays saved evidence. Moving the cursor, paging a log, opening an artifact,
+or comparing two captures never touches the DUT and never executes suite code.</p>
+<p>The input is a run directory containing <code>result.json</code>, its per-node <code>timeline.jsonl</code>
+files, and the point-in-time artifacts referenced by those timelines. The structural tree
+comes entirely from <code>summary_tree</code>; the temporal view comes entirely from the linked
+JSON Lines records. A saved 70-DUT rack must be inspectable without live <code>TestComponent</code>
+objects, source discovery, an SSH connection, or the test station that produced it.</p>
+<p>The <a href="inspector-json.html">Inspector JSON contract</a> owns the field definitions and version
+policy. This page owns their presentation. It introduces no new result fields or
+verdict rules. The result and each timeline record have independent <code>format_version</code>
+values; select and validate each decoder separately, accept additive fields, and report
+unsupported versions explicitly rather than guessing their meaning.</p>
+<h2 id="opening-a-run">Opening a run<a class="headerlink" href="#opening-a-run" title="Permanent link">&para;</a></h2>
+<p><code>hilt inspect PATH</code> opens a selected <code>result.json</code>, or the <code>result.json</code> inside a
+selected run directory, and treats its containing directory as the run root. <code>hilt
+inspect</code> alone opens the most recently modified <code>result.json</code> under the artifact root
+(<code>HILT_ARTIFACT_ROOT</code>, default <code>artifacts/</code>; <code>--artifact-root DIR</code> overrides), the
+legacy convenience carried over by Ty's ruling of 2026-09-09 on #89. The legacy
+<code>npm run inspect</code> command and <code>summary-tree.artifact</code> input are not Python interfaces.</p>
+<p>If no result is available, explain that there is no saved tree to inspect. Do not start
+a test to manufacture one: <code>hilt inspect</code> with nothing under the root exits 3 saying
+so, and a selection that is not a saved version-1 run exits 3 with the reader's
+diagnostic, never another file opened in its place. Absence of <code>result.json</code> is not a
+verdict: an invocation may have failed before a run, or a process may have ended before
+result publication. Preserve any surviving timeline evidence for diagnosis.</p>
+<h2 id="the-screen-layout">The screen layout<a class="headerlink" href="#the-screen-layout" title="Permanent link">&para;</a></h2>
+<p>The terminal has a tab bar, the tree above, and the highlighted node's timeline below.
+This illustration shows the arrangement, not a captured run:</p>
+<pre><code class="language-text">  [ Inspect ]   Re-Run
+  ---------------------------------------------------------
+    rack  Aborted
+    └─ servers  Aborted  ←
+       ├─ server-01  Pass
+       ├─ server-02  Fail
+  &gt;    │  └─ thermal check  Fail  not taken: fan_rpm
+       ├─ server-03  Aborted
+       └─ firmware check  Pending
+  ---------------------------------------------------------
+  log: rack/servers  (rolled up: thermal check has no own log)
+  page 4/7  errors only: off  captures: 1  (1-9 opens a capture)
+      14:02:11Z info     starting thermal ramp
+  [1] 14:02:45Z info     survey captured
+      14:03:02Z error    temperature 87 C exceeds 75 C
+  q Quit  Tab Inspect / Re-Run  ← → failures  h Hide passes  n p page  f Errors only
+</code></pre>
+<p>The log updates on cursor movement. Enter is never required to read it. A delayed load
+for the previous selection must not overwrite the currently highlighted node's view.
+Show the selected node and, when different, the ancestor that owns its timeline: the
+pane names that owner, and the owner's row ends in the cyan <code>←</code> so the eye finds the
+file the highlighted node's records went into.</p>
+<p>Depth is drawn with the legacy glyphs: <code>├─</code> for a child with siblings below it, <code>└─</code>
+for the last child, <code>│</code> continuing a branch that has more children further down. They
+are computed over the rows on screen, so when passing rows are hidden each remaining
+branch still closes on its last visible child.</p>
+<p>Tree order is declaration order, including in parallel compositions. A parent marked
+Fail may summarize a failing child; keep the descendants visible so the technician can
+reach the actual claim. Use the root-to-node array of names as the path, not a split of
+the display breadcrumbs: names may themselves contain <code>/</code>.</p>
+<h2 id="the-tabs">The tabs<a class="headerlink" href="#the-tabs" title="Permanent link">&para;</a></h2>
+<h3 id="inspect-the-default">Inspect — the default<a class="headerlink" href="#inspect-the-default" title="Permanent link">&para;</a></h3>
+<p>Display every declared node, with its recorded state and failure message. Color and
+symbols help scanning, but the state must remain legible as text.</p>
+<table>
+<thead>
+<tr>
+<th>State</th>
+<th>Presentation and meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Pass</code></td>
+<td>Green success mark. The framework accepted an explicit verdict and any required evidence. A string <code>"PASS"</code> is not a passing verdict.</td>
+</tr>
+<tr>
+<td><code>Fail</code></td>
+<td>Red failure mark. Read the failure object: this can be a modeled <code>TestFailure</code> or a software contract violation.</td>
+</tr>
+<tr>
+<td><code>Aborted</code></td>
+<td>Distinct, named state. No verdict was produced; the cause may be integration, operator interrupt, missing verdict, or an abort budget.</td>
+</tr>
+<tr>
+<td><code>null</code></td>
+<td>Dim Pending / unreached row. This declared step never ran; it is not a fourth terminal state.</td>
+</tr>
+</tbody>
+</table>
+<p>Left and right arrows move backward and forward through nodes needing attention,
+skipping Pass and pending rows. Preserve the legacy implementation's inclusion of both
+Fail and Aborted in that navigation, while keeping their labels and recovery meanings
+distinct. At either end, leave the cursor where it is; do not wrap unexpectedly.</p>
+<p><code>h</code> hides every Pass row and shows them again. This replaces the legacy Failures list
+(Ty, 2026-09-10): the same recorded tree with the passing branches folded away, so a
+failure buried inside a large rack is found without leaving the tree or losing its
+place in it. Pending rows stay visible; they are not passes. If the cursor was on a
+row that just disappeared, it lands on the nearest visible row above it. When every
+node passed, the pane says so rather than showing nothing.</p>
+<p>Show the selected leaf's <code>evidence</code> beside its claim and failure. For every name in
+<code>evidence_declared</code> absent from <code>evidence</code>, show <strong>not taken</strong> by name. An absent reading
+is neither zero nor a successful measurement. Do not present the reserved empty
+<code>run_data["measurements"]</code> slot as an implemented measurement or SPC feature.</p>
+<h3 id="re-run-the-bench">Re-Run — the bench<a class="headerlink" href="#re-run-the-bench" title="Permanent link">&para;</a></h3>
+<p>The same tree, unhydrated: every row reads <strong>not re-run</strong> until the technician executes
+it. Move to any node and press Enter to execute that node and everything beneath it
+with the code that ran in production. Switching tabs or highlighting a node never runs
+anything; Enter on the Inspect tab does nothing. The purpose is the floor's quick
+check: the ping failed, the cable is reseated, the one claim is re-run with the
+production code, and only then is the whole suite restarted through the station's
+normal procedure.</p>
+<p><strong>What executes is the sealed lifecycle, confined to one subtree.</strong> <code>TestComponent.run</code>
+takes <code>subtree=</code>, the child positions from the root to the pressed node. Every node on
+the path to it runs its own configure and cleanup, because that is their lifecycle and
+the only way the pressed node meets the hop its ancestors own; every leaf outside the
+subtree is left pending, never executed. The framework continues to own configure and
+cleanup. This is not the legacy <code>↑ctx</code> ancestor-configure replay, which stays
+prohibited: no parent's configure is replayed outside the lifecycle to make a device
+runnable, and the
+<a href="idioms.html#immutable-self-convention">instance-local context idiom</a> is untouched.</p>
+<p><strong>The suite is supplied, never derived.</strong> <code>hilt run</code> records the loader target it
+used in <code>result.json</code> as <code>suite_target</code> (absolute file or module name, <code>::</code>, class),
+and <code>hilt inspect</code> loads that suite the first time the tab is opened; <code>--suite
+TARGET</code> names another, and is loaded at the prompt. Nothing is reconstructed from
+<code>result.json</code>, artifact contents, or source found beside the run directory. Before any
+node runs, the supplied suite's declared tree is compared with the saved one, name and
+type in preorder; a difference is refused by path, and the pane says which suite to
+name instead. A run that recorded no target, one started from a developer's own
+harness, leaves the tab unavailable with that reason until <code>--suite</code> is given.</p>
+<p><strong>Nothing the bench produces persists.</strong> Each re-run writes its evidence under a
+scratch directory, in a subdirectory per pressed node. Re-running the same node
+empties that subdirectory first, so the ninth re-run leaves nothing of the eighth. The
+whole scratch directory is removed when the Inspector closes. After a re-run the
+pressed node and its descendants that ran show their fresh states; rows the re-run
+never reached keep whatever an earlier re-run left, or <strong>not re-run</strong>. The log pane
+shows the highlighted node's re-run chronology, read by the same reader as the archive,
+with the same owner arrow; a node no re-run reached says so instead of borrowing the
+archive's log.</p>
+<p><strong>A node above the pressed one reads partly re-run, never a verdict.</strong> Its lifecycle
+ran and its chronology is worth reading, but the state it rolled up covers only the
+child the bench was pointed at: every sibling was left pending and contributed nothing
+to it. Drawn as a verdict, that rollup turns a group whose other child failed in
+production into a Pass and carries the Pass to the root, which is the one reading the
+floor must never be given (issue #141). The bench answers for the branch it ran; the
+verdict on the whole node belongs to the archive on the Inspect tab, or to a re-run of
+that node, which runs every claim beneath it and so reads as a verdict again.</p>
+<p>The run's recorded environment seeds the re-run, so the station's variables travel with
+the record; the live environment overrides it, so a technician can change one
+deliberately before pressing Enter.</p>
+<p><strong>A live re-run is live hardware.</strong> Tab is held while a node runs, as in the legacy UI,
+and Enter starts nothing else. <code>q</code> during a re-run is the operator interrupt: it takes
+the framework's
+<a href="contracts.html#in-flight-termination-contract">termination contract</a>, the node settles
+Aborted with bounded cleanup, and only then does the Inspector exit. A second <code>q</code>
+during that cleanup exits immediately, as a second signal does at the station. The
+legacy promise that Ctrl-C always exits immediately with nothing at stake applies to
+the archive, not to the bench.</p>
+<h2 id="the-main-workflow-diagnosing-a-failure">The main workflow: diagnosing a failure<a class="headerlink" href="#the-main-workflow-diagnosing-a-failure" title="Permanent link">&para;</a></h2>
+<ol>
+<li><strong>Find the node needing attention.</strong> Use right/left to move forward/backward without
+   scrolling through passed leaves. Read the recorded state before choosing a recovery.</li>
+<li><strong>Read the failure message and comparison.</strong> Show <code>fail_message</code>, and <code>expected</code> /
+   <code>received</code> when present. Preserve bug banners, nested causes, hook names, and operator
+   signals; a plain-language message alone does not establish hardware fault.</li>
+<li><strong>Read the timeline already below the tree.</strong> <code>n</code> advances a page, <code>p</code> returns a
+   page, and <code>f</code> toggles the errors-only filter. Log severity does not replace the verdict.</li>
+<li><strong>Open a referenced artifact.</strong> Press its displayed digit, <code>1</code>–<code>9</code>. Survey captures
+   can show whether the device's reported health agrees with what actually happened.</li>
+<li><strong>Choose the recovery protocol.</strong> Read the failure's cause and the available evidence.
+   The human makes the final determination; uncertainty is a reason to escalate.</li>
+</ol>
+<p>The five categories follow the current
+<a href="contracts.html#failure-taxonomy-contract">Failure Taxonomy Contract</a>, which supersedes
+the legacy guide's separate, automatically assigned infrastructure category:</p>
+<table>
+<thead>
+<tr>
+<th>Category</th>
+<th>Evidence to read</th>
+<th>Recovery direction</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>DUT failed a check</td>
+<td>Modeled <code>TestFailure</code>, comparisons, and captured readings. A configure failure means the device did not reach a testable state; hardware versus infrastructure remains a human determination.</td>
+<td>Follow the station protocol for the established cause.</td>
+</tr>
+<tr>
+<td>Hardware lying</td>
+<td>Survey evidence contradicts a claimed healthy state or the apparent verdict.</td>
+<td>Preserve the discrepancy and seek deeper inspection, even after Pass.</td>
+</tr>
+<tr>
+<td>Test method bug</td>
+<td>Contract-violation banner, <code>bug</code>, or <code>MissingVerdict</code>. The latter is Aborted; thrown bugs are Fail. A framework-contract banner identifies the framework maintainer as the owner.</td>
+<td>Escalate the software defect; do not condemn the unit from this signal.</td>
+</tr>
+<tr>
+<td>External integration failure</td>
+<td><code>ExternalIntegrationFailure</code>, its hook, and its cause.</td>
+<td>Restore the harness or coordination service before retrying.</td>
+</tr>
+<tr>
+<td>Operator interrupt</td>
+<td><code>OperatorInterrupt</code>, <code>operator: true</code>, and its signal.</td>
+<td>The rack was stopped deliberately; resume only under the station's procedure.</td>
+</tr>
+</tbody>
+</table>
+<p>Time-budget evidence supplements this taxonomy. Display the winning <code>timeout.clock</code>,
+declaration, budget, and elapsed time. <code>fail_after</code> produces Fail; <code>abort_after</code> produces
+Aborted and may have no failure object at all. Do not relabel the latter as a hook
+failure just because both are Aborted. The
+<a href="floor-technician.html#sixty-second-recovery-protocol">station recovery table</a> gives the
+full reading procedure.</p>
+<h2 id="the-timeline-and-its-owner">The timeline and its owner<a class="headerlink" href="#the-timeline-and-its-owner" title="Permanent link">&para;</a></h2>
+<p>Resolve a node's non-null <code>log_path</code> relative to the selected run directory. A terminal
+node with a null link rolled its records into the nearest ancestor with a link; indicate
+that ancestor with the legacy cyan owner arrow. Keep each entry's <code>scope</code> visible so
+sibling records in the shared timeline cannot be mistaken for this leaf's readings.</p>
+<p>A pending node has no chronology anywhere. Show <strong>not run</strong>, not its parent's timeline
+as though the pending node produced evidence. A missing file for a node that did run
+is a separate, explicit <strong>log unavailable</strong> condition. Neither condition changes state.</p>
+<p>Read JSON Lines incrementally, preserving file order and every complete valid record.
+For an interrupted final line, display the complete preceding records and a visible
+truncation marker; do not fill in the unfinished object. Report malformed complete
+records or unsupported versions as decoding errors rather than silently dropping them.
+An errors-only filter must not hide these reader diagnostics.</p>
+<h2 id="artifacts-the-evidence-behind-the-verdict">Artifacts — the evidence behind the verdict<a class="headerlink" href="#artifacts-the-evidence-behind-the-verdict" title="Permanent link">&para;</a></h2>
+<p>Number structured artifact-pointer entries in the loaded timeline and show <code>[N]</code> on the
+corresponding row. Digits <code>1</code>–<code>9</code> open the matching numbered capture in a modal. Take
+the link from the pointer fields, not from a path-looking substring in <code>message</code>.
+Retain numbering when paging or filtering so a digit never silently changes its target.</p>
+<p>The modal groups captures by <code>artifact_type</code> and labels each with its name and timestamp.
+Show the persisted content, including an explicit null observation; nothing in the
+viewer recomputes a verdict. The root <code>run-result</code> pointer opens <code>result.json</code>, whose
+shape differs from a point-in-time artifact envelope. The capture reader checks the
+envelope's own version and published schema as required by
+the <a href="inspector-json.html#published-schemas">JSON version policy</a>.</p>
+<p>An unavailable or unreadable capture produces a visible diagnostic containing the
+reference, while the log and tree remain usable. The saved files are never edited.
+Version 1 stores absolute <code>artifact_path</code> pointers, whereas tree log links are relative.
+The reader resolves captures under the selected run root. For a moved run, try
+re-anchoring the recorded path's run-root-relative tail beneath the opened run root
+before declaring the capture unavailable. Preserve that full relative path: two nodes
+may capture different evidence with the same filename. Never search for or substitute
+a file merely because its basename matches.</p>
+<p>Re-anchoring requires an established original run root. If the reader cannot establish
+that mapping, or the mapped capture cannot be read under the opened root, show
+<strong>artifact unavailable</strong> with the recorded reference; do not guess a root or silently
+fall back to another run's evidence. The reader implementation must demonstrate that
+mapping and its unavailable cases in tests before claiming moved-run support.</p>
+<p>This is a reader rule. Saved pointers remain unchanged and absolute at version 1.
+Changing their stored representation to relative paths is a record-contract change
+under the <a href="inspector-json.html#published-schemas">version policy</a>, requiring Ty's decision
+before an implementation MR.</p>
+<h3 id="reading-and-comparing-artifacts">Reading and comparing artifacts<a class="headerlink" href="#reading-and-comparing-artifacts" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Single-artifact view</th>
+<th>Diff view</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>[</code> / <code>]</code></td>
+<td>Previous / next artifact type.</td>
+<td>Change the left artifact within the current type.</td>
+</tr>
+<tr>
+<td><code>←</code> / <code>→</code></td>
+<td>Previous / next artifact within the current type.</td>
+<td>Change the right artifact within the current type.</td>
+</tr>
+<tr>
+<td><code>n</code> / <code>p</code></td>
+<td>Next / previous content page.</td>
+<td>Page both sides together.</td>
+</tr>
+<tr>
+<td><code>d</code></td>
+<td>Enter diff when the type has at least two artifacts.</td>
+<td>Return to the single-artifact view.</td>
+</tr>
+<tr>
+<td><code>b</code></td>
+<td>Close the modal and return to the log.</td>
+<td>Close the modal and return to the log.</td>
+</tr>
+</tbody>
+</table>
+<p>Diff shows two captures of the same type side by side, highlighting changed lines and
+dimming unchanged lines. Preserve the legacy guide's intended swap when the two selected
+indices collide, so a two-capture comparison can reverse sides. This is a display of
+recorded differences, not an automatic diagnosis of hardware truth.</p>
+<h2 id="key-bindings-quick-reference">Key bindings quick reference<a class="headerlink" href="#key-bindings-quick-reference" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Context</th>
+<th>Key</th>
+<th>Action</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Saved inspection, including a modal</td>
+<td><code>q</code> / <code>Ctrl-C</code></td>
+<td>Quit without changing evidence or touching hardware.</td>
+</tr>
+<tr>
+<td>Live re-run</td>
+<td><code>q</code> / <code>Ctrl-C</code></td>
+<td>Operator interrupt: the node settles Aborted through bounded cleanup, then the Inspector exits. A second press during cleanup exits at once.</td>
+</tr>
+<tr>
+<td>Main view</td>
+<td><code>Tab</code></td>
+<td>Switch Inspect / Re-Run. Held during a live re-run.</td>
+</tr>
+<tr>
+<td>Either tree</td>
+<td><code>↑</code> / <code>↓</code></td>
+<td>Move through the rows on screen; hidden passes are stepped over.</td>
+</tr>
+<tr>
+<td>Either tree</td>
+<td><code>←</code> / <code>→</code></td>
+<td>Previous / next Fail or Aborted node of the saved run; skip passed and pending rows.</td>
+</tr>
+<tr>
+<td>Inspect tree</td>
+<td><code>h</code></td>
+<td>Hide passing rows, or show them again.</td>
+</tr>
+<tr>
+<td>Re-Run tree</td>
+<td><code>Enter</code></td>
+<td>Execute the highlighted node and everything beneath it; nothing else runs anything.</td>
+</tr>
+<tr>
+<td>Log pane, no modal</td>
+<td><code>n</code> / <code>p</code></td>
+<td>Next / previous page.</td>
+</tr>
+<tr>
+<td>Log pane, no modal</td>
+<td><code>f</code></td>
+<td>Toggle errors-only filtering.</td>
+</tr>
+<tr>
+<td>Log pane, no modal</td>
+<td><code>1</code>–<code>9</code></td>
+<td>Open the artifact carrying that number.</td>
+</tr>
+<tr>
+<td>Artifact modal</td>
+<td><code>b</code>, <code>[</code>, <code>]</code>, <code>←</code>, <code>→</code>, <code>n</code>, <code>p</code>, <code>d</code></td>
+<td>Use the artifact controls above; the modal owns these keys until it closes.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="things-that-need-careful-reading">Things that need careful reading<a class="headerlink" href="#things-that-need-careful-reading" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>An ancestor owns the log.</strong> The owner arrow explains roll-up; it says nothing about
+  context inheritance. The legacy <code>↑ctx</code> ancestor-configure replay is prohibited.</li>
+<li><strong>An error appears in a passing test.</strong> Survey errors are logged but do not decide
+  the verdict. Read the state and the surrounding capture, not just the line's color.</li>
+<li><strong>Many nodes are Aborted.</strong> An integration halt or operator interruption can affect
+  the whole in-flight tree. A missing verdict or an abort budget is node-local. Read
+  the cause instead of inferring a rack-wide hardware failure from repeated labels.</li>
+<li><strong>The record ends abruptly.</strong> Retain the accepted chronology and mark the missing
+  tail. Neither incomplete evidence nor missing declared readings may become Pass.</li>
+</ul>
+<h2 id="implementation-acceptance">Implementation acceptance<a class="headerlink" href="#implementation-acceptance" title="Permanent link">&para;</a></h2>
+<p>The screen implementation (<code>hilt.inspector_app</code>) and the entry point (<code>hilt
+inspect</code>) follow this document. The view model is testable independently of the
+terminal and driven by a recorded 70-DUT rack:</p>
+<ul>
+<li>Reconstruct tree order, peer states, pending descendants, failure causes, timeout
+  evidence, and missing declared readings from version-1 records alone.</li>
+<li>Navigate failures and load the selected node's own or rolled-up timeline immediately,
+  with correct owner and scope; never show stale content after a cursor change.</li>
+<li>Open numbered pointers, group artifacts by type, and compare captures using the
+  specified keys, including the two-artifact index collision.</li>
+<li>Preserve complete lines under truncation and distinguish unavailable evidence,
+  malformed records, unsupported versions, and nodes that never ran.</li>
+<li>Make Inspect usable from saved evidence without source or hardware, hidden passes
+  included; it never waits for a suite. The saved-view command and discovery rule are
+  the ones under "Opening a run".</li>
+<li>Verify moved-run resolution preserves the complete run-relative path and remains
+  under the opened root. Exercise captures with identical basenames in different nodes,
+  an unestablished root mapping, and unavailable files; preserve the recorded reference
+  in every unavailable diagnostic and never substitute another capture.</li>
+<li>Hold Re-Run to its ruling. Its adapter accepts only an operator-supplied suite
+  through the command line (<code>suite_target</code> or <code>--suite</code>), never reconstruction from
+  evidence or neighboring source, and refuses a suite whose declared tree differs from
+  the saved one. Execution is <code>TestComponent.run(subtree=...)</code>: ancestors' own lifecycle,
+  the pressed subtree, every other leaf pending. Ancestor-configure replay stays
+  prohibited. A node above the pressed one shows <strong>partly re-run</strong>, never the state it
+  rolled up over the one child the bench ran. Scratch evidence is replaced per node and
+  removed on close. A live
+  re-run holds Tab, and quitting it goes through the operator-interrupt path to
+  Aborted with bounded cleanup before the Inspector exits.</li>
+</ul>
+<p>If the message, chronology, and captures do not establish a recovery category, keep the
+run directory and escalate with the selected node's path. The Inspector must make that
+uncertainty visible. Evidence earns a conclusion; the screen cannot supply one for it.</p>
+<h2 id="migration-references">Migration references<a class="headerlink" href="#migration-references" title="Permanent link">&para;</a></h2>
+<p>The behavioral reference is the read-only <code>hilt-test-legacy/docs/inspector.md</code>, with
+navigation checked against <code>src/inspector/InspectTab.mts</code>, <code>RunTab.mts</code>,
+<code>TreePanel.mts</code>, <code>DebugView.mts</code>, and <code>ArtifactModal.mts</code> in that repository. The
+guide's workflow, split panes, Run tab, tree glyphs, owner arrow, failure navigation,
+modal, and diff controls are retained; the Failures list became the <code>h</code> key.
+Python record names, the five current categories, instance-local ctx, explicit evidence,
+and interruption semantics follow this port's contracts. No TypeScript runtime or
+language-server behavior is required to specify this saved-evidence viewer.</p></div>
+            </div>
+        </div>
+
+        <footer class="col-md-12">
+            <hr>
+                <p>Copyright 2026 Tyler Meador</p>
+            <p>Documentation built with <a href="https://www.mkdocs.org/">MkDocs</a>.</p>
+        </footer>
+        <script src="js/bootstrap.bundle.min.js"></script>
+        <script>
+            var base_url = ".",
+                shortcuts = {"help": 191, "next": 78, "previous": 80, "search": 83};
+        </script>
+        <script src="js/base.js"></script>
+        <script src="search/main.js"></script>
+
+        <div class="modal" id="mkdocs_search_modal" tabindex="-1" role="dialog" aria-labelledby="searchModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="searchModalLabel">Search</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>From here you can search these documents. Enter your search terms below.</p>
+                <form>
+                    <div class="form-group">
+                        <input type="search" class="form-control" placeholder="Search..." id="mkdocs-search-query" title="Type search term here">
+                    </div>
+                </form>
+                <div id="mkdocs-search-results" data-no-results-text="No results found"></div>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div><div class="modal" id="mkdocs_keyboard_modal" tabindex="-1" role="dialog" aria-labelledby="keyboardModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="keyboardModalLabel">Keyboard Shortcuts</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th style="width: 20%;">Keys</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="help shortcut"><kbd>?</kbd></td>
+                    <td>Open this help</td>
+                  </tr>
+                  <tr>
+                    <td class="next shortcut"><kbd>n</kbd></td>
+                    <td>Next page</td>
+                  </tr>
+                  <tr>
+                    <td class="prev shortcut"><kbd>p</kbd></td>
+                    <td>Previous page</td>
+                  </tr>
+                  <tr>
+                    <td class="search shortcut"><kbd>s</kbd></td>
+                    <td>Search</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div>
+
+    </body>
+</html>

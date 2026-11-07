@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        
+        
+        <link rel="canonical" href="https://gitlab.com/Tyler-Meador/HILT/-/tree/main/docs/hil/index.html">
+        <link rel="shortcut icon" href="../img/favicon.ico">
+        <title>Overview - HILT</title>
+        <link href="../css/bootstrap.min.css" rel="stylesheet">
+        <link href="../css/fontawesome.min.css" rel="stylesheet">
+        <link href="../css/brands.min.css" rel="stylesheet">
+        <link href="../css/solid.min.css" rel="stylesheet">
+        <link href="../css/v4-font-face.min.css" rel="stylesheet">
+        <link href="../css/base.css" rel="stylesheet">
+        <link id="hljs-light" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" >
+        <link id="hljs-dark" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github-dark.min.css" disabled>
+        <link href="../assets/_mkdocstrings.css" rel="stylesheet">
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+        <script>hljs.highlightAll();</script> 
+    </head>
+
+    <body>
+        <div class="navbar fixed-top navbar-expand-lg navbar-dark bg-primary">
+            <div class="container">
+                <a class="navbar-brand" href="../index.html">HILT</a>
+                <!-- Expander button -->
+                <button type="button" class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#navbar-collapse" aria-controls="navbar-collapse" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <!-- Expanded navigation -->
+                <div id="navbar-collapse" class="navbar-collapse collapse">
+                        <!-- Main navigation -->
+                        <ul class="nav navbar-nav">
+                            <li class="nav-item">
+                                <a href="../index.html" class="nav-link">Home</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="../getting-started.html" class="nav-link">Getting started</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="../floor-technician.html" class="nav-link">Floor Technician</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="../overview.html" class="nav-link">Overview</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="../idioms.html" class="nav-link">Idioms</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="../utilities.html" class="nav-link">Utilities</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="../contracts.html" class="nav-link">Contracts</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="../inspector-json.html" class="nav-link">Inspector JSON</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="../inspector.html" class="nav-link">Inspector (target specification)</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="../measurements.html" class="nav-link">Measurements</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="../junit-xml.html" class="nav-link">JUnit XML</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="../hilt-run.html" class="nav-link">hilt run</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="../hilt-new.html" class="nav-link">hilt new</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="../hilt-check.html" class="nav-link">hilt-check</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="../api-stability.html" class="nav-link">API stability</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="../api.html" class="nav-link">API reference</a>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle active" aria-current="page" role="button" data-bs-toggle="dropdown"  aria-expanded="false">HIL interfaces</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="index.html" class="dropdown-item active" aria-current="page">Overview</a>
+</li>
+                                    
+<li>
+    <a href="gpio.html" class="dropdown-item">GPIO (design note)</a>
+</li>
+                                    
+<li>
+    <a href="pwm.html" class="dropdown-item">PWM (design note)</a>
+</li>
+                                    
+<li>
+    <a href="can.html" class="dropdown-item">CAN bus (design note)</a>
+</li>
+                                    
+<li>
+    <a href="i2c-spi.html" class="dropdown-item">I2C/SPI (design note)</a>
+</li>
+                                    
+<li>
+    <a href="device-api.html" class="dropdown-item">Device API (design note)</a>
+</li>
+                                    
+<li>
+    <a href="serial.html" class="dropdown-item">Serial/UART (design note)</a>
+</li>
+                                </ul>
+                            </li>
+                        </ul>
+
+                    <ul class="nav navbar-nav ms-md-auto">
+                        <li class="nav-item">
+                            <a href="#" class="nav-link" data-bs-toggle="modal" data-bs-target="#mkdocs_search_modal">
+                                <i class="fa fa-search"></i> Search
+                            </a>
+                        </li>
+                            <li class="nav-item">
+                                <a rel="prev" href="../api.html" class="nav-link">
+                                    <i class="fa fa-arrow-left"></i> Previous
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a rel="next" href="gpio.html" class="nav-link">
+                                    Next <i class="fa fa-arrow-right"></i>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="https://gitlab.com/Tyler-Meador/HILT/-/blob/main/docs/hil/index.md" class="nav-link"><i class="fa-brands fa-gitlab"></i> Edit on GitLab</a>
+                            </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="container">
+            <div class="row">
+                    <div class="col-md-3"><div class="navbar-expand-md bs-sidebar hidden-print affix" role="complementary">
+    <div class="navbar-header">
+        <button type="button" class="navbar-toggler collapsed" data-bs-toggle="collapse" data-bs-target="#toc-collapse" title="Table of Contents">
+            <span class="fa fa-angle-down"></span>
+        </button>
+    </div>
+
+    
+    <div id="toc-collapse" class="navbar-collapse collapse card bg-body-tertiary">
+        <ul class="nav flex-column">
+            
+            <li class="nav-item" data-bs-level="1"><a href="#hil-interface-design-notes" class="nav-link">HIL interface design notes</a>
+              <ul class="nav flex-column">
+            <li class="nav-item" data-bs-level="2"><a href="#the-three-rulings" class="nav-link">The three rulings</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#the-notes" class="nav-link">The notes</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#what-every-note-holds-in-common" class="nav-link">What every note holds in common</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+              </ul>
+            </li>
+        </ul>
+    </div>
+</div></div>
+                    <div class="col-md-9" role="main">
+
+<h1 id="hil-interface-design-notes">HIL interface design notes<a class="headerlink" href="#hil-interface-design-notes" title="Permanent link">&para;</a></h1>
+<p>Phase 9 gives each hardware-in-the-loop interface its own contract, written to the
+same diligence as <code>docs/contracts.md</code>, and signed by Ty before any implementation
+begins. This page states the three standing rulings that govern every note below
+once, so each note can cite them instead of repeating them.</p>
+<h2 id="the-three-rulings">The three rulings<a class="headerlink" href="#the-three-rulings" title="Permanent link">&para;</a></h2>
+<ol>
+<li><strong>New contracts, not <code>exec</code> subclasses.</strong> <code>exec</code> is a command contract: a string
+   goes in, an <code>ExecResult</code> comes out, and a non-zero exit is data for the test
+   method to judge. A GPIO pin level, a PWM duty cycle, a CAN frame, an I2C/SPI
+   transaction, and a CoAP/HTTP resource are not commands — none of them fit the
+   shape of "run this string and collect stdout/stderr/exit_code." Coercing one
+   into <code>exec</code> would either lose information (a frame is not text) or invite the
+   test author to shell out to a protocol library instead of calling a typed
+   method. Each interface below gets its own contract, in the same shape as
+   <code>docs/contracts.md</code>: a named contract, the framework's obligation, the
+   developer's obligation, and the consequence of getting it wrong.</li>
+<li><strong>The framework owns lifecycle and hooks, unforked.</strong> Connected-flag
+   ownership, the idempotent <code>cancel_in_flight</code> halt, <code>before_each</code>/<code>after_each</code>
+   dispatch and the pair invariant, <code>use_survey</code>/<code>use_audit</code> asymmetry (survey
+   swallows, audit does not), and the In-Flight Termination Contract belong to
+   <code>src/hilt/lifecycle.py</code>, <code>src/hilt/hooks.py</code>, and the transport base in
+   <code>src/hilt/remote.py</code>. A new interface contract governs transfer, error
+   taxonomy, timing, and safe-state for its own protocol — it does not reopen how
+   the framework sequences <code>configure</code> → <code>build_suite</code> → <code>cleanup</code>, how a hook
+   pair fires, or how a hard abort reaches a resource. Hardware whose behavior
+   cannot be expressed under those existing contracts is a finding to bring back
+   to Ty, not a license to grow a parallel lifecycle for one interface.</li>
+<li><strong>Ty signs the design note; Zavala signs the implementation.</strong> Each note below
+   is <code>DRAFT</code> until Ty records his signature on its issue. No implementation MR
+   may open, and no reference implementation (#98) may build against a shape,
+   until the note it depends on carries that signature. An implementation may
+   not outrun its approved note.</li>
+</ol>
+<h2 id="the-notes">The notes<a class="headerlink" href="#the-notes" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Interface</th>
+<th>Note</th>
+<th>Issue</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>GPIO</td>
+<td><a href="gpio.html">gpio.md</a></td>
+<td>#93</td>
+<td>SIGNED 2026-09-07</td>
+</tr>
+<tr>
+<td>PWM</td>
+<td><a href="pwm.html">pwm.md</a></td>
+<td>#94</td>
+<td>SIGNED 2026-09-08</td>
+</tr>
+<tr>
+<td>CAN bus</td>
+<td><a href="can.html">can.md</a></td>
+<td>#95</td>
+<td>SIGNED 2026-09-09</td>
+</tr>
+<tr>
+<td>I2C / SPI</td>
+<td><a href="i2c-spi.html">i2c-spi.md</a></td>
+<td>#96</td>
+<td>SIGNED 2026-09-09</td>
+</tr>
+<tr>
+<td>Device API (CoAP/HTTP)</td>
+<td><a href="device-api.html">device-api.md</a></td>
+<td>#97</td>
+<td>SIGNED 2026-09-09</td>
+</tr>
+<tr>
+<td>Serial (UART)</td>
+<td><a href="serial.html">serial.md</a></td>
+<td>#91</td>
+<td>SIGNED 2026-09-10</td>
+</tr>
+</tbody>
+</table>
+<p>Every note this page introduces is now signed and on <code>main</code>. Each landed as an
+independent MR carrying its note and the required <code>mkdocs.yml</code> navigation entry,
+so the docs checks passed standalone on that branch, following the
+<a href="https://gitlab.com/Tyler-Meador/HILT/-/issues/94#note_3799932288">scope ruling on #94</a>.
+A filename here becomes a link only after the file exists on <code>main</code>, so a note
+still in flight would otherwise carry a broken link on every branch but the one
+that adds the target.</p>
+<p>Serial/UART is Cayde's vertical (ruled by Ty as both a local peer of SSH and the
+same transport reached through a <code>via</code> hop). It is listed here for navigation
+only — its note lives at <code>docs/hil/serial.md</code> and is not one of the five notes
+this page introduces.</p>
+<h2 id="what-every-note-holds-in-common">What every note holds in common<a class="headerlink" href="#what-every-note-holds-in-common" title="Permanent link">&para;</a></h2>
+<ul>
+<li>A <code>Status: DRAFT — awaiting Ty's signature on #N</code> header. The note is a
+  proposal until that line changes.</li>
+<li>Provisional interface and type names, clearly marked as provisional. Naming is
+  not the thing being signed off; the obligations are. A name may still change
+  between sign-off and implementation without reopening the ruling, provided the
+  obligations it names do not move.</li>
+<li>A statement that lifecycle and hook ownership are unchanged, made concrete for
+  that hardware — not a restatement of ruling 2 in the abstract, but what it
+  means for <em>this</em> protocol's bring-up, teardown, and abort path.</li>
+<li>A failure-vocabulary mapping onto the taxonomy already in <code>docs/contracts.md</code>
+  and <code>src/hilt/errors.py</code> (<code>TestFailure</code>, <code>ContractViolation</code>,
+  <code>ExternalIntegrationFailure</code>, <code>OperatorInterrupt</code>, <code>MissingVerdict</code>). No note
+  invents a new terminal state or a new exception root; Aborted and Fail keep
+  their existing meanings.</li>
+<li>A description of how a mock backend and a real backend both satisfy the same
+  contract — the pattern <code>RemoteInterface</code>/<code>MockTransport</code>/<code>SshInterface</code>
+  already establishes for <code>exec</code>, carried over to the new protocol.</li>
+<li>A statement of how evidence is recorded, tied to the Evidence Contract
+  (<code>PASS(evidence)</code>, <code>@evidence</code>) and, where the interface produces a measurable
+  quantity, a reference to the parametric-measurements protocol under design in
+  issue #85 rather than a restatement of it.</li>
+<li>A description of what the Floor Technician sees in the timeline when the
+  framework takes a safe-state action on that interface.</li>
+</ul>
+<p>None of these notes changes <code>hilt.__all__</code>. Every name in them is provisional
+until an implementation issue is raised and signed off in its own right, per
+<code>docs/api-stability.md</code>.</p></div>
+            </div>
+        </div>
+
+        <footer class="col-md-12">
+            <hr>
+                <p>Copyright 2026 Tyler Meador</p>
+            <p>Documentation built with <a href="https://www.mkdocs.org/">MkDocs</a>.</p>
+        </footer>
+        <script src="../js/bootstrap.bundle.min.js"></script>
+        <script>
+            var base_url = "..",
+                shortcuts = {"help": 191, "next": 78, "previous": 80, "search": 83};
+        </script>
+        <script src="../js/base.js"></script>
+        <script src="../search/main.js"></script>
+
+        <div class="modal" id="mkdocs_search_modal" tabindex="-1" role="dialog" aria-labelledby="searchModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="searchModalLabel">Search</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>From here you can search these documents. Enter your search terms below.</p>
+                <form>
+                    <div class="form-group">
+                        <input type="search" class="form-control" placeholder="Search..." id="mkdocs-search-query" title="Type search term here">
+                    </div>
+                </form>
+                <div id="mkdocs-search-results" data-no-results-text="No results found"></div>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div><div class="modal" id="mkdocs_keyboard_modal" tabindex="-1" role="dialog" aria-labelledby="keyboardModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="keyboardModalLabel">Keyboard Shortcuts</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th style="width: 20%;">Keys</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="help shortcut"><kbd>?</kbd></td>
+                    <td>Open this help</td>
+                  </tr>
+                  <tr>
+                    <td class="next shortcut"><kbd>n</kbd></td>
+                    <td>Next page</td>
+                  </tr>
+                  <tr>
+                    <td class="prev shortcut"><kbd>p</kbd></td>
+                    <td>Previous page</td>
+                  </tr>
+                  <tr>
+                    <td class="search shortcut"><kbd>s</kbd></td>
+                    <td>Search</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div>
+
+    </body>
+</html>

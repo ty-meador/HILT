@@ -1,0 +1,818 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        
+        
+        <link rel="canonical" href="https://gitlab.com/Tyler-Meador/HILT/-/tree/main/docs/measurements.html">
+        <link rel="shortcut icon" href="img/favicon.ico">
+        <title>Measurements - HILT</title>
+        <link href="css/bootstrap.min.css" rel="stylesheet">
+        <link href="css/fontawesome.min.css" rel="stylesheet">
+        <link href="css/brands.min.css" rel="stylesheet">
+        <link href="css/solid.min.css" rel="stylesheet">
+        <link href="css/v4-font-face.min.css" rel="stylesheet">
+        <link href="css/base.css" rel="stylesheet">
+        <link id="hljs-light" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" >
+        <link id="hljs-dark" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github-dark.min.css" disabled>
+        <link href="assets/_mkdocstrings.css" rel="stylesheet">
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+        <script>hljs.highlightAll();</script> 
+    </head>
+
+    <body>
+        <div class="navbar fixed-top navbar-expand-lg navbar-dark bg-primary">
+            <div class="container">
+                <a class="navbar-brand" href="index.html">HILT</a>
+                <!-- Expander button -->
+                <button type="button" class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#navbar-collapse" aria-controls="navbar-collapse" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <!-- Expanded navigation -->
+                <div id="navbar-collapse" class="navbar-collapse collapse">
+                        <!-- Main navigation -->
+                        <ul class="nav navbar-nav">
+                            <li class="nav-item">
+                                <a href="index.html" class="nav-link">Home</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="getting-started.html" class="nav-link">Getting started</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="floor-technician.html" class="nav-link">Floor Technician</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="overview.html" class="nav-link">Overview</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="idioms.html" class="nav-link">Idioms</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="utilities.html" class="nav-link">Utilities</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="contracts.html" class="nav-link">Contracts</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="inspector-json.html" class="nav-link">Inspector JSON</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="inspector.html" class="nav-link">Inspector (target specification)</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="measurements.html" class="nav-link active" aria-current="page">Measurements</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="junit-xml.html" class="nav-link">JUnit XML</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="hilt-run.html" class="nav-link">hilt run</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="hilt-new.html" class="nav-link">hilt new</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="hilt-check.html" class="nav-link">hilt-check</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="api-stability.html" class="nav-link">API stability</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="api.html" class="nav-link">API reference</a>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">HIL interfaces</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="hil/index.html" class="dropdown-item">Overview</a>
+</li>
+                                    
+<li>
+    <a href="hil/gpio.html" class="dropdown-item">GPIO (design note)</a>
+</li>
+                                    
+<li>
+    <a href="hil/pwm.html" class="dropdown-item">PWM (design note)</a>
+</li>
+                                    
+<li>
+    <a href="hil/can.html" class="dropdown-item">CAN bus (design note)</a>
+</li>
+                                    
+<li>
+    <a href="hil/i2c-spi.html" class="dropdown-item">I2C/SPI (design note)</a>
+</li>
+                                    
+<li>
+    <a href="hil/device-api.html" class="dropdown-item">Device API (design note)</a>
+</li>
+                                    
+<li>
+    <a href="hil/serial.html" class="dropdown-item">Serial/UART (design note)</a>
+</li>
+                                </ul>
+                            </li>
+                        </ul>
+
+                    <ul class="nav navbar-nav ms-md-auto">
+                        <li class="nav-item">
+                            <a href="#" class="nav-link" data-bs-toggle="modal" data-bs-target="#mkdocs_search_modal">
+                                <i class="fa fa-search"></i> Search
+                            </a>
+                        </li>
+                            <li class="nav-item">
+                                <a rel="prev" href="inspector.html" class="nav-link">
+                                    <i class="fa fa-arrow-left"></i> Previous
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a rel="next" href="junit-xml.html" class="nav-link">
+                                    Next <i class="fa fa-arrow-right"></i>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="https://gitlab.com/Tyler-Meador/HILT/-/blob/main/docs/measurements.md" class="nav-link"><i class="fa-brands fa-gitlab"></i> Edit on GitLab</a>
+                            </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="container">
+            <div class="row">
+                    <div class="col-md-3"><div class="navbar-expand-md bs-sidebar hidden-print affix" role="complementary">
+    <div class="navbar-header">
+        <button type="button" class="navbar-toggler collapsed" data-bs-toggle="collapse" data-bs-target="#toc-collapse" title="Table of Contents">
+            <span class="fa fa-angle-down"></span>
+        </button>
+    </div>
+
+    
+    <div id="toc-collapse" class="navbar-collapse collapse card bg-body-tertiary">
+        <ul class="nav flex-column">
+            
+            <li class="nav-item" data-bs-level="1"><a href="#parametric-measurements" class="nav-link">Parametric Measurements</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            
+            <li class="nav-item" data-bs-level="1"><a href="#86-this-page-owns-the-protocol-docsinspector-jsonmd-owns-the-records-place-in" class="nav-link">86. This page owns the protocol; docs/inspector-json.md owns the record's place in</a>
+              <ul class="nav flex-column">
+            <li class="nav-item" data-bs-level="2"><a href="#the-call" class="nav-link">The call</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#the-recorded-shape" class="nav-link">The recorded shape</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#evidence-never-a-verdict" class="nav-link">Evidence, never a verdict</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#the-export-contract" class="nav-link">The export contract</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#tiers" class="nav-link">Tiers</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#what-86-delivers" class="nav-link">What #86 delivers</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+              </ul>
+            </li>
+        </ul>
+    </div>
+</div></div>
+                    <div class="col-md-9" role="main">
+
+<h1 id="parametric-measurements">Parametric Measurements<a class="headerlink" href="#parametric-measurements" title="Permanent link">&para;</a></h1>
+<p>Design note for #85, signed off by Ty on the issue 2026-09-05 and implemented under</p>
+<h1 id="86-this-page-owns-the-protocol-docsinspector-jsonmd-owns-the-records-place-in">86. This page owns the protocol; <code>docs/inspector-json.md</code> owns the record's place in<a class="headerlink" href="#86-this-page-owns-the-protocol-docsinspector-jsonmd-owns-the-records-place-in" title="Permanent link">&para;</a></h1>
+<p><code>result.json</code>.</p>
+<p>A test method already hands its readings back with the verdict (<code>PASS(evidence)</code>,
+<code>docs/idioms.md</code>). That record answers the Floor Technician's question: did the unit
+meet the claim. It does not answer the process engineer's question: where inside the
+window did this unit land, and where are the last five hundred landing. That question
+needs a number with a unit and limits, in a shape a statistical consumer can read
+without the suite source. <code>utils.measure</code> records that number, in one call, without
+touching the verdict.</p>
+<p>The rule this note is built on: <strong>a limit is evidence, never a verdict.</strong> A
+measurement outside its limits is recorded as such, beside the verdict; the verdict
+stays whatever the gated <code>PASS</code> says. A <code>Pass</code> keeps meaning exactly what it has always
+meant, and the framework forges nothing.</p>
+<h2 id="the-call">The call<a class="headerlink" href="#the-call" title="Permanent link">&para;</a></h2>
+<p><code>utils.measure</code> is the documented home. It is a method on <code>TestUtils</code>, the scoped
+service object every lifecycle method already receives, so a measurement is scoped to
+its node the way a log line is.</p>
+<pre><code class="language-python">def measure(
+    self,
+    name: str,
+    value: int | float | None,
+    *,
+    unit: str | None = None,
+    limits: tuple[float | None, float | None] | None = None,
+) -&gt; Measurement: ...
+</code></pre>
+<p>It is synchronous. It records and returns; it performs no I/O, so there is nothing to
+await and no place for a cancellation to land between the reading and the record.</p>
+<p><strong><code>name</code></strong> — a non-empty <code>str</code>, unique within the node. The name is the identity the
+downstream consumer keys on, together with the node path (see
+<a href="#the-export-contract">The export contract</a>): for the life of the suite it names the
+same quantity in the same unit. Use the same spelling discipline as evidence keys
+(<code>output_voltage_v</code>, <code>boot_time_s</code>). Recording the same name twice in one node is a
+<code>ContractViolation</code> naming the node and the name; the second reading is not silently
+appended, because a consumer that sees two <code>output_voltage_v</code> rows for one node cannot
+tell a retry from a bug.</p>
+<p><strong><code>value</code></strong> — an <code>int</code> or a finite <code>float</code>, or <code>None</code> for a reading the suite tried to
+take and could not. <code>bool</code> is refused (it is an <code>int</code> to Python and a category to a
+process engineer), as are <code>NaN</code> and the infinities, for the same reason <code>run_data</code>
+refuses them: a JSON consumer cannot carry them. A textual observation
+(<code>ftl_state: "running"</code>) is evidence on the verdict, not a measurement; SPC and Cpk are
+defined on numbers, and this protocol does not pretend otherwise.</p>
+<p><code>None</code> and <code>NaN</code> are kept apart on purpose (issue #159, bench finding F10). A blank
+answer over a shell is a fact about the device, and the record is where the Floor
+Technician should find it; a <code>NaN</code> can only come from arithmetic in the suite, and that
+is a bug the <code>ContractViolation</code> names. Before #159 every reading parsed from a shell
+needed its own <code>try</code> to turn the blank into a failure; now the parse hands <code>measure</code>
+the <code>None</code> and the gate below does the rest.</p>
+<p><strong><code>unit</code></strong> — a free string the developer chooses (<code>"V"</code>, <code>"ms"</code>, <code>"°C"</code>), or <code>None</code>
+for a dimensionless count. The framework validates nothing about it and never converts;
+it is a label the consumer reads back. That is why the name must not change meaning:
+a name that was volts in one release and millivolts in the next breaks every chart
+built on it.</p>
+<p><strong><code>limits</code></strong> — <code>None</code>, or a <code>(low, high)</code> tuple, inclusive at both ends, with <code>None</code>
+for an open side: <code>(4.75, 5.25)</code>, <code>(None, 250.0)</code>, <code>(0, None)</code>. A tuple is enough: it
+reads as the window it is, and it puts no new type into a public signature. Both sides
+<code>None</code>, a bound that is not a finite number, or <code>low &gt; high</code> is a <code>ContractViolation</code>
+at the call — a limit that bounds nothing is a bug in the suite, not a wide window.
+With <code>limits=None</code> the measurement is recorded for trend and <code>in_limits</code> is <code>null</code>.</p>
+<p><strong>The return</strong> is a frozen <code>Measurement</code> record: <code>name</code>, <code>value</code>, <code>unit</code>, <code>limits</code>,
+<code>in_limits</code>, <code>timestamp</code>, exactly what was recorded. It exists so the developer can gate
+on it in plain sight:</p>
+<pre><code class="language-python">@evidence(&quot;output_voltage_v&quot;)
+async def _check_rail(self, utils: TestUtils) -&gt; Verdict:
+    v = await self._read_rail(utils, utils.ctx[&quot;ip&quot;])
+    rail = utils.measure(&quot;output_voltage_v&quot;, v, unit=&quot;V&quot;, limits=(4.75, 5.25))
+    if rail.in_limits:
+        return PASS({&quot;output_voltage_v&quot;: v})
+    raise TestFailure(
+        &quot;5V rail out of window&quot;, &quot;4.75..5.25 V&quot;, f&quot;{v} V&quot;, evidence={&quot;output_voltage_v&quot;: v}
+    )
+</code></pre>
+<p>The framework evaluated the limit once, the developer chose what to do about it, and
+<code>hilt/gated-pass</code> can see the predicate beside the <code>PASS</code>. Whether an out-of-window
+reading is a <code>TestFailure</code>, a warning to trend, or a reason to re-seat the probe and
+read again is the suite author's decision, taken in the suite.</p>
+<h3 id="a-reading-not-taken">A reading not taken<a class="headerlink" href="#a-reading-not-taken" title="Permanent link">&para;</a></h3>
+<p><code>measure(name, None, ...)</code> records that the suite tried and the device gave nothing.
+The verdict rule for it follows from the one above and adds nothing to it:</p>
+<ul>
+<li><strong>A missing reading is never inside its window.</strong> With <code>limits</code>, <code>in_limits</code> is
+  <code>false</code>, so the gate in the example fails the claim however it is spelled
+  (<code>if rail.in_limits:</code> or <code>if rail.in_limits is False:</code>). The claim then says what the
+  hole means, usually a <code>TestFailure</code> naming the command that answered blank. Without
+  <code>limits</code>, <code>in_limits</code> is <code>null</code>, as for any trend reading.</li>
+<li><strong>The framework still changes nothing.</strong> A limit is evidence, never a verdict, and a
+  hole is no different: a claim that gates on the reading fails through its own gate; a
+  trend-only reading leaves the verdict where the claim put it. A <code>Pass</code> beside a
+  <code>value: null</code> means the claim did not gate on that reading, and that is the claim
+  author's decision, visible in the record.</li>
+<li><strong>The record keeps the entry.</strong> The reading sits in <code>measurements</code> in call order with
+  <code>value: null</code>, so the consumer sees a hole in the series where there was one, and the
+  Floor Technician sees the name of what was not taken rather than a shorter array.</li>
+</ul>
+<pre><code class="language-python">@evidence(&quot;root_used_pct&quot;)
+async def _root_filesystem(self, utils: TestUtils) -&gt; Verdict:
+    result = await utils.exec(&quot;df --output=pcent / | tail -n 1&quot;)
+    used = _number(result.stdout.rstrip().rstrip(&quot;%&quot;))  # float | None; no try here
+    reading = utils.measure(&quot;root_used_pct&quot;, used, unit=&quot;%&quot;, limits=(None, 90))
+    if reading.value is None:
+        raise TestFailure(&quot;df gave no percentage&quot;, &quot;N%&quot;, result.stdout.strip())
+    if reading.in_limits:
+        return PASS({&quot;root_used_pct&quot;: reading.value})
+    raise TestFailure(&quot;root filesystem too full&quot;, &quot;&lt;= 90 %&quot;, f&quot;{reading.value:g} %&quot;)
+</code></pre>
+<h3 id="where-it-may-be-called">Where it may be called<a class="headerlink" href="#where-it-may-be-called" title="Permanent link">&para;</a></h3>
+<p><code>configure</code> and the test method. Those are the two slots that produce the node's
+record: <code>configure</code> provides ctx, the test method produces the verdict, and both receive
+the node's own <code>TestUtils</code>. A bring-up reading (ambient at start, supply voltage before
+the DUT is powered) belongs to <code>configure</code>; a reading under test belongs to the test
+method. A composite node (<code>sequence</code>, <code>parallel</code>) has a <code>configure</code> and may measure
+there.</p>
+<p>Not from <code>cleanup</code>, which restores state and produces no evidence
+(<code>hilt/no-verdict-in-cleanup</code> is the same rule from the verdict's side). Not from
+surveys or audits: they already have an artifact channel for what they observe, and an
+audit's samples are a time series with its own semantics, which this protocol does not
+define. Not from integration hooks, which are deliberately denied <code>utils</code>. A call from
+any of those, or after the node has settled, is a <code>ContractViolation</code> naming the node,
+in the pattern of <code>ContextImmutable</code>: the record is sealed at the same moment
+<code>run_data</code> is snapshotted, and nothing writes into a sealed record.</p>
+<h3 id="the-package-root-alias">The package-root alias<a class="headerlink" href="#the-package-root-alias" title="Permanent link">&para;</a></h3>
+<p>Ty's condition on the approval: <code>from hilt import measure</code> and <code>hilt.measure(...)</code>
+must both work. They do, with the same signature and the same rules, and <code>utils.measure</code>
+remains the home the documentation teaches. The alias is convenience, not a second
+mechanism.</p>
+<p>The alias has to find the <em>current</em> node's <code>TestUtils</code> without a global, because a
+<code>parallel</code> node runs its children concurrently in one process and a global would hand
+one child's reading to another. The mechanism is a <code>contextvars.ContextVar</code> that the
+framework binds around each slot that admits measurements, at the seam in
+<code>src/hilt/base.py</code> where the child boundary is handed <code>fn(utils)</code> for <code>configure</code> and
+the test method: <code>set</code> before the boundary runs the slot, <code>reset</code> in <code>finally</code>. A
+<code>ContextVar</code> is task-local, and asyncio copies the context into every task it creates,
+so each child of a <code>parallel</code> node sees its own binding and a gateway parent sees its
+own inside its own slots. <code>hilt.measure</code> reads the variable and delegates to that
+<code>TestUtils.measure</code>; when nothing is bound — module scope, a hook, <code>cleanup</code>, a helper
+called from outside a run — it raises <code>ContractViolation</code> saying that <code>measure</code> was
+called outside a running node and naming <code>utils.measure</code> inside <code>configure</code> or a test
+method as the fix. The self-tests hold the alias to the method: every guard above fires
+identically through either spelling.</p>
+<p>A <code>TestUtils</code> is not otherwise reachable from the package root; the variable is private
+to the framework, is never exported, and is read by nothing else.</p>
+<h2 id="the-recorded-shape">The recorded shape<a class="headerlink" href="#the-recorded-shape" title="Permanent link">&para;</a></h2>
+<p>Each call appends one object to the node's <code>measurements</code> array, in call order:</p>
+<pre><code class="language-json">{
+  &quot;name&quot;: &quot;output_voltage_v&quot;,
+  &quot;value&quot;: 5.02,
+  &quot;unit&quot;: &quot;V&quot;,
+  &quot;limits&quot;: { &quot;low&quot;: 4.75, &quot;high&quot;: 5.25 },
+  &quot;in_limits&quot;: true,
+  &quot;timestamp&quot;: &quot;2026-09-06T21:14:03.118402Z&quot;
+}
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>JSON type</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>name</code></td>
+<td>string</td>
+<td>The measurement's identity within the node; unique in the array.</td>
+</tr>
+<tr>
+<td><code>value</code></td>
+<td>number or null</td>
+<td>The reading, exactly as passed; null when the suite tried to take it and could not. A consumer charting the series skips null: it is a hole, not a zero.</td>
+</tr>
+<tr>
+<td><code>unit</code></td>
+<td>string or null</td>
+<td>The developer's label. Never converted.</td>
+</tr>
+<tr>
+<td><code>limits</code></td>
+<td>object or null</td>
+<td><code>{ "low": number or null, "high": number or null }</code>, inclusive; null when the call declared none.</td>
+</tr>
+<tr>
+<td><code>in_limits</code></td>
+<td>boolean or null</td>
+<td><code>low &lt;= value &lt;= high</code> with an open side always satisfied; false when <code>value</code> is null and <code>limits</code> is not; null when <code>limits</code> is null. Evidence, not a verdict.</td>
+</tr>
+<tr>
+<td><code>timestamp</code></td>
+<td>string</td>
+<td>When the reading was recorded, UTC ending in <code>Z</code>, the same form the timeline uses.</td>
+</tr>
+</tbody>
+</table>
+<p>The node path, the run, and the station are not repeated in every entry. They are
+properties of the node and the run directory the array sits in, and repeating them
+would invite a consumer to trust the copy over the tree.</p>
+<p><strong>In two lines:</strong> <code>measurements</code> is an array, one object per <code>measure</code> call in call
+order, each <code>{name, value: number | null, unit, limits: {low, high} | null, in_limits:
+bool | null, timestamp}</code>. It appears on the node's <code>run_data</code> and on the node's
+<code>summary_tree</code> entry; node path comes from the tree, run id from the run directory.</p>
+<h3 id="where-it-appears-in-resultjson">Where it appears in <code>result.json</code><a class="headerlink" href="#where-it-appears-in-resultjson" title="Permanent link">&para;</a></h3>
+<p>Two places, additive within result <code>format_version</code> 1 — the number does not bump.</p>
+<ol>
+<li><strong><code>run_data["measurements"]</code></strong> on the node's own <code>RunResult</code>, the slot reserved
+   since Phase 2, now filled. The existing guards stay: an authored ctx entry named
+   <code>measurements</code> cannot populate or replace it, and an evidence key of that name is
+   still an <code>EvidenceViolation</code>.</li>
+<li><strong><code>measurements</code> on every <code>summary_tree</code> node</strong>, beside <code>evidence</code> and
+   <code>evidence_declared</code>. This placement is load-bearing, not decoration. <code>result.json</code>
+   is the <em>root</em> <code>RunResult.to_json()</code>, and its <code>run_data</code> is the root's ctx view; a
+   leaf's <code>run_data</code> reaches only that leaf's <code>RunResult</code>, which the root record does
+   not carry. Without the tree field a leaf's measurements would never reach the file
+   the Floor Technician and the SPC consumer open. The precedent is <code>evidence</code> on the
+   tree node (#118) and <code>log_path</code> before it (#106): a per-node fact is published on the
+   per-node tree entry.</li>
+</ol>
+<p><code>measurements</code> on a tree node is an array on every node that ran (empty when it
+   measured nothing) and <code>null</code> on a node that never ran, matching <code>state</code>.</p>
+<p>Adding a field to a framework-owned object keeps the version under rule 1 of the
+versioning policy in <code>docs/inspector-json.md</code>; filling a slot the record already
+declares open is likewise additive. The self-tests close every framework-owned object
+against the schema, so the schema amendment lands in the same MR that first emits a
+measurement, as rule 5 requires. The amendment to <code>docs/schema/result-v1.schema.json</code>
+is a new <code>$defs/measurement</code> and two references to it:</p>
+<pre><code class="language-json">&quot;measurement&quot;: {
+  &quot;type&quot;: &quot;object&quot;,
+  &quot;required&quot;: [&quot;name&quot;, &quot;value&quot;, &quot;unit&quot;, &quot;limits&quot;, &quot;in_limits&quot;, &quot;timestamp&quot;],
+  &quot;properties&quot;: {
+    &quot;name&quot;: { &quot;type&quot;: &quot;string&quot;, &quot;minLength&quot;: 1 },
+    &quot;value&quot;: { &quot;type&quot;: [&quot;number&quot;, &quot;null&quot;] },
+    &quot;unit&quot;: { &quot;type&quot;: [&quot;string&quot;, &quot;null&quot;] },
+    &quot;limits&quot;: {
+      &quot;anyOf&quot;: [
+        {
+          &quot;type&quot;: &quot;object&quot;,
+          &quot;required&quot;: [&quot;low&quot;, &quot;high&quot;],
+          &quot;properties&quot;: {
+            &quot;low&quot;: { &quot;type&quot;: [&quot;number&quot;, &quot;null&quot;] },
+            &quot;high&quot;: { &quot;type&quot;: [&quot;number&quot;, &quot;null&quot;] }
+          },
+          &quot;additionalProperties&quot;: false
+        },
+        { &quot;type&quot;: &quot;null&quot; }
+      ]
+    },
+    &quot;in_limits&quot;: { &quot;type&quot;: [&quot;boolean&quot;, &quot;null&quot;] },
+    &quot;timestamp&quot;: {
+      &quot;type&quot;: &quot;string&quot;,
+      &quot;format&quot;: &quot;date-time&quot;,
+      &quot;description&quot;: &quot;Timezone-aware UTC timestamp ending in 'Z', matching the timeline's own timestamp field.&quot;
+    }
+  },
+  &quot;additionalProperties&quot;: true,
+  &quot;description&quot;: &quot;One utils.measure call. in_limits is evidence: it never decides the node's state.&quot;
+}
+</code></pre>
+<p><code>result-v1.schema.json</code> has no shared <code>utcTimestamp</code> <code>$def</code> of its own — that definition
+lives in <code>docs/schema/timeline-v1.schema.json</code>, and the two schemas are not cross-
+referenced. <code>measurement.timestamp</code> therefore states the same <code>date-time</code> shape inline
+rather than inventing a cross-file <code>$ref</code> the published-schema policy does not use
+elsewhere.</p>
+<p><code>run_data.properties.measurements</code> gains <code>"items": { "$ref": "#/$defs/measurement" }</code>
+and drops the "empty in version 1" wording; <code>summaryTreeNode</code> gains
+<code>"measurements": { "anyOf": [{ "type": "array", "items": { "$ref":
+"#/$defs/measurement" } }, { "type": "null" }] }</code> and adds it to <code>required</code>. The
+<code>measurement</code> object stays open, like every framework-owned object, so a field added
+later within version 1 is accepted by a consumer validating with this file.</p>
+<p><code>value</code> became nullable on 2026-10-20 (issue #159), in place and under version 1. Rule 2
+of the versioning policy would bump the number for a nullability change; the policy's
+own pre-1.0.0 clause lets the record change in place because no consumer exists to
+break, and Ty ruled on the issue that this is the time to make such changes. From 1.0.0
+the same change would be a version 2.</p>
+<h2 id="evidence-never-a-verdict">Evidence, never a verdict<a class="headerlink" href="#evidence-never-a-verdict" title="Permanent link">&para;</a></h2>
+<p>The framework evaluates the limit and writes <code>in_limits</code>. It does not raise, does not
+change <code>state</code>, does not add a failure, and does not warn the boundary. The three
+terminal states keep their meanings (<code>docs/contracts.md</code>, Terminal State Contract):
+<code>Pass</code> means a test method returned a <code>Verdict</code> through a gate the developer wrote,
+and an <code>in_limits: false</code> beside a <code>Pass</code> means that gate did not include this limit.
+That can be right — a trend-only measurement, a limit still being characterised — and
+it can be a suite defect; either way it is the suite author's decision, visible in the
+record, and not something the framework second-guesses.</p>
+<p>Because a measurement is independent of the verdict, it is sealed whatever the state.
+An aborted leaf contributes no <em>evidence</em>, since evidence travels with a verdict that
+was never produced; the measurements it recorded before the cut were timestamped and
+held by the framework at the moment of the call, and they are published with the node.
+The consumer reads them beside <code>state</code> and decides what an Aborted node's numbers are
+worth to a capability index. Feeding them in blind is the consumer's mistake, not a
+gap in the record.</p>
+<h3 id="what-the-floor-technician-reads">What the Floor Technician reads<a class="headerlink" href="#what-the-floor-technician-reads" title="Permanent link">&para;</a></h3>
+<p>In <code>result.json</code>, walk <code>summary_tree</code> to the claim and read its <code>measurements</code> array.
+<code>docs/floor-technician.md</code> gains one row for it: <em>The numbers this claim recorded, with
+their windows. An entry with <code>in_limits: false</code> is a reading outside its window. Read
+<code>state</code> beside it: it is not a Fail unless <code>state</code> says Fail.</em></p>
+<table>
+<thead>
+<tr>
+<th><code>state</code></th>
+<th><code>in_limits</code> on an entry</th>
+<th>What it means</th>
+<th>What you do</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Fail</code></td>
+<td><code>false</code></td>
+<td>The claim named that window in its check and the unit missed it. <code>evidence</code> on the same node usually carries the same reading.</td>
+<td>Hardware. Follow the station protocol for the failure name; the entry tells you by how much.</td>
+</tr>
+<tr>
+<td><code>Pass</code></td>
+<td><code>false</code></td>
+<td>The claim recorded the number for trend and did not gate on it, or the window is not yet a pass criterion.</td>
+<td>Ship on the verdict. Do not scrap the unit on this line alone; route the reading to the process engineer.</td>
+</tr>
+<tr>
+<td><code>Pass</code> or <code>Fail</code></td>
+<td><code>null</code></td>
+<td>Recorded without a window.</td>
+<td>Trend only. Nothing to act on here.</td>
+</tr>
+<tr>
+<td>any</td>
+<td><code>false</code> or <code>null</code>, with <code>value: null</code></td>
+<td>The claim tried to take this reading and the device gave nothing. Not a reading of zero.</td>
+<td>Read <code>state</code> and <code>failure</code> beside it: a <code>Fail</code> names what answered blank. A <code>Pass</code> means the claim did not gate on it; route the hole to the process engineer, not to scrap.</td>
+</tr>
+<tr>
+<td><code>Aborted</code></td>
+<td>anything</td>
+<td>The number was taken before the run stopped; no verdict exists.</td>
+<td>Follow the Aborted protocol for the failure. The measurement is context, not a category.</td>
+</tr>
+</tbody>
+</table>
+<p>In the timeline, every call writes one scoped line so the chronology carries the number
+next to what the suite was doing when it took it:</p>
+<pre><code>measurement: output_voltage_v = 5.02 V limits=[4.75, 5.25] in_limits=true
+measurement: output_voltage_v = 5.31 V limits=[4.75, 5.25] in_limits=false
+measurement: output_voltage_v not taken limits=[4.75, 5.25] in_limits=false
+</code></pre>
+<p>An in-window or unlimited reading logs at <code>info</code>; an out-of-window reading, or one not
+taken, logs at <code>warning</code>, so it stands out in <code>timeline.log</code> without the FT filtering
+for it. The not-taken line says so in words rather than printing <code>= null V</code>, which reads
+as a number missing its digits. The line is a log entry and nothing more: it is not the
+record (the array is), and it does not change the node's state.</p>
+<h3 id="relationship-to-evidence-and-passevidence">Relationship to <code>@evidence</code> and <code>PASS(evidence)</code><a class="headerlink" href="#relationship-to-evidence-and-passevidence" title="Permanent link">&para;</a></h3>
+<p>A measurement is not an evidence key. The two records answer different questions, are
+validated by different contracts, and live in different fields:</p>
+<ul>
+<li><code>evidence</code> is what the verdict carried, validated at the child boundary against the
+  <code>@evidence</code> declaration and the reserved keys, and <code>null</code> when there was no verdict.
+  Its shape is the developer's mapping.</li>
+<li><code>measurements</code> is what the node recorded, validated at each call, sealed with the
+  node whatever its state. Its shape is fixed by this note.</li>
+</ul>
+<p>Recording a measurement therefore does not satisfy an <code>@evidence</code> declaration, and a
+declared key absent from <code>PASS</code> is still <code>EvidenceViolation.not_carried</code> no matter how
+many measurements share its name. A developer who wants a reading held to the
+declaration names it in both places, as the rail example above does: <code>utils.measure</code>
+for the process engineer, <code>PASS({...})</code> for the claim. That is one extra name in a dict
+literal, and it keeps each record honest on its own terms. The alternative — merging
+measurements into <code>evidence</code> automatically — was considered and rejected: it would make
+the boundary's evidence check depend on calls made earlier in <code>configure</code>, would let a
+measurement shadow a ctx key by another route, and would give the SPC consumer two
+shapes for one number.</p>
+<p>The one interaction that exists is the reserved name. <code>measurements</code> is not a legal
+evidence key and not a ctx key that reaches <code>run_data</code>; both guards predate this note
+and stay.</p>
+<h2 id="the-export-contract">The export contract<a class="headerlink" href="#the-export-contract" title="Permanent link">&para;</a></h2>
+<p>The downstream consumer is an SPC or Cpk tool reading a directory of run directories,
+or the after-each integrator forwarding each <code>RunResult</code> to a database. What it needs,
+and where each part lives in the record, is fixed here so the consumer can be written
+against this page and the schema alone:</p>
+<table>
+<thead>
+<tr>
+<th>The consumer needs</th>
+<th>Where it is</th>
+<th>Stability</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>A stable name</td>
+<td><code>measurements[].name</code>, unique within the node</td>
+<td>The developer's promise; a rename is a new series.</td>
+</tr>
+<tr>
+<td>A unit</td>
+<td><code>measurements[].unit</code></td>
+<td>A label, never converted. Changing it under a name breaks the series.</td>
+</tr>
+<tr>
+<td>A numeric value</td>
+<td><code>measurements[].value</code></td>
+<td>A JSON number, or <code>null</code> when the reading was not taken (#159); never a string, boolean, or non-finite. The consumer skips <code>null</code> in a series: a hole, not a zero.</td>
+</tr>
+<tr>
+<td>The limits it was judged against</td>
+<td><code>measurements[].limits.low</code> / <code>.high</code>, or null</td>
+<td>Inclusive; an open side is null.</td>
+</tr>
+<tr>
+<td>Whether it was inside</td>
+<td><code>measurements[].in_limits</code></td>
+<td>Evidence; the consumer does not recompute the verdict from it.</td>
+</tr>
+<tr>
+<td>A timestamp</td>
+<td><code>measurements[].timestamp</code></td>
+<td>UTC, <code>Z</code>-terminated, same form as the timeline. Depends on the station clock rule in <code>docs/floor-technician.md</code>.</td>
+</tr>
+<tr>
+<td>The node path</td>
+<td>The walk from the root of <code>summary_tree</code> to the node; <code>ancestor_names</code> on a per-node <code>RunResult</code></td>
+<td>Durable identity. Names may contain <code>/</code>; do not parse <code>bread_crumbs</code>.</td>
+</tr>
+<tr>
+<td>The run id</td>
+<td>The run directory name, <code>HILT_ARTIFACT_ROOT/&lt;timestamp&gt;[.n]</code>, published by the root timeline's <code>result</code> pointer as the directory of <code>artifact_path</code></td>
+<td>One directory per <code>run()</code>, collision-safe; <code>result.json</code> does not repeat it because a consumer has already opened the directory to read the file.</td>
+</tr>
+<tr>
+<td>The station</td>
+<td><code>physical_location</code> on the root</td>
+<td><code>PHYSICAL_LOCATION</code>, or <code>unknown</code>.</td>
+</tr>
+<tr>
+<td>The node's verdict</td>
+<td><code>state</code> on the same tree node</td>
+<td>The consumer keys on it before it aggregates.</td>
+</tr>
+</tbody>
+</table>
+<p>A series is <code>(station, node path, name)</code>. Everything the consumer aggregates over is
+in <code>result.json</code> or in the directory name; it never needs the suite source, the live
+objects, or the timeline, though the timeline carries the same numbers in order for a
+human.</p>
+<h2 id="tiers">Tiers<a class="headerlink" href="#tiers" title="Permanent link">&para;</a></h2>
+<p>The tier-1 guards live in the framework, in <code>TestUtils.measure</code> and the package-root
+alias, and every one of them is a <code>ContractViolation</code> (developer bug, <code>bug: true</code>,
+<code>banner: CONTRACT VIOLATION</code>) naming the node and, where there is one, the measurement:</p>
+<table>
+<thead>
+<tr>
+<th>Guard</th>
+<th>Fires when</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Duplicate name</td>
+<td>The node already recorded that name.</td>
+</tr>
+<tr>
+<td>Not numeric</td>
+<td><code>value</code> is a <code>bool</code>, a <code>str</code>, <code>NaN</code>, an infinity, or anything that is not <code>int</code>/<code>float</code>. <code>None</code> is not refused: it is the reading not taken (#159).</td>
+</tr>
+<tr>
+<td>Invalid limits</td>
+<td>Both sides <code>None</code>, a non-finite bound, or <code>low &gt; high</code>.</td>
+</tr>
+<tr>
+<td>Outside a node</td>
+<td><code>hilt.measure</code> with nothing bound, or either spelling from <code>cleanup</code>, a survey, an audit, a hook, or after the node settled.</td>
+</tr>
+</tbody>
+</table>
+<p>They are raised by a <code>ContractViolation</code> subclass in <code>src/hilt/errors.py</code> that is
+not exported, on the precedent of <code>ContextInsufficient</code> and <code>ContextImmutable</code>: the FT
+reads the banner, <code>node</code>, and a <code>measurement</code> field naming the reading; the developer
+follows the class name from the log. Nothing protecting the record lives only in tier 3.</p>
+<p>Tier-3 rules for <code>hilt-check</code>, each mirroring a guard above so the finding reaches
+the developer's CI before it reaches a station log:</p>
+<table>
+<thead>
+<tr>
+<th>Rule</th>
+<th>Flags</th>
+<th>Mirrors</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>hilt/measurement-name-unique</code></td>
+<td>Two <code>measure(...)</code> calls with the same literal name inside one <code>configure</code> or test method.</td>
+<td>Tier 1: duplicate name.</td>
+<td>Shipped (#132).</td>
+</tr>
+<tr>
+<td><code>hilt/measurement-in-node</code></td>
+<td>A <code>measure(...)</code> call, either spelling, inside <code>cleanup</code>, a survey or audit function, a <code>before_each</code>/<code>after_each</code>, or at module scope.</td>
+<td>Tier 1: outside a node.</td>
+<td>Shipped (#133).</td>
+</tr>
+</tbody>
+</table>
+<p>Neither was part of #86; each was raised as its own issue per <code>docs/hilt-check.md</code>
+(<em>Adding a rule</em>) and both now ship. The <code>-&gt; Verdict</code> and <code>hilt/gated-pass</code> rules already cover the
+gate a developer writes on <code>.in_limits</code>.</p>
+<h2 id="what-86-delivers">What #86 delivers<a class="headerlink" href="#what-86-delivers" title="Permanent link">&para;</a></h2>
+<p>The acceptance criteria this note fixes for the implementation issue:</p>
+<ol>
+<li><code>TestUtils.measure</code> with the signature above, synchronous, returning a frozen
+   <code>Measurement</code>; <code>measure</code> and <code>Measurement</code> added to <code>hilt.__all__</code>, the reference
+   table in <code>docs/api-stability.md</code> (rows in order), <code>docs/api.md</code>, and <code>CHANGELOG.md</code>
+   together, as <code>docs/api-stability.md</code> (<em>Changing the surface</em>) requires. Two names,
+   not three: the violation class stays private.</li>
+<li><code>hilt.measure</code> at the package root, bound through a <code>ContextVar</code> around
+   <code>configure</code> and the test method, <code>ContractViolation</code> when nothing is bound; the
+   self-tests exercise every guard through both spellings and prove a <code>parallel</code> node's
+   children do not see each other's binding.</li>
+<li>The four tier-1 guards above, each a <code>ContractViolation</code> naming node and
+   measurement, with a self-test per guard.</li>
+<li>The recorded shape, exactly as the table above states it, in call order, sealed when
+   the node settles, on every state including Aborted.</li>
+<li><code>run_data["measurements"]</code> filled on the node's <code>RunResult</code>; <code>measurements</code> on every
+   <code>summary_tree</code> node (<code>null</code> when the node never ran); both under result
+   <code>format_version</code> 1, unbumped.</li>
+<li><code>docs/schema/result-v1.schema.json</code> amended as above in the same MR;
+   <code>tests/test_inspector_schema.py</code> still closes every framework-owned object.</li>
+<li>The timeline line, <code>info</code> in window and <code>warning</code> out of it.</li>
+<li>Documentation reconciled in the same MR, replacing every "reserved and empty"
+   sentence: the <code>run_data</code> row and the "Version 1 does not define measurement
+   entries" paragraph in <code>docs/inspector-json.md</code> plus a <code>measurements</code> row in its
+   summary-tree table; the <code>run_data</code> and summary-tree rows in
+   <code>docs/floor-technician.md</code> and the table in <em>What the Floor Technician reads</em>
+   above; the reserved-slot bullets in the Evidence Contract of <code>docs/contracts.md</code>
+   and a <em>Measurement Contract</em> stating the guards; the evidence section of
+   <code>docs/idioms.md</code> and a short <em>Measurements</em> idiom; the <code>TestUtils</code> row of the
+   reference table. This page then drops its Status header and becomes the owning
+   doc.</li>
+<li>The pi-hole dogfood (<code>examples/pi_hole_server.py</code>) records at least one real
+   measurement with limits and gates on <code>.in_limits</code> in plain sight; <code>hilt-check
+   examples</code> stays clean.</li>
+<li>Coverage floors hold or rise; <code>make check</code> green locally.</li>
+</ol>
+<p>Out of scope for #86, each a future issue if wanted: audit-sample time series,
+aggregation of any kind, unit conversion, a <code>run_id</code> field on the root record, and the
+two tier-3 rules.</p></div>
+            </div>
+        </div>
+
+        <footer class="col-md-12">
+            <hr>
+                <p>Copyright 2026 Tyler Meador</p>
+            <p>Documentation built with <a href="https://www.mkdocs.org/">MkDocs</a>.</p>
+        </footer>
+        <script src="js/bootstrap.bundle.min.js"></script>
+        <script>
+            var base_url = ".",
+                shortcuts = {"help": 191, "next": 78, "previous": 80, "search": 83};
+        </script>
+        <script src="js/base.js"></script>
+        <script src="search/main.js"></script>
+
+        <div class="modal" id="mkdocs_search_modal" tabindex="-1" role="dialog" aria-labelledby="searchModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="searchModalLabel">Search</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>From here you can search these documents. Enter your search terms below.</p>
+                <form>
+                    <div class="form-group">
+                        <input type="search" class="form-control" placeholder="Search..." id="mkdocs-search-query" title="Type search term here">
+                    </div>
+                </form>
+                <div id="mkdocs-search-results" data-no-results-text="No results found"></div>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div><div class="modal" id="mkdocs_keyboard_modal" tabindex="-1" role="dialog" aria-labelledby="keyboardModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="keyboardModalLabel">Keyboard Shortcuts</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th style="width: 20%;">Keys</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="help shortcut"><kbd>?</kbd></td>
+                    <td>Open this help</td>
+                  </tr>
+                  <tr>
+                    <td class="next shortcut"><kbd>n</kbd></td>
+                    <td>Next page</td>
+                  </tr>
+                  <tr>
+                    <td class="prev shortcut"><kbd>p</kbd></td>
+                    <td>Previous page</td>
+                  </tr>
+                  <tr>
+                    <td class="search shortcut"><kbd>s</kbd></td>
+                    <td>Search</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div>
+
+    </body>
+</html>

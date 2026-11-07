@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        
+        
+        <link rel="canonical" href="https://gitlab.com/Tyler-Meador/HILT/-/tree/main/docs/hil/gpio.html">
+        <link rel="shortcut icon" href="../img/favicon.ico">
+        <title>GPIO (design note) - HILT</title>
+        <link href="../css/bootstrap.min.css" rel="stylesheet">
+        <link href="../css/fontawesome.min.css" rel="stylesheet">
+        <link href="../css/brands.min.css" rel="stylesheet">
+        <link href="../css/solid.min.css" rel="stylesheet">
+        <link href="../css/v4-font-face.min.css" rel="stylesheet">
+        <link href="../css/base.css" rel="stylesheet">
+        <link id="hljs-light" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" >
+        <link id="hljs-dark" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github-dark.min.css" disabled>
+        <link href="../assets/_mkdocstrings.css" rel="stylesheet">
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+        <script>hljs.highlightAll();</script> 
+    </head>
+
+    <body>
+        <div class="navbar fixed-top navbar-expand-lg navbar-dark bg-primary">
+            <div class="container">
+                <a class="navbar-brand" href="../index.html">HILT</a>
+                <!-- Expander button -->
+                <button type="button" class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#navbar-collapse" aria-controls="navbar-collapse" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <!-- Expanded navigation -->
+                <div id="navbar-collapse" class="navbar-collapse collapse">
+                        <!-- Main navigation -->
+                        <ul class="nav navbar-nav">
+                            <li class="nav-item">
+                                <a href="../index.html" class="nav-link">Home</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="../getting-started.html" class="nav-link">Getting started</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="../floor-technician.html" class="nav-link">Floor Technician</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="../overview.html" class="nav-link">Overview</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="../idioms.html" class="nav-link">Idioms</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="../utilities.html" class="nav-link">Utilities</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="../contracts.html" class="nav-link">Contracts</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="../inspector-json.html" class="nav-link">Inspector JSON</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="../inspector.html" class="nav-link">Inspector (target specification)</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="../measurements.html" class="nav-link">Measurements</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="../junit-xml.html" class="nav-link">JUnit XML</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="../hilt-run.html" class="nav-link">hilt run</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="../hilt-new.html" class="nav-link">hilt new</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="../hilt-check.html" class="nav-link">hilt-check</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="../api-stability.html" class="nav-link">API stability</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="../api.html" class="nav-link">API reference</a>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle active" aria-current="page" role="button" data-bs-toggle="dropdown"  aria-expanded="false">HIL interfaces</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="index.html" class="dropdown-item">Overview</a>
+</li>
+                                    
+<li>
+    <a href="gpio.html" class="dropdown-item active" aria-current="page">GPIO (design note)</a>
+</li>
+                                    
+<li>
+    <a href="pwm.html" class="dropdown-item">PWM (design note)</a>
+</li>
+                                    
+<li>
+    <a href="can.html" class="dropdown-item">CAN bus (design note)</a>
+</li>
+                                    
+<li>
+    <a href="i2c-spi.html" class="dropdown-item">I2C/SPI (design note)</a>
+</li>
+                                    
+<li>
+    <a href="device-api.html" class="dropdown-item">Device API (design note)</a>
+</li>
+                                    
+<li>
+    <a href="serial.html" class="dropdown-item">Serial/UART (design note)</a>
+</li>
+                                </ul>
+                            </li>
+                        </ul>
+
+                    <ul class="nav navbar-nav ms-md-auto">
+                        <li class="nav-item">
+                            <a href="#" class="nav-link" data-bs-toggle="modal" data-bs-target="#mkdocs_search_modal">
+                                <i class="fa fa-search"></i> Search
+                            </a>
+                        </li>
+                            <li class="nav-item">
+                                <a rel="prev" href="index.html" class="nav-link">
+                                    <i class="fa fa-arrow-left"></i> Previous
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a rel="next" href="pwm.html" class="nav-link">
+                                    Next <i class="fa fa-arrow-right"></i>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="https://gitlab.com/Tyler-Meador/HILT/-/blob/main/docs/hil/gpio.md" class="nav-link"><i class="fa-brands fa-gitlab"></i> Edit on GitLab</a>
+                            </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="container">
+            <div class="row">
+                    <div class="col-md-3"><div class="navbar-expand-md bs-sidebar hidden-print affix" role="complementary">
+    <div class="navbar-header">
+        <button type="button" class="navbar-toggler collapsed" data-bs-toggle="collapse" data-bs-target="#toc-collapse" title="Table of Contents">
+            <span class="fa fa-angle-down"></span>
+        </button>
+    </div>
+
+    
+    <div id="toc-collapse" class="navbar-collapse collapse card bg-body-tertiary">
+        <ul class="nav flex-column">
+            
+            <li class="nav-item" data-bs-level="1"><a href="#design-note-gpio-interface-contract" class="nav-link">Design note: GPIO interface contract</a>
+              <ul class="nav flex-column">
+            <li class="nav-item" data-bs-level="2"><a href="#why-not-an-exec-subclass" class="nav-link">Why not an exec subclass</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#the-gpio-interface-contract" class="nav-link">The GPIO Interface Contract</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#lifecycle-and-hook-ownership-unchanged" class="nav-link">Lifecycle and hook ownership: unchanged</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#failure-vocabulary" class="nav-link">Failure vocabulary</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#mock-and-real-backends-one-contract-two-implementations" class="nav-link">Mock and real backends: one contract, two implementations</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#evidence" class="nav-link">Evidence</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#what-the-floor-technician-sees" class="nav-link">What the Floor Technician sees</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+              </ul>
+            </li>
+        </ul>
+    </div>
+</div></div>
+                    <div class="col-md-9" role="main">
+
+<h1 id="design-note-gpio-interface-contract">Design note: GPIO interface contract<a class="headerlink" href="#design-note-gpio-interface-contract" title="Permanent link">&para;</a></h1>
+<p>Status: SIGNED — Ty ruled the open questions on #93 on 2026-09-07</p>
+<p>This note states the developer-framework contract for digital I/O pins —
+direction, level, debounce, safe-state on abort, the error taxonomy for a pin
+that will not settle, and timing guarantees. It is written to the diligence of
+<code>docs/contracts.md</code> and governed by the three rulings in <code>docs/hil/index.md</code>.
+All names below (<code>GpioInterface</code>, <code>GpioPin</code>, <code>PinDirection</code>, <code>PinLevel</code>,
+<code>PinSettleFailure</code>) are provisional: they name the shape Ty signed off, not
+a promised spelling.</p>
+<h2 id="why-not-an-exec-subclass">Why not an <code>exec</code> subclass<a class="headerlink" href="#why-not-an-exec-subclass" title="Permanent link">&para;</a></h2>
+<p>A GPIO pin does not run commands. "Set this pin high" and "read this pin's
+level" are typed operations on a fixed set of physical lines, not strings
+handed to a shell. Forcing pin control through <code>exec</code> would mean either
+shelling out to <code>sysfs</code>/<code>libgpiod</code> command-line tools per call (slow, racy,
+and impossible to debounce cleanly) or smuggling a pin controller inside a
+<code>RemoteInterface</code> subclass that answers <code>_exec</code> with a fake shell dialect —
+exactly the parallel-lifecycle-in-disguise ruling 1 forbids. <code>GpioInterface</code> is
+its own ABC, structurally parallel to <code>RemoteInterface</code>
+(<code>src/hilt/remote.py</code>) but not a subclass of it: it owns <code>connect</code>/
+<code>disconnect</code>/<code>cancel_in_flight</code> in the same shape, and adds pin-shaped
+operations in place of <code>exec</code>.</p>
+<h2 id="the-gpio-interface-contract">The GPIO Interface Contract<a class="headerlink" href="#the-gpio-interface-contract" title="Permanent link">&para;</a></h2>
+<p><strong>Framework obligation:</strong> <code>GpioInterface</code> presents a fixed set of named pins,
+each with a declared direction and idle level, and guarantees the following
+regardless of backend:</p>
+<ul>
+<li><strong>Direction and level.</strong> Every pin is declared <code>PinDirection.OUT</code> or
+  <code>PinDirection.IN</code> before first use; direction is fixed for the pin's
+  lifetime — a suite that needs the other direction opens a different
+  declared pin, it does not flip one live. <code>set_level(pin, PinLevel.HIGH |
+  PinLevel.LOW)</code> and <code>read_level(pin) -&gt; PinLevel</code> are the only level
+  operations. <code>PinLevel</code> carries three members, not two: <code>HIGH</code>, <code>LOW</code>, and
+  <code>UNAVAILABLE</code> — the last meaning the controller could not be reached for
+  this read. A two-valued return would have to answer that case with a level
+  nobody measured, and there is no honest choice between them.
+  Setting an input pin or reading an output-only pin (on hardware
+  that cannot read back its own output) is a <code>TypeError</code> at the call site, not
+  a silent no-op — the same posture <code>RemoteInterface.exec</code> takes toward a
+  disconnected transport, caught before it can be mistaken for a hardware
+  reading.</li>
+<li><strong>Debounce.</strong> A read on an input pin names two quantities, never one: a
+  <strong>stability window</strong> — how long the level must hold unchanged for the
+  reading to count — and an <strong>acquisition deadline</strong> — how long the framework
+  keeps looking for such a stretch. Both are seconds, both validated positive
+  and finite, and the deadline must exceed the window. One number cannot carry
+  both jobs: a transition halfway through a window leaves no complete stable
+  stretch before that same instant, so a single <code>settle</code> can demand an outcome
+  it has also made unreachable. Given the two, the framework samples at an
+  interval no coarser than a tenth of the window and returns the first level
+  that holds for a full window. A pin still chattering when the deadline
+  passes does not return a guessed value — it raises (see the failure
+  vocabulary below). Both defaults are per-backend but always explicit in the
+  resolved call. Debounce is symmetric: it is not a filter for "the level I
+  expected," it is a filter for "the level that stopped moving."</li>
+<li><strong>Safe-state on abort.</strong> Every declared output pin carries a required idle
+  level, given at declaration time, not inferred from its first <code>set_level</code>
+  call. Two different events drive pins to idle, and this note keeps them
+  apart because the contracts do:<ul>
+<li><em>The run-level halt</em> — an integration hook throw, or an operator
+  SIGINT/SIGTERM — drives every output pin that every open
+  <code>GpioInterface</code> holds to its declared idle level before any interface
+  reports <code>cancel_in_flight</code> complete. The whole bench is coming down.</li>
+<li><em>A node's time budget expiring is not that halt.</em> Deadline Aborted is
+  node-local: it never fires the shared run halt and never cascades past
+  the bounded subtree (<code>docs/contracts.md</code>, Time Budget Contract). It
+  drives only the pins the cut subtree itself opened; an inherited
+  controller or an inherited hop is never in that owned set, and a
+  sibling outside the subtree is untouched under the Group Isolation
+  Contract. On a rack of thirty units, one node overrunning its clock must
+  not idle the other twenty-nine.
+  The sweep is owed under both budget names. <code>fail_after</code> renders Fail and
+  <code>abort_after</code> renders node-local Aborted; the verdict differs, the safe
+  state does not. This is the GPIO-specific instance of the In-Flight
+  Termination Contract's "cancel the resource, not just the coroutine": for a
+  relay driving mains power or a reset line holding a DUT in a known state,
+  leaving the last-written level in place across an abort is the failure mode
+  this contract exists to prevent. Input pins have no safe-state action; they
+  carry no risk from being read after abort, and <code>cancel_in_flight</code> stops
+  accepting reads immediately.</li>
+</ul>
+</li>
+<li><strong>Timing guarantees.</strong> <code>set_level</code> and <code>read_level</code> (after debounce settles)
+  complete within a bounded, backend-declared latency ceiling — the interface
+  states its worst-case pin-toggle latency so a suite author can reason about
+  whether a protocol timing requirement (a reset pulse width, a chip-select
+  setup time) is achievable at all through this backend before writing the
+  test. A call that cannot complete within that ceiling is a
+  backend-operation timeout — the controller gave up — and it is reported as
+  the operational failure below. It is not the node's clock expiring, and the
+  record must never conflate the two: a suite that declared a generous
+  <code>fail_after</code> has not thereby reclassified a controller that timed out in
+  milliseconds, and a node deadline firing during a pin call has not made the
+  controller at fault.</li>
+</ul>
+<p><strong>Developer obligation:</strong></p>
+<ul>
+<li>Declare every pin's direction and, for outputs, its idle level at
+  configuration time — in <code>configure()</code>, the same place <code>use_shell</code> is called.
+  A pin whose idle level is not knowable ("depends on what the last test left
+  it at") is a design defect in the test, not something the framework can
+  paper over.</li>
+<li>State both debounce quantities deliberately. The defaults are not "right for
+  every signal" — a mechanical relay and a solid-state one settle on different
+  timescales, and a noisy line often needs a strict window with a generous
+  deadline. The author who knows the hardware states both numbers.</li>
+<li>Catch <code>PinSettleFailure</code> and decide what it means. It is a <code>HiltError</code>,
+  not a <code>TestFailure</code>, and that ancestry is the whole point: a pin that will
+  not stop moving does not by itself say whether the DUT is faulty, the
+  harness is noisy, or the probe is loose. The author models it into a verdict
+  or the child boundary classifies the escape as the bug it is — a mode the
+  suite never handled.</li>
+<li>Handle <code>PinLevel.UNAVAILABLE</code> at every read. It is a real state of the
+  bench, not defensive padding: the controller was unreachable and no
+  measurement exists. Compare against the member you mean
+  (<code>if level is PinLevel.LOW:</code>), never against its negation —
+  <code>if level != PinLevel.HIGH:</code> quietly reads an unreachable controller as a
+  low line, and a technician acting on that verdict believes a wire is dead
+  when nothing confirmed it.</li>
+</ul>
+<p><strong>Consequence:</strong> A relay left energized, a reset line left asserted, or a
+power-enable pin left high across an aborted run is a safety and equipment-
+damage risk, not merely a test artifact. Declaring idle levels up front and
+enforcing them on every abort path — not just a clean <code>cleanup()</code> — is what
+makes GPIO safe to use on live hardware under this framework.</p>
+<h2 id="lifecycle-and-hook-ownership-unchanged">Lifecycle and hook ownership: unchanged<a class="headerlink" href="#lifecycle-and-hook-ownership-unchanged" title="Permanent link">&para;</a></h2>
+<p><code>GpioInterface</code> does not run its own event loop, does not register its own
+<code>before_each</code>/<code>after_each</code>, and does not own a competing halt signal.
+Concretely:</p>
+<ul>
+<li>Bring-up happens the same way <code>use_shell</code> brings up SSH: a <code>configure()</code>
+  call obtains a <code>GpioInterface</code> handle (provisionally <code>utils.get_gpio(...)</code>,
+  mirroring <code>get_shell</code>), and the framework's existing <code>ExecRouting</code>-style
+  bookkeeping tracks what this node opened versus what it inherited.</li>
+<li>Teardown order is the framework's, not the interface's: <code>cancel_in_flight</code>
+  on every opened <code>GpioInterface</code> fires as part of the same In-Flight
+  Termination Contract sweep that already closes <code>RemoteInterface</code> transports
+  when <code>RunAbort</code> fires, not on a separate GPIO-specific abort path.</li>
+<li><code>use_survey</code>/<code>use_audit</code> are the only hooks a suite registers to observe pin
+  state; a periodic audit that reads a watchdog pin and raises <code>TestFailure</code>
+  on an unexpected level is exactly the audit contract's existing shape
+  (thermal-runaway-style monitoring), not a new hook kind.</li>
+<li><code>before_each</code>/<code>after_each</code> remain the integrator's narrow context
+  (<code>BeforeEachContext</code>/<code>AfterEachContext</code>) and still cannot touch hardware —
+  a GPIO pin is exactly the kind of thing those hooks are barred from reaching,
+  same as <code>exec</code> and <code>get_shell</code> today.</li>
+</ul>
+<p>Hardware that needs a GPIO controller to run its own concurrent polling loop
+outside the audit/survey pattern, or that cannot honor a hard
+<code>cancel_in_flight</code>, is a finding for Ty — not a reason to give GPIO its own
+lifecycle.</p>
+<h2 id="failure-vocabulary">Failure vocabulary<a class="headerlink" href="#failure-vocabulary" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Situation</th>
+<th>Raised as</th>
+<th>Terminal state</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>A pin never settles within its acquisition deadline</td>
+<td><code>PinSettleFailure</code> (provisional; a <code>HiltError</code>, deliberately <strong>not</strong> a <code>TestFailure</code> — the exact posture <code>ArpResolutionFailure</code> holds, <code>src/hilt/errors.py</code>)</td>
+<td>Fail when the author catches it and states the verdict; a <code>ContractViolation</code>-wrapped Fail (<code>bug: true</code>) when it escapes, because the suite never modeled the mode</td>
+</tr>
+<tr>
+<td>A pin call exceeds the backend's declared latency ceiling</td>
+<td><code>PinSettleFailure</code>, naming the backend operation</td>
+<td>As above. Never recorded as a node time-budget expiry</td>
+</tr>
+<tr>
+<td>Direction/level operation misused (write to an input, read an output-only pin)</td>
+<td><code>TypeError</code> at the call site</td>
+<td><code>ContractViolation</code> (Fail, <code>bug: true</code>) — same posture as <code>ExecRouting</code>'s connection-pair <code>TypeError</code>s</td>
+</tr>
+<tr>
+<td>Backend cannot reach the controller during a read</td>
+<td>No exception: <code>read_level</code> returns <code>PinLevel.UNAVAILABLE</code></td>
+<td>Whatever verdict the author writes for that state. An unhandled third member is not a framework error — it is a reading the suite declined to judge</td>
+</tr>
+<tr>
+<td>Backend cannot reach the controller at bring-up</td>
+<td><code>ConnectionError</code> from the interface's own <code>connect</code></td>
+<td>Absorbed the way <code>RemoteInterface</code>'s connect failures are absorbed today — not a bug, a hardware-unreachable condition for the test method to judge</td>
+</tr>
+<tr>
+<td>An idle drive cannot be confirmed during the safe-state sweep</td>
+<td>No exception; the run is already ending</td>
+<td>The node's terminal state is unchanged, and the timeline records the failure to confirm, naming the pin. A sweep that could not verify idle never leaves a success line behind</td>
+</tr>
+<tr>
+<td>Integration hook throws while pins are held mid-toggle</td>
+<td>Framework raises <code>ExternalIntegrationFailure</code></td>
+<td>Aborted; the run-level halt drives every open <code>GpioInterface</code> to idle, per the In-Flight Termination Contract</td>
+</tr>
+<tr>
+<td>Operator SIGINT/SIGTERM mid-run</td>
+<td>Framework raises <code>OperatorInterrupt</code></td>
+<td>Aborted; same run-level sweep</td>
+</tr>
+<tr>
+<td>A node's time budget expires while it holds pins</td>
+<td>Framework settles the node per its declared budget</td>
+<td><code>fail_after</code> → Fail, <code>abort_after</code> → node-local Aborted; either way only the pins that subtree opened are driven to idle</td>
+</tr>
+</tbody>
+</table>
+<p>No new terminal state is introduced, and no new exception root.
+<code>PinSettleFailure</code> is an operational condition rather than a verdict, which is
+why it takes <code>HiltError</code> and not <code>TestFailure</code>: "this pin will not stop
+moving" does not tell anyone whether the DUT is faulty, the harness is noisy,
+or the probe is loose, and the framework must not choose among those on the
+author's behalf. That is the epistemic position <code>ArpResolutionFailure</code> already
+occupies. <code>PinLevel.UNAVAILABLE</code> is likewise data and never control flow — a
+reading the author judges, exactly as a non-zero exit code from <code>exec</code> is.</p>
+<h2 id="mock-and-real-backends-one-contract-two-implementations">Mock and real backends: one contract, two implementations<a class="headerlink" href="#mock-and-real-backends-one-contract-two-implementations" title="Permanent link">&para;</a></h2>
+<p>The pattern is the one <code>RemoteInterface</code>/<code>MockTransport</code>/<code>SshInterface</code>
+already proves for <code>exec</code>: <code>GpioInterface</code> is the ABC; a real backend
+(provisionally targeting <code>libgpiod</code> or a vendor SDK) and a <code>MockGpio</code> test
+double both implement the same <code>connect</code>/<code>_set_level</code>/<code>_read_level</code>/
+<code>_cancel_in_flight</code> methods, and self-tests exercise both against a shared
+contract-suite of assertions (declare pin, set level, read level, abort mid-
+toggle, verify idle drive) so a bug in either backend is caught by the same
+tests. <code>MockGpio</code> schedules <code>park</code>-style holds analogous to
+<code>MockTransport.park</code>, so lifecycle tests can assert that an abort arriving
+mid-debounce still drives idle levels without a real controller on the bench.
+A suite author never constructs either backend directly, mirroring
+<code>use_shell</code>/<code>get_shell</code>: a provisional <code>utils.get_gpio(...)</code> call resolves to
+whichever backend the run was configured with.</p>
+<h2 id="evidence">Evidence<a class="headerlink" href="#evidence" title="Permanent link">&para;</a></h2>
+<p>A pin read that matters to the verdict travels with it exactly as the Evidence
+Contract already requires: <code>PASS({"reset_pin_level": level})</code> or
+<code>TestFailure(..., evidence={"reset_pin_level": level})</code>, declared up front with
+<code>@evidence(...)</code> when the method promises to carry it. A GPIO level itself is
+not a parametric measurement (there is no unit, limit, or continuous scale to
+it — it is boolean-shaped evidence), so it is recorded as a plain evidence
+entry, not through the <code>#85</code> measurements protocol. Where a GPIO-adjacent
+reading <em>is</em> parametric — a pulse-width or duty-cycle-like timing measured off
+a pin transition — that measurement follows whatever protocol issue #85
+settles on, referenced there rather than re-specified here.</p>
+<p>Every pin declaration, direction, and idle-level assignment is logged through
+<code>utils.logger</code> at configuration time, the same way <code>ExecRouting</code> logs a
+connection's provenance lines — so the Floor Technician can see what idle
+state was promised without opening the suite source.</p>
+<h2 id="what-the-floor-technician-sees">What the Floor Technician sees<a class="headerlink" href="#what-the-floor-technician-sees" title="Permanent link">&para;</a></h2>
+<p>When a pin is driven to its idle level, the node's <code>timeline.jsonl</code> (and its
+human-readable <code>timeline.log</code> twin) carries a log entry at the scope of the
+node that owned the pin, naming which pin was driven and to what level,
+immediately before that node's terminal entry — the same temporal-backbone
+placement the In-Flight Termination Contract already gives a hard-closed SSH
+transport. The terminal entry is not always Aborted: a run-level halt and an
+<code>abort_after</code> expiry both settle the node Aborted, a <code>fail_after</code> expiry
+settles it Fail, and the idle sweep is owed under every one of them.
+<code>result.json</code>'s <code>summary_tree</code> shows whichever state applies; there is no
+separate GPIO-specific field, because a safe-state action is evidence of what
+the framework did to protect the hardware, not a verdict of its own. A
+technician reading the timeline sees why the run ended (from <code>failure</code>, naming
+the operator, the integration hook that threw, or the clock that fired) and —
+from the log line — that the reset/enable/relay pin the suite declared was left
+in its documented idle state, not in whatever level the test last happened to
+set.</p>
+<p>Where the sweep could not confirm a pin reached its idle level, the timeline
+says exactly that, naming the pin. This is the most load-bearing line in the
+note. A technician reaching into a rack trusts a record that says a relay was
+de-energized, and a success line written for a drive nobody confirmed is how
+someone puts a hand on a line believing it dead. An unconfirmed idle is
+recorded as unconfirmed.</p></div>
+            </div>
+        </div>
+
+        <footer class="col-md-12">
+            <hr>
+                <p>Copyright 2026 Tyler Meador</p>
+            <p>Documentation built with <a href="https://www.mkdocs.org/">MkDocs</a>.</p>
+        </footer>
+        <script src="../js/bootstrap.bundle.min.js"></script>
+        <script>
+            var base_url = "..",
+                shortcuts = {"help": 191, "next": 78, "previous": 80, "search": 83};
+        </script>
+        <script src="../js/base.js"></script>
+        <script src="../search/main.js"></script>
+
+        <div class="modal" id="mkdocs_search_modal" tabindex="-1" role="dialog" aria-labelledby="searchModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="searchModalLabel">Search</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>From here you can search these documents. Enter your search terms below.</p>
+                <form>
+                    <div class="form-group">
+                        <input type="search" class="form-control" placeholder="Search..." id="mkdocs-search-query" title="Type search term here">
+                    </div>
+                </form>
+                <div id="mkdocs-search-results" data-no-results-text="No results found"></div>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div><div class="modal" id="mkdocs_keyboard_modal" tabindex="-1" role="dialog" aria-labelledby="keyboardModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="keyboardModalLabel">Keyboard Shortcuts</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th style="width: 20%;">Keys</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="help shortcut"><kbd>?</kbd></td>
+                    <td>Open this help</td>
+                  </tr>
+                  <tr>
+                    <td class="next shortcut"><kbd>n</kbd></td>
+                    <td>Next page</td>
+                  </tr>
+                  <tr>
+                    <td class="prev shortcut"><kbd>p</kbd></td>
+                    <td>Previous page</td>
+                  </tr>
+                  <tr>
+                    <td class="search shortcut"><kbd>s</kbd></td>
+                    <td>Search</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div>
+
+    </body>
+</html>

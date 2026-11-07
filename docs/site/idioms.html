@@ -1,0 +1,1057 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        
+        
+        <link rel="canonical" href="https://gitlab.com/Tyler-Meador/HILT/-/tree/main/docs/idioms.html">
+        <link rel="shortcut icon" href="img/favicon.ico">
+        <title>Idioms - HILT</title>
+        <link href="css/bootstrap.min.css" rel="stylesheet">
+        <link href="css/fontawesome.min.css" rel="stylesheet">
+        <link href="css/brands.min.css" rel="stylesheet">
+        <link href="css/solid.min.css" rel="stylesheet">
+        <link href="css/v4-font-face.min.css" rel="stylesheet">
+        <link href="css/base.css" rel="stylesheet">
+        <link id="hljs-light" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" >
+        <link id="hljs-dark" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github-dark.min.css" disabled>
+        <link href="assets/_mkdocstrings.css" rel="stylesheet">
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+        <script>hljs.highlightAll();</script> 
+    </head>
+
+    <body>
+        <div class="navbar fixed-top navbar-expand-lg navbar-dark bg-primary">
+            <div class="container">
+                <a class="navbar-brand" href="index.html">HILT</a>
+                <!-- Expander button -->
+                <button type="button" class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#navbar-collapse" aria-controls="navbar-collapse" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <!-- Expanded navigation -->
+                <div id="navbar-collapse" class="navbar-collapse collapse">
+                        <!-- Main navigation -->
+                        <ul class="nav navbar-nav">
+                            <li class="nav-item">
+                                <a href="index.html" class="nav-link">Home</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="getting-started.html" class="nav-link">Getting started</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="floor-technician.html" class="nav-link">Floor Technician</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="overview.html" class="nav-link">Overview</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="idioms.html" class="nav-link active" aria-current="page">Idioms</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="utilities.html" class="nav-link">Utilities</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="contracts.html" class="nav-link">Contracts</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="inspector-json.html" class="nav-link">Inspector JSON</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="inspector.html" class="nav-link">Inspector (target specification)</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="measurements.html" class="nav-link">Measurements</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="junit-xml.html" class="nav-link">JUnit XML</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="hilt-run.html" class="nav-link">hilt run</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="hilt-new.html" class="nav-link">hilt new</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="hilt-check.html" class="nav-link">hilt-check</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="api-stability.html" class="nav-link">API stability</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="api.html" class="nav-link">API reference</a>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">HIL interfaces</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="hil/index.html" class="dropdown-item">Overview</a>
+</li>
+                                    
+<li>
+    <a href="hil/gpio.html" class="dropdown-item">GPIO (design note)</a>
+</li>
+                                    
+<li>
+    <a href="hil/pwm.html" class="dropdown-item">PWM (design note)</a>
+</li>
+                                    
+<li>
+    <a href="hil/can.html" class="dropdown-item">CAN bus (design note)</a>
+</li>
+                                    
+<li>
+    <a href="hil/i2c-spi.html" class="dropdown-item">I2C/SPI (design note)</a>
+</li>
+                                    
+<li>
+    <a href="hil/device-api.html" class="dropdown-item">Device API (design note)</a>
+</li>
+                                    
+<li>
+    <a href="hil/serial.html" class="dropdown-item">Serial/UART (design note)</a>
+</li>
+                                </ul>
+                            </li>
+                        </ul>
+
+                    <ul class="nav navbar-nav ms-md-auto">
+                        <li class="nav-item">
+                            <a href="#" class="nav-link" data-bs-toggle="modal" data-bs-target="#mkdocs_search_modal">
+                                <i class="fa fa-search"></i> Search
+                            </a>
+                        </li>
+                            <li class="nav-item">
+                                <a rel="prev" href="overview.html" class="nav-link">
+                                    <i class="fa fa-arrow-left"></i> Previous
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a rel="next" href="utilities.html" class="nav-link">
+                                    Next <i class="fa fa-arrow-right"></i>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="https://gitlab.com/Tyler-Meador/HILT/-/blob/main/docs/idioms.md" class="nav-link"><i class="fa-brands fa-gitlab"></i> Edit on GitLab</a>
+                            </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="container">
+            <div class="row">
+                    <div class="col-md-3"><div class="navbar-expand-md bs-sidebar hidden-print affix" role="complementary">
+    <div class="navbar-header">
+        <button type="button" class="navbar-toggler collapsed" data-bs-toggle="collapse" data-bs-target="#toc-collapse" title="Table of Contents">
+            <span class="fa fa-angle-down"></span>
+        </button>
+    </div>
+
+    
+    <div id="toc-collapse" class="navbar-collapse collapse card bg-body-tertiary">
+        <ul class="nav flex-column">
+            
+            <li class="nav-item" data-bs-level="1"><a href="#framework-idioms-patterns" class="nav-link">Framework Idioms &amp; Patterns</a>
+              <ul class="nav flex-column">
+            <li class="nav-item" data-bs-level="2"><a href="#the-golden-rule" class="nav-link">The Golden Rule</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#immutable-self-convention" class="nav-link">Immutable-self Convention</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#evidence-travels-with-the-verdict" class="nav-link">Evidence Travels With the Verdict</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#the-parent-owns-the-route" class="nav-link">The Parent Owns the Route</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#run_data-automatic-structured-evidence" class="nav-link">run_data — Automatic Structured Evidence</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#measurements-utilsmeasure" class="nav-link">Measurements: utils.measure</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#composition-factories-selftest-selfsequence-selfparallel" class="nav-link">Composition Factories: self.test, self.sequence, self.parallel</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#time-budgets-name-the-meaning-of-too-long" class="nav-link">Time Budgets: Name the Meaning of “Too Long”</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#passfailaborted-contract" class="nav-link">Pass/Fail/Aborted Contract</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#constructor-only-hooks-use_survey-and-use_audit" class="nav-link">Constructor-Only Hooks: use_survey and use_audit</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#integration-hooks-before_each-after_each-on-the-run-params" class="nav-link">Integration Hooks: before_each / after_each on the Run Params</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#configure-returns-context-pattern" class="nav-link">Configure-Returns-Context Pattern</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#composability" class="nav-link">Composability</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#environment-variables" class="nav-link">Environment Variables</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#testutils-injection" class="nav-link">TestUtils Injection</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#logging" class="nav-link">Logging</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#runresult-navigation-ancestor_names-and-bread_crumbs" class="nav-link">RunResult Navigation — ancestor_names and bread_crumbs</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#fractal-design-hilt-exposes-a-single-class" class="nav-link">Fractal Design: HILT exposes a single class</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#selfsequence-vs-selfparallel" class="nav-link">self.sequence() vs self.parallel()</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#arpresolver-mac-to-ip" class="nav-link">ArpResolver — MAC to IP</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#arpresolver-behind-a-gateway" class="nav-link">ArpResolver Behind a Gateway</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#ssh-device-class-owned-connection" class="nav-link">SSH Device — Class-Owned Connection</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#ssh-tunneling" class="nav-link">SSH Tunneling</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#device-api-coaphttp" class="nav-link">Device API — CoAP/HTTP</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#wait_for-patterns" class="nav-link">wait_for Patterns</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+              </ul>
+            </li>
+        </ul>
+    </div>
+</div></div>
+                    <div class="col-md-9" role="main">
+
+<h1 id="framework-idioms-patterns">Framework Idioms &amp; Patterns<a class="headerlink" href="#framework-idioms-patterns" title="Permanent link">&para;</a></h1>
+<h2 id="the-golden-rule">The Golden Rule<a class="headerlink" href="#the-golden-rule" title="Permanent link">&para;</a></h2>
+<p>If implementing something feels awkward or "ugly", you are fighting the framework. Seek the idiomatic approach.</p>
+<p>Treat that friction as a design-review signal, not a style preference and not immediate
+evidence that the framework needs another feature. Ask:</p>
+<blockquote>
+<p>What established HILT idiom is this design fighting, and which problem-domain concept
+would let composition, lifecycle boundaries, or <code>utils</code> express the intent coherently?</p>
+</blockquote>
+<p>Resolve that question before expanding the public API. A new abstraction is warranted only
+when the existing idioms cannot express a real manufacturing-test concept without obscuring
+evidence, hardware ownership, or verdict integrity. Convenience alone is not sufficient.</p>
+<p>The most important application is the React boundary in the port plan's section 1. HILT
+borrows React's component model—composition, inversion of control, hooks, and local state—not
+its runtime model. Reconciliation, re-rendering, and reactivity are out of scope because a
+hardware test executes once and may produce irreversible physical side effects. If a proposal
+feels awkward because it tries to import that runtime model, the friction identifies a crossed
+boundary, not a missing HILT feature.</p>
+<h2 id="immutable-self-convention">Immutable-self Convention<a class="headerlink" href="#immutable-self-convention" title="Permanent link">&para;</a></h2>
+<p>After <code>__init__</code> runs, <code>self</code> is read-only. What the tests need flows through configure's return value into <code>utils.ctx</code>, and what they observed leaves with the verdict. This eliminates hidden state coupling and makes the data flow explicit.</p>
+<p><strong>Rules:</strong>
+- <code>__init__</code> sets read-only config (MAC, credentials, site, etc.)
+- <code>configure()</code> returns what the tests will read, as a plain dict — the framework merges it into <code>utils.ctx</code> and closes it
+- test methods, <code>cleanup()</code>, and all child test bodies read from <code>utils.ctx</code>, not from <code>self</code>; every key they read with <code>[]</code> is one <code>configure()</code> returned, and a key it did not provide is read with <code>.get()</code> or not at all — a missing <code>[]</code> read is a <code>ContractViolation</code>, not a <code>KeyError</code> (issue #112)
+- <code>cleanup()</code> reads every key with <code>.get()</code> or <code>in</code>, never <code>[]</code>: it also runs when <code>configure()</code> raised before it returned, and then ctx holds nothing <code>configure()</code> would have provided. A <code>[]</code> read there logs a <code>ContractViolation</code> beside the real Fail (issue #152)
+- No <code>self.field = value</code> after construction, and no write to <code>utils.ctx</code> after <code>configure()</code> — a reading travels with the verdict, <code>PASS({...})</code>, and a thing that changes mid-run (an address, a connection) is an object in ctx that manages itself (issue #118)</p>
+<p><strong>Why:</strong> Mutable state, on <code>self</code> or in ctx, creates hidden coupling between lifecycle phases. When inputs flow through ctx and readings flow out with the verdict, the data path is explicit and traceable. The Floor Technician benefits because each leaf's record carries exactly what that leaf handed back, beside the limits it judged against.</p>
+<p><strong>Enforcement:</strong> This is a tier-1 runtime guard, not merely a lint convention.
+<code>TestComponent</code> freezes only after the most-derived <code>__init__</code> returns, so subclasses may
+finish declaring their identity after <code>super().__init__()</code>. Ordinary assignment and
+deletion then raise <code>AttributeError</code>. Framework-owned lifecycle and evidence transitions
+use <code>object.__setattr__</code> directly; suite code receives no framework escape-hatch method.
+The static no-self-mutation rule remains defense in depth.</p>
+<p><strong>Scope note:</strong> ctx is strictly instance-local. A parent's ctx never flows into composed children — composition is the only coupling mechanism, and ctx inheritance would smuggle hidden state across it. One leaf never reads another's reading either: what a sibling observed is on that sibling's record, not in ctx.</p>
+<h2 id="evidence-travels-with-the-verdict">Evidence Travels With the Verdict<a class="headerlink" href="#evidence-travels-with-the-verdict" title="Permanent link">&para;</a></h2>
+<p>A test method is a function from <code>utils.ctx</code> to a verdict. Its readings leave with the
+verdict: <code>PASS({...})</code> on the pass path, <code>TestFailure(..., evidence={...})</code> on the fail
+path. <code>@evidence</code> is the method's return signature — it names the keys a pass must
+carry, beside the code that keeps the promise (issue #118).</p>
+<pre><code class="language-python">@evidence(&quot;output_voltage_v&quot;)
+async def _check_voltage(self, utils: TestUtils) -&gt; Verdict:
+    v = await self._read(utils, utils.ctx[&quot;ip&quot;])
+    reading = {&quot;output_voltage_v&quot;: v}
+    if v &lt;= utils.ctx[&quot;voltage_high_v&quot;]:
+        return PASS(reading)
+    raise TestFailure(f&quot;{v} V exceeds limit&quot;, evidence=reading)
+</code></pre>
+<ul>
+<li>The declaration is fixed at class definition and never computed at run time. Pass
+  criteria that vary by SKU or fixture are a leaf argument or a different leaf, decided
+  before <code>build_suite</code> runs.</li>
+<li>A pass without its declared evidence is not a pass: the child boundary refuses it as a
+  <code>ContractViolation</code> naming the leaf and the key. Extra keys are allowed; the
+  declaration is a floor. A failure is not held to it, since a failure may fire before
+  every reading was taken; it records what it is handed.</li>
+<li>The payload is validated entry by entry. A value that is not JSON, or a key that shadows
+  a ctx entry or the framework-owned <code>measurements</code> slot, is a <code>ContractViolation</code> naming
+  the key. Nothing is stripped silently.</li>
+<li>Ctx and evidence are one namespace, because they land on one record. A key
+  <code>configure()</code> returns names the limit or the target (<code>kernel</code>, <code>domain</code>, <code>voltage_high_v</code>);
+  a key <code>@evidence</code> declares names the reading judged against it (<code>kernel_running</code>,
+  <code>queried</code>, <code>output_voltage_v</code>). The same word cannot do both, so pick the evidence name
+  with the ctx key in view. <code>hilt-check</code> flags the clash on the declaring literal as
+  <code>hilt/evidence-shadows-ctx</code> (bench finding F14, issue #161).</li>
+<li>A measurement is not evidence. <code>utils.measure</code> records a number beside the verdict
+  (see <em>Measurements</em> below); it does not satisfy an <code>@evidence</code> declaration, so a claim
+  that wants the reading in both records names it in both.</li>
+<li>An undecorated method may still return <code>PASS(payload)</code>; the payload is recorded
+  unchecked. Declare when you want to be held to it.</li>
+<li>The same decorator accepts a <code>TypedDict</code>. With <code>-&gt; Verdict[MyEvidence]</code> on the method,
+  pyright checks the <code>PASS({...})</code> payload against the shape at write time; at run time
+  the <code>TypedDict</code>'s required keys are the declaration.</li>
+</ul>
+<pre><code class="language-python">class VoltageEvidence(TypedDict):
+    output_voltage_v: float
+
+
+@evidence(VoltageEvidence)
+async def _check_voltage(self, utils: TestUtils) -&gt; Verdict[VoltageEvidence]: ...
+</code></pre>
+<p><code>hilt-check</code> enforces the declaration statically as <code>hilt/evidence-fulfilled</code>, the one
+namespace as <code>hilt/evidence-shadows-ctx</code>, and the read-only context as part of
+<code>hilt/ctx-provenance</code>.</p>
+<h2 id="the-parent-owns-the-route">The Parent Owns the Route<a class="headerlink" href="#the-parent-owns-the-route" title="Permanent link">&para;</a></h2>
+<p>The node that opens a hop owns it, and everything composed under it inherits it. A
+gateway is a parent node: its <code>configure()</code> calls <code>utils.use_shell(host=..., ...)</code>,
+and its <code>build_suite()</code> composes the devices behind the hop. The framework routes the
+gateway's own <code>utils.exec</code> through that hop and hands the route to every child, so a
+device's configure, surveys, tests, and audits all land on the far side without the
+device saying so. A device class never takes a routing argument; it is written once
+and reused on every bench.</p>
+<pre><code class="language-python">class Gateway(TestComponent):
+    async def configure(self, utils: TestUtils) -&gt; dict[str, Any]:
+        await utils.use_shell(host=&quot;10.0.0.1&quot;, username=&quot;ops&quot;)
+        return {}
+
+    def build_suite(self) -&gt; TestComponent:
+        return MyDevice(name=&quot;target&quot;, mac=&quot;aa:bb:cc:dd:ee:ff&quot;)
+</code></pre>
+<p><code>MyDevice</code> run on its own reads the test host; composed under <code>Gateway</code> it reads the
+gateway. Same bytes. A child that must run locally declares <code>use_shell(inherit=False)</code>
+in its own <code>configure()</code>; a parent that must not hand its route down declares
+<code>propagate=False</code>. The hop stays up until the parent's own teardown, after every
+child has cleaned up — a child that fails or expires loses only the transports it
+opened itself, never its parent's hop. A gateway that cannot come up Fails in its
+own <code>configure()</code>, and the children it never composed stay pending: the bench was
+not ready, so the device was never asked.</p>
+<p>The only <code>via</code> in the framework is the tunnel argument to <code>use_shell</code> / <code>get_shell</code>
+(see SSH Tunnel below). That is the parent's tool for reaching through a jump host
+inside its own <code>configure()</code>; it is never a child's burden.</p>
+<h3 id="the-node-names-what-it-needs-the-framework-decides-where-it-comes-from">The Node Names What It Needs; the Framework Decides Where It Comes From<a class="headerlink" href="#the-node-names-what-it-needs-the-framework-decides-where-it-comes-from" title="Permanent link">&para;</a></h3>
+<p>Ruled on issue #142 (2026-09-12). A constructor argument is identity, fixed at
+composition time: a name, a MAC, the SKU-specific pass criteria. Runtime state comes
+from <code>utils</code> in <code>configure()</code>, as one call with no fallback: the IP, the shell, the
+tunnel, the resolver, the device API. When a parent and a child both could provide the
+same thing, that thing belongs in <code>TestUtils</code>, where the framework inherits it down the
+tree and records which way it went; it never travels through ctx or the constructor. A
+fallback in <code>configure()</code> is the smell that says a utility is missing.</p>
+<pre><code class="language-python"># Not allowed: two sources of truth for one ctx key, a branch the suite engineer
+# wrote, and a record that cannot say which path produced the value.
+ip = self._ip or await utils.get_arp_resolver(mac=self._mac).resolve()
+</code></pre>
+<p>The framework already does this twice. The route flows down through <code>use_shell</code> and is
+inherited by every composed child; the ARP resolver is scoped to the node's current
+route and its cache is keyed by the routing label, so devices behind one gateway share
+ARP state without the suite engineer writing anything to arrange it.</p>
+<p>Identity reaches a root node through <code>utils.env</code> when no parent composed it: the
+<code>DUT_MAC</code> a bench-run device reads is the same MAC a rack parent passes to the
+constructor, and the run's environment is published on the record either way (see
+Environment Variables below). That is the run's declared input, not discovery, and it
+is what keeps the bench-run device and the composed one the same bytes.</p>
+<h2 id="run_data-automatic-structured-evidence">run_data — Automatic Structured Evidence<a class="headerlink" href="#run_data-automatic-structured-evidence" title="Permanent link">&para;</a></h2>
+<p>The default <code>run_data</code> returns a detached snapshot of all serializable values from
+<code>utils.ctx</code>: the ctx view. JSON primitives (with finite numbers), plain dicts with string
+keys, and lists survive; class instances (<code>SshInterface</code>, etc.), functions, live handles,
+non-finite floats, and cycles are stripped automatically. A leaf's <code>RunResult.run_data</code> is
+that view plus the evidence its verdict carried, flat, so the limit sits beside the
+reading; the leaf's <code>summary_tree</code> node carries the same evidence and its declaration.
+A non-leaf node's <code>run_data</code> is the ctx view alone.</p>
+<p>Stripping is deterministic and all-or-nothing at each top-level ctx entry. If a list or
+dict contains one invalid nested value, that complete entry is absent from <code>run_data</code>.
+HILT does not remove only the handle and leave a plausible-looking partial record.</p>
+<p>A value the claims need but the record must not carry, such as a session credential
+obtained in <code>configure()</code>, is named in <code>redact_ctx</code> on the suite class (issue #154).
+Each entry is a ctx key, exact or as a regular expression the key matches whole. The
+key appears in <code>run_data</code> as <code>&lt;REDACTED&gt;</code>, and the string under it is masked on every
+record surface, including a log line or a <code>TestFailure</code> the author hands it to. The
+record shows that the key was held; it never shows what. ctx itself is unchanged: the
+claims read the real value.</p>
+<pre><code class="language-python">class BlocklistRoundTrip(TestComponent):
+    redact_ctx = (&quot;sid&quot;, r&quot;api_.*&quot;)
+
+    async def configure(self, utils: TestUtils) -&gt; dict[str, Any]:
+        sid = await self._login(utils)
+        return {&quot;sid&quot;: sid, &quot;api_token&quot;: await self._token(utils, sid), &quot;domain&quot;: &quot;x.test&quot;}
+
+
+# RunResult.run_data =&gt; {
+#     &quot;measurements&quot;: [],
+#     &quot;sid&quot;: &quot;&lt;REDACTED&gt;&quot;,
+#     &quot;api_token&quot;: &quot;&lt;REDACTED&gt;&quot;,
+#     &quot;domain&quot;: &quot;x.test&quot;,
+# }
+</code></pre>
+<pre><code class="language-python"># configure returns data — it appears in run_data automatically
+async def configure(self, utils: TestUtils) -&gt; dict[str, Any]:
+    ip = await self._resolve()
+    return {&quot;ip&quot;: ip, &quot;hostname&quot;: &quot;switch-01&quot;}
+
+
+# RunResult.run_data =&gt; {
+#     &quot;measurements&quot;: [],
+#     &quot;ip&quot;: &quot;10.0.0.1&quot;,
+#     &quot;hostname&quot;: &quot;switch-01&quot;,
+# }
+</code></pre>
+<p>Override <code>run_data</code> only when you need computed or filtered output from the context.
+An override sees the ctx view, not the readings, which are merged when the leaf settles:</p>
+<pre><code class="language-python">from hilt import JsonObject
+
+
+@property
+def run_data(self) -&gt; JsonObject:
+    base = super().run_data
+    return {**base, &quot;within_spec&quot;: self._check_spec(base)}
+</code></pre>
+<p><strong>Note:</strong> non-JSON-safe objects (<code>datetime</code>, sets, arbitrary classes) are stripped by
+default. Override <code>run_data</code> if you need custom serialization for these types, and
+return only JSON-safe data from the override.</p>
+<p>Every snapshot includes <code>run_data["measurements"]</code>, the list <code>utils.measure</code> fills. It
+is framework-owned: a ctx entry with that key does not populate or replace it, and it
+is written after any <code>run_data</code> override runs, so an override cannot drop it.</p>
+<h2 id="measurements-utilsmeasure">Measurements: <code>utils.measure</code><a class="headerlink" href="#measurements-utilsmeasure" title="Permanent link">&para;</a></h2>
+<p>A reading with a unit and a window that a process engineer will chart belongs in
+<code>utils.measure</code>, not only in the evidence payload. The call records and returns; the
+verdict stays whatever the gated <code>PASS</code> says, because a limit is evidence, never a
+verdict (<code>docs/measurements.md</code>):</p>
+<pre><code class="language-python">from hilt import PASS, TestComponent, TestFailure, TestUtils, Verdict, evidence
+
+
+class Rail(TestComponent):
+    @evidence(&quot;output_voltage_v&quot;)
+    async def _output_rail(self, utils: TestUtils) -&gt; Verdict:
+        volts = await self._read_rail(utils)
+        rail = utils.measure(&quot;output_voltage_v&quot;, volts, unit=&quot;V&quot;, limits=(4.75, 5.25))
+        if rail.in_limits:
+            return PASS({&quot;output_voltage_v&quot;: volts})
+        raise TestFailure(&quot;rail outside window&quot;, &quot;4.75-5.25 V&quot;, f&quot;{volts} V&quot;)
+</code></pre>
+<p>The gate reads in plain sight, so <code>hilt/gated-pass</code> sees the predicate and the next
+reader sees the criterion. Name the quantity once per node, in the unit it will always
+carry; the consumer keys its series on that name. Record for trend without a window by
+passing <code>limits=None</code>. Measure from <code>configure()</code> (a bring-up reading) or the test
+method only; <code>cleanup</code>, surveys, audits, and hooks are refused. <code>from hilt import
+measure</code> is the same call resolved to the running node when a helper does not have
+<code>utils</code> in hand.</p>
+<p>When the reading comes over a shell, parse it to <code>float | None</code> and hand <code>measure</code> the
+<code>None</code> instead of wrapping the parse in a <code>try</code>: a reading not taken is recorded as
+such, it is never inside its window, and the same gate fails the claim (issue #159).
+Keep <code>NaN</code> out of the call; that is a bug in the suite's arithmetic, not a blank from
+the device, and the framework refuses it.</p>
+<h2 id="composition-factories-selftest-selfsequence-selfparallel">Composition Factories: <code>self.test</code>, <code>self.sequence</code>, <code>self.parallel</code><a class="headerlink" href="#composition-factories-selftest-selfsequence-selfparallel" title="Permanent link">&para;</a></h2>
+<p><code>TestComponent</code> exposes three instance factories for building the suite. The names are
+the vocabulary a suite reads aloud in: a leaf is a <em>test</em>, dependent children run in
+<em>sequence</em>, independent children run in <em>parallel</em>. There is exactly one spelling for
+each; <code>case</code> and <code>group</code> are retired (issue #110) and <code>hilt/retired-names</code> flags them.</p>
+<ul>
+<li><code>self.test(name, fn, *, fail_after=None, abort_after=None)</code> — the leaf: one verdict
+  method, named here at composition time. Defaults to <code>discrete_log_file=False</code> so
+  entries roll up to the parent artifact.</li>
+<li><code>self.sequence(name, children, ...)</code> — serial execution, bails on first failure, and
+  owns a discrete timeline by default.</li>
+<li><code>self.parallel(name, children, ...)</code> — concurrent execution via <code>asyncio.TaskGroup</code>,
+  collects all failures, and owns a discrete timeline by default. The name says so:
+  nobody misses that two children share a bus.</li>
+</ul>
+<p>Pass <code>discrete_log_file=False</code> to <code>self.sequence()</code> or <code>self.parallel()</code> when that
+composition is too small to merit a separate Inspector timeline. Its records then roll
+into the nearest owning ancestor, just as leaves do. Authored <code>TestComponent</code>
+subclasses also default to a discrete timeline and may opt into roll-up through
+<code>super().__init__(..., discrete_log_file=False)</code>. The root always owns a log so every
+run has an authoritative temporal backbone.</p>
+<p><strong>Private methods pass as references directly — Python bound methods carry <code>self</code> for free.</strong></p>
+<pre><code class="language-python">def build_suite(self) -&gt; TestComponent:
+    return self.sequence(
+        self.name,
+        [
+            self.test(&quot;check reachable&quot;, self._check_reachable),
+            self.test(&quot;check firmware&quot;, self._check_firmware),
+        ],
+    )
+
+
+async def _check_reachable(self, utils: TestUtils) -&gt; Verdict:
+    # `self` is preserved — bound at attribute access, no wrapping needed
+    result = await utils.exec(&quot;true&quot;)
+    if result.exit_code == 0:
+        return PASS
+    raise TestFailure(&quot;device unreachable&quot;, &quot;exit 0&quot;, str(result.exit_code))
+</code></pre>
+<p>Every <code>return PASS</code> sits under the predicate that earns it; <code>hilt-check</code> (the
+<code>hilt/gated-pass</code> rule) flags a bare one, and the examples show the gated shape.</p>
+<h3 id="enumerate-leaves-at-runtime">Enumerate Leaves at Runtime<a class="headerlink" href="#enumerate-leaves-at-runtime" title="Permanent link">&para;</a></h3>
+<p>A leaf's name is decided where the tree is composed, not where the method is defined.
+One method, many leaves: pass the value that varies straight to <code>self.test()</code> after the
+method, and name each leaf in a comprehension. The framework calls
+<code>fn(utils, *args, **kwargs)</code>; <code>utils</code> is always first, and the developer's arguments
+follow. <code>fail_after</code> and <code>abort_after</code> are the leaf's budget, never the method's
+parameters. The arguments are checked against the method's signature when the tree is
+built, so a leaf that could never be called fails <code>build_suite</code> with a
+<code>ContractViolation</code> before any hardware is touched.</p>
+<pre><code class="language-python">class Compute(TestComponent):
+    def __init__(self, *, name: str, cpu_count: int) -&gt; None:
+        super().__init__(name=name)
+        self._cpu_count = cpu_count
+
+    async def _cpu_stress(self, utils: TestUtils, *, cpu: int) -&gt; Verdict: ...
+
+    def build_suite(self) -&gt; TestComponent:
+        return self.parallel(
+            &quot;stress&quot;,
+            [
+                self.test(f&quot;cpu{i}_stress&quot;, self._cpu_stress, cpu=i, fail_after=120.0)
+                for i in range(self._cpu_count)
+            ],
+        )
+</code></pre>
+<p>The comprehension maps a known population (every core, every rail, every channel) onto
+leaves; it does not choose among them. A comprehension with an <code>if</code> filter decides at
+build time which claims exist, and <code>hilt/pure-build-suite</code> flags it. The population
+is identity, like a hook: it comes in through <code>__init__</code>, never out of <code>configure()</code>.</p>
+<h3 id="selftest-or-configure"><code>self.test()</code> or <code>configure()</code>?<a class="headerlink" href="#selftest-or-configure" title="Permanent link">&para;</a></h3>
+<p>A long operation such as a firmware flash or a provisioning step is a <code>self.test(...)</code>
+when the Floor Technician should see it in the report with its own verdict and its own
+budget. When it is preparation the report should not itemize, it belongs in
+<code>configure()</code>, where a <code>TestFailure</code> means "the device did not reach a testable state"
+(see overview.md) and the node reads Fail without a phantom leaf. Ask whether the Floor
+Technician acts differently when this step fails on its own line. If so, it is a leaf.</p>
+<h2 id="time-budgets-name-the-meaning-of-too-long">Time Budgets: Name the Meaning of “Too Long”<a class="headerlink" href="#time-budgets-name-the-meaning-of-too-long" title="Permanent link">&para;</a></h2>
+<p>Declare a budget on the composition line that owns the work. Use <code>fail_after</code> when
+missing the time limit is a negative hardware verdict, and <code>abort_after</code> when the
+harness should stop waiting without claiming the hardware failed.</p>
+<pre><code class="language-python">def build_suite(self) -&gt; TestComponent:
+    return self.parallel(
+        &quot;rack claims&quot;,
+        [
+            self.test(&quot;BMC ready&quot;, self._bmc_ready, fail_after=45.0),
+            self.test(&quot;optional telemetry&quot;, self._telemetry, abort_after=10.0),
+        ],
+        fail_after=120.0,
+    )
+
+
+result = await rack.run(abort_after=300.0)
+</code></pre>
+<p>The run budget bounds the whole rack. The parallel node and its leaves may tighten that
+bound; they cannot lengthen it. If the 45-second leaf is reached with only 8 seconds left on the
+run clock, the run clock fires after those 8 seconds and its <code>abort_after</code> state applies.
+The resulting <code>timeout</code> evidence names <code>reason="timeout"</code>, the declared budget, active
+elapsed time, and the root-to-node path of the winning clock.</p>
+<p>The timed window is configure through the test method or last child. Cleanup retains
+its separate finalization allowance. Root-owned <code>before_each</code>/<code>after_each</code> hooks are
+excluded from every time-budget clock, so a slow shop-floor database cannot manufacture
+a hardware Fail. In a parallel node, however, a sibling still inside its timed
+window keeps the shared ancestor clock moving; another sibling's hook or cleanup cannot
+lend it extra time. Do not catch or suppress <code>asyncio.CancelledError</code> around awaited
+work.</p>
+<p>A deadline closes only transports opened by the cut node. An inherited route remains
+the parent's resource; this is what keeps a timed-out DUT from taking down a healthy
+sibling behind the same gateway.</p>
+<p>A gateway parent may declare the same budget pair. Its clock begins when it enters
+<code>configure</code>; if the hop is not open by then, the Fail or Aborted state and its timeout
+evidence are the gateway's own, and the devices behind it are never asked.</p>
+<h2 id="passfailaborted-contract">Pass/Fail/Aborted Contract<a class="headerlink" href="#passfailaborted-contract" title="Permanent link">&para;</a></h2>
+<ul>
+<li>A test method returning <code>PASS</code>, or <code>PASS(evidence)</code> with its readings → test passes (state <code>Pass</code>). The check is <code>isinstance(result, Verdict)</code>, and only <code>PASS</code> mints one. The string <code>"PASS"</code> does not pass, and a <code>PASS</code> missing a key its <code>@evidence</code> declared is a contract violation, not a pass.</li>
+<li>A test method raising <code>TestFailure</code> (or subclass) → test fails with structured data (state <code>Fail</code>)</li>
+<li>A test method raising any other exception → <code>ContractViolation</code> Fail (banner <code>CONTRACT VIOLATION</code>, <code>bug: true</code>): the developer didn't model this failure mode</li>
+<li>A test method returning anything other than the <code>PASS</code> sentinel (including falling through with <code>None</code>) → node-local <code>Aborted</code>. No verdict was produced, so the framework refuses to forge one. Siblings are unaffected.</li>
+<li>An integration hook (<code>before_each</code> / <code>after_each</code>) throwing anywhere in the tree → state <code>Aborted</code> on the enclosing node AND every ancestor</li>
+</ul>
+<p><code>Aborted</code> is a peer state to <code>Pass</code> and <code>Fail</code>, not a flavor of failure. It signals that no verdict was produced — either the harness around the test broke, or the test method finished without rendering one. The Floor Technician's recovery protocol is "check the integration layer / the test method," not "check the hardware."</p>
+<h2 id="constructor-only-hooks-use_survey-and-use_audit">Constructor-Only Hooks: <code>use_survey</code> and <code>use_audit</code><a class="headerlink" href="#constructor-only-hooks-use_survey-and-use_audit" title="Permanent link">&para;</a></h2>
+<p>Survey and audit hooks are registered in <code>__init__</code>, not in <code>configure()</code>. They are stackable — multiple calls register multiple independent hooks, each firing on its own schedule.</p>
+<pre><code class="language-python">class ComputeBlade(TestComponent):
+    def __init__(self, params: TestParams) -&gt; None:
+        super().__init__(params)
+
+        # Passive snapshot at every lifecycle phase boundary
+        self.use_survey(self._dmesg_snapshot)
+
+        # Active monitoring that can fail the test
+        self.use_audit(interval=5.0, fn=self._check_thermals)
+</code></pre>
+<p><strong>Why constructor-registration, not configure-registration?</strong>
+Survey and audit are part of the test's <em>identity</em> — stable across runs, visible on the class — not runtime-configured state. Registering them in the constructor makes them discoverable and keeps <code>configure()</code> focused on runtime wiring.</p>
+<p>Survey errors are swallowed (never affect the verdict). Audit errors are real failures — a throwing audit cancels in-flight test methods immediately and fails the test.</p>
+<p><strong>Scheduling a survey.</strong> A survey fires at all six <code>Phase</code> boundaries unless the
+constructor says otherwise. A survey that reads the device through <code>utils.exec</code> has no
+device to read at <code>pre-configure</code>, before <code>use_shell</code> has run; its dispatch there execs
+on the test host and records the developer's machine as device evidence. Say which
+boundaries the survey observes, and guard the route:</p>
+<pre><code class="language-python">from hilt import TestComponent, Phase, TestUtils
+
+
+class PiHole(TestComponent):
+    def __init__(self, *, name: str) -&gt; None:
+        super().__init__(name=name)
+        self.use_survey(
+            self._ftl_tail,
+            phases=[phase for phase in Phase if phase &gt;= Phase.POST_CONFIGURE],
+        )
+
+    async def _ftl_tail(self, utils: TestUtils) -&gt; object:
+        if utils.exec_route == &quot;local&quot;:
+            return None  # no device on the other end of exec at this boundary
+        return (await utils.exec(&quot;tail -n 50 /var/log/pihole/FTL.log&quot;)).stdout
+</code></pre>
+<p>Both halves are needed. The phase list is the schedule; the route check is the guard.
+Order is not reach: when <code>configure</code> fails before <code>use_shell</code> returns, the engine
+skips <code>post-configure</code>, <code>pre-test</code>, and <code>post-test</code> and still fires <code>pre-cleanup</code> and
+<code>post-cleanup</code>, and at those two <code>utils.exec</code> is on the test host. <code>utils.exec_route</code>
+answers <code>"local"</code> there and the hop's endpoint (<code>"10.10.10.10"</code>) once the route is
+up, so a survey that compares against it never tails the wrong machine. An empty
+<code>phases=</code> is a <code>ValueError</code> at registration, not a survey that silently never fires.</p>
+<p>Survey artifacts are named for the lifecycle dispatch point and hook index. Audit
+artifacts use the same <code>survey</code> artifact type and add the audit hook and dispatch indexes
+to the name. Every non-<code>None</code> return is captured, including empty containers. Python
+cannot distinguish an explicit or delegated <code>None</code> return from fall-through at runtime,
+so <code>None</code> writes only an informational log entry. A hook that needs to preserve a
+deliberate null observation calls <code>await utils.capture_artifact(Artifact(..., data=None))</code>
+directly. Once a hook produces an observation, framework shutdown waits for its artifact
+publication within the bounded evidence budget, even under repeated cancellation. Audit
+intervals must be positive and finite, and the framework stops every audit loop as soon
+as the authored suite settles.</p>
+<p>See <code>examples/hardware_device_lifecycle.py</code> for survey and audit around a device
+with real state transitions — rail up in <code>configure</code>, thermal audit during the claim,
+rail down in <code>cleanup</code>.</p>
+<h2 id="integration-hooks-before_each-after_each-on-the-run-params">Integration Hooks: <code>before_each</code> / <code>after_each</code> on the Run Params<a class="headerlink" href="#integration-hooks-before_each-after_each-on-the-run-params" title="Permanent link">&para;</a></h2>
+<p>For composing HILT into a larger harness (shop-floor DB, lab coordinator, audit pipeline), pass <code>before_each</code> and <code>after_each</code> to the root <code>run()</code> call:</p>
+<pre><code class="language-python">await root.run(
+    before_each=lambda ctx: shopfloor_db.record_started(
+        fn=ctx.bread_crumbs,
+        station=ctx.env.get(&quot;STATION_ID&quot;),
+        at=datetime.now(UTC),
+    ),
+    after_each=lambda ctx: shopfloor_db.record_finished(
+        fn=ctx.bread_crumbs,
+        state=ctx.result.state,
+        failure=ctx.result.failure.fail_message if ctx.result.failure else None,
+        at=datetime.now(UTC),
+    ),
+)
+</code></pre>
+<p>Register once at the root — the framework fires them around every executed test in the tree. The hook context is deliberately narrow (node name, <code>ancestor_names</code>, <code>bread_crumbs</code>, <code>logger</code>, <code>env</code>) — NOT <code>exec</code> or <code>get_shell</code>. Integration hooks are for external coordination, not for exercising the hardware.</p>
+<p><strong>Pair invariant:</strong> <code>after_each</code> fires even when <code>before_each</code> threw. Register them as a pair or pass <code>allow_unpaired_hooks=True</code> to opt out of the warning.</p>
+<p>The exception-path behavior is: throw from either hook → run halts → every enclosing node transitions to <code>Aborted</code> → every in-flight SSH session and subprocess is killed immediately. A 30-minute firmware flash mid-abort must NOT continue to mutate the hardware.</p>
+<h2 id="configure-returns-context-pattern">Configure-Returns-Context Pattern<a class="headerlink" href="#configure-returns-context-pattern" title="Permanent link">&para;</a></h2>
+<p><code>configure()</code> returns a plain dict; the framework merges it into <code>utils.ctx</code> for test methods, survey hooks, <code>cleanup()</code>, and all descendant leaves, then closes it. No instance fields are needed for configure-phase data.</p>
+<p>The return value is the contract with the test methods: it names every key they read with <code>[]</code>, and it is all they will ever find there. Seed no placeholders — a reading belongs on the verdict, not in ctx — and nothing writes ctx after configure returns. <code>hilt-check</code> enforces both statically as <code>hilt/ctx-provenance</code>; at run time a <code>[]</code> read of a missing key, or any later write, is a <code>ContractViolation</code> naming the test and the key, while <code>.get()</code> and <code>in</code> read an optional key (issues #112, #118).</p>
+<p>The framework annotation is <code>Mapping[str, Any]</code>; a plain <code>dict[str, Any]</code> return is the
+default and satisfies it. When a suite benefits from precise key types, define a local
+<code>TypedDict</code> and use it as the covariant return annotation — pyright strict accepts the
+override because a <code>TypedDict</code> is a <code>Mapping</code>, which <code>dict[str, Any]</code> as the base
+annotation would not allow. This is static information only: a <code>TypedDict</code> is still an
+ordinary mutable dict at runtime, and the framework copies it into <code>utils.ctx</code>. A context dataclass is deliberately out of contract because it would fight
+dict merge semantics and require special handling in the default <code>run_data</code> path.</p>
+<pre><code class="language-python">class DeviceContext(TypedDict):
+    ssh: RemoteInterface
+    token: str
+
+
+async def configure(self, utils: TestUtils) -&gt; DeviceContext: ...
+</code></pre>
+<h3 id="carrying-the-same-type-into-the-test-methods">Carrying the same type into the test methods<a class="headerlink" href="#carrying-the-same-type-into-the-test-methods" title="Permanent link">&para;</a></h3>
+<p>A <code>TypedDict</code> return tells the reader the shape, but <code>utils.ctx</code> still hands the test
+methods a <code>Mapping[str, Any]</code>, so a misspelled key survives pyright and reaches the
+floor as a <code>ContextInsufficient</code> contract violation — a Fail under the bug banner,
+where the author meant to take a reading (issue #112). Naming the type once on the
+class closes that gap: declare
+<code>class MySuite(TestComponent[MyCtx])</code> and annotate the lifecycle methods
+<code>utils: TestUtils[MyCtx]</code>, and <code>utils.ctx["volts"]</code> is a <code>float</code> to the editor while
+<code>utils.ctx["volt"]</code> is a type error before it is ever run (issue #75).</p>
+<pre><code class="language-python">class PowerCtx(TypedDict):
+    rail: str
+    volts: float
+
+
+class PowerSuite(TestComponent[PowerCtx]):
+    async def configure(self, utils: TestUtils[PowerCtx]) -&gt; PowerCtx:
+        return {&quot;rail&quot;: &quot;3v3&quot;, &quot;volts&quot;: 3.3}
+
+    def build_suite(self) -&gt; TestComponent:
+        return self.test(&quot;rail&quot;, self._rail_is_up)
+
+    async def _rail_is_up(self, utils: TestUtils[PowerCtx]) -&gt; Verdict:
+        if utils.ctx[&quot;volts&quot;] &gt; 3.0:  # a float here, not Any
+            return PASS
+        raise TestFailure(&quot;rail low&quot;, &quot;&gt; 3.0V&quot;, f&quot;{utils.ctx['volts']}V&quot;)
+</code></pre>
+<p>This is sugar, and it is opt-in in both directions. Writing <code>TestComponent</code> and
+<code>TestUtils</code> bare means what it always did — the parameter defaults to
+<code>Mapping[str, Any]</code> — so no existing suite has to change, and a suite that adopts the
+parameter is making a claim to its own reader, not to the framework. Nothing about the
+run moves: the context object is the framework's <code>RunContext</code>, a <code>dict[str, Any]</code> it
+owns; a key <code>configure()</code> never provided is still a runtime <code>ContractViolation</code> rather
+than a static one; and <code>run_data</code> still strips class instances, functions, and live
+handles value by value.</p>
+<p>Composition stays unparameterized on purpose. <code>self.test()</code>, <code>self.sequence()</code>, and
+<code>self.parallel()</code> speak of <code>TestComponent</code> nodes of any context shape, because a rack composes suites that do not share one context — pinning them to
+a single <code>CtxT</code> would make the parameter contagious rather than opt-in.</p>
+<pre><code class="language-python">class MyDevice(TestComponent):
+    # configure ALWAYS returns the context your test provides to its
+    # lifecycle methods and children. This tells future devs exactly what
+    # context your test requires and what it supplies — important, for
+    # example, for ssh chaining, which requires an &quot;ssh&quot; entry in ctx.
+    async def configure(self, utils: TestUtils) -&gt; dict[str, Any]:
+        # utils.env.require raises TestFailure when the variable is unset or
+        # blank: a verdict from configure — the test lands in Fail without the
+        # suite ever running. The verdict means &quot;did not reach a testable
+        # state&quot;; whether the cause is config/infra or DUT is the human's call
+        # from logs and survey artifacts. Model as many failure modes as
+        # possible so they surface as verdicts rather than bugs. utils.env.port
+        # does the same for a port, defaulting to 22 and rejecting a typo.
+        # utils.env.int and utils.env.float do it for a number: unset uses the
+        # default when one was given, and a bad value Fails naming the variable
+        # and the value.
+        username = utils.env.require(&quot;TARGET_USER&quot;)
+        password = utils.env.require(&quot;TARGET_PASSWORD&quot;)
+        address = utils.env.require(&quot;TARGET_ADDRESS&quot;)
+        shell = await utils.use_shell(host=address, username=username, password=password)
+        # use_shell wires utils.exec to route through SSH automatically
+        return {&quot;ssh&quot;: shell.ssh, &quot;token&quot;: await self._authenticate()}
+
+    # pass or fail, cleanup is GUARANTEED to run at the end of the lifecycle.
+    # Use it to close any opened connections, put the device into a neutral state, etc.
+    # It runs after a configure Fail too, so read ctx with .get(): &quot;token&quot; may never
+    # have been returned.
+    async def cleanup(self, utils: TestUtils) -&gt; None:
+        pass  # ssh auto-disconnected by framework, after the post-cleanup survey
+
+    def build_suite(self) -&gt; TestComponent:
+        return self.sequence(
+            self.name,
+            [
+                self.test(&quot;survey&quot;, self._capture_survey),
+                self.test(&quot;reachable&quot;, self._check_reachable),
+            ],
+        )
+
+    async def _check_reachable(self, utils: TestUtils) -&gt; Verdict:
+        # utils.exec already routed through ssh
+        result = await utils.exec(&quot;true&quot;)
+        if result.exit_code == 0:
+            return PASS
+        raise TestFailure(&quot;device unreachable&quot;, &quot;exit 0&quot;, str(result.exit_code))
+</code></pre>
+<h2 id="composability">Composability<a class="headerlink" href="#composability" title="Permanent link">&para;</a></h2>
+<p>A device-level test can be dropped into a rack-level test without modification. "Push state up" to higher-level components; trust the framework lifecycle.</p>
+<h2 id="environment-variables">Environment Variables<a class="headerlink" href="#environment-variables" title="Permanent link">&para;</a></h2>
+<p>Always use <code>utils.env</code> inside test code. Never <code>os.environ</code> directly. The env snapshot is stored in every <code>RunResult</code> for post-run auditing — filtered by the run's <code>env_allow</code> or <code>env_deny</code> list when one was declared, verbatim otherwise (see <code>docs/inspector-json.md</code>). <code>text</code>, <code>require</code>, and <code>port</code> read a string, a required string, and a TCP port. <code>int</code> and <code>float</code> read a number the same way: a bad value Fails the run naming the variable and the value, and a missing one uses the <code>default</code> when the call passed one.</p>
+<h2 id="testutils-injection">TestUtils Injection<a class="headerlink" href="#testutils-injection" title="Permanent link">&para;</a></h2>
+<p>Call <code>await root.run()</code> to execute a suite. The framework constructs <code>TestUtils</code>; suite
+authors import it for lifecycle annotations, not as plumbing they must assemble.</p>
+<p>Every node receives a distinct <code>TestUtils</code> object with a logger scoped to that node's
+full root-to-leaf path. Leaves, sequences, and parallel nodes built by one authored
+instance share that instance's <code>utils.ctx</code> dict, while a composed <code>TestComponent</code> subclass
+starts with a fresh context. The environment snapshot is immutable and shared across
+the run; the halt signal is read-only from suite code.</p>
+<h2 id="logging">Logging<a class="headerlink" href="#logging" title="Permanent link">&para;</a></h2>
+<ul>
+<li><code>utils.logger</code> is scoped per node — never <code>print()</code>, so evidence is captured in artifacts</li>
+<li>Artifacts captured automatically</li>
+<li><code>discrete_log_file=False</code> rolls log entries into the parent logger. <code>discrete_log_file=True</code> (the default on class-based tests) gives the node its own log file. Inline <code>self.test()</code> bodies default to <code>False</code>.</li>
+<li>Every full run creates a timestamped directory under the configured artifact root.
+  A logging owner streams both <code>timeline.log</code> for humans and versioned
+  <code>timeline.jsonl</code> for the Inspector, flushing both on every entry. Treat
+  <code>TestComponent.log_path</code> as the authoritative path; directory names are not an API.</li>
+<li>While a durable timeline is attached, <code>utils.logger.isEnabledFor(...)</code> is true at
+  every level so developer-side guards cannot suppress the authoritative chronology.
+  Process logging handlers still apply their own level policy.</li>
+</ul>
+<h3 id="point-in-time-artifacts">Point-in-Time Artifacts<a class="headerlink" href="#point-in-time-artifacts" title="Permanent link">&para;</a></h3>
+<p>Construct an immutable <code>Artifact</code> and pass it to <code>utils.capture_artifact()</code>. The method
+persists the JSON artifact under <code>HILT_ARTIFACT_ROOT</code>, then emits a structured pointer
+through the same scoped logger that records the surrounding test events. <code>Artifact</code>
+deliberately has no <code>write()</code> or <code>write_file()</code> method: a file without its pointer would
+be absent from the authoritative chronology.</p>
+<pre><code class="language-python">from hilt import Artifact
+
+snapshot = Artifact(
+    name=&quot;pre-flash&quot;,
+    type=&quot;hardware-survey&quot;,
+    data={&quot;firmware&quot;: &quot;2.4.1&quot;, &quot;healthy&quot;: True},
+)
+artifact_path = await utils.capture_artifact(snapshot)
+</code></pre>
+<p>Artifact names and types accept letters, numbers, dashes, and underscores. Payloads must
+be JSON serializable. Capture is async, never overwrites an existing artifact, and
+returns the absolute path recorded in the pointer entry.</p>
+<h2 id="runresult-navigation-ancestor_names-and-bread_crumbs">RunResult Navigation — <code>ancestor_names</code> and <code>bread_crumbs</code><a class="headerlink" href="#runresult-navigation-ancestor_names-and-bread_crumbs" title="Permanent link">&para;</a></h2>
+<p>Every <code>RunResult</code> carries the node's position in the tree:</p>
+<ul>
+<li><code>ancestor_names: list[str]</code> — canonical form, root-to-this inclusive. Use for programmatic aggregation (DB keys, leaf identity).</li>
+<li><code>bread_crumbs: str</code> — <code>"/".join(ancestor_names)</code> precomputed. Use for display, log lines, error messages.</li>
+<li><code>summary_tree: SummaryTreeNode</code> — snapshot of this node's subtree at completion. Enables downstream integrators to reconstruct the full Inspector tree from the root's RunResult alone.</li>
+</ul>
+<p>The versioned payload and recursive node fields are defined in
+<a href="inspector-json.html"><code>inspector-json.md</code></a>.</p>
+<p>A full <code>run()</code> also persists the root payload automatically as <code>result.json</code> in that
+run's artifact directory. Authored suites should consume the returned <code>RunResult</code> when
+they need the live value; they never write the canonical Inspector file themselves.</p>
+<h2 id="fractal-design-hilt-exposes-a-single-class">Fractal Design: HILT exposes a single class<a class="headerlink" href="#fractal-design-hilt-exposes-a-single-class" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Need</th>
+<th>Use</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Physical hardware component</td>
+<td><code>TestComponent</code></td>
+</tr>
+<tr>
+<td>Networked device (MAC-based)</td>
+<td><code>TestComponent</code> + <code>utils.get_arp_resolver()</code> in configure</td>
+</tr>
+<tr>
+<td>Device reached over SSH, connection shared across tests</td>
+<td><code>TestComponent</code> with configure returning <code>{"ssh": ...}</code></td>
+</tr>
+<tr>
+<td>Device behind a jump host or OOB gateway</td>
+<td>The gateway is a <code>TestComponent</code> whose <code>configure()</code> opens the hop and whose <code>build_suite()</code> composes the device</td>
+</tr>
+<tr>
+<td>Standalone test procedure</td>
+<td><code>TestComponent</code></td>
+</tr>
+</tbody>
+</table>
+<hr />
+<p>The Python <code>examples/</code> tree is the authoring reference. A broken example means
+the API changed and the docs need updating.</p>
+<hr />
+<h2 id="selfsequence-vs-selfparallel"><code>self.sequence()</code> vs <code>self.parallel()</code><a class="headerlink" href="#selfsequence-vs-selfparallel" title="Permanent link">&para;</a></h2>
+<p><strong><code>self.sequence()</code></strong> — serial, stops on the first failure.
+Use when later tests depend on earlier ones. The Floor Technician sees exactly where the chain broke and nothing beyond it.</p>
+<p><strong><code>self.parallel()</code></strong> — concurrent via <code>asyncio.TaskGroup</code>, collects all failures.
+Use when tests are fully independent. The Floor Technician sees everything broken at once. One child's Fail never cancels its siblings — Fail is returned, not raised, at the child boundary; only a harness-level abort cancels the parallel node, and then cancelling everything is exactly what Aborted means.</p>
+<p>Independent claims can still share one resource. A single <code>DeviceApi</code> handle opened in <code>configure()</code> and read from ctx by every leaf serialises their requests: the leaves run concurrently, their requests go out one at a time in call order, and a latency measured around <code>request</code> includes the wait for siblings. That is correct when the claim is about the bytes; when the claim is about the DUT's own latency, give each leaf its own handle.</p>
+<p>The same holds for a routed console. <code>use_serial(device=...)</code> in <code>configure()</code> binds <code>utils.exec</code> for the node and its descendants to one <code>SerialInterface</code>, and <code>parallel</code> leaves under it take turns on it in call order (<code>docs/hil/serial.md</code>, Serial Turn Contract). A console costs more to share than a handle does: the leaves share one shell's state, so a <code>cd</code> or an exported variable in one leaf is visible to the next. Claims that need isolation want one console each, via <code>get_serial(device=...)</code>.</p>
+<hr />
+<h2 id="arpresolver-mac-to-ip">ArpResolver — MAC to IP<a class="headerlink" href="#arpresolver-mac-to-ip" title="Permanent link">&para;</a></h2>
+<p><code>ArpResolver</code> is a composable utility for resolving a device's IP from its MAC. Create one via <code>utils.get_arp_resolver()</code> in <code>configure()</code>, call <code>resolve()</code>, and return both the resolved data and the resolver into ctx. Test methods read the IP and the resolver from <code>utils.ctx</code>. Call <code>arp.ping(utils)</code> for reachability. Call <code>arp.reacquire(utils)</code> after anything that may change the IP (reboot, firmware flash, DHCP churn): it returns the new address and the resolver remembers it, so a later <code>ping</code> dials the address it last resolved while ctx stays as <code>configure()</code> left it. Carry the new address as evidence on the verdict if the Floor Technician should see it.</p>
+<p><code>ArpResolutionFailure</code> is not a <code>TestFailure</code>. Catch it in <code>configure</code> and re-raise as <code>TestFailure</code> so a missing ARP entry is a verdict. Uncaught, it is a developer bug — the suite did not model the failure mode.</p>
+<pre><code class="language-python"># In configure():
+arp = utils.get_arp_resolver(mac=self._mac)
+try:
+    resolved = await arp.resolve()
+except ArpResolutionFailure as error:
+    raise TestFailure(
+        f&quot;{error.mac} did not appear on the network&quot;,
+        error.mac,
+        error.host,
+    ) from error
+return {**resolved, &quot;arp&quot;: arp}
+
+# In build_suite():
+self.test(&quot;reachability&quot;, self._reachability)
+</code></pre>
+<p>See <code>examples/networked_device.py</code>.</p>
+<hr />
+<h2 id="arpresolver-behind-a-gateway">ArpResolver Behind a Gateway<a class="headerlink" href="#arpresolver-behind-a-gateway" title="Permanent link">&para;</a></h2>
+<p>When the test host cannot reach the target network directly, the SE code is identical to the local case. Compose the device under a gateway parent whose <code>configure()</code> opened the hop, and the framework routes the lookup — the SE never touches SSH.</p>
+<pre><code class="language-python"># DutDevice.configure() — no SSH awareness, identical to local ArpResolver usage:
+arp = utils.get_arp_resolver(mac=self._mac)
+resolved = await arp.resolve()
+return {**resolved, &quot;arp&quot;: arp}
+
+# Gateway.build_suite() — the parent names what sits behind its hop:
+return self.sequence(self.name, [self.test(&quot;gateway-up&quot;, self._gateway_up), DutDevice(name=&quot;dut&quot;)])
+</code></pre>
+<p>See <code>examples/networked_device.py</code>. <code>hilt run ...::DutDevice</code> reads the test host's ARP table; <code>hilt run ...::Gateway</code> runs the same DUT class through the hop.</p>
+<hr />
+<h2 id="ssh-device-class-owned-connection">SSH Device — Class-Owned Connection<a class="headerlink" href="#ssh-device-class-owned-connection" title="Permanent link">&para;</a></h2>
+<p>Extend <code>TestComponent</code> when one SSH connection must be shared across all of the device's leaves. Open in <code>configure()</code> via <code>utils.use_shell()</code> and let the framework route <code>utils.exec</code> through it automatically.</p>
+<p>Returning <code>{"ssh": ...}</code> from <code>configure()</code> also makes the device eligible as a <code>via</code> target. Pass it as <code>via</code> in <code>TestParams</code> — the framework manages the lifecycle and scopes <code>utils.exec</code> automatically.</p>
+<p><code>use_shell</code> vs <code>get_shell</code>: <code>use_shell</code> answers "where does <code>utils.exec</code> go" — it rebinds the routing for this test and its descendants. <code>get_shell</code> hands you an additional interface without touching the routing.</p>
+<p>A console by device path is the same idiom: <code>await utils.use_serial(device="/dev/ttyUSB0")</code> in <code>configure()</code> declares it as the node's exec route and <code>get_serial</code> opens one as an auxiliary endpoint; both hand back a <code>Shell</code>, the framework closes the port after the post-cleanup survey and from the abort sweep, and no transport is imported or carried in ctx. Behind a hop, pass an SSH <code>Shell</code> as <code>via</code> or let the console inherit the parent's <code>use_shell</code> route. The policy-only shapes (<code>inherit=False</code>, <code>propagate=False</code>) stay with <code>use_shell</code>.</p>
+<p>See <code>examples/remote_device_ssh.py</code>. The pi-hole dogfood suite
+(<code>examples/pi_hole_server.py</code>) is the same class-owned hop plus phase-boundary
+surveys that tail service logs for the Floor Technician.</p>
+<hr />
+<h2 id="ssh-tunneling">SSH Tunneling<a class="headerlink" href="#ssh-tunneling" title="Permanent link">&para;</a></h2>
+<p>Pass the <code>Shell</code> an earlier <code>utils.get_shell()</code> returned as the <code>via</code> argument to the next <code>utils.get_shell()</code> to tunnel the new connection through it. Both interfaces are framework-managed — no <code>cleanup()</code> override is needed.</p>
+<pre><code class="language-python">jump = await utils.get_shell(host=jump_host, username=jump_user)
+target = await utils.get_shell(host=target_host, username=target_user, via=jump)
+</code></pre>
+<p>See <code>examples/ssh_tunneling.py</code>.</p>
+<hr />
+<h2 id="device-api-coaphttp">Device API — CoAP/HTTP<a class="headerlink" href="#device-api-coaphttp" title="Permanent link">&para;</a></h2>
+<p>A device API is not <code>exec</code> with a URL. Open a session from <code>configure()</code> with
+<code>utils.get_http</code> or <code>utils.get_coap</code>, then <code>request</code> a typed
+<code>DeviceRequest</code>. The response's <code>status</code> is data — HTTP 4xx/5xx is not an
+exception, and neither is a CoAP 4.xx. On HTTP, <code>status</code> is the integer. On
+CoAP it is the dotted code (<code>CoapCode.CONTENT</code> is <code>"2.05"</code>), which is what the
+record stores when the claim puts <code>response.status</code> on the verdict. Catch
+<code>DeviceApiOperationFailure</code> when the transfer itself did not complete (timeout,
+refused connection) and model it as a <code>TestFailure</code>.</p>
+<p>Retries default to zero. Each declared attempt is logged. POST refuses retry
+unless <code>retry_non_idempotent=True</code>. Attempt logs keep header names and withhold
+every value unless the author lists that name in <code>evidence_headers</code>. Abort
+closes the session; it does not invent a shutdown PUT.</p>
+<p>One handle carries one request at a time. Leaves under a <code>parallel</code> that share
+the handle <code>configure()</code> opened queue on it in call order — nothing collides and
+nothing is refused — so a round trip timed in the leaf includes the queue. A
+request still waiting when the handle is cancelled or closed is never sent; it
+fails with <code>DeviceApiOperationFailure</code>, the same class as any other transfer
+that did not complete. Measure the DUT alone with one handle per leaf.</p>
+<pre><code class="language-python">api = await utils.get_http(base_url=&quot;https://dut.local&quot;)
+response = await api.request(DeviceRequest(method=&quot;GET&quot;, path=&quot;/whoami&quot;))
+if response.status != 200:
+    raise TestFailure(&quot;whoami rejected&quot;, 200, response.status)
+return PASS({&quot;status&quot;: response.status})
+</code></pre>
+<p>The backends stay off the public surface, the way <code>SshInterface</code> does.</p>
+<p>For a JSON body, declare <code>json=</code> instead of encoding bytes and setting a header by
+hand. Read it back with <code>.json()</code>, or select the parser with
+<code>.parse(response_type="json")</code> / <code>.parse(response_type="yaml")</code> (YAML needs
+<code>hilt-core[yaml]</code>). Both leave the original bytes and status available. Parser errors
+propagate, so model a malformed response as <code>TestFailure</code> when it is a DUT failure
+mode. Neither the transfer nor the parser chooses a verdict.</p>
+<pre><code class="language-python">response = await api.request(DeviceRequest(method=&quot;PUT&quot;, path=&quot;/settings&quot;, json={&quot;enabled&quot;: True}))
+if response.status == 200 and response.json().get(&quot;enabled&quot;) is True:
+    return PASS({&quot;enabled&quot;: True})
+raise TestFailure(&quot;device did not enable&quot;, &quot;enabled&quot;, response.status)
+</code></pre>
+<hr />
+<h2 id="wait_for-patterns">wait_for Patterns<a class="headerlink" href="#wait_for-patterns" title="Permanent link">&para;</a></h2>
+<p>Where <code>wait_for()</code> is called determines what the timeout <em>means</em>, not what gets raised — both raise <code>TestFailure</code>:</p>
+<ul>
+<li><strong>In <code>configure()</code></strong> — timeout becomes a <code>TestFailure</code> that halts the lifecycle. The test lands in Fail; the suite never runs. The verdict means "the device did not reach a testable state." Whether the cause is hardware or infrastructure is <strong>not knowable from code</strong> — the human triager makes that call from logs and survey artifacts.</li>
+<li><strong>In a test method</strong> — timeout becomes a <code>TestFailure</code> that is the verdict itself. The device was reachable but failed to reach the expected state.</li>
+</ul>
+<p><code>looking_for</code> is required and must be plain language — it becomes the Floor Technician's primary diagnostic string when a wait times out. The call returns the predicate's truthy value (<code>True</code> stays <code>True</code>); a claim that needs what was observed returns it from the predicate instead of closing over a list.</p>
+<p>The runnable <a href="https://gitlab.com/Tyler-Meador/HILT/-/blob/main/examples/wait_for_patterns.py"><code>examples/wait_for_patterns.py</code></a> ports
+both placements from the legacy example. It also shows how polling observations flow
+through scoped logs, phase-boundary surveys, point-in-time artifacts, <code>run_data</code>, and the
+root <code>summary_tree</code> without adding another evidence API.</p></div>
+            </div>
+        </div>
+
+        <footer class="col-md-12">
+            <hr>
+                <p>Copyright 2026 Tyler Meador</p>
+            <p>Documentation built with <a href="https://www.mkdocs.org/">MkDocs</a>.</p>
+        </footer>
+        <script src="js/bootstrap.bundle.min.js"></script>
+        <script>
+            var base_url = ".",
+                shortcuts = {"help": 191, "next": 78, "previous": 80, "search": 83};
+        </script>
+        <script src="js/base.js"></script>
+        <script src="search/main.js"></script>
+
+        <div class="modal" id="mkdocs_search_modal" tabindex="-1" role="dialog" aria-labelledby="searchModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="searchModalLabel">Search</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>From here you can search these documents. Enter your search terms below.</p>
+                <form>
+                    <div class="form-group">
+                        <input type="search" class="form-control" placeholder="Search..." id="mkdocs-search-query" title="Type search term here">
+                    </div>
+                </form>
+                <div id="mkdocs-search-results" data-no-results-text="No results found"></div>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div><div class="modal" id="mkdocs_keyboard_modal" tabindex="-1" role="dialog" aria-labelledby="keyboardModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="keyboardModalLabel">Keyboard Shortcuts</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th style="width: 20%;">Keys</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="help shortcut"><kbd>?</kbd></td>
+                    <td>Open this help</td>
+                  </tr>
+                  <tr>
+                    <td class="next shortcut"><kbd>n</kbd></td>
+                    <td>Next page</td>
+                  </tr>
+                  <tr>
+                    <td class="prev shortcut"><kbd>p</kbd></td>
+                    <td>Previous page</td>
+                  </tr>
+                  <tr>
+                    <td class="search shortcut"><kbd>s</kbd></td>
+                    <td>Search</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div>
+
+    </body>
+</html>

@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        
+        
+        <link rel="canonical" href="https://gitlab.com/Tyler-Meador/HILT/-/tree/main/docs/getting-started.html">
+        <link rel="shortcut icon" href="img/favicon.ico">
+        <title>Getting started - HILT</title>
+        <link href="css/bootstrap.min.css" rel="stylesheet">
+        <link href="css/fontawesome.min.css" rel="stylesheet">
+        <link href="css/brands.min.css" rel="stylesheet">
+        <link href="css/solid.min.css" rel="stylesheet">
+        <link href="css/v4-font-face.min.css" rel="stylesheet">
+        <link href="css/base.css" rel="stylesheet">
+        <link id="hljs-light" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" >
+        <link id="hljs-dark" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github-dark.min.css" disabled>
+        <link href="assets/_mkdocstrings.css" rel="stylesheet">
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+        <script>hljs.highlightAll();</script> 
+    </head>
+
+    <body>
+        <div class="navbar fixed-top navbar-expand-lg navbar-dark bg-primary">
+            <div class="container">
+                <a class="navbar-brand" href="index.html">HILT</a>
+                <!-- Expander button -->
+                <button type="button" class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#navbar-collapse" aria-controls="navbar-collapse" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <!-- Expanded navigation -->
+                <div id="navbar-collapse" class="navbar-collapse collapse">
+                        <!-- Main navigation -->
+                        <ul class="nav navbar-nav">
+                            <li class="nav-item">
+                                <a href="index.html" class="nav-link">Home</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="getting-started.html" class="nav-link active" aria-current="page">Getting started</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="floor-technician.html" class="nav-link">Floor Technician</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="overview.html" class="nav-link">Overview</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="idioms.html" class="nav-link">Idioms</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="utilities.html" class="nav-link">Utilities</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="contracts.html" class="nav-link">Contracts</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="inspector-json.html" class="nav-link">Inspector JSON</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="inspector.html" class="nav-link">Inspector (target specification)</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="measurements.html" class="nav-link">Measurements</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="junit-xml.html" class="nav-link">JUnit XML</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="hilt-run.html" class="nav-link">hilt run</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="hilt-new.html" class="nav-link">hilt new</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="hilt-check.html" class="nav-link">hilt-check</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="api-stability.html" class="nav-link">API stability</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="api.html" class="nav-link">API reference</a>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">HIL interfaces</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="hil/index.html" class="dropdown-item">Overview</a>
+</li>
+                                    
+<li>
+    <a href="hil/gpio.html" class="dropdown-item">GPIO (design note)</a>
+</li>
+                                    
+<li>
+    <a href="hil/pwm.html" class="dropdown-item">PWM (design note)</a>
+</li>
+                                    
+<li>
+    <a href="hil/can.html" class="dropdown-item">CAN bus (design note)</a>
+</li>
+                                    
+<li>
+    <a href="hil/i2c-spi.html" class="dropdown-item">I2C/SPI (design note)</a>
+</li>
+                                    
+<li>
+    <a href="hil/device-api.html" class="dropdown-item">Device API (design note)</a>
+</li>
+                                    
+<li>
+    <a href="hil/serial.html" class="dropdown-item">Serial/UART (design note)</a>
+</li>
+                                </ul>
+                            </li>
+                        </ul>
+
+                    <ul class="nav navbar-nav ms-md-auto">
+                        <li class="nav-item">
+                            <a href="#" class="nav-link" data-bs-toggle="modal" data-bs-target="#mkdocs_search_modal">
+                                <i class="fa fa-search"></i> Search
+                            </a>
+                        </li>
+                            <li class="nav-item">
+                                <a rel="prev" href="index.html" class="nav-link">
+                                    <i class="fa fa-arrow-left"></i> Previous
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a rel="next" href="floor-technician.html" class="nav-link">
+                                    Next <i class="fa fa-arrow-right"></i>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="https://gitlab.com/Tyler-Meador/HILT/-/blob/main/docs/getting-started.md" class="nav-link"><i class="fa-brands fa-gitlab"></i> Edit on GitLab</a>
+                            </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="container">
+            <div class="row">
+                    <div class="col-md-3"><div class="navbar-expand-md bs-sidebar hidden-print affix" role="complementary">
+    <div class="navbar-header">
+        <button type="button" class="navbar-toggler collapsed" data-bs-toggle="collapse" data-bs-target="#toc-collapse" title="Table of Contents">
+            <span class="fa fa-angle-down"></span>
+        </button>
+    </div>
+
+    
+    <div id="toc-collapse" class="navbar-collapse collapse card bg-body-tertiary">
+        <ul class="nav flex-column">
+            
+            <li class="nav-item" data-bs-level="1"><a href="#getting-started" class="nav-link">Getting started</a>
+              <ul class="nav flex-column">
+            <li class="nav-item" data-bs-level="2"><a href="#install" class="nav-link">Install</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#your-first-run" class="nav-link">Your first run</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#write-your-own-suite" class="nav-link">Write your own suite</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#walk-the-examples" class="nav-link">Walk the examples</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#deploying-to-a-station" class="nav-link">Deploying to a station</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#contributing" class="nav-link">Contributing</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+              </ul>
+            </li>
+        </ul>
+    </div>
+</div></div>
+                    <div class="col-md-9" role="main">
+
+<h1 id="getting-started">Getting started<a class="headerlink" href="#getting-started" title="Permanent link">&para;</a></h1>
+<p>This page takes you from a fresh clone to a saved run open in the Inspector, then
+through the examples in the order they teach. For why HILT is shaped the way it is,
+read the <a href="overview.html">overview</a>; for the rules your suite is held to, the
+<a href="contracts.html">contracts</a>.</p>
+<h2 id="install">Install<a class="headerlink" href="#install" title="Permanent link">&para;</a></h2>
+<p>HILT needs Python 3.14 and <a href="https://docs.astral.sh/uv/">uv</a>.</p>
+<pre><code class="language-sh">make install   # uv sync + git hooks
+</code></pre>
+<h2 id="your-first-run">Your first run<a class="headerlink" href="#your-first-run" title="Permanent link">&para;</a></h2>
+<pre><code class="language-sh">uv run hilt run examples/hello_world.py
+uv run hilt inspect
+</code></pre>
+<p><code>hilt run</code> loads a suite file or module and runs the one <code>TestComponent</code> subclass it
+defines, or the one named after <code>::</code>. Its exit status is the verdict:</p>
+<table>
+<thead>
+<tr>
+<th>Exit</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>Pass</td>
+</tr>
+<tr>
+<td>1</td>
+<td>Fail</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Aborted</td>
+</tr>
+<tr>
+<td>3</td>
+<td>The suite could not be run at all</td>
+</tr>
+</tbody>
+</table>
+<p><code>hilt inspect [PATH]</code> opens a saved run in the <a href="inspector.html">Inspector</a>, the Floor
+Technician's terminal surface. Without <code>PATH</code> it opens the latest run under
+<code>artifacts/</code>.</p>
+<p>Three flags shape what a run leaves behind (<a href="hilt-run.html">hilt run</a>):</p>
+<ul>
+<li><code>--artifact-root DIR</code> puts the run's evidence somewhere specific.</li>
+<li><code>--json</code> prints the <code>format_version</code> 1 result record to stdout
+  (<a href="inspector-json.html">Inspector JSON contract</a>).</li>
+<li><code>--junit PATH</code> writes the <a href="junit-xml.html">JUnit XML</a> projection beside it, for CI.</li>
+</ul>
+<h2 id="write-your-own-suite">Write your own suite<a class="headerlink" href="#write-your-own-suite" title="Permanent link">&para;</a></h2>
+<pre><code class="language-sh">uv run hilt new WidgetSuite
+</code></pre>
+<p><code>hilt new</code> writes a gated-<code>PASS</code> suite and a matching self-test, so a new suite starts
+in the right shape instead of as a copy of an example (<a href="hilt-new.html">hilt new</a>).
+<code>hilt-check</code> is the optional tier-3 linter over authored suites
+(<a href="hilt-check.html">hilt-check</a>); <a href="idioms.html">idioms</a> collects the authoring patterns.</p>
+<h2 id="walk-the-examples">Walk the examples<a class="headerlink" href="#walk-the-examples" title="Permanent link">&para;</a></h2>
+<p>The locally executable examples build from one explicit claim, through composition, to
+polling, lifecycle hooks, and the evidence surface:</p>
+<pre><code class="language-sh">uv run hilt run examples/hello_world.py
+uv run hilt run examples/test_composition.py::SequencedDevice
+uv run hilt run examples/test_composition.py::ParallelDevice   # exits 1 by design
+uv run hilt run examples/wait_for_patterns.py::ConfigureGatedDevice
+uv run hilt run examples/wait_for_patterns.py::MainAssertionDevice
+uv run hilt run examples/hardware_device_lifecycle.py
+uv run hilt run examples/run_data_evidence.py
+</code></pre>
+<ul>
+<li><code>wait_for_patterns.py</code> shows readiness polling in <code>configure()</code> and verdict polling
+  in a test method.</li>
+<li><code>hardware_device_lifecycle.py</code> registers survey and audit hooks around a rail that
+  comes up, is watched, and is dropped in cleanup.</li>
+<li><code>run_data_evidence.py</code> shows limits flowing in through ctx and readings travelling
+  out with the verdict.</li>
+</ul>
+<p>Every example carries comments explaining the reasoning behind its pattern, not only
+what the code does. Read them as the authoring guide.</p>
+<h3 id="examples-against-real-devices">Examples against real devices<a class="headerlink" href="#examples-against-real-devices" title="Permanent link">&para;</a></h3>
+<p>The SSH-backed examples take their target from <code>utils.env</code> in <code>configure()</code>. A missing
+variable Fails the suite (exit 1): the device did not reach a testable state, and the
+message names the variable to set. Optional password and port variables
+(<code>SSH_PASSWORD</code> / <code>SSH_PORT</code>, <code>JUMP_*</code> / <code>TARGET_*</code>, <code>GATEWAY_*</code>) default the port to 22
+when unset.</p>
+<pre><code class="language-sh">SSH_HOST=dut.lab SSH_USER=root uv run hilt run examples/remote_device_ssh.py
+JUMP_HOST=jump.lab JUMP_USER=ops TARGET_HOST=dut.lab TARGET_USER=root uv run hilt run examples/ssh_tunneling.py
+DUT_MAC=aa:bb:cc:dd:ee:ff uv run hilt run examples/networked_device.py::DutDevice
+TARGET_ADDRESS=pihole.lab TARGET_USER=root uv run hilt run examples/pi_hole_server.py
+</code></pre>
+<p><code>networked_device.py</code> defines <code>Gateway</code> and <code>DutDevice</code>; pick the station suite with
+<code>::DutDevice</code>. <code>GATEWAY_HOST</code> and <code>GATEWAY_USER</code> (both required together) resolve ARP
+through a hop instead of the test host's table.</p>
+<h2 id="deploying-to-a-station">Deploying to a station<a class="headerlink" href="#deploying-to-a-station" title="Permanent link">&para;</a></h2>
+<p><strong>Every test host must synchronize its system clock with NTP before HILT runs.</strong> The
+scoped log is the authoritative chronology for a run, including structured pointers to
+captured artifacts, and may be used to establish event order in customer disputes. A
+station with an unsynchronized clock cannot produce trustworthy evidence and must not
+execute tests.</p>
+<p>Set <code>HILT_ARTIFACT_ROOT</code> to the run-specific evidence directory. Point-in-time evidence
+is an immutable <code>Artifact</code> value with no public file-writing method; persist it only with
+<code>await utils.capture_artifact(artifact)</code>, which writes the file and then appends its
+pointer to the scoped log timeline.</p>
+<p>The <a href="floor-technician.html">Floor Technician guide</a> is the station page: how to read a
+result without reading source. Its rendered page,
+<a href="https://gitlab.com/Tyler-Meador/HILT/-/blob/main/docs/floor-technician.md">https://gitlab.com/Tyler-Meador/HILT/-/blob/main/docs/floor-technician.md</a>, is
+the URL that belongs on a station label.</p>
+<h2 id="contributing">Contributing<a class="headerlink" href="#contributing" title="Permanent link">&para;</a></h2>
+<p>Read <code>STANDARDS.md</code> before committing.</p>
+<pre><code class="language-sh">make fix           # auto-format + auto-fix lint
+make check         # the gate (there is no CI; the bench run is it): format check, lint, pyright strict, import cycles, pytest under the coverage floors, hilt-check, wheel smoke install, docs, pip-audit
+make docs          # documentation site (strict: a broken cross-reference is red)
+make docs-release  # the same build into docs/site/, committed on a release branch only
+</code></pre>
+<p><a href="api-stability.html">API stability</a> defines the public surface, semantic versioning from
+1.0.0, and the deprecation procedure. <code>CHANGELOG.md</code> at the repository root records every
+change to that surface. For a release MR, select the Release template
+(<code>.gitlab/merge_request_templates/Release.md</code>): it records the candidate's checks,
+changelog cut, and the handoff to Zavala for review.</p>
+<p>Nothing hosts the docs site. The tree is the documentation: GitLab renders every page
+under <a href="https://gitlab.com/Tyler-Meador/HILT/-/tree/main/docs">https://gitlab.com/Tyler-Meador/HILT/-/tree/main/docs</a>, and each release
+branch (<code>release/MAJOR.MINOR.PATCH</code>) also carries the built site under <code>docs/site/</code>
+(<code>make docs-release</code>; open <code>docs/site/index.html</code> from a clone, no network needed).</p>
+<p>The port design lives in the workspace plan (<code>../PLAN.md</code>); the TypeScript original is
+the <code>../hilt-test-legacy/</code> design reference, and its language server is
+<code>../hilt-language-server-legacy/</code>. Both are read-only — parity with them is explicitly
+not a goal. <code>PLAN.md</code> section 0 maps the workspace.</p></div>
+            </div>
+        </div>
+
+        <footer class="col-md-12">
+            <hr>
+                <p>Copyright 2026 Tyler Meador</p>
+            <p>Documentation built with <a href="https://www.mkdocs.org/">MkDocs</a>.</p>
+        </footer>
+        <script src="js/bootstrap.bundle.min.js"></script>
+        <script>
+            var base_url = ".",
+                shortcuts = {"help": 191, "next": 78, "previous": 80, "search": 83};
+        </script>
+        <script src="js/base.js"></script>
+        <script src="search/main.js"></script>
+
+        <div class="modal" id="mkdocs_search_modal" tabindex="-1" role="dialog" aria-labelledby="searchModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="searchModalLabel">Search</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>From here you can search these documents. Enter your search terms below.</p>
+                <form>
+                    <div class="form-group">
+                        <input type="search" class="form-control" placeholder="Search..." id="mkdocs-search-query" title="Type search term here">
+                    </div>
+                </form>
+                <div id="mkdocs-search-results" data-no-results-text="No results found"></div>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div><div class="modal" id="mkdocs_keyboard_modal" tabindex="-1" role="dialog" aria-labelledby="keyboardModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="keyboardModalLabel">Keyboard Shortcuts</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th style="width: 20%;">Keys</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="help shortcut"><kbd>?</kbd></td>
+                    <td>Open this help</td>
+                  </tr>
+                  <tr>
+                    <td class="next shortcut"><kbd>n</kbd></td>
+                    <td>Next page</td>
+                  </tr>
+                  <tr>
+                    <td class="prev shortcut"><kbd>p</kbd></td>
+                    <td>Previous page</td>
+                  </tr>
+                  <tr>
+                    <td class="search shortcut"><kbd>s</kbd></td>
+                    <td>Search</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div>
+
+    </body>
+</html>

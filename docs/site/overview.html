@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        
+        
+        <link rel="canonical" href="https://gitlab.com/Tyler-Meador/HILT/-/tree/main/docs/overview.html">
+        <link rel="shortcut icon" href="img/favicon.ico">
+        <title>Overview - HILT</title>
+        <link href="css/bootstrap.min.css" rel="stylesheet">
+        <link href="css/fontawesome.min.css" rel="stylesheet">
+        <link href="css/brands.min.css" rel="stylesheet">
+        <link href="css/solid.min.css" rel="stylesheet">
+        <link href="css/v4-font-face.min.css" rel="stylesheet">
+        <link href="css/base.css" rel="stylesheet">
+        <link id="hljs-light" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" >
+        <link id="hljs-dark" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github-dark.min.css" disabled>
+        <link href="assets/_mkdocstrings.css" rel="stylesheet">
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+        <script>hljs.highlightAll();</script> 
+    </head>
+
+    <body>
+        <div class="navbar fixed-top navbar-expand-lg navbar-dark bg-primary">
+            <div class="container">
+                <a class="navbar-brand" href="index.html">HILT</a>
+                <!-- Expander button -->
+                <button type="button" class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#navbar-collapse" aria-controls="navbar-collapse" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <!-- Expanded navigation -->
+                <div id="navbar-collapse" class="navbar-collapse collapse">
+                        <!-- Main navigation -->
+                        <ul class="nav navbar-nav">
+                            <li class="nav-item">
+                                <a href="index.html" class="nav-link">Home</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="getting-started.html" class="nav-link">Getting started</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="floor-technician.html" class="nav-link">Floor Technician</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="overview.html" class="nav-link active" aria-current="page">Overview</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="idioms.html" class="nav-link">Idioms</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="utilities.html" class="nav-link">Utilities</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="contracts.html" class="nav-link">Contracts</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="inspector-json.html" class="nav-link">Inspector JSON</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="inspector.html" class="nav-link">Inspector (target specification)</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="measurements.html" class="nav-link">Measurements</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="junit-xml.html" class="nav-link">JUnit XML</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="hilt-run.html" class="nav-link">hilt run</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="hilt-new.html" class="nav-link">hilt new</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="hilt-check.html" class="nav-link">hilt-check</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="api-stability.html" class="nav-link">API stability</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="api.html" class="nav-link">API reference</a>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">HIL interfaces</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="hil/index.html" class="dropdown-item">Overview</a>
+</li>
+                                    
+<li>
+    <a href="hil/gpio.html" class="dropdown-item">GPIO (design note)</a>
+</li>
+                                    
+<li>
+    <a href="hil/pwm.html" class="dropdown-item">PWM (design note)</a>
+</li>
+                                    
+<li>
+    <a href="hil/can.html" class="dropdown-item">CAN bus (design note)</a>
+</li>
+                                    
+<li>
+    <a href="hil/i2c-spi.html" class="dropdown-item">I2C/SPI (design note)</a>
+</li>
+                                    
+<li>
+    <a href="hil/device-api.html" class="dropdown-item">Device API (design note)</a>
+</li>
+                                    
+<li>
+    <a href="hil/serial.html" class="dropdown-item">Serial/UART (design note)</a>
+</li>
+                                </ul>
+                            </li>
+                        </ul>
+
+                    <ul class="nav navbar-nav ms-md-auto">
+                        <li class="nav-item">
+                            <a href="#" class="nav-link" data-bs-toggle="modal" data-bs-target="#mkdocs_search_modal">
+                                <i class="fa fa-search"></i> Search
+                            </a>
+                        </li>
+                            <li class="nav-item">
+                                <a rel="prev" href="floor-technician.html" class="nav-link">
+                                    <i class="fa fa-arrow-left"></i> Previous
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a rel="next" href="idioms.html" class="nav-link">
+                                    Next <i class="fa fa-arrow-right"></i>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="https://gitlab.com/Tyler-Meador/HILT/-/blob/main/docs/overview.md" class="nav-link"><i class="fa-brands fa-gitlab"></i> Edit on GitLab</a>
+                            </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="container">
+            <div class="row">
+                    <div class="col-md-3"><div class="navbar-expand-md bs-sidebar hidden-print affix" role="complementary">
+    <div class="navbar-header">
+        <button type="button" class="navbar-toggler collapsed" data-bs-toggle="collapse" data-bs-target="#toc-collapse" title="Table of Contents">
+            <span class="fa fa-angle-down"></span>
+        </button>
+    </div>
+
+    
+    <div id="toc-collapse" class="navbar-collapse collapse card bg-body-tertiary">
+        <ul class="nav flex-column">
+            
+            <li class="nav-item" data-bs-level="1"><a href="#hilt-project-overview" class="nav-link">HILT — Project Overview</a>
+              <ul class="nav flex-column">
+            <li class="nav-item" data-bs-level="2"><a href="#what-it-is" class="nav-link">What It Is</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#how-it-does-that" class="nav-link">How it does that</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#the-hilt-success-metric" class="nav-link">The HILT Success Metric</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#the-core-purpose" class="nav-link">The Core Purpose</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#the-primary-beneficiary-floor-technician" class="nav-link">The Primary Beneficiary: Floor Technician</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#the-atom" class="nav-link">The Atom</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#the-chemistry-mental-model" class="nav-link">The Chemistry Mental Model</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#the-three-terminal-states" class="nav-link">The Three Terminal States</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#failure-taxonomy" class="nav-link">Failure Taxonomy</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#the-temporal-backbone" class="nav-link">The Temporal Backbone</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#integration-hooks-the-external-world-contract" class="nav-link">Integration Hooks: The External-World Contract</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#why-hilt-rejects-pass-by-default" class="nav-link">Why HILT Rejects "Pass by Default"</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#where-things-live" class="nav-link">Where things live</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+              </ul>
+            </li>
+        </ul>
+    </div>
+</div></div>
+                    <div class="col-md-9" role="main">
+
+<h1 id="hilt-project-overview">HILT — Project Overview<a class="headerlink" href="#hilt-project-overview" title="Permanent link">&para;</a></h1>
+<p><strong>Philosophy:</strong> "The act of running a HILT Test is the act of producing irrefutable evidence."</p>
+<p>"Happy path" scripts work 99% of the time but cause 100% of the line stoppages because they fail ambiguously. HILT forces the SE to handle the "Sad Path" (Infra vs. Hardware vs. Integration) at design time.</p>
+<h2 id="what-it-is">What It Is<a class="headerlink" href="#what-it-is" title="Permanent link">&para;</a></h2>
+<p>An opinionated manufacturing test framework built in Python (asyncio). It seeks to implement empathetic architecture by addressing SE → tech communication issues upstream via a pit-of-success model.</p>
+<p>This is the Python port of the TypeScript original (<code>../hilt-test-legacy/</code>, read-only reference). Parity with the original is explicitly not a goal; the contracts are carried forward, the enforcement is stronger.</p>
+<h2 id="how-it-does-that">How it does that<a class="headerlink" href="#how-it-does-that" title="Permanent link">&para;</a></h2>
+<p>HILT gives the SEs a framework that allows them to focus on getting the test right and logging meaningful evidence. It does this by reducing cognitive load on the SE as much as it possibly can. The SE declares their intent and HILT collects and organizes structured evidence. Much like a real hilt test, <strong>the act of executing the test is the act of producing evidence. full stop.</strong> The SEs capture meaningful information, and the hilt inspector guarantees that a tech is able to turn that data into information at 2am.</p>
+<h2 id="the-hilt-success-metric">The HILT Success Metric<a class="headerlink" href="#the-hilt-success-metric" title="Permanent link">&para;</a></h2>
+<p>A Floor Technician (the "FT" of the source docstrings) can accurately categorize a failure and initiate the correct recovery protocol within 60 seconds of opening the Inspector, without needing to Slack the Software Engineer.</p>
+<h2 id="the-core-purpose">The Core Purpose<a class="headerlink" href="#the-core-purpose" title="Permanent link">&para;</a></h2>
+<blockquote>
+<p>"We are giving developers the tools they need to give floor operators the tools THEY need,
+and doing so without additional cognitive load on the developer."</p>
+</blockquote>
+<p>Two-level service contract:
+1. <strong>Framework → Developer</strong>: lifecycle guarantees, automatic evidence collection, structured failure signals — developer focuses on test logic, not plumbing.
+2. <strong>Developer → Floor Technician</strong>: clear names, hardware-domain failure messages, scoped artifacts in the inspector tree — tech makes confident judgment calls without escalating to a software engineer.</p>
+<h2 id="the-primary-beneficiary-floor-technician">The Primary Beneficiary: Floor Technician<a class="headerlink" href="#the-primary-beneficiary-floor-technician" title="Permanent link">&para;</a></h2>
+<h4 id="floor-technicians-simultaneously-have-the-biggest-impact-on-the-success-of-our-business-and-the-least-control-over-how-it-operates">"Floor technicians simultaneously have the biggest impact on the success of our business, and the least control over how it operates"<a class="headerlink" href="#floor-technicians-simultaneously-have-the-biggest-impact-on-the-success-of-our-business-and-the-least-control-over-how-it-operates" title="Permanent link">&para;</a></h4>
+<p>Typically early-career technology enthusiast. Passionate, capable, but may be operating at the edge of their knowledge. They are the first person to see failures and to make failure category judgment calls. They are the experts on how to handle any given failure mode. The inspector is their primary tool — and also a containment layer preventing them from going places they shouldn't. The station page is <code>docs/floor-technician.md</code>
+(<a href="floor-technician.html">Floor Technician guide</a>): how to read <code>result.json</code> and
+what to do next, without opening the suite source.</p>
+<h2 id="the-atom">The Atom<a class="headerlink" href="#the-atom" title="Permanent link">&para;</a></h2>
+<p><strong><code>TestComponent</code> is the irreducible unit of the manufacturing test problem domain.</strong></p>
+<ul>
+<li>Does not know or care what the DUT is</li>
+<li>Does not know what stage it's running at</li>
+<li>Does not know what surrounds it in the composition</li>
+<li>Only knows: <code>configure</code> → <code>build_suite</code> → <code>cleanup</code></li>
+</ul>
+<p>A rack-level L11 test is not a different kind of thing — it is more atoms composed together. Leaves, sequences, parallel nodes, and full hardware devices are all instances of <code>TestComponent</code>; the framework is fractal. A <code>TestComponent</code> is simultaneously a claim about hardware and a procedure for verifying that claim: <strong>evidence at scale N−1 becomes a verdict at scale N.</strong> The DUT tree and the test tree are one structure.</p>
+<h2 id="the-chemistry-mental-model">The Chemistry Mental Model<a class="headerlink" href="#the-chemistry-mental-model" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Level</th>
+<th>Framework Construct</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Atom</td>
+<td><code>TestComponent</code> (leaf via <code>self.test()</code>)</td>
+</tr>
+<tr>
+<td>Molecule</td>
+<td><code>self.sequence()</code> (ordered, bails on failure), <code>self.parallel()</code> (concurrent, collects all)</td>
+</tr>
+<tr>
+<td>Organelle</td>
+<td><code>TestComponent</code> subclass (encapsulates state + lifecycle, produces atoms via <code>build_suite()</code>)</td>
+</tr>
+<tr>
+<td>Organism</td>
+<td>Full rack/system-level suite</td>
+</tr>
+<tr>
+<td>Emulsion</td>
+<td>L10+JBOG/JBOD — two molecules behaving as unified system under test</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Key property</strong>: No level needs to know about the levels above it. Composition is the only coupling mechanism and the framework is contractually obligated to provide it.</p>
+<h2 id="the-three-terminal-states">The Three Terminal States<a class="headerlink" href="#the-three-terminal-states" title="Permanent link">&para;</a></h2>
+<p>Every run of a <code>TestComponent</code> resolves to one of three peer states — no silent exits, no hidden fourth category:</p>
+<ol>
+<li><strong>Pass</strong> — the test method returned <code>PASS</code> explicitly, bare or as <code>PASS(evidence)</code> carrying its readings. Cannot accidentally pass: the framework checks <code>isinstance(result, Verdict)</code>, and a <code>Verdict</code> is only obtained by importing <code>PASS</code> or calling it, so a string, a truthy value, or a parsed config cannot forge it. A method that declares its evidence with <code>@evidence(...)</code> cannot pass without carrying it.</li>
+<li><strong>Fail</strong> — the test method raised a <code>TestFailure</code>. Structured articulation of what the hardware did wrong, or (for a plain exception) a loud contract violation signal that the developer didn't model this failure mode.</li>
+<li><strong>Aborted</strong> — no verdict was produced. Two causes:</li>
+<li><strong>Harness-level:</strong> an external integration hook (<code>before_each</code>/<code>after_each</code> on the run params) threw, halting the run before a verdict could be reached.</li>
+<li><strong>Node-local:</strong> the test method returned anything other than the <code>PASS</code> sentinel — a <code>None</code> fall-through or an explicit wrong value (the string <code>"PASS"</code> included). No verdict exists, so the framework refuses to forge Fail (or Pass) on its behalf. Siblings are unaffected.</li>
+</ol>
+<p><strong>Peer state to Pass/Fail, NOT a flavor of failure.</strong></p>
+<blockquote>
+<p>The node-local Aborted cause is a deliberate deviation from the TypeScript original, which folded a missing verdict into the contract violation/Fail path. The port's position: a contract violation that <em>threw</em> produced information (Fail + violation signal); a method that <em>returned wrong</em> produced nothing, and reporting nothing as a verdict would itself be a quiet lie.</p>
+</blockquote>
+<p>The tech's recovery protocol differs for each. A Fail says "check the hardware." An Aborted says "check the harness — the shop-floor DB, the coordinator, the integration layer — or the test method that produced no verdict — not the unit." <strong>Collapsing these into one category is exactly what the framework refuses to do.</strong></p>
+<p>A two-layer bug-guard exists alongside the three terminal states:
+- <code>ContractViolation</code> — developer contract violation, raised at the lifecycle layer
+- <code>FrameworkContractViolation</code> — framework internal contract violated (should be unreachable, indicates a bug in the framework itself)</p>
+<h2 id="failure-taxonomy">Failure Taxonomy<a class="headerlink" href="#failure-taxonomy" title="Permanent link">&para;</a></h2>
+<p>Root causes the framework must make obvious:
+1. <strong>DUT failed a check</strong> — <code>TestFailure</code> from a test method or from <code>configure()</code> → state <code>Fail</code>. A <code>TestFailure</code> from <code>configure()</code> means "the device did not reach a testable state"; whether hardware or infrastructure is the cause is <strong>not knowable from code</strong> — the human triager decides.
+2. <strong>Hardware lying</strong> — survey artifacts expose mismatch (claimed success vs actual state)
+3. <strong>Test method contract violation</strong> — plain exception from a test method or from <code>configure()</code> → violation signal
+4. <strong>Integration failure</strong> — <code>ExternalIntegrationFailure</code> from <code>before_each</code>/<code>after_each</code> aborts the run. The test may be fine; the harness around it broke (e.g. shopfloor DB unreachable, network congestion).
+5. <strong>Operator interrupt</strong> — <code>OperatorInterrupt</code> from SIGINT/SIGTERM during a live run. The Floor Technician reads that the operator stopped the rack, not that the harness or the DUT failed.</p>
+<p><strong>A human must always make the final determination.</strong> The framework presents evidence clearly enough that the tech can make the call without a software engineer's help.</p>
+<h2 id="the-temporal-backbone">The Temporal Backbone<a class="headerlink" href="#the-temporal-backbone" title="Permanent link">&para;</a></h2>
+<p>The log artifact is the authoritative chronological record of a test run. Two complementary views:
+- <strong>Structural</strong> (inspector tree): what ran, what passed, what failed, how tests compose
+- <strong>Temporal</strong> (log backbone): what happened, in what order, what state at each moment</p>
+<p><code>await utils.capture_artifact(artifact)</code> stitches artifacts onto the timeline via
+structured pointer log entries. The public <code>Artifact</code> value has no file-writing method,
+so the framework cannot persist evidence without also recording that pointer.</p>
+<p>Every full run creates one timestamped directory beneath the configured artifact root.
+Logging nodes stream a human <code>timeline.log</code> and a versioned Inspector
+<code>timeline.jsonl</code>; leaves roll into their nearest owning ancestor. Both views are
+flushed entry by entry, preserving the accepted chronology through interruption.
+When the root reaches Pass, Fail, or Aborted, the framework atomically writes its
+versioned <code>RunResult</code> to <code>result.json</code> at that run-directory root. The root timeline's
+final entry points to the file, so the structural and temporal views remain joined.</p>
+<p><strong>Timestamp integrity is a system requirement.</strong> NTP sync on the test host is not optional. The log backbone is used as a legal instrument in customer disputes ("did failures start before your 2pm firmware push?").</p>
+<h2 id="integration-hooks-the-external-world-contract">Integration Hooks: The External-World Contract<a class="headerlink" href="#integration-hooks-the-external-world-contract" title="Permanent link">&para;</a></h2>
+<p><code>before_each</code> and <code>after_each</code> on the run params are how HILT composes with the world outside the test framework — shop-floor databases, lab coordinators, audit pipelines, any system that needs a "started" signal before each test and a "finished" signal after.</p>
+<ul>
+<li>Registered once at the root <code>run()</code> call, fire around every executed test in the tree (fractal dispatch)</li>
+<li>Throw from either hook → run halts → enclosing node transitions to <code>Aborted</code></li>
+<li><strong>Pair invariant</strong>: <code>after_each</code> fires even when <code>before_each</code> threw, so "started" and "finished" records stay balanced in the external system. No orphan rows.</li>
+<li>Hooks receive a narrow context (node name, ancestor chain, scoped logger, env snapshot) — NOT <code>utils.exec</code> or <code>get_shell</code>. The interface encodes "integration hooks don't touch the hardware."</li>
+</ul>
+<p>When a hook throws, the required end state is for the framework to close every in-flight transport across the whole tree immediately (SSH connections destroyed, subprocesses killed). A 30-minute firmware flash in flight when the integration layer halts must NOT continue to mutate the hardware. This is load-bearing for manufacturing test integrity.</p>
+<h3 id="the-pit-of-success-model">The Pit of Success Model<a class="headerlink" href="#the-pit-of-success-model" title="Permanent link">&para;</a></h3>
+<p>The correct pattern must be the path of least resistance — enforced by API shape, not documentation.</p>
+<p>HILT is deliberately designed so that the <em>right</em> way to write a test is also the <em>easiest</em> way. The framework uses runtime enforcement, import-time structural checks, sensible defaults, and loud signals to guide developers toward honest, evidence-rich tests without requiring them to constantly consult the docs.</p>
+<p>Here are some of the ways HILT implements this:</p>
+<ul>
+<li><strong>No pass by default</strong> — test methods must explicitly return <code>PASS</code>, or <code>PASS(evidence)</code> with the readings that prove it. Reaching the end of the method without doing so is a missing verdict (node-local Aborted); raising a plain exception is a developer contract violation. A method that declares its evidence with <code>@evidence(...)</code> cannot pass without carrying it. Even internal implementations like <code>TestSequence</code> explicitly model the passing condition as (all tests ran AND all tests passed) — it does not silently pass if nothing threw.</li>
+<li><strong>Setup is constrained to <code>configure()</code></strong> — All infrastructure wiring, readiness checks, and context creation must happen in <code>configure()</code>. The framework merges the return value into <code>utils.ctx</code> for the rest of the lifecycle and all descendants, and ctx is read-only from then on: inputs come in through configure, readings go out with the verdict. This prevents hidden state coupling and makes the data flow explicit.</li>
+<li><strong>Unmodeled failure modes are loud</strong> — Raising anything other than a <code>TestFailure</code> (or subclass) from a test method produces a clear "CONTRACT VIOLATION" message. <strong>The framework refuses to let an unhandled error silently become a pass.</strong></li>
+<li><strong><code>use_shell()</code> auto-wires execution routing</strong> — Calling <code>utils.use_shell()</code> in <code>configure()</code> automatically rebinds <code>utils.exec</code> to route through the SSH connection. Child tests and descendants inherit the routing with zero extra code. The SE never has to manually thread SSH interfaces.</li>
+<li><strong>Composition takes bound methods directly</strong> — <code>self.test("name", self._my_method)</code> works with a plain bound method reference. No wrapping, no binding ceremony.</li>
+<li><strong>Sensible defaults reduce boilerplate</strong> — <code>self.test("name", self._my_method)</code> defaults to <code>discrete_log_file=False</code>, so its logs automatically roll up into the parent. This gives you <strong>one log per logical abstraction instead of one log per screw</strong>.</li>
+<li><strong>Survey and audit hooks belong in the constructor</strong> — Registering them only in <code>__init__</code> makes them part of the test's stable identity (visible on the class and consistent across runs).</li>
+<li><strong><code>wait_for()</code> requires intent</strong> — The <code>looking_for</code> parameter is mandatory and becomes the primary diagnostic string when a timeout occurs. This nudges developers to write human-readable failure messages.</li>
+<li><strong>Import-time structural enforcement</strong> — a tier the TypeScript original never had. <code>__init_subclass__</code> on <code>TestComponent</code> verifies at class <em>definition</em> (import time, before any hardware is touched) that the subclass is structurally sound: required lifecycle methods present and async, sealed internals (<code>main</code>, <code>run</code>, <code>_run_lifecycle</code>, the <code>_safe_*</code> family) not overridden. A malformed test refuses to import; it can never reach the floor.</li>
+</ul>
+<p>These constraints are not restrictions — they are guardrails that make it difficult to write ambiguous or incomplete tests while making the correct patterns feel natural.</p>
+<h2 id="why-hilt-rejects-pass-by-default">Why HILT Rejects "Pass by Default"<a class="headerlink" href="#why-hilt-rejects-pass-by-default" title="Permanent link">&para;</a></h2>
+<p>Most test frameworks treat "the test reached the end without throwing an error" as a passing result. This is the default mental model the industry has used for decades.</p>
+<p><strong>HILT rejects it outright.</strong></p>
+<h4 id="the-quiet-lie">The Quiet Lie<a class="headerlink" href="#the-quiet-lie" title="Permanent link">&para;</a></h4>
+<p>When a test passes by default, it has only proven one thing:</p>
+<blockquote>
+<p>It did not encounter any of the failure modes the author happened to think of and write explicit checks for.</p>
+</blockquote>
+<p>That is not evidence that the system works. It is a quiet lie — one that accumulates silently until it causes a line stoppage. HILT provides the guardrails that make it difficult to accidentally ship a test that only <em>appears</em> complete. The same conviction governs what a pass carries: a pass without its declared evidence is not a pass.</p>
+<h3 id="cases-where-explicit-pass-modeling-feels-awkward">Cases Where Explicit Pass Modeling Feels Awkward<a class="headerlink" href="#cases-where-explicit-pass-modeling-feels-awkward" title="Permanent link">&para;</a></h3>
+<p>Here are the situations where forcing an explicit <code>PASS</code> can feel clunky if you are coming from a pass-by-default mentality. In every case below, the job is the same: make the pass condition a readable check the next developer can find and understand. <code>return PASS</code> on its own is syntax, not modeling — the conditional that gates it is where your intent lives, and where <code>hilt-check</code> (the static-analysis tier) will insist it goes.</p>
+<table>
+<thead>
+<tr>
+<th>Situation</th>
+<th>Why It Feels Awkward</th>
+<th>How to Model the Pass Condition</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Long-running / soak tests</strong></td>
+<td>Success = "it didn't crash for 8 hours"</td>
+<td>Track error count or health samples across the run. <code>if errors == 0 and samples_collected &gt;= expected: return PASS</code> — the conditional names what "healthy for 8 hours" actually means.</td>
+</tr>
+<tr>
+<td><strong>Event-driven / callback tests</strong></td>
+<td>Success depends on receiving a callback within time</td>
+<td><code>if await wait_for(lambda: callback_fired, looking_for=...): return PASS</code> — the wait returning truthy IS the success condition, gated explicitly.</td>
+</tr>
+<tr>
+<td><strong>Performance / load tests</strong></td>
+<td>Success = "p99 latency &lt; 50ms and throughput &gt; 10k req/s"</td>
+<td>Collect metrics, then: <code>if metrics.p99 &lt; 50 and metrics.throughput &gt; 10_000: return PASS</code> — <strong>both</strong> thresholds named in code, not just in your head.</td>
+</tr>
+<tr>
+<td><strong>Fuzzing / property-based tests</strong></td>
+<td>Success is probabilistic ("no counterexample found in 10,000 runs")</td>
+<td><code>if iterations_completed == 10_000 and not counterexamples: return PASS</code> — <strong>both halves matter</strong>: you ran the full budget AND found nothing.</td>
+</tr>
+<tr>
+<td><strong>Best-effort / smoke tests</strong></td>
+<td>"It's okay if some optional checks fail"</td>
+<td>Define the threshold as a variable then <code>if critical_checks_passed: return PASS</code>. The next reader sees the threshold immediately.</td>
+</tr>
+<tr>
+<td><strong>Non-deterministic external systems</strong></td>
+<td>Success depends on flaky third-party behavior</td>
+<td>After retries: <code>if last_attempt_succeeded: return PASS</code>. The retry loop models the flake tolerance; the final conditional models the verdict.</td>
+</tr>
+</tbody>
+</table>
+<h4 id="why-this-matters-to-floor-technicians">Why This Matters to Floor Technicians<a class="headerlink" href="#why-this-matters-to-floor-technicians" title="Permanent link">&para;</a></h4>
+<p>Floor Technicians are the primary consumers of everything you produce. They are the ones who will open the Inspector at 2am when a station is down. They need to answer three questions in under 60 seconds:</p>
+<ol>
+<li>What actually happened?</li>
+<li>Is this a hardware problem, a test problem, or an infrastructure problem?</li>
+<li>What should I do next?</li>
+</ol>
+<p>Pass-by-default tests make all three questions harder. The tech is left guessing at your intent, debugging ambiguous results, and sometimes having to escalate because the evidence is unclear.</p>
+<p>HILT is built so that the evidence a tech needs is produced automatically and presented clearly — without requiring them to read your source code or understand your design intent.</p>
+<h4 id="what-hilt-demands">What HILT Demands<a class="headerlink" href="#what-hilt-demands" title="Permanent link">&para;</a></h4>
+<h4 id="the-three-tier-enforcement-stack">The three-tier enforcement stack<a class="headerlink" href="#the-three-tier-enforcement-stack" title="Permanent link">&para;</a></h4>
+<p>HILT does not merely prefer explicit passes — it <strong>rejects</strong> implicit ones at every tier of the enforcement stack:</p>
+<table>
+<thead>
+<tr>
+<th>Tier</th>
+<th>Mechanism</th>
+<th>Enforces</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>Runtime IoC wrapping (the child-boundary in <code>lifecycle.py</code>)</td>
+<td>Verdict contract, failure taxonomy, lifecycle order — can never be bypassed</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Import-time structural checks (<code>__init_subclass__</code>)</td>
+<td>Subclass shape, sealed internals — fires before hardware is touched</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Static analysis (<code>hilt-check</code>)</td>
+<td>Declarative syntax: pure <code>build_suite</code>, gated <code>PASS</code>, immutable-self idiom</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Rule: nothing that protects hardware or verdict integrity may live only in tier 3.</strong></p>
+<ul>
+<li>In the runtime contract: test methods must return the <code>PASS</code> sentinel explicitly. Reaching the end without doing so produces no verdict — the node renders Aborted, never Pass.</li>
+<li>In internal implementations: even when all conditions are met (as in <code>TestSequence</code>), the framework still performs an explicit check and refuses to silently pass.</li>
+<li>At the static-analysis level: returning <code>PASS</code> outside of an <code>if</code> condition is surfaced as a lint error — the framework wants you to model your success condition deliberately.</li>
+</ul>
+<p>This is more work up front. It forces you to think about what "success" actually looks like with the same rigor you apply to failure modes.</p>
+<p>In return, you get tests that mean what they say, clear failure categorization, and automatic structured evidence that a floor technician can trust.</p>
+<h2 id="where-things-live">Where things live<a class="headerlink" href="#where-things-live" title="Permanent link">&para;</a></h2>
+<p>The concepts above are carried by the modules under <code>src/hilt</code>. Each line says what
+the module is for, not what it contains; the contracts themselves are stated once, in
+<a href="contracts.html">contracts.md</a> and the pages linked from it.</p>
+<table>
+<thead>
+<tr>
+<th>Module</th>
+<th>What it is for</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>__init__.py</code></td>
+<td>The public surface: <code>hilt.__all__</code> is the documented API (<a href="api.html">api.md</a>); every other name in the package is internal.</td>
+</tr>
+<tr>
+<td><code>base.py</code></td>
+<td>The atom: <code>TestComponent</code>, the one node every suite is composed from, and the framework-owned lifecycle that runs it.</td>
+</tr>
+<tr>
+<td><code>lifecycle.py</code></td>
+<td>Tier 1, the kernel of trust: the child boundary that turns what a test method returns into one of the three terminal states.</td>
+</tr>
+<tr>
+<td><code>verdict.py</code></td>
+<td>The non-forgeable <code>PASS</code> sentinel and the <code>Verdict</code> a test method hands back.</td>
+</tr>
+<tr>
+<td><code>errors.py</code></td>
+<td>The failure taxonomy: which exception means Fail, which means Aborted, and who is being told.</td>
+</tr>
+<tr>
+<td><code>utils.py</code></td>
+<td>The per-node surface authored code is handed: exec, ctx, env, logging, measurements, hook registration.</td>
+</tr>
+<tr>
+<td><code>evidence.py</code></td>
+<td><code>@evidence</code>: the readings a test method promises to carry with its <code>PASS</code>.</td>
+</tr>
+<tr>
+<td><code>measurement.py</code></td>
+<td>Parametric measurements: a number with a unit and limits, recorded beside the verdict (<a href="measurements.html">measurements.md</a>).</td>
+</tr>
+<tr>
+<td><code>run_data.py</code></td>
+<td>The JSON-safe view of ctx and verdict evidence that reaches the run record.</td>
+</tr>
+<tr>
+<td><code>results.py</code></td>
+<td>The immutable evidence of a run and its JSON boundary to the Inspector (<a href="inspector-json.html">inspector-json.md</a>).</td>
+</tr>
+<tr>
+<td><code>timeline.py</code></td>
+<td>The temporal backbone: the durable per-node records that are a run's authoritative chronology.</td>
+</tr>
+<tr>
+<td><code>artifacts.py</code></td>
+<td>Point-in-time captures and their framework-owned persistence.</td>
+</tr>
+<tr>
+<td><code>hooks.py</code></td>
+<td>The integration hooks (surveys, audits, <code>before_each</code>/<code>after_each</code>) and the deliberately narrow contexts they see.</td>
+</tr>
+<tr>
+<td><code>executor.py</code></td>
+<td>The host-side execution choke point every blocking call passes through.</td>
+</tr>
+<tr>
+<td><code>routing.py</code></td>
+<td>Topology-aware exec routing: which hop a node's <code>utils.exec</code> travels through.</td>
+</tr>
+<tr>
+<td><code>remote.py</code></td>
+<td>The remote transport contract the concrete transports implement.</td>
+</tr>
+<tr>
+<td><code>ssh.py</code></td>
+<td>The SSH transport.</td>
+</tr>
+<tr>
+<td><code>mock.py</code></td>
+<td>The in-process transport for self-tests: no hardware, no SSH.</td>
+</tr>
+<tr>
+<td><code>arp.py</code></td>
+<td>MAC-to-IP resolution over the node's current exec route.</td>
+</tr>
+<tr>
+<td><code>device_api.py</code></td>
+<td>The Device API (CoAP/HTTP) contract: resource requests, not an exec subclass (<a href="hil/device-api.html">hil/device-api.md</a>).</td>
+</tr>
+<tr>
+<td><code>junit.py</code></td>
+<td>The JUnit XML reporter over the run record, for CI systems that read that format (<a href="junit-xml.html">junit-xml.md</a>).</td>
+</tr>
+<tr>
+<td><code>cli.py</code></td>
+<td>The <code>hilt</code> command line: <code>run</code>, <code>new</code>, <code>inspect</code> (<a href="hilt-run.html">hilt-run.md</a>, <a href="hilt-new.html">hilt-new.md</a>, <a href="inspector.html">inspector.md</a>).</td>
+</tr>
+<tr>
+<td><code>scaffold.py</code></td>
+<td>Writes a gated-<code>PASS</code> suite and its self-test from a class name, so a new suite starts inside the pit of success.</td>
+</tr>
+<tr>
+<td><code>inspector_*.py</code> (ten modules)</td>
+<td>The Floor Technician's Inspector, split reader / model / view. Readers (<code>inspector_json</code>, <code>inspector_run</code>, <code>inspector_timeline</code>, <code>inspector_artifacts</code>) load saved evidence and execute nothing; models (<code>inspector_tree</code>, <code>inspector_selection</code>, <code>inspector_artifact_navigation</code>) turn it into rows and cursors; views (<code>inspector_timeline_view</code>, <code>inspector_artifact_view</code>, <code>inspector_app</code>) render and forward keys, deciding nothing.</td>
+</tr>
+</tbody>
+</table></div>
+            </div>
+        </div>
+
+        <footer class="col-md-12">
+            <hr>
+                <p>Copyright 2026 Tyler Meador</p>
+            <p>Documentation built with <a href="https://www.mkdocs.org/">MkDocs</a>.</p>
+        </footer>
+        <script src="js/bootstrap.bundle.min.js"></script>
+        <script>
+            var base_url = ".",
+                shortcuts = {"help": 191, "next": 78, "previous": 80, "search": 83};
+        </script>
+        <script src="js/base.js"></script>
+        <script src="search/main.js"></script>
+
+        <div class="modal" id="mkdocs_search_modal" tabindex="-1" role="dialog" aria-labelledby="searchModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="searchModalLabel">Search</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>From here you can search these documents. Enter your search terms below.</p>
+                <form>
+                    <div class="form-group">
+                        <input type="search" class="form-control" placeholder="Search..." id="mkdocs-search-query" title="Type search term here">
+                    </div>
+                </form>
+                <div id="mkdocs-search-results" data-no-results-text="No results found"></div>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div><div class="modal" id="mkdocs_keyboard_modal" tabindex="-1" role="dialog" aria-labelledby="keyboardModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="keyboardModalLabel">Keyboard Shortcuts</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th style="width: 20%;">Keys</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="help shortcut"><kbd>?</kbd></td>
+                    <td>Open this help</td>
+                  </tr>
+                  <tr>
+                    <td class="next shortcut"><kbd>n</kbd></td>
+                    <td>Next page</td>
+                  </tr>
+                  <tr>
+                    <td class="prev shortcut"><kbd>p</kbd></td>
+                    <td>Previous page</td>
+                  </tr>
+                  <tr>
+                    <td class="search shortcut"><kbd>s</kbd></td>
+                    <td>Search</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div>
+
+    </body>
+</html>
