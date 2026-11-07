@@ -19,7 +19,6 @@ keywords = [
     "dut",
 ]
 classifiers = [
-    "Development Status :: 3 - Alpha",
     "Framework :: AsyncIO",
     "Intended Audience :: Developers",
     "Intended Audience :: Manufacturing",
