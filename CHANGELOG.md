@@ -10,6 +10,15 @@ leave a fresh Unreleased section above it. Use the
 
 ## Unreleased
 
+### Added
+
+- `docs/lifecycle.md`: an onboarding page for the lifecycle. It opens with a diagram of
+  the three lifecycle methods (`configure`, `build_suite`, `cleanup`), follows with a
+  second diagram of the suite `build_suite` returns and the test methods that suite
+  uses, then one small component in code and a diagram of nested components each
+  running their own lifecycle. The Lifecycle Contract in `docs/contracts.md` stays the
+  normative statement.
+
 ### Fixed
 
 - README Status section said HILT was at 0.0.x with the API still moving; it now
