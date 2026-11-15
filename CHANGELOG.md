@@ -10,6 +10,15 @@ leave a fresh Unreleased section above it. Use the
 
 ## Unreleased
 
+Nothing yet.
+
+## [1.0.1] - 2026-11-14
+
+A documentation release. Nothing a suite can observe changes: no name, contract,
+record format, or `hilt-check` rule is touched, so there is no upgrade action. The
+README is the PyPI project page, and the Status fix below reaches that page with this
+release.
+
 ### Added
 
 - `docs/lifecycle.md`: an onboarding page for the lifecycle. It opens with a diagram of

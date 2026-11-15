@@ -1,6 +1,6 @@
 [project]
 name = "hilt-core"
-version = "1.0.0"
+version = "1.0.1"
 description = "Python HIL testing with a pit of success: composable tests, guardrails that make a bad test hard to write, and an engine that won't let an unhandled failure pass silently."
 readme = "README.md"
 license = "Apache-2.0"
