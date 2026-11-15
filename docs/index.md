@@ -11,7 +11,8 @@ writes the suite that makes that possible.
   [Floor Technician guide](floor-technician.md). That is the URL that belongs
   on a station label.
 - **Suite authors:** start with [getting started](getting-started.md), then the
-  [overview](overview.md), [idioms](idioms.md), and [contracts](contracts.md).
+  [overview](overview.md), the [lifecycle](lifecycle.md), [idioms](idioms.md), and
+  [contracts](contracts.md).
 - **Public surface:** [API stability](api-stability.md) is the policy;
   the [API reference](api.md) is generated from the public names' docstrings.
 - **Inspector contributors:** the [target specification](inspector.md) carries the

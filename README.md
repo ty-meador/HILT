@@ -170,6 +170,8 @@ The same record is available as versioned JSON (`--json`, with
 
 - [Getting started](docs/getting-started.md): install, first run, examples, deployment
 - [Overview](docs/overview.md): the philosophy and the failure taxonomy
+- [Lifecycle](docs/lifecycle.md): `configure`, `build_suite`, and `cleanup` in
+  diagrams, with one small component in code
 - [Contracts](docs/contracts.md): what the framework guarantees and what it asks of you
 - [Idioms](docs/idioms.md): authoring patterns
 - [Inspector](docs/inspector.md) and [Floor Technician guide](docs/floor-technician.md):
