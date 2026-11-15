@@ -6,9 +6,9 @@ each.
 
 ```mermaid
 flowchart TD
-    init(["`**Before the run**
-    The constructor.
-    Name and limits only.
+    init(["`**Before the lifecycle**
+    The constructor
+    describes the test.
     No hardware yet.`"])
 
     subgraph lifecycle["THE LIFECYCLE: HILT calls these three methods, in this order"]
@@ -46,7 +46,7 @@ flowchart TD
 
 If you have written a bench procedure, you know the shape: **set up, run the checks,
 tear down**. The difference is that HILT owns the order. You never call these methods
-yourself, and the teardown cannot be skipped.
+yourself, and HILT runs the teardown after every outcome.
 
 Two things you write are *not* lifecycle steps:
 
@@ -136,7 +136,7 @@ class _Fan:
 
 
 class FanSuite(TestComponent):
-    # Before the run: describe the test. No hardware yet.
+    # Before the lifecycle: describe the test. No hardware yet.
     def __init__(self, *, name: str, min_rpm: int = 1800, max_current_ma: int = 250) -> None:
         super().__init__(name=name)
         self._min_rpm = min_rpm
@@ -146,7 +146,11 @@ class FanSuite(TestComponent):
     async def configure(self, utils: TestUtils) -> dict[str, Any]:
         fan = _Fan()
         fan.power_on()
-        await utils.wait_for(lambda: fan.read_rpm() > 0, looking_for="fan spinning")
+        try:
+            await utils.wait_for(lambda: fan.read_rpm() > 0, looking_for="fan spinning")
+        except TestFailure:
+            fan.power_off()  # a failed configure hands cleanup nothing, so undo it here
+            raise
         return {"fan": fan, "min_rpm": self._min_rpm, "max_current_ma": self._max_current_ma}
 
     # LIFECYCLE 2 of 3: return the suite. Name each test and hand over its method.
@@ -198,7 +202,7 @@ Save it as `fan_suite.py` and run `uv run hilt run fan_suite.py`. It ends with
 
 | | Method | Put here | Keep out |
 |-|--------|----------|----------|
-| Before the run | `__init__` | Name, limits, addresses. Anything known before the run. | Anything that touches the device. |
+| Before the lifecycle | `__init__` | Name, limits, addresses. Anything known up front. | Anything that touches the device. |
 | Lifecycle 1 | `configure` | Power-up, connections, waiting until ready. Return a dict of what the tests need. | Checks that deserve their own line in the report. |
 | Lifecycle 2 | `build_suite` | The tests, by name, in order. | Any work. It is a plain `def` and reads no hardware. |
 | Lifecycle 3 | `cleanup` | Power-down, restoring settings. | Raising errors. Reading ctx with `[]`. |
@@ -206,13 +210,14 @@ Save it as `fan_suite.py` and run `uv run hilt run fan_suite.py`. It ends with
 
 Three rules cover most first-week mistakes:
 
-- **`utils.ctx` is the dict `configure` returned.** That is how values reach the test
+- **`utils.ctx` holds what `configure` returned.** That is how values reach the test
   methods. It is read-only after `configure`; a test hands its readings back with
   `PASS({...})`.
 - **`self` is frozen after `__init__`.** Setting `self.something` later raises an
   error. Use ctx instead.
 - **`cleanup` reads ctx with `.get()`.** It also runs when `configure` failed, and
-  then the dict is empty.
+  then ctx holds nothing `configure` would have returned. So a `configure` that fails
+  partway undoes what it started, the way the example powers the fan back off.
 
 ## Components nest
 
@@ -251,27 +256,38 @@ flowchart TD
     class rc,rb,rk,a1,a2,a3,b1,b2,b3 step
 ```
 
-Each component has its own ctx: a child does not see what its parent's `configure`
-returned.
+`RackSuite` defines only `build_suite`: `configure` and `cleanup` are optional, for a
+component with nothing of its own to set up or put back.
+
+Each component has its own ctx. The tests inside one component share it; a component
+nested in another does not see what the outer one's `configure` returned.
 
 ## When something goes wrong
 
+For the fan example, whose suite is a sequence:
+
 | What happened | Suite runs? | `cleanup` runs? | Result |
 |---------------|-------------|-----------------|--------|
-| A test method raises `TestFailure` | Up to the failure | Yes | `Fail`: the hardware did not do what was claimed |
-| `configure` raises `TestFailure` (a `wait_for` timeout does) | No, and `build_suite` is not called | Yes | `Fail`: the device never became testable |
-| Any other exception escapes | Up to the exception | Yes | `Fail`, flagged as a bug in the suite |
+| A test method raises `TestFailure` | Up to the failure | Yes | `Fail`: the claim did not hold |
+| `configure` raises `TestFailure` (a `wait_for` timeout does) | No | Yes | `Fail`: the device never became testable |
+| `configure` or a test method raises any other exception | Up to the exception | Yes | `Fail`, flagged as a bug in the suite |
 | A test method ends without `return PASS` | Up to that test | Yes | `Aborted`: no verdict was given |
 
-`TestFailure` means the device is at fault. Any other exception means the suite is.
-Catch what the device can do wrong and raise `TestFailure` for it.
+In a `self.parallel`, one test failing does not stop the others.
+
+`TestFailure` is a verdict: the device did not pass. Whether the cause is the hardware
+or the bench around it is for the person at the station to work out. Any other
+exception means the suite itself has a bug. Catch what the device can do wrong and
+raise `TestFailure` for it.
 
 ## Going further
 
 - **Watching the device during a run.** Surveys snapshot the device at each lifecycle
   boundary, and audits check it on a timer while the suite runs. Both are registered
   in `__init__`; see `examples/hardware_device_lifecycle.py` and [idioms](idioms.md).
-- **The exact guarantees.** The [Lifecycle Contract](contracts.md#lifecycle-contract)
-  is the precise statement of everything on this page.
+- **The exact guarantees.** [Contracts](contracts.md) is the precise statement of what
+  the framework promises, starting with the
+  [Lifecycle Contract](contracts.md#lifecycle-contract). This page is the short
+  version; where the two differ, the contract is right.
 - **Authoring patterns.** [Idioms](idioms.md) covers time budgets, evidence, typed
   ctx, and SSH.
