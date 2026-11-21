@@ -25,6 +25,29 @@ wheels = [
 ]
 
 [[package]]
+name = "babel"
+version = "2.18.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/7d/b2/51899539b6ceeeb420d40ed3cd4b7a40519404f9baf3d4ac99dc413a834b/babel-2.18.0.tar.gz", hash = "sha256:b80b99a14bd085fcacfa15c9165f651fbb3406e66cc603abf11c5750937c992d", size = 9959554, upload-time = "2026-02-01T12:30:56.078Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/77/f5/21d2de20e8b8b0408f0681956ca2c69f1320a3848ac50e6e7f39c6159675/babel-2.18.0-py3-none-any.whl", hash = "sha256:e2b422b277c2b9a9630c1d7903c2a00d0830c409c59ac8cae9081c92f1aeba35", size = 10196845, upload-time = "2026-02-01T12:30:53.445Z" },
+]
+
+[[package]]
+name = "backrefs"
+version = "8.3"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/53/1d/01d5e03463cf724789518b935b1df079d3692e9565b7f41d5c289295b2a3/backrefs-8.3.tar.gz", hash = "sha256:bc87b4350f11cc6bf31a2f793dd2f9df577f5c91efaa943627bd261df26506aa", size = 5947408, upload-time = "2026-11-13T00:49:26.625Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/b0/ed/960d7997ce9f41481ad50ce8b22ad3343c67510e15e687cfa0b47ece00a1/backrefs-8.3-py310-none-any.whl", hash = "sha256:bc7ab9f1f5444d23ce15795700f6a3e621f13d521e0cb87e21204ff1e12b8c5f", size = 386394, upload-time = "2026-11-13T00:49:16.959Z" },
+    { url = "https://files.pythonhosted.org/packages/16/d7/4fcdb17835dc0f3519272d0d54114a4e63081732634c377491f8ba5b73a0/backrefs-8.3-py311-none-any.whl", hash = "sha256:2722cbb6884ecadce4cab992113fa50fc2c28733949104132fcf89dba0ac3290", size = 398389, upload-time = "2026-11-13T00:49:18.566Z" },
+    { url = "https://files.pythonhosted.org/packages/ee/12/3f55cfffe037d84db1b37fee7a91b461ce02b6303417ae6ce4abf82d50c7/backrefs-8.3-py312-none-any.whl", hash = "sha256:f9e7cc5934a9dd89bf1d86a91853120fca7cd32d7861c829c7a449f30100ba99", size = 404182, upload-time = "2026-11-13T00:49:19.881Z" },
+    { url = "https://files.pythonhosted.org/packages/26/ff/690caa4791e08622331c23b4728c80c2bffbf72a189fa1182860d5364f6c/backrefs-8.3-py313-none-any.whl", hash = "sha256:3f4b574b32f08b0c0dedc6ad15c3865ce93f1dca4fb31760e061bc4bac41ff2b", size = 406069, upload-time = "2026-11-13T00:49:21.463Z" },
+    { url = "https://files.pythonhosted.org/packages/54/37/af7a66a70ec5ca0d535950c3807432b9840bf3ec9f98baf1268d08608925/backrefs-8.3-py314-none-any.whl", hash = "sha256:be0de6f9ead4d44839169774643f25e36f4f2b05f7f1850368f5b5147e279e82", size = 418239, upload-time = "2026-11-13T00:49:22.94Z" },
+    { url = "https://files.pythonhosted.org/packages/ba/55/50bb5542709c09673e7d321dd3de828715780e138684ff84c65f04c88c02/backrefs-8.3-py315-none-any.whl", hash = "sha256:3930982530dc3e6c3b45094fdaa246edd59e4e91fd6b2dba61ee821efe1e3101", size = 423672, upload-time = "2026-11-13T00:49:24.871Z" },
+]
+
+[[package]]
 name = "black"
 version = "26.10.1"
 source = { registry = "https://pypi.org/simple" }
@@ -456,76 +479,6 @@ wheels = [
 ]
 
 [[package]]
-name = "hilt-core"
-version = "1.0.1"
-source = { editable = "." }
-dependencies = [
-    { name = "asyncssh" },
-    { name = "jsonschema" },
-    { name = "textual" },
-]
-
-[package.optional-dependencies]
-pylsp = [
-    { name = "python-lsp-server" },
-]
-serial = [
-    { name = "pyserial-asyncio" },
-]
-yaml = [
-    { name = "pyyaml" },
-]
-
-[package.dev-dependencies]
-bench = [
-    { name = "gpiod" },
-]
-dev = [
-    { name = "hypothesis" },
-    { name = "mkdocs" },
-    { name = "mkdocstrings", extra = ["python"] },
-    { name = "mutmut" },
-    { name = "pip-audit" },
-    { name = "pyright" },
-    { name = "pyserial-asyncio" },
-    { name = "pytest" },
-    { name = "pytest-asyncio" },
-    { name = "pytest-cov" },
-    { name = "python-lsp-server" },
-    { name = "ruff" },
-    { name = "types-pyyaml" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "asyncssh", specifier = ">=2.21" },
-    { name = "jsonschema", specifier = ">=4.23" },
-    { name = "pyserial-asyncio", marker = "extra == 'serial'", specifier = ">=0.6" },
-    { name = "python-lsp-server", marker = "extra == 'pylsp'", specifier = ">=1.12" },
-    { name = "pyyaml", marker = "extra == 'yaml'", specifier = ">=6.0.3" },
-    { name = "textual", specifier = ">=8.2" },
-]
-provides-extras = ["pylsp", "serial", "yaml"]
-
-[package.metadata.requires-dev]
-bench = [{ name = "gpiod", specifier = ">=2.5.0" }]
-dev = [
-    { name = "hypothesis", specifier = ">=6.151" },
-    { name = "mkdocs", specifier = ">=1.6.1" },
-    { name = "mkdocstrings", extras = ["python"], specifier = ">=1.0.6" },
-    { name = "mutmut", specifier = ">=3.7.0" },
-    { name = "pip-audit", specifier = ">=2.10" },
-    { name = "pyright", specifier = ">=1.1.400" },
-    { name = "pyserial-asyncio", specifier = ">=0.6" },
-    { name = "pytest", specifier = ">=8.4" },
-    { name = "pytest-asyncio", specifier = ">=1.0" },
-    { name = "pytest-cov", specifier = ">=7" },
-    { name = "python-lsp-server", specifier = ">=1.12" },
-    { name = "ruff", specifier = ">=0.12" },
-    { name = "types-pyyaml", specifier = ">=6.0.12" },
-]
-
-[[package]]
 name = "hypothesis"
 version = "6.167.1"
 source = { registry = "https://pypi.org/simple" }
@@ -863,6 +816,37 @@ wheels = [
 ]
 
 [[package]]
+name = "mkdocs-material"
+version = "9.8.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "babel" },
+    { name = "backrefs" },
+    { name = "colorama" },
+    { name = "jinja2" },
+    { name = "markdown" },
+    { name = "mkdocs" },
+    { name = "mkdocs-material-extensions" },
+    { name = "paginate" },
+    { name = "pygments" },
+    { name = "pymdown-extensions" },
+    { name = "requests" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/e2/b2/dee93bf227b481e28ba4d800c322dffc41b16d524ae84ca8d85aa7ec3a81/mkdocs_material-9.8.1.tar.gz", hash = "sha256:cddae7d77bb98d1d347aa68ee252ab40926171a1b34ba8777c44e16de9629f00", size = 4160481, upload-time = "2026-11-07T13:05:04.482Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/70/05/a4011d6a6af86cd03059a5b165cd69a3695ef4bd7bd477c66befe399640a/mkdocs_material-9.8.1-py3-none-any.whl", hash = "sha256:2115af67ee680e1398bdd0ea02e517721e4bba88b342503a93f97ea8eb3de51c", size = 9302217, upload-time = "2026-11-07T13:05:00.747Z" },
+]
+
+[[package]]
+name = "mkdocs-material-extensions"
+version = "1.3.1"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/79/9b/9b4c96d6593b2a541e1cb8b34899a6d021d208bb357042823d4d2cabdbe7/mkdocs_material_extensions-1.3.1.tar.gz", hash = "sha256:10c9511cea88f568257f960358a467d12b970e1f7b2c0e5fb2bb48cab1928443", size = 11847, upload-time = "2023-11-22T19:09:45.208Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/5b/54/662a4743aa81d9582ee9339d4ffa3c8fd40a4965e033d77b9da9774d3960/mkdocs_material_extensions-1.3.1-py3-none-any.whl", hash = "sha256:adff8b62700b25cb77b53358dad940f3ef973dd6db797907c49e3c2ef3ab4e31", size = 8728, upload-time = "2023-11-22T19:09:43.465Z" },
+]
+
+[[package]]
 name = "mkdocstrings"
 version = "1.0.6"
 source = { registry = "https://pypi.org/simple" }
@@ -988,6 +972,78 @@ wheels = [
 ]
 
 [[package]]
+name = "open-hilt"
+version = "1.0.1"
+source = { editable = "." }
+dependencies = [
+    { name = "asyncssh" },
+    { name = "jsonschema" },
+    { name = "textual" },
+]
+
+[package.optional-dependencies]
+pylsp = [
+    { name = "python-lsp-server" },
+]
+serial = [
+    { name = "pyserial-asyncio" },
+]
+yaml = [
+    { name = "pyyaml" },
+]
+
+[package.dev-dependencies]
+bench = [
+    { name = "gpiod" },
+]
+dev = [
+    { name = "hypothesis" },
+    { name = "mkdocs" },
+    { name = "mkdocs-material" },
+    { name = "mkdocstrings", extra = ["python"] },
+    { name = "mutmut" },
+    { name = "pip-audit" },
+    { name = "pyright" },
+    { name = "pyserial-asyncio" },
+    { name = "pytest" },
+    { name = "pytest-asyncio" },
+    { name = "pytest-cov" },
+    { name = "python-lsp-server" },
+    { name = "ruff" },
+    { name = "types-pyyaml" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "asyncssh", specifier = ">=2.21" },
+    { name = "jsonschema", specifier = ">=4.23" },
+    { name = "pyserial-asyncio", marker = "extra == 'serial'", specifier = ">=0.6" },
+    { name = "python-lsp-server", marker = "extra == 'pylsp'", specifier = ">=1.12" },
+    { name = "pyyaml", marker = "extra == 'yaml'", specifier = ">=6.0.3" },
+    { name = "textual", specifier = ">=8.2" },
+]
+provides-extras = ["pylsp", "serial", "yaml"]
+
+[package.metadata.requires-dev]
+bench = [{ name = "gpiod", specifier = ">=2.5.0" }]
+dev = [
+    { name = "hypothesis", specifier = ">=6.151" },
+    { name = "mkdocs", specifier = ">=1.6.1" },
+    { name = "mkdocs-material", specifier = ">=9.8" },
+    { name = "mkdocstrings", extras = ["python"], specifier = ">=1.0.6" },
+    { name = "mutmut", specifier = ">=3.7.0" },
+    { name = "pip-audit", specifier = ">=2.10" },
+    { name = "pyright", specifier = ">=1.1.400" },
+    { name = "pyserial-asyncio", specifier = ">=0.6" },
+    { name = "pytest", specifier = ">=8.4" },
+    { name = "pytest-asyncio", specifier = ">=1.0" },
+    { name = "pytest-cov", specifier = ">=7" },
+    { name = "python-lsp-server", specifier = ">=1.12" },
+    { name = "ruff", specifier = ">=0.12" },
+    { name = "types-pyyaml", specifier = ">=6.0.12" },
+]
+
+[[package]]
 name = "packageurl-python"
 version = "0.17.6"
 source = { registry = "https://pypi.org/simple" }
@@ -1003,6 +1059,15 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/7d/fa/3944b40b07da9ce895c0e6303a5ab7d53da063554f534556b134a54d6093/packaging-26.3.tar.gz", hash = "sha256:94edc256424af38762eb31306eed28beb9f0efc50a8837492c9d6fd6004aed79", size = 313412, upload-time = "2026-08-04T18:15:28.737Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/63/34/ba1c580383c9eada3711951fef0795c80b829a078d72188184bcab9dd527/packaging-26.3-py3-none-any.whl", hash = "sha256:d7193f7c8e4e93f444fde0262bf90af30e16fa0ad0ad44cb553c87339b23cd1c", size = 129956, upload-time = "2026-08-04T18:15:27.159Z" },
+]
+
+[[package]]
+name = "paginate"
+version = "0.5.7"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/ec/46/68dde5b6bc00c1296ec6466ab27dddede6aec9af1b99090e1107091b3b84/paginate-0.5.7.tar.gz", hash = "sha256:22bd083ab41e1a8b4f3690544afb2c60c25e5c9a63a30fa2f483f6c60c8e5945", size = 19252, upload-time = "2024-08-25T14:17:24.139Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/90/96/04b8e52da071d28f5e21a805b19cb9390aa17a47462ac87f5e2696b9566d/paginate-0.5.7-py2.py3-none-any.whl", hash = "sha256:b885e2af73abcf01d9559fd5216b57ef722f8c42affbb63942377668e35c7591", size = 13746, upload-time = "2024-08-25T14:17:22.55Z" },
 ]
 
 [[package]]

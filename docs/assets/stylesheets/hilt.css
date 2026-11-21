@@ -1,0 +1,100 @@
+/*
+ * HILT palette for Material for MkDocs: the near-black and off-white of the hero
+ * image, with one blue for links and focus. mkdocs.yml sets primary and accent to
+ * `custom`, which leaves every colour below to this file. Two schemes are defined:
+ * `default` (light) and `slate` (dark); the header toggle picks between them.
+ */
+
+:root {
+  --hilt-ink: #0d0e12;
+  --hilt-paper: #f1f2f4;
+}
+
+/* The header and the navigation tabs are the hero's ink in both schemes. */
+[data-md-color-scheme="default"],
+[data-md-color-scheme="slate"] {
+  --md-primary-fg-color: var(--hilt-ink);
+  --md-primary-fg-color--light: #2b2e37;
+  --md-primary-fg-color--dark: #000000;
+  --md-primary-bg-color: var(--hilt-paper);
+  --md-primary-bg-color--light: #f1f2f4b3;
+}
+
+[data-md-color-scheme="default"] {
+  --md-accent-fg-color: #1d4ed8;
+  --md-accent-fg-color--transparent: #1d4ed81a;
+  --md-typeset-a-color: #1d4ed8;
+}
+
+[data-md-color-scheme="slate"] {
+  --md-default-bg-color: #111318;
+  --md-default-bg-color--light: #111318b3;
+  --md-default-bg-color--lighter: #1113184d;
+  --md-default-bg-color--lightest: #1113181f;
+  --md-code-bg-color: #191c23;
+  --md-footer-bg-color: var(--hilt-ink);
+  --md-footer-bg-color--dark: #000000;
+  --md-accent-fg-color: #93c5fd;
+  --md-accent-fg-color--transparent: #93c5fd1a;
+  --md-typeset-a-color: #8ab4f8;
+}
+
+/* On the dark scheme the header is nearly the page colour; a hairline keeps its edge. */
+[data-md-color-scheme="slate"] .md-header {
+  border-bottom: 1px solid #ffffff1f;
+}
+
+/* The wordmark is set in monospace capitals, as in the hero. */
+.md-header__title .md-header__topic:first-child .md-ellipsis {
+  font-family: var(--md-code-font-family);
+  font-weight: 700;
+  letter-spacing: 0.12em;
+}
+
+/* Reference tables (contracts, measurements, rule lists) read as tables: full width,
+   with the header row set apart. */
+.md-typeset table:not([class]) {
+  display: table;
+  width: 100%;
+  font-size: 0.72rem;
+}
+
+.md-typeset table:not([class]) th {
+  background-color: var(--md-default-fg-color--lightest);
+  font-weight: 700;
+}
+
+/* API reference: each documented name starts a visibly separate block. */
+.md-typeset .doc.doc-object.doc-class,
+.md-typeset .doc.doc-object.doc-function,
+.md-typeset .doc.doc-object.doc-attribute {
+  margin-top: 2.4em;
+  padding-top: 0.8em;
+  border-top: 1px solid var(--md-default-fg-color--lightest);
+}
+
+.md-typeset .doc.doc-object .doc.doc-object {
+  margin-top: 1.2em;
+  padding-top: 0;
+  padding-left: 0.8rem;
+  border-top: 0;
+  border-left: 2px solid var(--md-default-fg-color--lightest);
+}
+
+/* A diagram names its own light fills (classDef), the ones GitLab draws on `main`, and
+   they cannot follow the palette. So on the dark scheme a drawn diagram keeps the light
+   scheme's colours and sits on a paper card. `div` scopes this to a diagram that was
+   drawn: with no network the fence stays a `pre` and reads as a code block. */
+[data-md-color-scheme="slate"] div.mermaid {
+  padding: 0.8rem;
+  border-radius: 0.2rem;
+  background-color: var(--hilt-paper);
+  --md-default-bg-color: var(--hilt-paper);
+  --md-default-fg-color--lighter: #00000052;
+  --md-default-fg-color--lightest: #00000012;
+  --md-mermaid-edge-color: #36464e;
+  --md-mermaid-label-fg-color: #36464e;
+  --md-mermaid-label-bg-color: var(--hilt-paper);
+  --md-mermaid-node-fg-color: #1d4ed8;
+  --md-mermaid-node-bg-color: #1d4ed81a;
+}

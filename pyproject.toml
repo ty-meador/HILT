@@ -1,5 +1,5 @@
 [project]
-name = "hilt-core"
+name = "open-hilt"
 version = "1.0.1"
 description = "Python HIL testing with a pit of success: composable tests, guardrails that make a bad test hard to write, and an engine that won't let an unhandled failure pass silently."
 readme = "README.md"
@@ -73,6 +73,7 @@ dev = [
     "python-lsp-server>=1.12",
     "pyserial-asyncio>=0.6",
     "types-PyYAML>=6.0.12",
+    "mkdocs-material>=9.8",
 ]
 
 [project.scripts]

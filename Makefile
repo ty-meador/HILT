@@ -1,5 +1,5 @@
 # HILT — development entry points. All tooling config lives in pyproject.toml.
-.PHONY: install format lint fix typecheck test coverage audit build smoke docs check soak nightly mutants hooks clean \
+.PHONY: install format lint fix typecheck test coverage audit build smoke docs docs-serve check soak nightly mutants hooks clean \
 	bench-serial bench-serial-up bench-serial-down bench-ssh bench-ssh-down bench-pihole bench-pihole-down \
 	bench-coap bench-coap-down bench-root-setup bench-can bench-i2c bench-gpio bench-up bench-down \
 	bench-suite-serial bench-suite-guest bench-suite-pihole bench-suite-coap bench-suite-gpio bench-rack bench-soak
@@ -67,8 +67,14 @@ check:  ## The gate (there is no CI) — verify only, no auto-fix. Green before 
 	$(MAKE) docs
 	$(MAKE) audit
 
-docs:  ## Documentation site; strict: a broken cross-reference is red
+# The API reference is not written by hand: docs/api.md names the public surface and
+# mkdocstrings fills each entry from that name's docstring in src/. The theme, its
+# light and dark palettes, and the rest of the build are configured in mkdocs.yml.
+docs:  ## Documentation site into site/, API reference generated from the docstrings; strict: a broken cross-reference is red
 	uv run mkdocs build --strict
+
+docs-serve:  ## The same site at http://127.0.0.1:8000, rebuilt and reloaded when a page or a docstring is saved
+	uv run mkdocs serve --livereload --watch src
 
 # mkdocs refuses a site_dir inside docs_dir, so the build lands in site/ and moves.
 docs-release:  ## The same build moved to docs/site/, committed on a release branch only; main never carries it (#138)

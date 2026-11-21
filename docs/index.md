@@ -18,7 +18,9 @@ writes the suite that makes that possible.
 - **Inspector contributors:** the [target specification](inspector.md) carries the
   terminal workflow that `hilt inspect` opens.
 
-Build this site locally with `make docs`. A broken cross-reference fails the
+Build this site locally with `make docs`, or run `make docs-serve` to read it in a
+browser while you edit. The header toggle switches between light and dark. A broken
+cross-reference fails the
 gate. Nothing hosts it: GitLab renders every page from `docs/` on `main`, and a
 release branch carries the built site under `docs/site/` (`make docs-release`) so a
 station can open it from a clone without a network (#138).
