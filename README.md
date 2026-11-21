@@ -37,12 +37,15 @@ guardrail and every line of the engine is measured against one bar:
 
 ## Try it
 
-Requires Python 3.14. The distribution on PyPI is `hilt-core`; the import package
+Requires Python 3.14. The distribution on PyPI is `open-hilt`; the import package
 and the console scripts are `hilt`:
 
 ```sh
-pip install hilt-core        # or: uv add hilt-core
+pip install open-hilt        # or: uv add open-hilt
 ```
+
+Release 1.0.0 was published as `hilt-core`. Both names install the same `hilt` package,
+so coming from it, run `pip uninstall hilt-core` first.
 
 To work from a clone instead, with [uv](https://docs.astral.sh/uv/):
 
