@@ -10,7 +10,25 @@ leave a fresh Unreleased section above it. Use the
 
 ## Unreleased
 
-Nothing yet.
+Documentation tooling only. Nothing a suite can observe changes.
+
+### Added
+
+- `make docs-serve`: the documentation site served locally, rebuilt and reloaded when a
+  page under `docs/` or a docstring under `src/` is saved.
+
+### Changed
+
+- The documentation site has a theme, Material for MkDocs, in place of the MkDocs
+  default. It follows the reader's light or dark system setting, the header toggle
+  overrides that and is remembered, and the palette is the hero image's
+  (`docs/assets/stylesheets/hilt.css`). The API reference marks each name as a class,
+  method, attribute, or type, in the page and in its table of contents. The build opened
+  as `file://` from a release branch stays self-contained: system fonts, and a search
+  box that works with no server and no network. `mermaid` fences are drawn as diagrams
+  in the site as they are on GitLab; that one script is fetched when a page with a
+  diagram is opened, and with no network the fence is shown as source, as before.
+  `mkdocs-material` joins the `dev` dependency group.
 
 ## [1.0.1] - 2026-11-14
 

@@ -5,7 +5,9 @@ fails on a broken cross-reference. Issue #138 (Ty, 2026-09-11): nothing hosts th
 site. GitLab renders ``docs/`` on ``main``, ``make docs-release`` commits the build
 under ``docs/site/`` on a release branch, and the getting-started guide (where the
 README overhaul of 2026-10-11 moved it) records the rendered station page as the URL
-that belongs on a station label.
+that belongs on a station label. The theme (Material for MkDocs) offers a light and a
+dark palette, and because that build is opened as ``file://`` with no network, a page
+may load nothing from another host.
 """
 
 from __future__ import annotations
@@ -34,6 +36,12 @@ STATION_URL = f"{REPO_URL}/-/blob/main/docs/floor-technician.md"
 
 _IDENT = re.compile(r"^::: hilt\.([A-Za-z_][A-Za-z0-9_]*)$", re.MULTILINE)
 _NAV_ENTRY = re.compile(r":\s*([A-Za-z0-9_./-]+\.md)\s*$", re.MULTILINE)
+# What a page makes the browser fetch before it can be read: scripts, and the links that
+# load a stylesheet or open a connection. An ordinary ``<a href>`` is not one of them.
+_REMOTE_SCRIPT = re.compile(r'<script\b[^>]*\bsrc="(https?://[^"]+)"')
+_REMOTE_LINK = re.compile(
+    r'<link\b[^>]*\brel="(?:stylesheet|preconnect|preload)"[^>]*\bhref="(https?://[^"]+)"'
+)
 
 
 def _recipe(target: str, makefile: str) -> str:
@@ -79,6 +87,20 @@ class TestDocsSiteConfig:
         # swept into the next one.
         assert "use_directory_urls: false" in text
         assert "site/" in text.split("exclude_docs:", 1)[1]
+
+    def test_theme_offers_light_and_dark_with_a_toggle(self) -> None:
+        # Three palette entries: follow the system, light, dark. Each carries a toggle,
+        # so the reader can leave the system setting and get back to it.
+        theme = (
+            MKDOCS.read_text(encoding="utf-8").split("\ntheme:", 1)[1].split("\nextra_css:", 1)[0]
+        )
+        assert "name: material" in theme
+        assert 'media: "(prefers-color-scheme)"' in theme
+        assert "scheme: default" in theme
+        assert "scheme: slate" in theme
+        assert theme.count("toggle:") == 3
+        # A web font is a request to another host on every page.
+        assert "font: false" in theme
 
     def test_every_markdown_page_is_in_the_nav(self) -> None:
         # Recursive: docs/hil/ groups the HIL interface design notes under one
@@ -156,6 +178,14 @@ class TestGateBuildsTheSite:
         assert _recipe("docs", makefile)
         assert "$(MAKE) docs" in _recipe("check", makefile)
 
+    def test_makefile_docs_serve_is_a_preview_and_not_a_gate(self) -> None:
+        makefile = MAKEFILE.read_text(encoding="utf-8")
+        serve = _recipe("docs-serve", makefile)
+        assert "mkdocs serve" in serve
+        # A docstring is a page source: saving one under src/ rebuilds the reference.
+        assert "--watch src" in serve
+        assert "docs-serve" not in _recipe("check", makefile)
+
     def test_makefile_smoke_target_is_in_check(self) -> None:
         # The smoke is the only place the wheel itself is exercised (issue #102): it
         # must run in the gate, from inside .smoke/ so src/ is off the path, and it
@@ -195,6 +225,31 @@ class TestBuiltSite:
         html = (site / "api.html").read_text(encoding="utf-8")
         missing = [name for name in hilt.__all__ if name not in html]
         assert missing == []
+
+    def test_pages_are_themed_and_load_nothing_from_another_host(self, site: Path) -> None:
+        # A station opens the committed build from a clone with no network (#138): a
+        # font, a stylesheet, or a script on a CDN is a page that renders late or wrong.
+        pages = sorted(site.rglob("*.html"))
+        assert pages
+        for page in pages:
+            html = page.read_text(encoding="utf-8")
+            assert "data-md-color-scheme" in html, page.name
+            assert _REMOTE_SCRIPT.findall(html) == [], page.name
+            assert _REMOTE_LINK.findall(html) == [], page.name
+        assert (site / "assets" / "stylesheets" / "hilt.css").is_file()
+
+    def test_search_works_from_a_file_url(self, site: Path) -> None:
+        # A file:// page can neither fetch the index nor start a Web Worker. The offline
+        # plugin inlines the index as a script, and the worker shim is a file in the
+        # build rather than the CDN copy the plugin would otherwise name.
+        assert (site / "search" / "search_index.js").is_file()
+        assert (site / "assets" / "javascripts" / "iframe-worker-shim.js").is_file()
+        home = (site / "index.html").read_text(encoding="utf-8")
+        assert 'src="assets/javascripts/iframe-worker-shim.js"' in home
+
+    def test_mermaid_fences_become_diagram_blocks(self, site: Path) -> None:
+        html = (site / "lifecycle.html").read_text(encoding="utf-8")
+        assert html.count('<pre class="mermaid">') == 3
 
     def test_published_schemas_are_copied(self, site: Path) -> None:
         assert (site / "schema" / "result-v1.schema.json").is_file()

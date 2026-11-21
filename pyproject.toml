@@ -73,6 +73,7 @@ dev = [
     "python-lsp-server>=1.12",
     "pyserial-asyncio>=0.6",
     "types-PyYAML>=6.0.12",
+    "mkdocs-material>=9.8",
 ]
 
 [project.scripts]

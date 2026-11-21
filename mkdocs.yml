@@ -5,6 +5,57 @@ repo_url: https://gitlab.com/Tyler-Meador/HILT
 edit_uri: -/blob/main/docs/
 copyright: Copyright 2026 Tyler Meador
 
+# Material for MkDocs. The palette follows the reader's system setting until they pick
+# a side with the header toggle, and the choice is remembered. Everything the theme
+# needs to draw a page is in the build: `font: false` keeps it on the system font stack
+# instead of fetching a web font, because the site is opened from a clone with no
+# network (#138). The colours themselves are in docs/assets/stylesheets/hilt.css.
+theme:
+  name: material
+  language: en
+  font: false
+  icon:
+    logo: material/chip
+    repo: fontawesome/brands/gitlab
+  palette:
+    - media: "(prefers-color-scheme)"
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/brightness-auto
+        name: Following the system setting. Switch to light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/weather-sunny
+        name: Light mode. Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/weather-night
+        name: Dark mode. Switch to the system setting
+  features:
+    - navigation.sections
+    - navigation.top
+    - navigation.footer
+    - toc.follow
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+
+extra_css:
+  - assets/stylesheets/hilt.css
+
+# The offline plugin (below) needs this shim to run search from file://. Naming a local
+# copy here stops it from adding the CDN one.
+extra:
+  polyfills:
+    - assets/javascripts/iframe-worker-shim.js
+
 strict: true
 docs_dir: docs
 site_dir: site
@@ -56,6 +107,8 @@ nav:
 
 plugins:
   - search
+  # Inlines the search index so the search box works on a build opened as file://.
+  - offline
   - mkdocstrings:
       handlers:
         python:
@@ -70,6 +123,9 @@ plugins:
             merge_init_into_class: true
             separate_signature: true
             show_signature_annotations: true
+            signature_crossrefs: true
+            show_symbol_type_heading: true
+            show_symbol_type_toc: true
             filters:
               - "!^_"
 
@@ -78,3 +134,12 @@ markdown_extensions:
   - tables
   - toc:
       permalink: true
+  - pymdownx.highlight
+  - pymdownx.inlinehilite
+  # A ```mermaid fence is drawn as a diagram, in the colours of the active palette,
+  # the same source GitLab draws on `main`.
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
