@@ -479,78 +479,6 @@ wheels = [
 ]
 
 [[package]]
-name = "hilt-core"
-version = "1.0.1"
-source = { editable = "." }
-dependencies = [
-    { name = "asyncssh" },
-    { name = "jsonschema" },
-    { name = "textual" },
-]
-
-[package.optional-dependencies]
-pylsp = [
-    { name = "python-lsp-server" },
-]
-serial = [
-    { name = "pyserial-asyncio" },
-]
-yaml = [
-    { name = "pyyaml" },
-]
-
-[package.dev-dependencies]
-bench = [
-    { name = "gpiod" },
-]
-dev = [
-    { name = "hypothesis" },
-    { name = "mkdocs" },
-    { name = "mkdocs-material" },
-    { name = "mkdocstrings", extra = ["python"] },
-    { name = "mutmut" },
-    { name = "pip-audit" },
-    { name = "pyright" },
-    { name = "pyserial-asyncio" },
-    { name = "pytest" },
-    { name = "pytest-asyncio" },
-    { name = "pytest-cov" },
-    { name = "python-lsp-server" },
-    { name = "ruff" },
-    { name = "types-pyyaml" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "asyncssh", specifier = ">=2.21" },
-    { name = "jsonschema", specifier = ">=4.23" },
-    { name = "pyserial-asyncio", marker = "extra == 'serial'", specifier = ">=0.6" },
-    { name = "python-lsp-server", marker = "extra == 'pylsp'", specifier = ">=1.12" },
-    { name = "pyyaml", marker = "extra == 'yaml'", specifier = ">=6.0.3" },
-    { name = "textual", specifier = ">=8.2" },
-]
-provides-extras = ["pylsp", "serial", "yaml"]
-
-[package.metadata.requires-dev]
-bench = [{ name = "gpiod", specifier = ">=2.5.0" }]
-dev = [
-    { name = "hypothesis", specifier = ">=6.151" },
-    { name = "mkdocs", specifier = ">=1.6.1" },
-    { name = "mkdocs-material", specifier = ">=9.8" },
-    { name = "mkdocstrings", extras = ["python"], specifier = ">=1.0.6" },
-    { name = "mutmut", specifier = ">=3.7.0" },
-    { name = "pip-audit", specifier = ">=2.10" },
-    { name = "pyright", specifier = ">=1.1.400" },
-    { name = "pyserial-asyncio", specifier = ">=0.6" },
-    { name = "pytest", specifier = ">=8.4" },
-    { name = "pytest-asyncio", specifier = ">=1.0" },
-    { name = "pytest-cov", specifier = ">=7" },
-    { name = "python-lsp-server", specifier = ">=1.12" },
-    { name = "ruff", specifier = ">=0.12" },
-    { name = "types-pyyaml", specifier = ">=6.0.12" },
-]
-
-[[package]]
 name = "hypothesis"
 version = "6.167.1"
 source = { registry = "https://pypi.org/simple" }
@@ -1041,6 +969,78 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/24/bf/d1bda4f6168e0b2e9e5958945e01910052158313224ada5ce1fb2e1113b8/nodeenv-1.10.0.tar.gz", hash = "sha256:996c191ad80897d076bdfba80a41994c2b47c68e224c542b48feba42ba00f8bb", size = 55611, upload-time = "2025-12-20T14:08:54.006Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/88/b2/d0896bdcdc8d28a7fc5717c305f1a861c26e18c05047949fb371034d98bd/nodeenv-1.10.0-py2.py3-none-any.whl", hash = "sha256:5bb13e3eed2923615535339b3c620e76779af4cb4c6a90deccc9e36b274d3827", size = 23438, upload-time = "2025-12-20T14:08:52.782Z" },
+]
+
+[[package]]
+name = "open-hilt"
+version = "1.0.1"
+source = { editable = "." }
+dependencies = [
+    { name = "asyncssh" },
+    { name = "jsonschema" },
+    { name = "textual" },
+]
+
+[package.optional-dependencies]
+pylsp = [
+    { name = "python-lsp-server" },
+]
+serial = [
+    { name = "pyserial-asyncio" },
+]
+yaml = [
+    { name = "pyyaml" },
+]
+
+[package.dev-dependencies]
+bench = [
+    { name = "gpiod" },
+]
+dev = [
+    { name = "hypothesis" },
+    { name = "mkdocs" },
+    { name = "mkdocs-material" },
+    { name = "mkdocstrings", extra = ["python"] },
+    { name = "mutmut" },
+    { name = "pip-audit" },
+    { name = "pyright" },
+    { name = "pyserial-asyncio" },
+    { name = "pytest" },
+    { name = "pytest-asyncio" },
+    { name = "pytest-cov" },
+    { name = "python-lsp-server" },
+    { name = "ruff" },
+    { name = "types-pyyaml" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "asyncssh", specifier = ">=2.21" },
+    { name = "jsonschema", specifier = ">=4.23" },
+    { name = "pyserial-asyncio", marker = "extra == 'serial'", specifier = ">=0.6" },
+    { name = "python-lsp-server", marker = "extra == 'pylsp'", specifier = ">=1.12" },
+    { name = "pyyaml", marker = "extra == 'yaml'", specifier = ">=6.0.3" },
+    { name = "textual", specifier = ">=8.2" },
+]
+provides-extras = ["pylsp", "serial", "yaml"]
+
+[package.metadata.requires-dev]
+bench = [{ name = "gpiod", specifier = ">=2.5.0" }]
+dev = [
+    { name = "hypothesis", specifier = ">=6.151" },
+    { name = "mkdocs", specifier = ">=1.6.1" },
+    { name = "mkdocs-material", specifier = ">=9.8" },
+    { name = "mkdocstrings", extras = ["python"], specifier = ">=1.0.6" },
+    { name = "mutmut", specifier = ">=3.7.0" },
+    { name = "pip-audit", specifier = ">=2.10" },
+    { name = "pyright", specifier = ">=1.1.400" },
+    { name = "pyserial-asyncio", specifier = ">=0.6" },
+    { name = "pytest", specifier = ">=8.4" },
+    { name = "pytest-asyncio", specifier = ">=1.0" },
+    { name = "pytest-cov", specifier = ">=7" },
+    { name = "python-lsp-server", specifier = ">=1.12" },
+    { name = "ruff", specifier = ">=0.12" },
+    { name = "types-pyyaml", specifier = ">=6.0.12" },
 ]
 
 [[package]]

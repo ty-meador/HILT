@@ -10,15 +10,48 @@ leave a fresh Unreleased section above it. Use the
 
 ## Unreleased
 
-Documentation tooling only. Nothing a suite can observe changes.
+Nothing yet.
+
+## [1.0.1] - 2026-11-21
+
+The distribution is renamed from `hilt-core` to `open-hilt`, and this is the first
+release under the new name. Nothing a suite can observe changes: the import package,
+the console scripts, and the rule codes stay `hilt`, and no public name, contract,
+record format, or `hilt-check` rule is touched. The one upgrade action is the install
+name, below. The section was first cut on 2026-11-14 as a documentation release that
+was never tagged or uploaded; its entries ship here, with the documentation site's
+new theme. The README is the PyPI project page, and the Status fix below reaches that
+page with this release.
+
+Upgrade from `hilt-core` 1.0.0: both distributions install the same `hilt` package and
+the same console scripts, so remove the old one first.
+
+```sh
+pip uninstall hilt-core
+pip install open-hilt
+```
+
+Requirement files, lock files, and extras follow the name: `hilt-core[serial]` becomes
+`open-hilt[serial]`, likewise `[yaml]` and `[pylsp]`. No `import` line changes.
 
 ### Added
 
+- `docs/lifecycle.md`: an onboarding page for the lifecycle. It opens with a diagram of
+  the three lifecycle methods (`configure`, `build_suite`, `cleanup`), follows with a
+  second diagram of the suite `build_suite` returns and the test methods that suite
+  uses, then one small component in code and a diagram of nested components each
+  running their own lifecycle. The Lifecycle Contract in `docs/contracts.md` stays the
+  normative statement.
 - `make docs-serve`: the documentation site served locally, rebuilt and reloaded when a
   page under `docs/` or a docstring under `src/` is saved.
 
 ### Changed
 
+- The PyPI distribution name is `open-hilt` (was `hilt-core`). `hilt.__version__` and
+  the packaged Inspector schemas are read from the `open-hilt` distribution, and the
+  missing-extra messages of `hilt.serial` and `hilt.device_api` name `open-hilt[serial]`
+  and `open-hilt[yaml]`. `hilt-core` 1.0.0 stays on PyPI as published and receives no
+  further releases.
 - The documentation site has a theme, Material for MkDocs, in place of the MkDocs
   default. It follows the reader's light or dark system setting, the header toggle
   overrides that and is remembered, and the palette is the hero image's
@@ -30,22 +63,6 @@ Documentation tooling only. Nothing a suite can observe changes.
   diagram is opened, and with no network the fence is shown as source, as before.
   `mkdocs-material` joins the `dev` dependency group.
 
-## [1.0.1] - 2026-11-14
-
-A documentation release. Nothing a suite can observe changes: no name, contract,
-record format, or `hilt-check` rule is touched, so there is no upgrade action. The
-README is the PyPI project page, and the Status fix below reaches that page with this
-release.
-
-### Added
-
-- `docs/lifecycle.md`: an onboarding page for the lifecycle. It opens with a diagram of
-  the three lifecycle methods (`configure`, `build_suite`, `cleanup`), follows with a
-  second diagram of the suite `build_suite` returns and the test methods that suite
-  uses, then one small component in code and a diagram of nested components each
-  running their own lifecycle. The Lifecycle Contract in `docs/contracts.md` stays the
-  normative statement.
-
 ### Fixed
 
 - README Status section said HILT was at 0.0.x with the API still moving; it now
@@ -53,7 +70,8 @@ release.
 
 ## [1.0.0] - 2026-11-06
 
-The initial Python release. The distribution on PyPI is `hilt-core` (`pip install hilt-core`);
+The initial Python release. The distribution on PyPI is `hilt-core` (`pip install hilt-core`;
+renamed `open-hilt` in 1.0.1);
 the import package, console scripts, and rule codes stay `hilt`. PyPI refuses the bare
 name `hilt` as confusable with an existing project (issue #9). The six foundation phases
 below summarize merged behavior using today's API names, with links to the MRs that
