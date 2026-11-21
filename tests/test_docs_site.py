@@ -6,8 +6,10 @@ site. GitLab renders ``docs/`` on ``main``, ``make docs-release`` commits the bu
 under ``docs/site/`` on a release branch, and the getting-started guide (where the
 README overhaul of 2026-10-11 moved it) records the rendered station page as the URL
 that belongs on a station label. The theme (Material for MkDocs) offers a light and a
-dark palette, and because that build is opened as ``file://`` with no network, a page
-may load nothing from another host.
+dark palette, and because that build is opened as ``file://`` with no network, no page
+names a font, stylesheet, or script on another host. One fetch is accepted and is not
+covered here: the theme's bundle loads the Mermaid renderer from a CDN when a page holds
+a diagram, and with no network that diagram stays as its source (CHANGELOG, 1.0.1).
 """
 
 from __future__ import annotations
@@ -226,9 +228,11 @@ class TestBuiltSite:
         missing = [name for name in hilt.__all__ if name not in html]
         assert missing == []
 
-    def test_pages_are_themed_and_load_nothing_from_another_host(self, site: Path) -> None:
+    def test_pages_are_themed_and_name_nothing_on_another_host(self, site: Path) -> None:
         # A station opens the committed build from a clone with no network (#138): a
         # font, a stylesheet, or a script on a CDN is a page that renders late or wrong.
+        # This reads the HTML only. The Mermaid renderer the theme's bundle fetches at
+        # run time is the one accepted exception (module docstring), and it is not here.
         pages = sorted(site.rglob("*.html"))
         assert pages
         for page in pages:
@@ -248,6 +252,7 @@ class TestBuiltSite:
         assert 'src="assets/javascripts/iframe-worker-shim.js"' in home
 
     def test_mermaid_fences_become_diagram_blocks(self, site: Path) -> None:
+        # Drawn by a renderer fetched at run time; offline, the block shows its source.
         html = (site / "lifecycle.html").read_text(encoding="utf-8")
         assert html.count('<pre class="mermaid">') == 3
 
