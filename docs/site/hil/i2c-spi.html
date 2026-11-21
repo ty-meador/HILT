@@ -1,0 +1,1768 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Python HIL testing with a pit of success: composable tests, guardrails that make a bad test hard to write, and an engine that won't let an unhandled failure pass silently.">
+      
+      
+      
+        <link rel="canonical" href="https://gitlab.com/Tyler-Meador/HILT/-/tree/main/docs/hil/i2c-spi.html">
+      
+      
+        <link rel="prev" href="can.html">
+      
+      
+        <link rel="next" href="device-api.html">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.1">
+    
+    
+      
+        <title>I2C/SPI (design note) - HILT</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.57a0d79d.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.fb2fffe2.min.css">
+      
+      
+
+
+    
+    
+      
+        <script src="../assets/javascripts/iframe-worker-shim.js"></script>
+      
+    
+    
+      
+    
+    
+      <link rel="stylesheet" href="../assets/_mkdocstrings.css">
+    
+      <link rel="stylesheet" href="../assets/stylesheets/hilt.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="custom">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#design-note-i2cspi-interface-contract" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../index.html" title="HILT" class="md-header__button md-logo" aria-label="HILT" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M6 4h12v1h3v2h-3v2h3v2h-3v2h3v2h-3v2h3v2h-3v1H6v-1H3v-2h3v-2H3v-2h3v-2H3V9h3V7H3V5h3zm5 11v3h1v-3zm2 0v3h1v-3zm2 0v3h1v-3z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            HILT
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              I2C/SPI (design note)
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme)" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="custom"  aria-label="Following the system setting. Switch to light mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Following the system setting. Switch to light mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m14.3 16-.7-2h-3.2l-.7 2H7.8L11 7h2l3.2 9zM20 8.69V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12zm-9.15 3.96h2.3L12 9z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="custom"  aria-label="Light mode. Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Light mode. Switch to dark mode" for="__palette_2" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5s-1.65.15-2.39.42zM3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29zm.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14zM20.65 7l-1.77 3.79a7.02 7.02 0 0 0-2.38-4.15zm-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29zM12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="custom" data-md-color-accent="custom"  aria-label="Dark mode. Switch to the system setting"  type="radio" name="__palette" id="__palette_2">
+    
+      <label class="md-header__button md-icon" title="Dark mode. Switch to the system setting" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3zm3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://gitlab.com/Tyler-Meador/HILT" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="m504 204.6-.7-1.8L433.6 21c-1.4-3.6-3.9-6.6-7.2-8.6-2.4-1.6-5.1-2.5-8-2.8s-5.7.1-8.4 1.1-5.1 2.7-7.1 4.8c-1.9 2.1-3.3 4.7-4.1 7.4l-47 144H161.3l-47.1-144c-.8-2.8-2.2-5.3-4.1-7.4-2-2.1-4.4-3.7-7.1-4.8-2.6-1-5.5-1.4-8.4-1.1s-5.6 1.2-8 2.8c-3.2 2-5.8 5.1-7.2 8.6L9.8 202.8l-.8 1.8c-10 26.2-11.3 55-3.5 82 7.7 26.9 24 50.7 46.4 67.6l.3.2.6.4 106 79.5c38.5 29.1 66.7 50.3 84.6 63.9 3.7 1.9 8.3 4.3 13 4.3s9.3-2.4 13-4.3c17.9-13.5 46.1-34.9 84.6-63.9l106.7-79.9.3-.3c22.4-16.9 38.7-40.6 45.6-67.5 8.6-27 7.4-55.8-2.6-82"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitLab
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../index.html" title="HILT" class="md-nav__button md-logo" aria-label="HILT" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M6 4h12v1h3v2h-3v2h3v2h-3v2h3v2h-3v2h3v2h-3v1H6v-1H3v-2h3v-2H3v-2h3v-2H3V9h3V7H3V5h3zm5 11v3h1v-3zm2 0v3h1v-3zm2 0v3h1v-3z"/></svg>
+
+    </a>
+    HILT
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://gitlab.com/Tyler-Meador/HILT" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="m504 204.6-.7-1.8L433.6 21c-1.4-3.6-3.9-6.6-7.2-8.6-2.4-1.6-5.1-2.5-8-2.8s-5.7.1-8.4 1.1-5.1 2.7-7.1 4.8c-1.9 2.1-3.3 4.7-4.1 7.4l-47 144H161.3l-47.1-144c-.8-2.8-2.2-5.3-4.1-7.4-2-2.1-4.4-3.7-7.1-4.8-2.6-1-5.5-1.4-8.4-1.1s-5.6 1.2-8 2.8c-3.2 2-5.8 5.1-7.2 8.6L9.8 202.8l-.8 1.8c-10 26.2-11.3 55-3.5 82 7.7 26.9 24 50.7 46.4 67.6l.3.2.6.4 106 79.5c38.5 29.1 66.7 50.3 84.6 63.9 3.7 1.9 8.3 4.3 13 4.3s9.3-2.4 13-4.3c17.9-13.5 46.1-34.9 84.6-63.9l106.7-79.9.3-.3c22.4-16.9 38.7-40.6 45.6-67.5 8.6-27 7.4-55.8-2.6-82"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitLab
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../index.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../getting-started.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../floor-technician.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Floor Technician
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../overview.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../lifecycle.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Lifecycle
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../idioms.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Idioms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../utilities.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Utilities
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../contracts.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Contracts
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../inspector-json.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Inspector JSON
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../inspector.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Inspector (target specification)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../measurements.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Measurements
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../junit-xml.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    JUnit XML
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../hilt-run.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    hilt run
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../hilt-new.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    hilt new
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../hilt-check.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    hilt-check
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api-stability.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API stability
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_18" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_18" id="__nav_18_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    HIL interfaces
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_18_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_18">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    HIL interfaces
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="index.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="gpio.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    GPIO (design note)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="pwm.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    PWM (design note)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="can.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CAN bus (design note)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    I2C/SPI (design note)
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="i2c-spi.html" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    I2C/SPI (design note)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#why-not-an-exec-subclass" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Why not an exec subclass
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-bus-transaction-contract" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Bus Transaction Contract
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-i2c-addressing-and-arbitration-contract" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The I2C Addressing and Arbitration Contract
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-spi-chip-select-and-mode-contract" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The SPI Chip-Select and Mode Contract
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-released-bus-and-timing-contract" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Released-Bus and Timing Contract
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#lifecycle-and-hook-ownership-unchanged" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Lifecycle and hook ownership: unchanged
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#failure-vocabulary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Failure vocabulary
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#mock-and-real-backends-one-contract-two-implementations-per-bus" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Mock and real backends: one contract, two implementations per bus
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#evidence" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Evidence
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-the-floor-technician-sees" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What the Floor Technician sees
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#signed-decisions-recorded-on-96" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Signed decisions recorded on #96
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="device-api.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Device API (design note)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="serial.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Serial/UART (design note)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#why-not-an-exec-subclass" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Why not an exec subclass
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-bus-transaction-contract" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Bus Transaction Contract
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-i2c-addressing-and-arbitration-contract" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The I2C Addressing and Arbitration Contract
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-spi-chip-select-and-mode-contract" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The SPI Chip-Select and Mode Contract
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-released-bus-and-timing-contract" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Released-Bus and Timing Contract
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#lifecycle-and-hook-ownership-unchanged" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Lifecycle and hook ownership: unchanged
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#failure-vocabulary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Failure vocabulary
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#mock-and-real-backends-one-contract-two-implementations-per-bus" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Mock and real backends: one contract, two implementations per bus
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#evidence" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Evidence
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-the-floor-technician-sees" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What the Floor Technician sees
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#signed-decisions-recorded-on-96" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Signed decisions recorded on #96
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="design-note-i2cspi-interface-contract">Design note: I2C/SPI interface contract<a class="headerlink" href="#design-note-i2cspi-interface-contract" title="Permanent link">&para;</a></h1>
+<p>Status: SIGNED — Ty approved this note in !129 on 2026-09-09; recorded on #96</p>
+<p>I2C and SPI carry register transactions, not command strings. This note
+states the transfer, addressing, arbitration, timing, and released-bus
+obligations that make both buses fit HILT's existing lifecycle. They are
+two interfaces under one contract shape, not one type with a protocol flag.
+The <a href="index.html#the-three-rulings">three HIL rulings</a> govern both.
+<a href="https://gitlab.com/Tyler-Meador/HILT/-/merge_requests/129#note_3812483928">Ty's approval of the actual note</a>
+signs the obligations below. Implementation requires its own approved issue
+and Zavala's review under <a href="../api-stability.html">API stability</a>.</p>
+<p>All names below (<code>I2cInterface</code>, <code>SpiInterface</code>, <code>I2cAddress</code>, <code>SpiMode</code>,
+<code>BusArbitrationFailure</code>, <code>BusOperationFailure</code>, <code>MockI2c</code>, <code>MockSpi</code>, and
+the method names) are provisional. This note adds no public Python name and
+changes no stored record. The legacy framework and language server supply no
+I2C/SPI behavior to carry forward; the migration context is the preserved
+lifecycle and evidence contracts, with a new hardware contract for Ty to
+judge.</p>
+<h2 id="why-not-an-exec-subclass">Why not an <code>exec</code> subclass<a class="headerlink" href="#why-not-an-exec-subclass" title="Permanent link">&para;</a></h2>
+<p>A register read is an addressed transaction: a 7- or 10-bit I2C address and
+a register pointer, or a SPI chip-select plus a command byte, then a
+bounded payload. None of that is a shell command. Forcing it through <code>exec</code>
+would mean shelling out to <code>i2cget</code>/<code>spidev</code> tools (lossy, racy, and blind
+to a stuck-low SDA) or smuggling a controller inside a <code>RemoteInterface</code>
+subclass that answers <code>_exec</code> with a fake dialect — exactly the
+parallel-lifecycle-in-disguise <a href="index.html#the-three-rulings">ruling 1</a>
+forbids. <code>I2cInterface</code> and <code>SpiInterface</code> are their own ABCs,
+structurally parallel to <code>RemoteInterface</code> (<code>src/hilt/remote.py</code>) and to
+the signed <a href="gpio.html"><code>GpioInterface</code></a> / <a href="pwm.html"><code>PwmInterface</code></a>: each owns
+<code>connect</code> / <code>disconnect</code> / <code>cancel_in_flight</code> in the same shape, and adds
+transaction-shaped operations in place of <code>exec</code>.</p>
+<p>They are not subclasses of each other. An I2C NACK is not a SPI 0xFF. A
+shared "bus transfer" ABC that pretended otherwise would lose the
+arbitration and chip-select contracts this note exists to name.</p>
+<h2 id="the-bus-transaction-contract">The Bus Transaction Contract<a class="headerlink" href="#the-bus-transaction-contract" title="Permanent link">&para;</a></h2>
+<p><strong>Framework obligation:</strong> Present each bus as its own typed interface under
+HIL ruling 1. Neither is an <code>exec</code> subclass; neither changes where
+<code>utils.exec</code> routes. A handle is bound to one adapter, one protocol, and a
+declared timing envelope before it can transfer.</p>
+<ul>
+<li>A <strong>transaction</strong> is atomic at the wire: I2C from START through STOP; SPI
+  for the whole time chip-select is asserted. The interface does not expose
+  a pile of unbound <code>read()</code> / <code>write()</code> calls that another node, or an
+  abort, can interleave mid-address.</li>
+<li>One in-flight transaction per handle. A second transfer is refused while
+  one is active; it is not queued to surprise the next lifecycle phase.
+  Framework termination takes precedence over this admission rule.</li>
+<li>Each operation records the requested address or chip-select, the
+  direction, the payload length, and whether the controller confirmed the
+  outcome. An unconfirmed transfer never becomes the last-successful value
+  in a cache the next test method reads as truth. Unknown is explicit.</li>
+<li>Payload is <code>bytes</code>. Reject a non-<code>bytes</code> payload, a negative length, and
+  a length above the backend-declared ceiling, at the call site, before the
+  adapter is touched. Booleans are not integers.</li>
+</ul>
+<p><strong>Developer obligation:</strong> Declare the adapter, protocol parameters, and
+every device this node will address in <code>configure()</code>. Obtain the
+framework-managed handle through a provisional <code>utils.get_i2c(...)</code> or
+<code>utils.get_spi(...)</code>; return the handle and static inputs through
+configure's ctx. Keep <code>self</code> immutable, <code>build_suite()</code> pure, and later ctx
+reads read-only. Judge the DUT with bytes actually returned (or with an
+independent observation), never by treating a successful ACK or a full-duplex
+clock-out as a passing device.</p>
+<p><strong>Consequence:</strong> The Floor Technician can tell which device was addressed,
+what was written, what came back, and whether the transaction completed.
+A NACK or a short read cannot quietly become a register value in a record
+that claims otherwise.</p>
+<h2 id="the-i2c-addressing-and-arbitration-contract">The I2C Addressing and Arbitration Contract<a class="headerlink" href="#the-i2c-addressing-and-arbitration-contract" title="Permanent link">&para;</a></h2>
+<p><strong>Framework obligation:</strong> I2C identity is an address, not a path.</p>
+<ul>
+<li>A provisional <code>I2cAddress</code> carries the 7-bit or 10-bit address and the
+  width. Reject an address that does not fit the declared width. 8-bit
+  "address plus R/W" encodings are refused: the R/W bit is the transfer's,
+  not the handle's.</li>
+<li>Provisional <code>write(address, data)</code>, <code>read(address, n)</code>, and
+  <code>write_read(address, tx, n)</code> each emit one START–STOP transaction.
+  <code>write_read</code> is a repeated-START, not two transactions the abort path
+  could split. There is no "hold the bus across calls" mode.</li>
+<li><strong>NACK on address</strong> (no device ACKed) and <strong>NACK on data</strong> (device ACKed
+  the address then rejected a byte) are distinct operational failures,
+  named in the error. Neither is a <code>TestFailure</code>. The interface does not
+  retry, does not clock out dummy bytes after a NACK, and does not return
+  a truncated payload as success.</li>
+<li><strong>Arbitration loss</strong> is an operational failure (<code>BusArbitrationFailure</code>).
+  Another master won the bus. The interface stops, does not retry, and
+  does not invent the bytes it did not finish sending. A backend whose
+  driver auto-retries arbitration in the background is refused at bring-up:
+  that is the I2C instance of a detached PWM ramp.</li>
+<li>Clock stretching is the slave's right within the backend-declared stretch
+  ceiling. Exceeding that ceiling is an operational timeout of the
+  transaction, not a node time-budget expiry.</li>
+</ul>
+<p><strong>Developer obligation:</strong> Name every address this node will talk to at
+configure time when the set is known. Catch address-NACK, data-NACK, and
+arbitration loss separately if they mean different things on this bench
+(missing DUT vs. register reject vs. a second tester). Do not busy-loop a
+NACK into existence of a device.</p>
+<p><strong>Consequence:</strong> A missing part, a device that refused a register, and a
+bus fight are three records, not one "I2C failed" blob.</p>
+<h2 id="the-spi-chip-select-and-mode-contract">The SPI Chip-Select and Mode Contract<a class="headerlink" href="#the-spi-chip-select-and-mode-contract" title="Permanent link">&para;</a></h2>
+<p><strong>Framework obligation:</strong> SPI identity is a chip-select plus a mode, not an
+address.</p>
+<ul>
+<li>A provisional <code>SpiDevice</code> declares the chip-select line, <code>SpiMode</code>
+  (CPOL/CPHA 0–3), bit order, and bits-per-word. Mode is fixed for the
+  handle's lifetime; flipping CPOL live is the SPI instance of flipping a
+  GPIO pin's direction.</li>
+<li>Provisional <code>transfer(tx) -&gt; rx</code> asserts chip-select, clocks <code>tx</code>,
+  returns <code>rx</code> of the same length, and deasserts chip-select. Full-duplex
+  is the default shape. A backend that can only half-duplex still returns
+  <code>bytes</code> of that length; it does not return <code>None</code> for the unobserved
+  side.</li>
+<li>There is no SPI NACK. MISO idle (typically 0xFF or 0x00) is <strong>data</strong>.
+  The framework must not interpret a repeating fill byte as "device
+  missing." Absence of a device, if the bench can know it, is a GPIO-level
+  or power-level observation, not a SPI protocol error.</li>
+<li>Chip-select is owned for the transaction. The interface does not leave
+  CS asserted across calls so an author can "optimize" two transfers. A
+  multi-message device that requires CS held uses one <code>transfer</code> covering
+  the whole sequence, or it is a finding for Ty.</li>
+</ul>
+<p><strong>Developer obligation:</strong> Declare mode, bit order, and chip-select in
+<code>configure()</code>. Do not decode 0xFF into "unplugged" inside the interface
+call; if that fill is a fault, the test method says so with a
+<code>TestFailure</code> naming the expected register contents.</p>
+<p><strong>Consequence:</strong> A disconnected MISO cannot be laundered into a protocol
+exception the Floor Technician would treat like an I2C NACK.</p>
+<h2 id="the-released-bus-and-timing-contract">The Released-Bus and Timing Contract<a class="headerlink" href="#the-released-bus-and-timing-contract" title="Permanent link">&para;</a></h2>
+<p><strong>Framework obligation:</strong> The safe state is a <strong>released bus</strong> — I2C lines
+idle after a STOP, SPI chip-select deasserted and clock at the mode's idle
+level — enforced at the resource by the existing termination sweep. This
+specializes the signed GPIO
+<a href="gpio.html#the-gpio-interface-contract">ownership and cut rules</a> and the
+signed PWM
+<a href="pwm.html#the-pwm-safe-state-contract">disabled-output termination</a>. It
+introduces no bus halt signal, event loop, lifecycle runner, or
+integration hook.</p>
+<ul>
+<li>Register ownership as soon as acquisition can drive a line, so partial
+  <code>configure()</code> failure cannot leave SDA held low or CS asserted. Bring-up
+  establishes and confirms the released state before admitting the first
+  transaction.</li>
+<li>An integration-hook failure or operator interrupt releases every open
+  I2C and SPI handle. A node deadline releases only resources opened by
+  the bounded subtree, under both <code>fail_after</code> (Fail) and <code>abort_after</code>
+  (node-local Aborted). An inherited adapter remains its owner's resource;
+  unrelated siblings are untouched.</li>
+<li><code>cancel_in_flight()</code> is idempotent. It aborts the in-flight transaction
+  at the controller (I2C: STOP if a START is open; SPI: deassert CS),
+  attempts the released state under the backend's latency ceiling, and
+  records whether release was confirmed. A repeated call cannot start a
+  new transaction or replay the last write. A closed handle remains
+  closed.</li>
+<li>The framework does not invent a "safe" register write on abort (clearing
+  an output register, putting a DAC to zero). A DUT that needs a specific
+  last write gets it from authored <code>cleanup()</code>, which the hard cut does
+  not wait for. Inventing a write at abort would be a stimulus the suite
+  never declared.</li>
+<li>Transaction ceiling (including I2C stretch bound) and bring-up/release
+  ceiling are each positive finite backend-declared bounds, separate from
+  the node's <code>fail_after</code> / <code>abort_after</code>. An operation timeout names that
+  operation and its ceiling. It does not manufacture the <code>timeout</code>
+  evidence reserved for the winning node clock in the
+  <a href="../contracts.html#time-budget-contract">Time Budget Contract</a>.</li>
+<li>A backend whose shared adapter would let one node's STOP or CS-deassert
+  starve another owner's in-flight transaction must refuse the conflicting
+  acquisition before either owner transfers. It cannot sacrifice Group
+  Isolation to offer more nodes on one bus.</li>
+</ul>
+<p><strong>Developer obligation:</strong> Select a fixture for which "this node releases
+the bus" is the intended safe state. Declare shared adapters honestly.
+Keep any required shutdown write in <code>cleanup()</code>; rely on framework
+ownership for termination.</p>
+<p><strong>Consequence:</strong> Ending the test stops this node's transactions and records
+what could be confirmed. A technician is never asked to infer that SDA is
+free, or that CS is high, from Pass/Fail/Aborted alone.</p>
+<h2 id="lifecycle-and-hook-ownership-unchanged">Lifecycle and hook ownership: unchanged<a class="headerlink" href="#lifecycle-and-hook-ownership-unchanged" title="Permanent link">&para;</a></h2>
+<p>The <a href="index.html#the-three-rulings">HIL lifecycle ruling</a> applies unchanged.
+Concretely:</p>
+<ul>
+<li>Bring-up happens the same way <code>use_shell</code> brings up SSH: <code>configure()</code>
+  obtains a handle (provisionally <code>utils.get_i2c(...)</code> / <code>utils.get_spi(...)</code>,
+  mirroring <code>get_shell</code> / <code>get_gpio</code> / <code>get_pwm</code>), and the framework's
+  bookkeeping tracks what this node opened versus what it inherited.</li>
+<li>Teardown order is the framework's: <code>cancel_in_flight</code> fires as part of
+  the same In-Flight Termination Contract sweep that already closes
+  <code>RemoteInterface</code> transports and silences signed GPIO/PWM resources.</li>
+<li><code>use_survey</code> / <code>use_audit</code> remain the observation hooks. A periodic
+  audit that reads a status register and raises <code>TestFailure</code> on an
+  unexpected value is the existing audit contract.</li>
+<li><code>before_each</code> / <code>after_each</code> remain the integrator's narrow context and
+  still cannot touch hardware.</li>
+</ul>
+<p>Hardware that needs the controller to run its own concurrent transfer loop
+outside survey/audit, or that cannot honor a hard <code>cancel_in_flight</code>
+(cannot issue STOP, cannot deassert CS), is a finding for Ty — not a
+reason to give either bus its own lifecycle.</p>
+<h2 id="failure-vocabulary">Failure vocabulary<a class="headerlink" href="#failure-vocabulary" title="Permanent link">&para;</a></h2>
+<p>No new terminal state is introduced, and no new exception root.
+<code>BusOperationFailure</code> and <code>BusArbitrationFailure</code> derive from
+<code>HiltError</code>, not <code>TestFailure</code>, for the same reason GPIO's
+<code>PinSettleFailure</code> and PWM's <code>PwmOperationFailure</code> do: failure to complete
+a transaction does not identify the DUT as the cause.</p>
+<table>
+<thead>
+<tr>
+<th>Situation</th>
+<th>Raised as</th>
+<th>Terminal state</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Invalid address, mode, payload, or conflicting in-flight use</td>
+<td><code>TypeError</code> / <code>ValueError</code> at the call site</td>
+<td><code>ContractViolation</code> (Fail, <code>bug: true</code>) if it escapes</td>
+</tr>
+<tr>
+<td>I2C NACK on address or data; transaction exceeds its ceiling (including stretch); SPI transfer exceeds its ceiling; release cannot be confirmed at bring-up</td>
+<td><code>BusOperationFailure</code> (provisional <code>HiltError</code>) naming the handle, operation, address or CS, and ceiling</td>
+<td>Fail when the author catches it and states the verdict; a <code>ContractViolation</code> Fail (<code>bug: true</code>) when it escapes</td>
+</tr>
+<tr>
+<td>I2C arbitration loss</td>
+<td><code>BusArbitrationFailure</code> (provisional <code>HiltError</code>)</td>
+<td>As above. Never an automatic DUT Fail</td>
+</tr>
+<tr>
+<td>SPI MISO fill (0xFF / 0x00)</td>
+<td>No exception: those bytes are the transfer result</td>
+<td>Whatever verdict the author writes. The interface does not guess "unplugged"</td>
+</tr>
+<tr>
+<td>Backend cannot reach the adapter at bring-up</td>
+<td><code>ConnectionError</code> from the interface's own <code>connect</code></td>
+<td>Absorbed the way <code>RemoteInterface</code> connect failures are absorbed today</td>
+</tr>
+<tr>
+<td>Release cannot be confirmed during the safe-state sweep</td>
+<td>No exception; the run is already ending</td>
+<td>Terminal state unchanged; timeline records the unconfirmed release, naming the handle. Never a success line</td>
+</tr>
+<tr>
+<td>Integration hook throws mid-transaction</td>
+<td>Framework raises <code>ExternalIntegrationFailure</code></td>
+<td>Aborted; run-level halt releases every open handle</td>
+</tr>
+<tr>
+<td>Operator SIGINT/SIGTERM mid-run</td>
+<td>Framework raises <code>OperatorInterrupt</code></td>
+<td>Aborted; same run-level sweep</td>
+</tr>
+<tr>
+<td>A node's time budget expires while it holds a handle</td>
+<td>Framework settles the node per its declared budget</td>
+<td><code>fail_after</code> → Fail, <code>abort_after</code> → node-local Aborted; either way only that subtree's handles are released</td>
+</tr>
+<tr>
+<td>Test returns without a verdict</td>
+<td>Existing <code>MissingVerdict</code></td>
+<td>Node-local Aborted. A completed transfer cannot supply the missing verdict</td>
+</tr>
+</tbody>
+</table>
+<p>Unknown is represented explicitly. A NACK is not a zero payload. An
+unconfirmed STOP is not a free bus.</p>
+<h2 id="mock-and-real-backends-one-contract-two-implementations-per-bus">Mock and real backends: one contract, two implementations per bus<a class="headerlink" href="#mock-and-real-backends-one-contract-two-implementations-per-bus" title="Permanent link">&para;</a></h2>
+<p>The pattern is the one <code>RemoteInterface</code> / <code>MockTransport</code> / <code>SshInterface</code>
+already proves, and that signed GPIO/PWM reuse: each ABC has a real
+backend (<code>smbus2</code> / <code>spidev</code> / a vendor SDK) and a mock (<code>MockI2c</code>,
+<code>MockSpi</code>). Self-tests exercise both against a shared contract suite.</p>
+<p>Required proofs, I2C: refuse bad addresses before START; one transaction
+in flight; address-NACK vs data-NACK named separately; arbitration loss
+stops and does not auto-retry; <code>write_read</code> is one repeated-START;
+partial <code>configure()</code> cannot leave SDA held; node cuts leave a sibling's
+transaction untouched; repeated <code>cancel_in_flight</code> issues at most one STOP
+and cannot replay a write; unconfirmed release produces only unconfirmed
+evidence.</p>
+<p>Required proofs, SPI: mode immutable; <code>transfer</code> length(tx) == length(rx);
+CS asserted only for that call; fill bytes are data; CS deasserted on
+abort even mid-clock; exclusive ownership of a shared adapter.</p>
+<p><code>MockI2c</code> / <code>MockSpi</code> schedule <code>park</code>-style holds analogous to
+<code>MockTransport.park</code>. A suite author never constructs either backend
+directly: <code>utils.get_i2c</code> / <code>utils.get_spi</code> resolve to whichever backend
+the run was configured with. Real-backend tests must verify transactions
+through independent observation (a second master, a logic analyzer);
+mock ACKs cannot establish that a DUT saw the register write.</p>
+<h2 id="evidence">Evidence<a class="headerlink" href="#evidence" title="Permanent link">&para;</a></h2>
+<p>Register values that matter to the verdict travel with it exactly as the
+Evidence Contract already requires: <code>PASS({"whoami": value})</code> or
+<code>TestFailure(..., evidence={"whoami": value})</code>, declared with
+<code>@evidence(...)</code> when the method promises to carry it. Commanded writes
+are stimulus, not measurements. A value that is parametric in the problem
+domain (a temperature register, a DAC code) follows whatever protocol
+issue #85 settled in <code>docs/measurements.md</code>, referenced there rather than
+restated here. This note neither fills the reserved <code>measurements</code> slot
+nor decodes anyone's application protocol.</p>
+<p>Every handle declaration — adapter, addresses or chip-selects, I2C width,
+SPI mode, ceilings — is logged through <code>utils.logger</code> at configuration
+time. Transfers, NACKs, arbitration loss, and release attempts use that
+scoped logger to distinguish requested, confirmed, interrupted, and
+unconfirmed outcomes.</p>
+<h2 id="what-the-floor-technician-sees">What the Floor Technician sees<a class="headerlink" href="#what-the-floor-technician-sees" title="Permanent link">&para;</a></h2>
+<p>When a handle is released, the node's <code>timeline.jsonl</code> (and its
+<code>timeline.log</code> twin) carries a log entry at the scope of the node that
+owned it, naming the handle and whether release was confirmed, immediately
+before that node's terminal entry — the same temporal-backbone placement
+the In-Flight Termination Contract already gives a hard-closed SSH
+transport and that signed GPIO/PWM reuse for idle/disable. The terminal
+entry is not always Aborted: a run-level halt and an <code>abort_after</code> expiry
+both settle Aborted, a <code>fail_after</code> expiry settles Fail, and the release
+sweep is owed under every one of them.</p>
+<p><code>result.json</code>'s <code>summary_tree</code> shows whichever state applies; there is no
+I2C- or SPI-specific field, because a safe-state action is evidence of
+what the framework did to protect the bus, not a verdict of its own. A
+technician reading the timeline sees why the run ended and — from the log
+line — that this node released the bus.
+Where the sweep could not confirm release (SDA still low, CS still
+asserted), the timeline says exactly that, naming the handle. An
+unconfirmed release never leaves a success line behind. That is the
+load-bearing line: a technician reaching into a rack trusts a record that
+says the bus is free.</p>
+<h2 id="signed-decisions-recorded-on-96">Signed decisions recorded on #96<a class="headerlink" href="#signed-decisions-recorded-on-96" title="Permanent link">&para;</a></h2>
+<p>The draft asks for a ruling on these concrete obligations before
+implementation:</p>
+<ol>
+<li>Two interfaces, one contract shape. I2C and SPI are not one type. A
+   NACK is not a 0xFF fill byte.</li>
+<li>Transactions are atomic (I2C START–STOP, including <code>write_read</code> as
+   repeated-START; SPI CS held only for one <code>transfer</code>). No unbound
+   read/write that another node can interleave.</li>
+<li>Address-NACK, data-NACK, and arbitration loss are named operational
+   <code>HiltError</code>s; no automatic retry.</li>
+<li>SPI MISO fill is data. Device-missing is not a SPI protocol error.</li>
+<li>Abort safe-state is a released bus (STOP / CS deassert), not a
+   framework-invented register write. Authored <code>cleanup()</code> may write a
+   last value; the hard cut does not wait for it and does not replace it.</li>
+<li>Shared adapters refuse conflicting ownership when one node's release
+   would starve another, same Group Isolation posture as signed PWM.</li>
+</ol>
+<p>The lifecycle, verdict, and evidence contracts above are constraints on
+that decision. If a required backend cannot satisfy them, the finding
+belongs on #96 with the affected guarantee named. It does not earn an
+alternate lifecycle or an exception enforced only by a linter.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="can.html" class="md-footer__link md-footer__link--prev" aria-label="Previous: CAN bus (design note)">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                CAN bus (design note)
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="device-api.html" class="md-footer__link md-footer__link--next" aria-label="Next: Device API (design note)">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                Device API (design note)
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright 2026 Tyler Meador
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.sections", "navigation.top", "navigation.footer", "toc.follow", "search.suggest", "search.highlight", "content.code.copy"], "search": "../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.a5f9d56c.min.js"></script>
+      
+    
+  </body>
+</html>

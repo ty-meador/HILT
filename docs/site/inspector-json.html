@@ -1,0 +1,1835 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Python HIL testing with a pit of success: composable tests, guardrails that make a bad test hard to write, and an engine that won't let an unhandled failure pass silently.">
+      
+      
+      
+        <link rel="canonical" href="https://gitlab.com/Tyler-Meador/HILT/-/tree/main/docs/inspector-json.html">
+      
+      
+        <link rel="prev" href="contracts.html">
+      
+      
+        <link rel="next" href="inspector.html">
+      
+      
+        
+      
+      
+      <link rel="icon" href="assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.1">
+    
+    
+      
+        <title>Inspector JSON - HILT</title>
+      
+    
+    
+      <link rel="stylesheet" href="assets/stylesheets/main.57a0d79d.min.css">
+      
+        
+        <link rel="stylesheet" href="assets/stylesheets/palette.fb2fffe2.min.css">
+      
+      
+
+
+    
+    
+      
+        <script src="assets/javascripts/iframe-worker-shim.js"></script>
+      
+    
+    
+      
+    
+    
+      <link rel="stylesheet" href="assets/_mkdocstrings.css">
+    
+      <link rel="stylesheet" href="assets/stylesheets/hilt.css">
+    
+    <script>__md_scope=new URL(".",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="custom">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#inspector-json-contract" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="index.html" title="HILT" class="md-header__button md-logo" aria-label="HILT" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M6 4h12v1h3v2h-3v2h3v2h-3v2h3v2h-3v2h3v2h-3v1H6v-1H3v-2h3v-2H3v-2h3v-2H3V9h3V7H3V5h3zm5 11v3h1v-3zm2 0v3h1v-3zm2 0v3h1v-3z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            HILT
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Inspector JSON
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme)" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="custom"  aria-label="Following the system setting. Switch to light mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Following the system setting. Switch to light mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m14.3 16-.7-2h-3.2l-.7 2H7.8L11 7h2l3.2 9zM20 8.69V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12zm-9.15 3.96h2.3L12 9z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="custom"  aria-label="Light mode. Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Light mode. Switch to dark mode" for="__palette_2" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5s-1.65.15-2.39.42zM3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29zm.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14zM20.65 7l-1.77 3.79a7.02 7.02 0 0 0-2.38-4.15zm-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29zM12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="custom" data-md-color-accent="custom"  aria-label="Dark mode. Switch to the system setting"  type="radio" name="__palette" id="__palette_2">
+    
+      <label class="md-header__button md-icon" title="Dark mode. Switch to the system setting" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3zm3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://gitlab.com/Tyler-Meador/HILT" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="m504 204.6-.7-1.8L433.6 21c-1.4-3.6-3.9-6.6-7.2-8.6-2.4-1.6-5.1-2.5-8-2.8s-5.7.1-8.4 1.1-5.1 2.7-7.1 4.8c-1.9 2.1-3.3 4.7-4.1 7.4l-47 144H161.3l-47.1-144c-.8-2.8-2.2-5.3-4.1-7.4-2-2.1-4.4-3.7-7.1-4.8-2.6-1-5.5-1.4-8.4-1.1s-5.6 1.2-8 2.8c-3.2 2-5.8 5.1-7.2 8.6L9.8 202.8l-.8 1.8c-10 26.2-11.3 55-3.5 82 7.7 26.9 24 50.7 46.4 67.6l.3.2.6.4 106 79.5c38.5 29.1 66.7 50.3 84.6 63.9 3.7 1.9 8.3 4.3 13 4.3s9.3-2.4 13-4.3c17.9-13.5 46.1-34.9 84.6-63.9l106.7-79.9.3-.3c22.4-16.9 38.7-40.6 45.6-67.5 8.6-27 7.4-55.8-2.6-82"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitLab
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="index.html" title="HILT" class="md-nav__button md-logo" aria-label="HILT" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M6 4h12v1h3v2h-3v2h3v2h-3v2h3v2h-3v2h3v2h-3v1H6v-1H3v-2h3v-2H3v-2h3v-2H3V9h3V7H3V5h3zm5 11v3h1v-3zm2 0v3h1v-3zm2 0v3h1v-3z"/></svg>
+
+    </a>
+    HILT
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://gitlab.com/Tyler-Meador/HILT" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="m504 204.6-.7-1.8L433.6 21c-1.4-3.6-3.9-6.6-7.2-8.6-2.4-1.6-5.1-2.5-8-2.8s-5.7.1-8.4 1.1-5.1 2.7-7.1 4.8c-1.9 2.1-3.3 4.7-4.1 7.4l-47 144H161.3l-47.1-144c-.8-2.8-2.2-5.3-4.1-7.4-2-2.1-4.4-3.7-7.1-4.8-2.6-1-5.5-1.4-8.4-1.1s-5.6 1.2-8 2.8c-3.2 2-5.8 5.1-7.2 8.6L9.8 202.8l-.8 1.8c-10 26.2-11.3 55-3.5 82 7.7 26.9 24 50.7 46.4 67.6l.3.2.6.4 106 79.5c38.5 29.1 66.7 50.3 84.6 63.9 3.7 1.9 8.3 4.3 13 4.3s9.3-2.4 13-4.3c17.9-13.5 46.1-34.9 84.6-63.9l106.7-79.9.3-.3c22.4-16.9 38.7-40.6 45.6-67.5 8.6-27 7.4-55.8-2.6-82"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitLab
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="index.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="getting-started.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="floor-technician.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Floor Technician
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="overview.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="lifecycle.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Lifecycle
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="idioms.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Idioms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="utilities.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Utilities
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="contracts.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Contracts
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Inspector JSON
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="inspector-json.html" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Inspector JSON
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#version-1-result" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Version 1 result
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Version 1 result">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-env-snapshot-is-filtered-by-the-run-not-by-the-schema" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The env snapshot is filtered by the run, not by the schema
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#version-1-timeline" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Version 1 timeline
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#two-records-two-version-fields" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Two records, two version fields
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#versioning-policy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Versioning policy
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#published-schemas" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Published schemas
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#summary-tree-node" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Summary tree node
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#failure-shape" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Failure shape
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#timeout-shape" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Timeout shape
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="inspector.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Inspector (target specification)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="measurements.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Measurements
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="junit-xml.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    JUnit XML
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="hilt-run.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    hilt run
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="hilt-new.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    hilt new
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="hilt-check.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    hilt-check
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="api-stability.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API stability
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="api.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_18" >
+        
+          
+          <label class="md-nav__link" for="__nav_18" id="__nav_18_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    HIL interfaces
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_18_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_18">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    HIL interfaces
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="hil/index.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="hil/gpio.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    GPIO (design note)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="hil/pwm.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    PWM (design note)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="hil/can.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CAN bus (design note)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="hil/i2c-spi.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    I2C/SPI (design note)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="hil/device-api.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Device API (design note)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="hil/serial.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Serial/UART (design note)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#version-1-result" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Version 1 result
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Version 1 result">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-env-snapshot-is-filtered-by-the-run-not-by-the-schema" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The env snapshot is filtered by the run, not by the schema
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#version-1-timeline" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Version 1 timeline
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#two-records-two-version-fields" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Two records, two version fields
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#versioning-policy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Versioning policy
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#published-schemas" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Published schemas
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#summary-tree-node" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Summary tree node
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#failure-shape" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Failure shape
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#timeout-shape" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Timeout shape
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="inspector-json-contract">Inspector JSON Contract<a class="headerlink" href="#inspector-json-contract" title="Permanent link">&para;</a></h1>
+<p>Floor Technicians reading a run should start at <code>docs/floor-technician.md</code>. This
+page is the consumer contract those fields live in.</p>
+<p>The Inspector TUI is outside the Python port's current scope. Its input contract is
+not. Every completed node produces a <code>RunResult</code>, and <code>RunResult.to_json()</code> returns a
+plain Python object that <code>json.dumps()</code> accepts without an encoder. The root result is
+self-contained: consumers do not need the live <code>TestComponent</code> objects to reconstruct the
+run tree. CI that already speaks JUnit XML consumes a projection of the same tree
+(<code>docs/junit-xml.md</code>); that reporter is not a second evidence record.</p>
+<p>Every full <code>TestComponent.run()</code> atomically writes the root <code>RunResult.to_json()</code> payload
+to <code>result.json</code> in the timestamped run directory beneath <code>HILT_ARTIFACT_ROOT</code>. The
+file is present for Pass, Fail, and Aborted outcomes. Its absolute path is published by
+the final entry in the root node's timeline, with artifact name <code>result</code> and artifact
+type <code>run-result</code>; consumers do not need to derive the run directory name.</p>
+<h2 id="version-1-result">Version 1 result<a class="headerlink" href="#version-1-result" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>JSON type</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>format_version</code></td>
+<td>integer</td>
+<td>Schema version; currently <code>1</code>.</td>
+</tr>
+<tr>
+<td><code>state</code></td>
+<td>string</td>
+<td>One terminal state: <code>Pass</code>, <code>Fail</code>, or <code>Aborted</code>.</td>
+</tr>
+<tr>
+<td><code>failure</code></td>
+<td>object or null</td>
+<td>JSON-safe framework failure, including nested causes.</td>
+</tr>
+<tr>
+<td><code>timeout</code></td>
+<td>object or null</td>
+<td>Structured time-budget evidence when a deadline determined or contributed to this state.</td>
+</tr>
+<tr>
+<td><code>test_case</code></td>
+<td>string</td>
+<td>Stable name of this node.</td>
+</tr>
+<tr>
+<td><code>type</code></td>
+<td>string</td>
+<td><code>suite</code>, <code>test</code>, <code>parallel</code>, or <code>sequence</code>: the node shape, in the vocabulary of <code>build_suite</code>.</td>
+</tr>
+<tr>
+<td><code>ancestor_names</code></td>
+<td>array of strings</td>
+<td>Root-to-this path, inclusive.</td>
+</tr>
+<tr>
+<td><code>bread_crumbs</code></td>
+<td>string</td>
+<td>Display path, exactly <code>ancestor_names.join("/")</code>.</td>
+</tr>
+<tr>
+<td><code>summary_tree</code></td>
+<td>object</td>
+<td>Recursive snapshot rooted at this node.</td>
+</tr>
+<tr>
+<td><code>physical_location</code></td>
+<td>string</td>
+<td><code>PHYSICAL_LOCATION</code>, or <code>unknown</code> when absent.</td>
+</tr>
+<tr>
+<td><code>env</code></td>
+<td>object</td>
+<td>Environment snapshot taken at the start of the run, filtered per the run's allow or deny list; see below.</td>
+</tr>
+<tr>
+<td><code>run_data</code></td>
+<td>object</td>
+<td>Detached structured evidence snapshot: the JSON-safe view of the node's ctx, plus, on a leaf, the evidence its verdict carried. It always contains a framework-owned <code>measurements</code> array: one entry per <code>utils.measure</code> call on this node, in call order, empty when the node measured nothing.</td>
+</tr>
+<tr>
+<td><code>suite_target</code></td>
+<td>string or null</td>
+<td>The loader target that produced the run, as <code>hilt run</code> resolved it: an absolute suite file or module name, <code>::</code>, and the suite class name. <code>hilt inspect</code> loads this suite for its Re-Run tab, so the technician re-runs a node with the code that ran in production; <code>--suite</code> overrides it. <code>null</code> when the run was started without one, from a developer's own harness. Added within version 1 on 2026-09-10; a consumer written before it treats the field as additive.</td>
+</tr>
+</tbody>
+</table>
+<p>A measurement entry is <code>{name, value, unit, limits, in_limits, timestamp}</code> as
+<code>docs/measurements.md</code> defines it: <code>value</code> is a number, or <code>null</code> when the suite tried
+to take the reading and could not (issue #159; a hole in the series, never a zero),
+<code>limits</code> is <code>{low, high}</code> with <code>null</code> for an open side or <code>null</code> altogether,
+<code>in_limits</code> is <code>true</code>, <code>false</code> (always <code>false</code> for a <code>null</code> value against a window), or
+<code>null</code> when no window was given, and <code>timestamp</code> is UTC ending in <code>Z</code>. <code>in_limits</code> is
+evidence, never a verdict;
+version 1 defines no aggregation, SPC, or Cpk, and an integrator must not infer them
+from the entries. Because <code>result.json</code> is the root's record, the entries a leaf
+recorded reach the file through <code>measurements</code> on its <code>summary_tree</code> node, not
+through this <code>run_data</code>.</p>
+<p>Python-only lifecycle details such as the internal slot and raw return value are not
+part of this payload. Consumers must treat unknown fields as additive and select a
+decoder by <code>format_version</code> (see <a href="#versioning-policy">Versioning policy</a>).</p>
+<h3 id="the-env-snapshot-is-filtered-by-the-run-not-by-the-schema">The <code>env</code> snapshot is filtered by the run, not by the schema<a class="headerlink" href="#the-env-snapshot-is-filtered-by-the-run-not-by-the-schema" title="Permanent link">&para;</a></h3>
+<p>Version 1 publishes the run environment as the run declared it. <code>TestComponent.run()</code> and
+<code>TestUtils</code> accept <strong>either</strong> <code>env_allow</code> <strong>or</strong> <code>env_deny</code> (both is a <code>ValueError</code>): a
+list of regular expressions matched with <code>re.search</code> against each variable's <em>name</em>.
+<code>TOKEN</code> therefore matches <code>GITLAB_TOKEN</code>; anchor as <code>^HOME$</code> for an exact name. With an
+allow list only matching names are published; with a deny list matching names are
+withheld. Values are never hashed or rewritten — a variable is either present verbatim
+or absent.</p>
+<p>With neither list the snapshot is verbatim: every value present at run start, including
+tokens or credentials injected by CI or the shell, is serialized into the artifact.
+Keeping secrets out of an unfiltered run environment is the operator's obligation.</p>
+<p><strong>DEBUG override.</strong> When the source environment carries <code>environment=DEBUG</code>, the
+declared list is ignored and every variable is published. The run logs a warning —
+<code>DEBUG mode detected, ignoring provided &lt;allow|deny&gt; list and including ALL environment
+variables</code> — so the artifact's extra content is explained in its own timeline.</p>
+<p>The filter is applied once, at the root, and every node and every <code>RunResult</code> sees the
+same filtered view. <code>PHYSICAL_LOCATION</code> and <code>HILT_ARTIFACT_ROOT</code> are read from that
+view, so an allow list must let them through to keep their effect. Decoders must not
+assume any particular variable is present (ruling on issue #53, 2026-09-03).</p>
+<h2 id="version-1-timeline">Version 1 timeline<a class="headerlink" href="#version-1-timeline" title="Permanent link">&para;</a></h2>
+<p>Each <code>run()</code> creates a timestamped directory directly beneath
+<code>HILT_ARTIFACT_ROOT</code>. Point-in-time artifacts are stored at that run-directory root.
+Every executed node that owns a discrete log receives a child directory containing:</p>
+<ul>
+<li><code>timeline.log</code> — a streamed human view with one escaped line per entry;</li>
+<li><code>timeline.jsonl</code> — the authoritative Inspector record, with one complete JSON object
+  per physical line.</li>
+</ul>
+<p>Both files are flushed after each entry. Consumers may read the JSON Lines file while a
+run is active and retain every complete line after interruption. The child-directory
+name is framework-owned and must be treated as opaque; use <code>TestComponent.log_path</code> rather
+than reconstructing it.</p>
+<p>Every version-1 timeline object contains these fields:</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>JSON type</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>format_version</code></td>
+<td>integer</td>
+<td>Timeline-record schema version; currently <code>1</code>.</td>
+</tr>
+<tr>
+<td><code>timestamp</code></td>
+<td>string</td>
+<td>Timezone-aware UTC timestamp ending in <code>Z</code>.</td>
+</tr>
+<tr>
+<td><code>scope</code></td>
+<td>array of strings</td>
+<td>Root-to-emitting-node path, inclusive.</td>
+</tr>
+<tr>
+<td><code>level</code></td>
+<td>string</td>
+<td>Lowercase Python logging level name.</td>
+</tr>
+<tr>
+<td><code>message</code></td>
+<td>string</td>
+<td>Fully rendered log message. Newlines remain escaped within the JSON line.</td>
+</tr>
+</tbody>
+</table>
+<p>An artifact-pointer entry additionally contains all four fields below. They are absent
+from ordinary records rather than set to null.</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>JSON type</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>artifact_name</code></td>
+<td>string</td>
+<td>Captured artifact name, or <code>result</code> for the root result.</td>
+</tr>
+<tr>
+<td><code>artifact_path</code></td>
+<td>string</td>
+<td>Absolute path of the published artifact or root <code>result.json</code>.</td>
+</tr>
+<tr>
+<td><code>artifact_type</code></td>
+<td>string</td>
+<td>Captured artifact type, or <code>run-result</code> for the root result.</td>
+</tr>
+<tr>
+<td><code>artifact_timestamp</code></td>
+<td>string</td>
+<td>The evidence timestamp in UTC; for the root result, its publication time.</td>
+</tr>
+</tbody>
+</table>
+<p>Authored suites, sequences, and parallel nodes own a log by default. Leaves roll their
+records into the nearest owning ancestor. A sequence, parallel node, or composed suite
+constructed with <code>discrete_log_file=False</code> also rolls up. Pending nodes create no files.</p>
+<h2 id="two-records-two-version-fields">Two records, two version fields<a class="headerlink" href="#two-records-two-version-fields" title="Permanent link">&para;</a></h2>
+<p>A run therefore produces two versioned records, and each carries its own
+<code>format_version</code>:</p>
+<table>
+<thead>
+<tr>
+<th>Record</th>
+<th>Where it lives</th>
+<th>Version field</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Result</td>
+<td><code>result.json</code> at the run-directory root; the serialized root <code>RunResult.to_json()</code> and structural view rooted at <code>summary_tree</code></td>
+<td><code>format_version</code> on the result object</td>
+</tr>
+<tr>
+<td>Timeline</td>
+<td><code>timeline.jsonl</code> beneath the run directory; the temporal view</td>
+<td><code>format_version</code> on every JSON Lines object</td>
+</tr>
+</tbody>
+</table>
+<p>The two version numbers move independently. The summary tree links the structural view
+to the temporal view through each node's <code>log_path</code> (ruling on issue #106, 2026-09-04:
+the link is additive within result version 1). An Inspector selects a node in the tree,
+resolves <code>log_path</code> against the run directory, and reads that node's chronology.</p>
+<h2 id="versioning-policy">Versioning policy<a class="headerlink" href="#versioning-policy" title="Permanent link">&para;</a></h2>
+<p><code>format_version</code> is an integer on every record the framework emits: the result, every
+timeline line, and the envelope <code>Artifact.to_json()</code> writes for point-in-time evidence.
+One rule governs all of them.</p>
+<ol>
+<li><strong>Additive within a version.</strong> Adding a field to a framework-owned object keeps the
+   number. So does adding a key that the record already declares open (<code>env</code>,
+   <code>run_data</code>, and the failure object). A consumer must accept fields it does not know
+   and must not fail on them; it reads what it was written for and ignores the rest.</li>
+<li><strong>Breaking bumps the version.</strong> Removing or renaming a field, changing a field's JSON
+   type or nullability, changing the meaning of an existing value, adding a member to a
+   closed set (<code>state</code>, <code>type</code>, <code>declared</code>, the failure <code>state</code>), moving or renaming
+   <code>result.json</code> or <code>timeline.jsonl</code>, or changing the one-object-per-line rule bumps the
+   number. A bump is a contract change and follows the workflow in <code>STANDARDS.md</code>
+   section 7: it is raised as an issue and ruled on before its MR opens.</li>
+<li><strong>Consumers declare what they accept.</strong> A decoder reads <code>format_version</code> before any
+   other field, accepts the versions it was written for, and refuses every other version
+   loudly, with an error that names the version found and the versions accepted. A
+   best-effort read of an unknown version is a silent misreading and is not permitted.
+   Within an accepted version the decoder validates against the published schema for
+   that version.</li>
+<li><strong>The records version independently.</strong> Bumping the result does not bump the
+   timeline, and the reverse. The per-node <code>log_path</code> link is additive within result
+   version 1 (ruling on issue #106, 2026-09-04).</li>
+<li><strong>Every change amends the schema in the same MR.</strong> A field added within version 1
+   appears in the version-1 schema and in this document before the framework emits it.
+   The self-tests close every framework-owned object against its schema, so an emitted
+   field the schema does not name is a red gate, not a silent contract change. A bump
+   publishes a new schema file and leaves the previous one in place: a run directory
+   written under version 1 stays readable by a version-1 consumer for as long as the
+   record exists.</li>
+</ol>
+<p>Before 1.0.0 the record may change in place under version 1, because no consumer
+exists to break; the <code>type</code> vocabulary was renamed this way to match the composition
+vocabulary (ruling on issue #111, 2026-09-06), and <code>measurements[].value</code> became
+nullable this way for a reading not taken (ruling on issue #159, 2026-10-20). From
+1.0.0 rule 2 applies as written.</p>
+<h2 id="published-schemas">Published schemas<a class="headerlink" href="#published-schemas" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Record</th>
+<th>Schema</th>
+<th>Draft</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Result</td>
+<td><a href="schema/result-v1.schema.json"><code>docs/schema/result-v1.schema.json</code></a></td>
+<td>JSON Schema 2020-12</td>
+</tr>
+<tr>
+<td>Timeline</td>
+<td><a href="schema/timeline-v1.schema.json"><code>docs/schema/timeline-v1.schema.json</code></a></td>
+<td>JSON Schema 2020-12</td>
+</tr>
+<tr>
+<td>Artifact envelope</td>
+<td><a href="schema/artifact-v1.schema.json"><code>docs/schema/artifact-v1.schema.json</code></a></td>
+<td>JSON Schema 2020-12</td>
+</tr>
+</tbody>
+</table>
+<p>The published files are the consumer contract, and they are open: framework-owned
+objects do not forbid additional properties, so a consumer validating with the file
+shipped in one release accepts the additive fields of a later release within the same
+version. Three objects are open by design and stay open under the self-tests as well:
+the failure object (a <code>TestFailure</code> subclass may add fields), <code>env</code> (station-defined
+names), and <code>run_data</code> (suite evidence beyond the framework-owned <code>measurements</code>
+slot). The measurement object itself is open as well, so a field added to it within
+version 1 is accepted by a consumer validating with this file.</p>
+<p><code>tests/test_inspector_schema.py</code> validates every emitted <code>result.json</code> and every emitted
+timeline line against these files on each gate run, first as published and then with
+every framework-owned object closed. It also validates emitted point-in-time captures
+against the artifact-envelope schema with the envelope closed. That schema describes
+the existing <code>Artifact.to_json()</code> shape: <code>format_version</code>, <code>name</code>, <code>type</code>, <code>timestamp</code>,
+and <code>data</code>. The observation may be any JSON value, including explicit null. Additive
+envelope fields remain acceptable to consumers; the payload is never closed. The
+internal Inspector capture reader consumes this envelope under the same version policy.
+The root <code>run-result</code> pointer instead uses the result schema; it is not an envelope.</p>
+<h2 id="summary-tree-node">Summary tree node<a class="headerlink" href="#summary-tree-node" title="Permanent link">&para;</a></h2>
+<p>Every <code>summary_tree</code> node contains exactly these version-1 fields:</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>JSON type</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>name</code></td>
+<td>string</td>
+<td>Stable node name.</td>
+</tr>
+<tr>
+<td><code>type</code></td>
+<td>string</td>
+<td>The same node-type discriminator used by <code>RunResult</code>.</td>
+</tr>
+<tr>
+<td><code>state</code></td>
+<td>string or null</td>
+<td>Terminal state, or null when a declared sequence step did not run.</td>
+</tr>
+<tr>
+<td><code>failure</code></td>
+<td>object or null</td>
+<td>JSON-safe failure for this exact node.</td>
+</tr>
+<tr>
+<td><code>timeout</code></td>
+<td>object or null</td>
+<td>Structured time-budget evidence for this exact node.</td>
+</tr>
+<tr>
+<td><code>log_path</code></td>
+<td>string or null</td>
+<td>POSIX path of this node's <code>timeline.jsonl</code>, relative to the run directory. Null when the node never ran or when its records rolled up into an ancestor.</td>
+</tr>
+<tr>
+<td><code>children</code></td>
+<td>array</td>
+<td>Ordered child nodes. Groups retain declaration order after settlement.</td>
+</tr>
+<tr>
+<td><code>evidence</code></td>
+<td>object or null</td>
+<td>The readings this leaf's verdict carried: <code>PASS({...})</code> or <code>TestFailure(..., evidence={...})</code>, validated entry by entry and detached. Null on a node that is not a leaf, that never ran, or whose verdict carried none.</td>
+</tr>
+<tr>
+<td><code>evidence_declared</code></td>
+<td>array of string or null</td>
+<td>The keys the leaf's <code>@evidence</code> declaration promised on <code>PASS</code>, in declaration order. A declared key absent from <code>evidence</code> is a reading that was not taken; show it by name. Null when the node is not a leaf or declared nothing.</td>
+</tr>
+<tr>
+<td><code>measurements</code></td>
+<td>array or null</td>
+<td>Every <code>utils.measure</code> call this node recorded, in call order, as measurement objects (<code>docs/measurements.md</code>). An array on every node that ran, empty when it measured nothing; null when the node never ran, matching <code>state</code>. A measurement does not satisfy an <code>@evidence</code> declaration and <code>in_limits: false</code> is not a Fail.</td>
+</tr>
+</tbody>
+</table>
+<p>A null tree state means pending/unreached; it is not a fourth terminal state. A stopped
+sequence retains its unexecuted descendants with null states, so the root snapshot
+still describes the full declared tree.</p>
+<p><code>log_path</code> is relative so that a run directory copied to another machine keeps every
+link intact. Consumers resolve it against the run directory they opened, the same
+directory that holds the point-in-time artifacts. A node with a terminal <code>state</code> and a
+null <code>log_path</code> rolled its records into an ancestor; the nearest ancestor with a
+non-null <code>log_path</code> holds them, and the root always carries one. A node whose <code>state</code>
+is null never ran and has no chronology anywhere.</p>
+<h2 id="failure-shape">Failure shape<a class="headerlink" href="#failure-shape" title="Permanent link">&para;</a></h2>
+<p>Failures use their framework <code>to_json()</code> methods. <code>TestFailure</code> and its subclasses
+retain the failure name, message, state, comparisons, and bug metadata. An
+<code>ExternalIntegrationFailure</code> retains its hook and JSON-safe cause. <code>OperatorInterrupt</code>
+retains <code>operator: true</code> and the signal name so a Ctrl-C is not mistaken for a hook
+failure. Arbitrary exception
+objects and live values degrade to descriptive JSON-safe forms rather than making
+serialization fail and masking the evidence.</p>
+<h2 id="timeout-shape">Timeout shape<a class="headerlink" href="#timeout-shape" title="Permanent link">&para;</a></h2>
+<p>When no deadline contributed to a node's state, <code>timeout</code> is null. Otherwise it carries
+these fields:</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>JSON type</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>reason</code></td>
+<td>string</td>
+<td>Always <code>timeout</code>.</td>
+</tr>
+<tr>
+<td><code>declared</code></td>
+<td>string</td>
+<td>The winning declaration: <code>fail_after</code> or <code>abort_after</code>.</td>
+</tr>
+<tr>
+<td><code>budget_seconds</code></td>
+<td>number</td>
+<td>Positive finite duration declared on the winning clock.</td>
+</tr>
+<tr>
+<td><code>elapsed_seconds</code></td>
+<td>number</td>
+<td>Active window time consumed when that clock fired.</td>
+</tr>
+<tr>
+<td><code>clock</code></td>
+<td>string</td>
+<td>Root-to-declaring-node path of the winning clock.</td>
+</tr>
+</tbody>
+</table>
+<p>For <code>fail_after</code>, <code>failure</code> also contains the hardware-facing <code>TestFailure</code>. For
+<code>abort_after</code>, <code>failure</code> may be null because the framework does not forge a verdict;
+the timeout record carries the reason for the node-local Aborted state.</p>
+<p>Integrators should use <code>ancestor_names</code> as the durable node identity and
+<code>bread_crumbs</code> only for display. Names may contain <code>/</code>; the array is therefore the
+canonical representation.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="contracts.html" class="md-footer__link md-footer__link--prev" aria-label="Previous: Contracts">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                Contracts
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="inspector.html" class="md-footer__link md-footer__link--next" aria-label="Next: Inspector (target specification)">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                Inspector (target specification)
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright 2026 Tyler Meador
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": ".", "features": ["navigation.sections", "navigation.top", "navigation.footer", "toc.follow", "search.suggest", "search.highlight", "content.code.copy"], "search": "assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="assets/javascripts/bundle.a5f9d56c.min.js"></script>
+      
+    
+  </body>
+</html>

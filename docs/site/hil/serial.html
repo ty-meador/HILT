@@ -1,0 +1,1659 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Python HIL testing with a pit of success: composable tests, guardrails that make a bad test hard to write, and an engine that won't let an unhandled failure pass silently.">
+      
+      
+      
+        <link rel="canonical" href="https://gitlab.com/Tyler-Meador/HILT/-/tree/main/docs/hil/serial.html">
+      
+      
+        <link rel="prev" href="device-api.html">
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.1">
+    
+    
+      
+        <title>Serial/UART (design note) - HILT</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.57a0d79d.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.fb2fffe2.min.css">
+      
+      
+
+
+    
+    
+      
+        <script src="../assets/javascripts/iframe-worker-shim.js"></script>
+      
+    
+    
+      
+    
+    
+      <link rel="stylesheet" href="../assets/_mkdocstrings.css">
+    
+      <link rel="stylesheet" href="../assets/stylesheets/hilt.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="custom">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#serialuart-console-transport" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../index.html" title="HILT" class="md-header__button md-logo" aria-label="HILT" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M6 4h12v1h3v2h-3v2h3v2h-3v2h3v2h-3v2h3v2h-3v1H6v-1H3v-2h3v-2H3v-2h3v-2H3V9h3V7H3V5h3zm5 11v3h1v-3zm2 0v3h1v-3zm2 0v3h1v-3z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            HILT
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Serial/UART (design note)
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme)" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="custom"  aria-label="Following the system setting. Switch to light mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Following the system setting. Switch to light mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m14.3 16-.7-2h-3.2l-.7 2H7.8L11 7h2l3.2 9zM20 8.69V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12zm-9.15 3.96h2.3L12 9z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="custom"  aria-label="Light mode. Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Light mode. Switch to dark mode" for="__palette_2" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5s-1.65.15-2.39.42zM3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29zm.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14zM20.65 7l-1.77 3.79a7.02 7.02 0 0 0-2.38-4.15zm-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29zM12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="custom" data-md-color-accent="custom"  aria-label="Dark mode. Switch to the system setting"  type="radio" name="__palette" id="__palette_2">
+    
+      <label class="md-header__button md-icon" title="Dark mode. Switch to the system setting" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3zm3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://gitlab.com/Tyler-Meador/HILT" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="m504 204.6-.7-1.8L433.6 21c-1.4-3.6-3.9-6.6-7.2-8.6-2.4-1.6-5.1-2.5-8-2.8s-5.7.1-8.4 1.1-5.1 2.7-7.1 4.8c-1.9 2.1-3.3 4.7-4.1 7.4l-47 144H161.3l-47.1-144c-.8-2.8-2.2-5.3-4.1-7.4-2-2.1-4.4-3.7-7.1-4.8-2.6-1-5.5-1.4-8.4-1.1s-5.6 1.2-8 2.8c-3.2 2-5.8 5.1-7.2 8.6L9.8 202.8l-.8 1.8c-10 26.2-11.3 55-3.5 82 7.7 26.9 24 50.7 46.4 67.6l.3.2.6.4 106 79.5c38.5 29.1 66.7 50.3 84.6 63.9 3.7 1.9 8.3 4.3 13 4.3s9.3-2.4 13-4.3c17.9-13.5 46.1-34.9 84.6-63.9l106.7-79.9.3-.3c22.4-16.9 38.7-40.6 45.6-67.5 8.6-27 7.4-55.8-2.6-82"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitLab
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../index.html" title="HILT" class="md-nav__button md-logo" aria-label="HILT" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M6 4h12v1h3v2h-3v2h3v2h-3v2h3v2h-3v2h3v2h-3v1H6v-1H3v-2h3v-2H3v-2h3v-2H3V9h3V7H3V5h3zm5 11v3h1v-3zm2 0v3h1v-3zm2 0v3h1v-3z"/></svg>
+
+    </a>
+    HILT
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://gitlab.com/Tyler-Meador/HILT" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="m504 204.6-.7-1.8L433.6 21c-1.4-3.6-3.9-6.6-7.2-8.6-2.4-1.6-5.1-2.5-8-2.8s-5.7.1-8.4 1.1-5.1 2.7-7.1 4.8c-1.9 2.1-3.3 4.7-4.1 7.4l-47 144H161.3l-47.1-144c-.8-2.8-2.2-5.3-4.1-7.4-2-2.1-4.4-3.7-7.1-4.8-2.6-1-5.5-1.4-8.4-1.1s-5.6 1.2-8 2.8c-3.2 2-5.8 5.1-7.2 8.6L9.8 202.8l-.8 1.8c-10 26.2-11.3 55-3.5 82 7.7 26.9 24 50.7 46.4 67.6l.3.2.6.4 106 79.5c38.5 29.1 66.7 50.3 84.6 63.9 3.7 1.9 8.3 4.3 13 4.3s9.3-2.4 13-4.3c17.9-13.5 46.1-34.9 84.6-63.9l106.7-79.9.3-.3c22.4-16.9 38.7-40.6 45.6-67.5 8.6-27 7.4-55.8-2.6-82"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitLab
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../index.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../getting-started.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../floor-technician.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Floor Technician
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../overview.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../lifecycle.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Lifecycle
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../idioms.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Idioms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../utilities.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Utilities
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../contracts.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Contracts
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../inspector-json.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Inspector JSON
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../inspector.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Inspector (target specification)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../measurements.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Measurements
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../junit-xml.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    JUnit XML
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../hilt-run.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    hilt run
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../hilt-new.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    hilt new
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../hilt-check.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    hilt-check
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api-stability.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API stability
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_18" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_18" id="__nav_18_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    HIL interfaces
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_18_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_18">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    HIL interfaces
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="index.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="gpio.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    GPIO (design note)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="pwm.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    PWM (design note)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="can.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CAN bus (design note)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="i2c-spi.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    I2C/SPI (design note)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="device-api.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Device API (design note)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Serial/UART (design note)
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="serial.html" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Serial/UART (design note)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#serial-prompt-contract" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Serial Prompt Contract
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#serial-line-discipline-contract" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Serial Line Discipline Contract
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#serial-exit-status-contract" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Serial Exit-Status Contract
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#serial-abort-contract" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Serial Abort Contract
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#serial-turn-contract" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Serial Turn Contract
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#error-taxonomy-mapping" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Error-taxonomy mapping
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#via-composition-placement-2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Via composition (placement 2)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#routing-use_serial-and-get_serial" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Routing: use_serial and get_serial
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#packaging" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Packaging
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#conformance-the-shared-transport-contract-suite" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Conformance: the shared transport-contract suite
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#serial-prompt-contract" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Serial Prompt Contract
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#serial-line-discipline-contract" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Serial Line Discipline Contract
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#serial-exit-status-contract" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Serial Exit-Status Contract
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#serial-abort-contract" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Serial Abort Contract
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#serial-turn-contract" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Serial Turn Contract
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#error-taxonomy-mapping" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Error-taxonomy mapping
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#via-composition-placement-2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Via composition (placement 2)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#routing-use_serial-and-get_serial" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Routing: use_serial and get_serial
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#packaging" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Packaging
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#conformance-the-shared-transport-contract-suite" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Conformance: the shared transport-contract suite
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="serialuart-console-transport">Serial/UART console transport<a class="headerlink" href="#serialuart-console-transport" title="Permanent link">&para;</a></h1>
+<p><strong>Status: SIGNED — Ty, 2026-09-10</strong> ("all approved", recorded on #91). Implementation
+lands with the MR that carries this status change.</p>
+<p><strong>Amendment SIGNED — Ty, 2026-10-18 (#150, merged as !184):</strong> the Serial Turn
+Contract below changes the transport's concurrency contract (one command on the
+wire at a time, queued in call order). Ty ruled "queue", not "refuse".</p>
+<p>Ty ruled <strong>both</strong> placements on 2026-09-05: <code>SerialInterface</code> as a local peer of
+<code>SshInterface</code> (console header on the HILT host), and the same transport reached
+through the existing <code>via</code> hop (a console server, or a Pi with a USB-UART, driven
+over SSH). One transport, two placements. This note specifies the transport's
+contract once — prompt detection, timeouts, line discipline, exit-status recovery,
+output bounding, safe-state on abort — and gives <code>via</code> composition its own
+section, per Ty's scoping note on the issue. Serial is a transport, not a new HIL
+contract: it slots in beside <code>SshInterface</code> behind <code>RemoteInterface</code>, matching
+<code>remote.py</code>'s own framing ("SSH, and later serial/UART, are peers behind this
+class"). Blocked on #90 (closed): the shared transport-contract suite this design
+must pass before any implementation MR opens.</p>
+<p><code>SerialInterface(RemoteInterface)</code> opens a local device node (<code>/dev/ttyUSB0</code>, a
+Windows <code>COM</code> port) via <code>pyserial-asyncio</code>; it never dials a socket. <code>address</code> is
+<code>None</code> — matching <code>RemoteInterface</code>'s own note that "a UART on a local device node
+has no address" — so <code>connect()</code> rejects <code>host</code>/<code>port</code> with <code>TypeError</code>, same as
+any unaddressed transport. <code>endpoint</code> is the device basename.</p>
+<p>A suite reaches it the way it reaches SSH: <code>utils.use_serial(device=...)</code> in
+<code>configure()</code> declares the console as the node's exec route, <code>utils.get_serial</code>
+opens one as an auxiliary endpoint, both hand back a <code>Shell</code>, and the framework
+owns the close (see "Routing" below). The transport itself is constructed only by
+the router and the self-tests.</p>
+<div class="highlight"><pre><span></span><code><span class="k">await</span> <span class="n">utils</span><span class="o">.</span><span class="n">use_serial</span><span class="p">(</span><span class="n">device</span><span class="o">=</span><span class="s2">"/dev/ttyUSB0"</span><span class="p">,</span> <span class="n">baud</span><span class="o">=</span><span class="mi">115200</span><span class="p">)</span>
+</code></pre></div>
+<h2 id="serial-prompt-contract">Serial Prompt Contract<a class="headerlink" href="#serial-prompt-contract" title="Permanent link">&para;</a></h2>
+<p><strong>Framework obligation:</strong> A console is a byte stream, not a request/response
+protocol — <code>exec</code> recognizes a command's end by the shell's prompt reappearing,
+never by an EOF or a status arriving on the wire. <code>prompt</code> (a regex, default a
+bare POSIX prompt) is matched against the tail of decoded output; <code>login_prompt</code> /
+<code>password_prompt</code>, when configured, are answered during <code>connect()</code> before the
+transport reads until <code>prompt</code> matches — a console already at a shell is
+unaffected. <code>login_timeout</code> (default 10s, connect-time only) bounds that
+resolution; expiry raises <code>ConnectionError</code> naming the last bytes seen,
+<code>connect()</code> raising whatever <code>_connect</code> raises, matching <code>RemoteInterface</code>.
+<code>prompt_timeout</code> (default 30s, fixed at construction) bounds how long <code>exec</code>
+waits for the prompt after sending a command — the transport's own safety net, not
+a substitute for <code>fail_after</code>/<code>abort_after</code>: a wedged console is a resource the
+transport cannot leave parked forever even with no ancestor budget declared.
+<code>prompt_timeout</code> and an ancestor's <code>fail_after</code>/<code>abort_after</code> are independent
+clocks racing the same await; whichever fires first decides the state, exactly as
+the Time Budget Contract already specifies. An echoed line unchanged across two
+read cycles is named in the eventual timeout's message, distinguishing "wedged,
+frozen" from "slow, still producing bytes" without the Floor Technician opening
+the suite.</p>
+<p><strong>Developer obligation:</strong> Supply <code>prompt</code> (and <code>login_prompt</code>/<code>password_prompt</code>
+where the console logs in) at construction for anything but a bare POSIX shell —
+guessing a prompt at runtime is how a stuck read gets misread as a fast command.
+Set <code>prompt_timeout</code> shorter than any <code>fail_after</code> wrapping this node's <code>exec</code>
+calls when a wedge should surface on its own evidence line rather than only as an
+ancestor's <code>TimeoutEvidence</code>.</p>
+<p><strong>Consequence:</strong> <code>exec</code> never raises for a command's own completion. Expiry
+settles like a killed command — <code>ExecResult.settled(partial_output, "prompt
+timeout", None)</code>, <code>exit_code == -1</code>, partial output kept as evidence — never an
+exception the suite must catch. If the harness's own clock wins the race instead,
+the coroutine is cancelled (<code>CancelledError</code> propagates, never swallowed) and
+<code>cancel_in_flight</code> runs the Serial Abort Contract below.</p>
+<h2 id="serial-line-discipline-contract">Serial Line Discipline Contract<a class="headerlink" href="#serial-line-discipline-contract" title="Permanent link">&para;</a></h2>
+<p><strong>Framework obligation:</strong> The wire is raw bytes with none of an SSH channel's
+structure (separate stdout/stderr, a real exit status). <code>_exec</code> normalizes before
+matching the prompt or handing bytes to <code>ExecResult.settled</code>: input is written as
+bare <code>\r</code> (real-terminal <code>Enter</code>, since some bootloader shells ignore <code>\n</code> alone),
+output CRLF is normalized to <code>\n</code>; exactly one leading echoed line matching the
+command just sent is stripped before that normalization (strip-if-present — a
+console with echo already off is unaffected); ANSI/VT100 escapes are stripped on
+the accumulated decoded buffer, so an escape split across two reads still
+resolves and a colorized prompt cannot defeat the <code>prompt</code> regex; decoding is
+UTF-8 with <code>errors="replace"</code>, matching <code>ExecResult.settled</code>'s existing path for
+every transport.</p>
+<p><strong>Developer obligation:</strong> Read <code>ExecResult.stdout</code> with <code>\n</code> line endings and no
+local echo, the same as any other transport's result — do not special-case
+serial output in suite code for line endings or echo.</p>
+<p><strong>Consequence:</strong> A suite calling <code>result.stdout.splitlines()</code> does not need to
+know the transport was serial. A DUT's binary or non-UTF-8 output is evidence,
+not a dead channel.</p>
+<h2 id="serial-exit-status-contract">Serial Exit-Status Contract<a class="headerlink" href="#serial-exit-status-contract" title="Permanent link">&para;</a></h2>
+<p><strong>Framework obligation:</strong> A raw console has no exit-status side-channel — no
+equivalent of asyncssh's <code>process.exit_status</code>. The transport appends a sentinel
+to what it sends and parses it back out of the reply:</p>
+<div class="highlight"><pre><span></span><code>&lt;command&gt;; echo "__HILT_RC__=$?"
+</code></pre></div>
+<p>Once the prompt reappears, the transport scans for <code>__HILT_RC__=&lt;digits&gt;</code>,
+strips that one line from <code>ExecResult.stdout</code>, and parses the digits as
+<code>exit_code</code>. A sentinel that never appears — echo suppression failed, the shell
+died mid-command — settles as <code>exit_code == -1</code> via <code>ExecResult.settled(...,
+None)</code>, the same "no real status exists" path every transport shares, with the
+raw captured text kept as evidence rather than discarded: the documented <code>-1</code>
+case ("killed by a signal, or aborted before an exit status existed") with a lost
+sentinel standing in for the signal-kill. Stdout and the sentinel-bearing reply
+together are bounded by <code>hilt.executor.BoundedCapture</code> and
+<code>DEFAULT_EXEC_OUTPUT_BUDGET</code> unmodified — the same named ceiling <code>LocalExec</code> and
+<code>SshInterface</code> already share. Hitting the budget sets <code>truncated=True</code>, stops
+accepting bytes, and triggers the Serial Abort Contract below (there is no
+process to SIGTERM on the other end of a UART, only a wire to interrupt); the
+port stays open afterward, matching "the SSH session stays up" for the
+equivalent case.</p>
+<p><strong>Developer obligation:</strong> Read <code>ExecResult.stderr</code> as transport-generated
+messages only (<code>"prompt timeout"</code>, <code>"transport closed"</code>) — never a slice of the
+DUT's own output. A console has one combined byte stream, not separate
+stdout/stderr descriptors; everything the DUT writes settles into <code>stdout</code>. A
+suite ported from an SSH-backed console that greps <code>stderr</code> for DUT error text
+needs to read <code>stdout</code> instead — the one place the two transports are not
+drop-in interchangeable.</p>
+<p><strong>Consequence:</strong> Every <code>ExecResult</code> this transport produces is a real, bounded
+value a suite can treat exactly like any other transport's result — a missing or
+truncated status is evidence, never a raised exception.</p>
+<h2 id="serial-abort-contract">Serial Abort Contract<a class="headerlink" href="#serial-abort-contract" title="Permanent link">&para;</a></h2>
+<p><strong>Framework obligation:</strong> <code>cancel_in_flight</code> is the load-bearing halt ("kill
+every in-flight operation as hard as the protocol allows... a later <code>exec</code>
+rejects"). A serial line has no socket to destroy the way
+<code>SshInterface._abort_client</code> does, so the sequence is protocol-shaped: send a
+<code>BREAK</code> condition (a real UART primitive) to interrupt whatever runs in the
+foreground on most bootloader and kernel consoles; send <code>Ctrl-C</code> (<code>\x03</code>) for a
+foreground shell command a BREAK alone misses; close the port unconditionally,
+whether or not the prompt reappeared after those two — no graceful wait, matching
+SSH's "graceful hangup is not used on either path" and the In-Flight Termination
+Contract's "closed HARD immediately... not at the next polling boundary." This
+contract does not fork that one; it names what "closed hard" means on a
+protocol with no socket to abort. The connected flag clears even if the
+BREAK/Ctrl-C sends themselves raise, same <code>try</code>/<code>finally</code> pattern as
+<code>RemoteInterface.cancel_in_flight</code>.</p>
+<p><strong>Developer obligation:</strong> None beyond the existing <code>RemoteInterface</code> contract —
+abort is framework-owned and idempotent; suite code never calls
+<code>cancel_in_flight</code> itself.</p>
+<p><strong>Consequence:</strong> Any <code>exec</code> still parked when the sequence runs settles with
+<code>stderr</code> naming <code>"transport closed"</code> — the same cause string
+<code>_name_transport_death</code> gives SSH, so a Floor Technician's grep for a dead
+resource does not need to know which transport produced it. An <code>exec</code> still
+queued behind it settles the same way without ever reaching the wire (Serial
+Turn Contract below). A 30-minute console session in progress when the run
+aborts does not keep mutating hardware after the sequence completes.</p>
+<h2 id="serial-turn-contract">Serial Turn Contract<a class="headerlink" href="#serial-turn-contract" title="Permanent link">&para;</a></h2>
+<p><strong>Framework obligation:</strong> <code>exec</code> on one <code>SerialInterface</code> runs one command at a
+time, in call order. A console carries one byte stream and no channel per
+caller — unlike an SSH session, which opens a channel per <code>exec</code> — so two callers
+writing back to back would both read the same reply. The transport holds an
+<code>asyncio.Lock</code> around each command's write-and-read; a caller that arrives while
+another is on the wire waits its turn, and waiters are served in the order they
+called. This is the turn a shared <code>DeviceApi</code> handle takes per request (bench
+finding F13), applied to the console, and it is what makes a <code>use_serial</code> route
+safe under <code>self.parallel()</code>: the leaves run concurrently, their commands go out
+one at a time.</p>
+<p><code>prompt_timeout</code> bounds only the command's own wait for the prompt once it is on
+the wire, never its time in the queue — a sibling ahead in the queue is not the
+DUT being slow, and the node clock bounds the whole wait. A command still queued
+when <code>cancel_in_flight</code> or <code>disconnect</code> lands never reaches the wire: it settles
+<code>exit_code == -1</code> with <code>stderr</code> <code>"transport closed"</code>, the same evidence an
+in-flight command gets from the Serial Abort Contract. The halt itself takes no
+turn — BREAK, Ctrl-C, and the close go out past whatever holds the lock, so the
+halt never waits.</p>
+<p><strong>Developer obligation:</strong> Know what the leaves share. Queued leaves share one
+shell, so its state travels between them: a <code>cd</code>, an exported variable, or a
+background job started in one leaf is visible to the next. That is the cost
+particular to a console — a <code>DeviceApi</code> handle shares a session, not a shell.
+Claims that need isolation want one console each (<code>get_serial(device=...)</code> per
+leaf, or one <code>use_serial</code> per child suite), and a latency measured around
+<code>utils.exec</code> on a shared console includes the wait for siblings.</p>
+<p><strong>Consequence:</strong> The F13 shape on a console — one <code>use_serial(device=...)</code> in
+<code>configure()</code>, <code>utils.exec</code> in every <code>parallel</code> leaf — comes back with each
+leaf's own verdict. Before this contract the second caller's read collided with
+the first's: <code>utils.exec</code> raised <code>asyncio.StreamReader</code>'s <code>RuntimeError</code> through
+the node, a false <code>ContractViolation</code> beside a false <code>"prompt timeout"</code> on a
+board that was healthy (issue #150).</p>
+<h2 id="error-taxonomy-mapping">Error-taxonomy mapping<a class="headerlink" href="#error-taxonomy-mapping" title="Permanent link">&para;</a></h2>
+<p>The transport raises nothing shaped like a verdict — only <code>ConnectionError</code>
+(protocol-level reject, absorbed by <code>TestUtils.exec</code>/<code>Shell.exec</code> into
+<code>exit_code == -1</code>) or whatever <code>_connect</code> propagates from a failed login.</p>
+<ul>
+<li><strong><code>exec</code> while not connected</strong> → <code>ConnectionError</code>, absorbed to <code>-1</code>.</li>
+<li><strong>Login/prompt never resolves at connect</strong> → <code>ConnectionError</code> from <code>_connect</code>.
+  A suite that wraps <code>connect()</code> in <code>configure()</code> and re-raises as <code>TestFailure</code>
+  makes the hardware-vs-infrastructure call itself — the framework never guesses
+  (Terminal State Contract: "not knowable from code... the human triager's call").</li>
+<li><strong>Prompt timeout / sentinel not found</strong> → <code>ExecResult</code> with <code>exit_code == -1</code>,
+  raw text kept as evidence; a suite treating this as a Fail raises <code>TestFailure</code>
+  from the reading, not the transport.</li>
+<li><strong><code>cancel_in_flight</code> / abort</strong> → parked <code>exec</code> settles <code>-1</code>,
+  <code>stderr="transport closed"</code> — framework-decided, never a suite choice.</li>
+<li><strong>A suite bug</strong> (bad regex type, wrong argument) → propagates uncaught into
+  <code>TestComponent</code>'s existing bug boundary: unmodeled exception → <code>ContractViolation</code>,
+  "CONTRACT VIOLATION IN <code>&lt;name&gt;</code>".</li>
+</ul>
+<p>Nothing here adds a new type to <code>hilt.errors</code>. The transport speaks the two
+vocabularies every <code>RemoteInterface</code> already speaks — <code>ConnectionError</code> at the
+protocol layer, <code>ExecResult</code> at the command layer.</p>
+<h2 id="via-composition-placement-2">Via composition (placement 2)<a class="headerlink" href="#via-composition-placement-2" title="Permanent link">&para;</a></h2>
+<p>The device path names a node on the <em>remote</em> box, not the HILT host, so
+<code>SerialInterface</code> cannot open it as a local file descriptor the way placement 1
+does. The resolution reuses the seam <code>RemoteInterface</code> already has for this:
+<code>hop</code> and <code>endpoint</code> let a transport name its place in the topology independent
+of how its bytes move ("an owned via hop and a borrowed tunnel answer alike").
+<code>SerialInterface</code> takes a <code>via: SshInterface | None</code> constructor argument,
+structurally matching <code>SshInterface</code>'s own <code>via</code> (SSH only — a console has no
+other kind of hop): when given, the "wire" is not a local pyserial handle but the
+stdin/stdout of a bridging command run <strong>through the hop's own <code>exec</code></strong> and kept
+open as a long-lived remote process. Every contract above — prompt, timeouts,
+line discipline, sentinel, abort — operates on that bytestream identically;
+placement only changes where the bytes originate. <code>cancel_in_flight</code> for
+placement 2 sends BREAK/Ctrl-C into the bridging process's stdin, then
+hard-cancels that exec through the hop — never the hop's own
+<code>cancel_in_flight()</code>, which would take down every other consumer of that SSH
+connection (Exec Routing Contract: a router "must not disconnect, cancel, or
+collapse its hop").</p>
+<p><strong>Borrowed hops.</strong> When the exec router supplies the hop — an inherited
+<code>use_shell</code> route, or an explicit <code>via=jump</code> <code>Shell</code> — that hop is already live
+and belongs to the router, so the console takes it through <code>tunnel=</code> rather than
+<code>via=</code>: it must arrive connected, a failed bridge leaves it standing, and
+<code>disconnect</code> closes only the bridge. <code>via</code> and <code>tunnel</code> are mutually exclusive,
+the same two channels <code>SshInterface</code> has, with the same ownership rule.</p>
+<p><strong>Routing line.</strong> <code>route_label</code>'s existing chain-walk needs no new rendering
+code: placement 1 renders <code>exec routing: via ttyUSB0 (declared via use_serial)</code> —
+no network in the picture; placement 2 renders <code>exec routing: via bastion -&gt;
+console-pi -&gt; ttyUSB0 (declared via use_serial)</code> — test-host-first, exactly as any
+SSH chain renders today.</p>
+<h2 id="routing-use_serial-and-get_serial">Routing: <code>use_serial</code> and <code>get_serial</code><a class="headerlink" href="#routing-use_serial-and-get_serial" title="Permanent link">&para;</a></h2>
+<p><code>TestUtils.use_serial</code> and <code>TestUtils.get_serial</code> are <code>use_shell</code> and <code>get_shell</code>
+for a device path. A device path and baud rate are not a <code>host</code>/<code>username</code> pair,
+so the console has its own request (<code>SerialOpenRequest</code>) and its own connector seam
+(<code>SerialConnector</code>, the mirror of <code>SshConnector</code>), and the router treats what comes
+back exactly as it treats an SSH remote: <code>ExecRouter.for_ssh</code> attaches it, the
+<code>opened</code> set records it, <code>disconnect_opened</code> closes it after the post-cleanup
+survey, and the run-level abort sweep hard-closes it on an operator Ctrl-C. The
+parameters are the transport's constructor arguments (<code>device</code>, <code>baud</code>, <code>prompt</code>,
+<code>login_prompt</code>, <code>password_prompt</code>, <code>username</code>, <code>password</code>, <code>login_timeout</code>,
+<code>prompt_timeout</code>, <code>bridge_command</code>, <code>output_budget</code>) plus the routing trio <code>via</code>,
+<code>inherit</code>, <code>propagate</code>.</p>
+<p>Two shapes, not four: <code>use_serial(device=...)</code> opens and binds; <code>use_serial()</code> with
+no arguments reads the active route. The policy-only shapes (<code>inherit=False</code>,
+<code>propagate=False</code>) stay with <code>use_shell</code>, and <code>use_serial</code> refuses them with a
+<code>TypeError</code> that says so. The declaring form is admitted only while <code>configure()</code>
+runs, under the same <code>ContractViolation</code> as <code>use_shell</code>, and <code>hilt-check</code>'s
+<code>hilt/shell-in-configure</code> reads <code>use_serial(...)</code> with arguments the same way.
+<code>via</code> must resolve to an SSH hop (a <code>Shell</code> from <code>use_shell</code> or <code>get_shell</code>): a
+console has no other tunnel to borrow, and the connector names <code>use_serial</code> in the
+<code>TypeError</code> when handed anything else — naming the hop it was handed and the
+<code>inherit=False</code> escape, since under a <code>use_serial</code> parent that hop was inherited,
+not passed. A local <code>Shell</code> as <code>via</code> is a direct open on the test host, as it is
+for <code>use_shell</code>. The route is shared by the node and its descendants, so
+<code>parallel</code> leaves under it take turns on the one console (Serial Turn Contract).</p>
+<p><code>bench/suites/serial_console.py</code> is the shape in use: one <code>use_serial</code> in
+<code>configure()</code>, <code>utils.exec</code> in every claim, no handle in ctx, no <code>cleanup()</code>.</p>
+<h2 id="packaging">Packaging<a class="headerlink" href="#packaging" title="Permanent link">&para;</a></h2>
+<p><code>pyserial-asyncio</code> is checked for Apache-2.0 compatibility at implementation time and
+lands as an optional extra: <code>pip install open-hilt[serial]</code>. Core <code>hilt</code> gains no
+new dependency and <code>import hilt</code> never imports <code>hilt.serial</code>: the default
+connector imports it on the first <code>use_serial</code> / <code>get_serial</code>, and a local open
+without the extra raises <code>ModuleNotFoundError</code> naming the install. <code>SerialInterface</code>
+stays off <code>hilt.__all__</code>, same policy as <code>RemoteInterface</code>, <code>SshInterface</code>, and
+<code>JunitXml</code> today ("stay private by test-pinned ruling") — the promised way to a
+console is <code>use_serial</code> / <code>get_serial</code>; self-tests and the transport-contract suite
+import the module directly.</p>
+<h2 id="conformance-the-shared-transport-contract-suite">Conformance: the shared transport-contract suite<a class="headerlink" href="#conformance-the-shared-transport-contract-suite" title="Permanent link">&para;</a></h2>
+<p><code>tests/test_transport_contract.py</code> parametrizes every assertion over a
+<code>TRANSPORTS</code> tuple of fixtures; "serial/UART is the next name on that list" per
+the suite's own docstring. A <code>serial_peer</code> fixture joins <code>mock_peer</code> and
+<code>ssh_peer</code>, backed by a <strong>pty-based fake console</strong>: <code>pty.openpty()</code> gives a real
+master/slave pair, and a small in-process script on the slave end plays a
+login-and-shell console — echoing input, answering <code>success</code>/<code>fail</code>/<code>block</code>
+(parked until cancelled) the same way the other two fixtures do, and emitting the
+<code>__HILT_RC__=</code> sentinel itself so the suite exercises real parsing rather than a
+stub. This keeps the suite honest about actual line discipline (real CRLF, a real
+echo) while staying fully in-process — no UART hardware required for <code>make
+check</code>. <code>wait_in_flight</code> follows the existing <code>_wait_ssh_in_flight</code> shape (a short
+sleep) since the parked command is a real subprocess, not a future the fixture
+can poll.</p>
+<p>Every existing assertion applies unchanged: connect/disconnect idempotence,
+exec-never-throws, <code>cancel_in_flight</code> idempotence and the <code>"transport closed"</code>
+cause name, connected-flag ownership. Adding this fixture and naming it in
+<code>TRANSPORTS</code> is the entire integration cost the suite's docstring promises
+("adding a transport is adding a fixture").</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="device-api.html" class="md-footer__link md-footer__link--prev" aria-label="Previous: Device API (design note)">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                Device API (design note)
+              </div>
+            </div>
+          </a>
+        
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright 2026 Tyler Meador
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.sections", "navigation.top", "navigation.footer", "toc.follow", "search.suggest", "search.highlight", "content.code.copy"], "search": "../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.a5f9d56c.min.js"></script>
+      
+    
+  </body>
+</html>
