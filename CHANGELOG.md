@@ -57,6 +57,11 @@ leave a fresh Unreleased section above it. Use the
 - Inspector log paging (issue #164): a change of height keeps the record the reader was
   on in view. It used to keep the page number, which on a taller or shorter pane is a
   different part of the chronology.
+- `README.md`, `docs/lifecycle.md`, and `docs/hilt-new.md` follow the changes above. The
+  README's Inspector section shows the new screen and its keys, and it is the PyPI
+  project page, so the change reaches that page with the next release. The lifecycle
+  page's examples and block table use the nameless root, and the `hilt new` page
+  describes the root sequence the scaffold now writes.
 
 ## [1.0.1] - 2026-11-21
 

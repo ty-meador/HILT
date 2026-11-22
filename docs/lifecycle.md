@@ -101,13 +101,14 @@ two `self.test` blocks:
 | Block | What HILT does with it |
 |-------|------------------------|
 | `self.test(name, method)` | Calls `method` once and records its verdict under `name`. |
-| `self.sequence(name, [...])` | Runs the children in order and stops at the first failure. |
-| `self.parallel(name, [...])` | Runs the children at the same time and collects every failure. |
+| `self.sequence([...])` | Runs the children in order and stops at the first failure. |
+| `self.parallel([...])` | Runs the children at the same time and collects every failure. |
 | Another component, such as `FanSuite(name="fan A")` | Runs that component's own lifecycle. See [Components nest](#components-nest). |
 
-The block that `build_suite` returns may leave its name out: `self.sequence([...])`
-takes the component's own name. Name it, as the examples here do, when the name adds
-something. See [Composition Factories](idioms.md#composition-factories-selftest-selfsequence-selfparallel).
+The sequence or parallel that `build_suite` returns needs no name. It takes the
+component's own, the one given as `FanSuite(name="fan A")`. One placed inside another
+block is named first, as a test is: `self.parallel("rails", [...])`. See
+[Composition Factories](idioms.md#composition-factories-selftest-selfsequence-selfparallel).
 
 ## The same thing in code
 
@@ -160,11 +161,10 @@ class FanSuite(TestComponent):
     # LIFECYCLE 2 of 3: return the suite. Name each test and hand over its method.
     def build_suite(self) -> TestComponent:
         return self.sequence(
-            "fan checks",
             [
                 self.test("fan reaches minimum speed", self._reaches_minimum_speed),
                 self.test("fan current is within limit", self._current_within_limit),
-            ],
+            ]
         )
 
     # LIFECYCLE 3 of 3: put the device back. Runs even if configure or a test failed.
@@ -233,7 +233,7 @@ runs its own complete lifecycle there.
 ```python
 class RackSuite(TestComponent):
     def build_suite(self) -> TestComponent:
-        return self.sequence("fans", [FanSuite(name="fan A"), FanSuite(name="fan B")])
+        return self.sequence([FanSuite(name="fan A"), FanSuite(name="fan B")])
 ```
 
 ```mermaid
