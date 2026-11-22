@@ -164,6 +164,24 @@ class TestReadmeRecordsThePublishedUrl:
         assert "(docs/getting-started.md)" in readme
         assert "docs/floor-technician.md" in readme
 
+    def test_the_project_page_gets_no_relative_link(self) -> None:
+        # PyPI does not resolve a relative link: the 1.0.0 and 1.0.1 pages showed a
+        # broken hero image and dead links into docs/. README.md keeps its relative
+        # links for the tree; the build's substitutions must leave none for the page.
+        data = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))
+        assert "readme" in data["project"]["dynamic"]
+        hook = data["tool"]["hatch"]["metadata"]["hooks"]["fancy-pypi-readme"]
+        assert [fragment["path"] for fragment in hook["fragments"]] == ["README.md"]
+        page = README.read_text(encoding="utf-8")
+        for substitution in hook["substitutions"]:
+            replacement = substitution["replacement"].replace("$HFPR_VERSION", "9.9.9")
+            page = re.sub(substitution["pattern"], replacement, page)
+        targets = re.findall(r"\]\(([^)\s]+)\)", page)
+        assert f"{REPO_URL}/-/raw/v9.9.9/hero.png" in targets
+        assert f"{REPO_URL}/-/blob/v9.9.9/docs/getting-started.md" in targets
+        relative = [t for t in targets if not t.startswith(("https://", "#"))]
+        assert relative == []
+
     def test_getting_started_names_the_docs_tree(self) -> None:
         guide = GUIDE.read_text(encoding="utf-8")
         assert DOCS_URL in guide

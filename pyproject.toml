@@ -1,8 +1,8 @@
 [project]
 name = "open-hilt"
-version = "1.0.1"
+version = "1.1.0"
 description = "Python HIL testing with a pit of success: composable tests, guardrails that make a bad test hard to write, and an engine that won't let an unhandled failure pass silently."
-readme = "README.md"
+dynamic = ["readme"]
 license = "Apache-2.0"
 license-files = ["LICENSE", "NOTICE"]
 requires-python = ">=3.14"
@@ -84,8 +84,30 @@ hilt-check = "hilt_check.cli:main"
 hilt_check = "hilt_check.pylsp_plugin"
 
 [build-system]
-requires = ["hatchling"]
+requires = ["hatchling", "hatch-fancy-pypi-readme>=24.1"]
 build-backend = "hatchling.build"
+
+# The README is the PyPI project page, and PyPI does not resolve a relative link: on the
+# 1.0.0 and 1.0.1 pages the hero image was broken and every link into docs/ led nowhere.
+# README.md keeps its relative links, which are right in the tree and on a release
+# branch; the build rewrites them to the tagged tree for the package metadata only.
+[tool.hatch.metadata.hooks.fancy-pypi-readme]
+content-type = "text/markdown"
+
+[[tool.hatch.metadata.hooks.fancy-pypi-readme.fragments]]
+path = "README.md"
+
+[[tool.hatch.metadata.hooks.fancy-pypi-readme.substitutions]]
+pattern = '\]\(hero\.png\)'
+replacement = '](https://gitlab.com/Tyler-Meador/HILT/-/raw/v$HFPR_VERSION/hero.png)'
+
+[[tool.hatch.metadata.hooks.fancy-pypi-readme.substitutions]]
+pattern = '\]\((docs/[^)\s]*)/\)'
+replacement = '](https://gitlab.com/Tyler-Meador/HILT/-/tree/v$HFPR_VERSION/\1)'
+
+[[tool.hatch.metadata.hooks.fancy-pypi-readme.substitutions]]
+pattern = '\]\((docs/[^)\s]+\.md)\)'
+replacement = '](https://gitlab.com/Tyler-Meador/HILT/-/blob/v$HFPR_VERSION/\1)'
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/hilt", "tools/hilt_check"]
