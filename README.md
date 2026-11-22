@@ -162,13 +162,13 @@ record.
       14:02:11Z info     starting thermal ramp
   [1] 14:02:45Z info     survey captured
       14:03:02Z error    temperature 87 C exceeds 75 C
-  Tab Inspect / Re-Run  q Quit  ← → Failures  h Hide passes  l Log full  ⏎ Re-run node  n p Page  f Errors only  alt+↑ alt+↓ Same level
+  Tab Inspect / Re-Run  q Quit  ← → Failures  h Hide passes  l Log full  ⏎ Re-run node  n p Page  f Errors only  shift+↑ shift+↓ Same level
 ```
 
 - **← / →** jump between failures, skipping everything that passed. **h** hides the
   passing branches of a large rack.
-- **Alt-↑ / Alt-↓** move along one level: from one server's check to the same check on
-  the next server, without stepping through the rows between.
+- **Shift-↑ / Shift-↓** (or Alt) move along one level: from one server's check to the
+  same check on the next server, without stepping through the rows between.
 - When a deep tree scrolls, the rows above the first one shown stay pinned at the top,
   above a rule, so a check never loses its rack and its device.
 - Each component is one row. The record keeps a component and the suite it built as two

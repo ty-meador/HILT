@@ -102,9 +102,10 @@ the screen are worth knowing before you need them:
   rack, device, and step the highlighted check belongs to. On a short screen
   only the nearest parents are pinned; the first line of the log has the full
   path.
-- **`Alt-↑` and `Alt-↓` move along one level.** From one device's check they go
+- **`Shift-↑` and `Shift-↓` move along one level.** From one device's check they go
   to the row at the same depth under the next device, without stepping through
-  everything nested between. They stop at the last such row.
+  everything nested between. They stop at the last such row. `Alt-↑` and `Alt-↓`
+  do the same, in a terminal that does not keep those keys for itself.
 
 ## Every field, from this side of the bench
 

@@ -327,9 +327,14 @@ class InspectorApp(App[None]):
         Binding("p", "page(-1)", "Previous page", group=_PAGE_KEYS),
         Binding("f", "toggle_errors", "Errors only"),
         # Last, where only a wide terminal shows them: they refine the plain arrows,
-        # which the footer does not list at all.
-        Binding("alt+up", "level(-1)", "Previous at this level", group=_LEVEL_KEYS),
-        Binding("alt+down", "level(1)", "Next at this level", group=_LEVEL_KEYS),
+        # which the footer does not list at all. Two modifiers reach one action because
+        # a terminal may keep one for itself: Terminator, for one, moves between its
+        # own panes on Alt with an arrow and never passes the key on. The footer names
+        # Shift, the pair that arrives there too.
+        Binding("shift+up", "level(-1)", "Previous at this level", group=_LEVEL_KEYS),
+        Binding("shift+down", "level(1)", "Next at this level", group=_LEVEL_KEYS),
+        Binding("alt+up", "level(-1)", "Previous at this level", show=False),
+        Binding("alt+down", "level(1)", "Next at this level", show=False),
         # Digits open the capture carrying that number in the complete chronology;
         # the number never changes with paging or filtering (TimelineView).
         *[
@@ -457,7 +462,7 @@ class InspectorApp(App[None]):
         self.redraw()
 
     async def action_level(self, direction: int) -> None:
-        """Alt with up or down: the nearest row on screen at the highlighted row's depth.
+        """Shift or Alt with up or down: the nearest row on screen at the highlighted row's depth.
 
         Depth alone decides, so the jump crosses from one parent to the next: from one
         device's check to the same check on the next device, without stepping through

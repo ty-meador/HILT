@@ -24,6 +24,9 @@ from tests.inspector_rack import (
     record_seventy_dut_run,
     saved_bytes,
 )
+from textual._xterm_parser import XTermParser
+from textual.binding import Binding
+from textual.events import Key
 from textual.widgets import Footer
 from textual.widgets._footer import FooterKey
 
@@ -79,6 +82,11 @@ def _row_name(line: str) -> str:
 
 def _selected(app: InspectorApp) -> str:
     return app.selection.view.selected.ancestor_names[-1]
+
+
+def _path(app: InspectorApp) -> str:
+    """The highlighted row's drawn path, which tells two rows of one name apart."""
+    return "/".join(app.saved_tree.line(app.selection.view.selected.index).path)
 
 
 def _pinned_rule(app: InspectorApp) -> int | None:
@@ -899,10 +907,68 @@ class TestSameLevelJump:
                 await pilot.pause()
                 assert app.tab == tab
                 offered = app.screen.active_bindings
-                for key in ("alt+up", "alt+down", "l"):
+                for key in ("shift+up", "shift+down", "l"):
                     assert offered[key].binding.show, key
                     assert offered[key].enabled, key
+                # Alt works wherever the terminal passes it on, and is not advertised:
+                # the footer names the pair that arrives in every terminal tried.
+                for key in ("alt+up", "alt+down"):
+                    assert not offered[key].binding.show, key
+                    assert offered[key].enabled, key
                 await pilot.press("tab")
+
+    @pytest.mark.parametrize("modifier", ["shift", "alt"])
+    async def test_either_modifier_makes_the_same_jump(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, modifier: str
+    ) -> None:
+        saved = await record_bay_run(tmp_path, monkeypatch)
+        app = InspectorApp(saved)
+
+        async with app.run_test(size=SIZE) as pilot:
+            await pilot.press("down", "down")
+            await pilot.pause()
+            assert _path(app) == "bay/sata/present"
+            visited: list[str] = []
+            for key in ("down", "down", "down", "up", "up", "up", "up"):
+                await pilot.press(f"{modifier}+{key}")
+                await pilot.pause()
+                visited.append(_path(app))
+            # The claims of one drive, then the next drive's, across the parent; back
+            # the same way, and still at the first one.
+            assert visited == [
+                "bay/sata/spins",
+                "bay/nvme/present",
+                "bay/nvme/spins",
+                "bay/nvme/present",
+                "bay/sata/spins",
+                "bay/sata/present",
+                "bay/sata/present",
+            ]
+
+    @pytest.mark.parametrize(
+        ("sequence", "key"),
+        [
+            ("\x1b[1;2A", "shift+up"),
+            ("\x1b[1;2B", "shift+down"),
+            ("\x1b[1;3A", "alt+up"),
+            ("\x1b[1;3B", "alt+down"),
+        ],
+    )
+    def test_the_bound_names_are_what_a_terminal_s_bytes_are_read_as(
+        self, sequence: str, key: str
+    ) -> None:
+        # The pilot presses a key by name and so never meets a terminal. These are
+        # the bytes an xterm-compatible terminal sends for each key; the binding is
+        # only reachable if the reader gives them the name it is registered under.
+        read = [event.key for event in XTermParser().feed(sequence) if isinstance(event, Key)]
+
+        assert read == [key]
+        bound = {
+            binding.key: binding.action
+            for binding in InspectorApp.BINDINGS
+            if isinstance(binding, Binding)
+        }
+        assert bound[key] == ("level(-1)" if key.endswith("up") else "level(1)")
 
     async def test_the_footer_shows_the_keys_that_cannot_be_guessed_whole_at_100_columns(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
@@ -924,7 +990,7 @@ class TestSameLevelJump:
             }
             assert {"tab", "q", "h", "l"} <= whole
             # Further right the list is cut, as it always was at this width.
-            assert "alt+down" not in whole
+            assert "shift+down" not in whole
 
 
 class TestLogSplit:
