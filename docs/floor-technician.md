@@ -47,7 +47,7 @@ framework's job is to make the call obvious.
 |---|---|---|---|
 | `Pass` | `failure` is `null` | The claim held | Ship. You are done. |
 | `Fail` | `name` is `TestFailure` (or a suite-authored subclass), `bug` absent or `false` | **Hardware.** The unit did not meet a check the suite named. | Pull the unit. Follow the station protocol for that failure name. The `fail_message` is written in your language; `expected` / `received` are the comparison when there is one. |
-| `Fail` | `banner` is `CONTRACT VIOLATION`, or `bug` is `true` | **Author.** The suite broke its contract. This is not the unit. | Do not scrap the unit on this evidence. Escalate to the suite author. The message names the node and the fix. |
+| `Fail` | `banner` is `CONTRACT VIOLATION`, or `bug` is `true` | **Author.** The suite broke its contract. This is not the unit. | Do not scrap the unit on this evidence. Escalate to the suite author. The message names the node and the fix. Where an exception escaped the suite's code, the lines under the banner in the node's log are its traceback: send them along, they name the file and line. |
 | `Fail` | `banner` is `FRAMEWORK CONTRACT VIOLATION` | **Framework.** Should be unreachable. | Escalate to the framework maintainers with the full run directory. Not the unit, not the suite author. |
 | `Aborted` | `name` is `ExternalIntegrationFailure` | **Integration / harness.** The shop-floor DB, the coordinator, the hook around the suite. | Fix the harness. Re-run. The unit was not judged. |
 | `Aborted` | `name` is `MissingVerdict`, or `bug` is `true` with `state` `Aborted` | **Author.** The test method returned nothing the framework will accept as a verdict. | Escalate to the suite author. Do not treat this as a hardware Fail. |

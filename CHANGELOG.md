@@ -76,6 +76,17 @@ leave a fresh Unreleased section above it. Use the
 
 ### Fixed
 
+- An exception that escapes suite code is logged with its traceback (issue #167). The
+  `CONTRACT VIOLATION IN <node>: <Type> escaped the node: <message>` line told the
+  author that a bug existed and not where: no file or line was written anywhere in the
+  run directory, so a misspelled attribute read two calls below `configure` had to be
+  found by searching the source. The traceback now follows that line in the node's log,
+  at `error`, one entry per line, in `timeline.log`, `timeline.jsonl`, the console, and
+  the Inspector's log pane. It starts at the author's code and keeps a `raise ... from`
+  chain. The `cleanup failed (verdict unaffected)` line and the halt line of a hook
+  that threw are followed by theirs in the same way. A `TestFailure` is a verdict and
+  logs none. The lines pass through the node's logger, so a `redact_ctx` value is
+  masked in them. `result.json` is unchanged.
 - Inspector, pinned ancestors (issue #164): a tree pane of three lines pinned one
   ancestor when the highlighted row was at the foot of the tree, against the rule in
   `docs/inspector.md` that a pane under four rows pins nothing. The rule is now the

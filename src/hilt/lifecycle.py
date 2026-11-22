@@ -27,9 +27,11 @@ declared once, in `SLOT_POLICIES`, and read nowhere else.
 
 import asyncio
 import logging
+import traceback
 from collections.abc import Awaitable, Mapping
 from dataclasses import dataclass
 from enum import StrEnum
+from pathlib import Path
 from typing import Literal, cast, final
 
 from hilt.errors import (
@@ -51,6 +53,31 @@ from hilt.run_data import MEASUREMENTS_KEY, JsonObject, invalid_evidence_key, js
 from hilt.verdict import Verdict
 
 LOGGER = logging.getLogger(__name__)
+
+_FRAMEWORK_SOURCE = f"{Path(__file__).resolve().parent}/"
+"""Where the framework's own modules live; a frame from here is not the author's code."""
+
+
+def _traceback_lines(error: BaseException) -> list[str]:
+    """Render where ``error`` was raised, one string per line of the traceback.
+
+    The traceback starts at the first frame outside the framework. The frames before
+    it are the boundary and the engine calling into suite code: they are the same for
+    every stray exception and say nothing about this one. Frames after it are kept
+    whoever owns them, so a framework call the author made stays in view. If every
+    frame is the framework's, the bug is the framework's and the whole traceback is
+    rendered.
+
+    A chained exception keeps its chain. Blank lines are dropped, because each line
+    becomes its own log entry and an empty entry reads as a fault in the log.
+    """
+    trace = error.__traceback__
+    while trace is not None and trace.tb_frame.f_code.co_filename.startswith(_FRAMEWORK_SOURCE):
+        trace = trace.tb_next
+    if trace is None:
+        trace = error.__traceback__
+    rendered = "".join(traceback.format_exception(type(error), error, trace))
+    return [line for line in rendered.splitlines() if line.strip()]
 
 
 class State(StrEnum):
@@ -591,7 +618,11 @@ class ChildBoundary:
                 # The swallow path logs what it discards; logging here too would
                 # report one event as two.
                 self._logger.error("%s", violation.fail_message)
-            return self._record(self._classify_thrown(slot, policy, violation))
+            outcome = self._classify_thrown(slot, policy, violation)
+            # After the classification, so that the traceback follows whichever of the
+            # two lines reported the exception.
+            self._log_traceback(error)
+            return self._record(outcome)
         else:
             self._raise_if_cancellation_pending(slot)
             return self._record(self._classify_return(slot, policy, result))
@@ -715,9 +746,23 @@ class ChildBoundary:
         hook: HookName = "before_each" if slot is Slot.BEFORE_EACH else "after_each"
         failure = ExternalIntegrationFailure(hook, cause)
         self._logger.error("%s", failure.fail_message)
+        self._log_traceback(cause)
         self._run_abort.fire(failure)
         self._record(Outcome(slot, self._node, State.ABORTED, failure=failure))
         return failure
+
+    def _log_traceback(self, error: BaseException) -> None:
+        """Log where ``error`` was raised, under the line that reported it (issue #167).
+
+        The banner names the exception's type and message, which tell the author that
+        a bug exists and not where it is. Each line of the traceback is its own entry,
+        at the banner's level: the human timeline holds one line per entry and escapes
+        a newline inside a message, so a traceback written as one entry would be one
+        unreadable line there. The entries go through the node's logger, so a redacted
+        value is masked in them as in any other line.
+        """
+        for line in _traceback_lines(error):
+            self._logger.error("%s", line)
 
     def _record(self, outcome: Outcome) -> Outcome:
         if self._redactions is not None:
