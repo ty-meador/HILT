@@ -57,6 +57,8 @@ The resolver is scoped to the node's current exec route and its cache is keyed b
 
 Open the device's shell in `configure()` with `use_shell` when one connection must be shared across all of the device's leaves. See `examples/remote_device_ssh.py`. The pi-hole dogfood suite (`examples/pi_hole_server.py`) is the same class-owned hop plus phase-boundary surveys that tail service logs for the Floor Technician.
 
+Each `utils.exec` over the hop opens its own SSH session, and an sshd grants a limited number per connection (`MaxSessions`, 10 by default). A suite that fans out wider than that under one hop should pass `max_sessions` at or below the device's limit: `await utils.use_shell(host=..., username=..., max_sessions=8)`. Commands past the bound wait their turn instead of being refused with `open failed`.
+
 ### Tunneling
 
 Pass the `Shell` an earlier `get_shell()` returned as the `via` argument to the next one to tunnel the new connection through it.

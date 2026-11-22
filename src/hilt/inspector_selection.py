@@ -9,7 +9,7 @@ from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Literal, cast
 
-from hilt.inspector_timeline import TimelineDiagnostic, TimelineRead, TimelineReader
+from hilt.inspector_timeline import TimelineDiagnostic, TimelineRead, TimelineReader, merge_reads
 from hilt.inspector_tree import InspectorTree, TreeRow
 
 
@@ -21,6 +21,10 @@ class SelectionView:
     defect). ``loading`` carries no previous chronology. ``ready`` may include decoding
     diagnostics beside records; ``unavailable`` identifies a missing owner or file and
     retains any partial read. ``not-run`` is reserved for a pending recorded node.
+
+    ``merged`` names the further owners of a folded line: the selected component's
+    same-named root keeps its own timeline, and the chronology interleaves it with the
+    owner's in time order so one line of the tree shows one log.
     """
 
     selected: TreeRow
@@ -28,6 +32,7 @@ class SelectionView:
     status: Literal["idle", "loading", "ready", "unavailable", "not-run"]
     timeline: TimelineRead | None = None
     message: str | None = None
+    merged: tuple[TreeRow, ...] = ()
 
 
 class InspectorSelection:
@@ -38,12 +43,23 @@ class InspectorSelection:
     separately; failure-list rows use the tree's same stable indices. Call select for
     the initial load and on cursor changes. All methods run on one event loop; concurrent
     loads are permitted, and only the latest request may update ``view``.
+
+    ``layout`` is the tree whose drawn lines decide which nodes share a chronology. It
+    is this tree unless the caller draws another one: the Re-Run tab draws the saved
+    run's lines over a re-run's records, and passes the saved tree so the bench merges
+    exactly the nodes the screen folded.
     """
 
     def __init__(
-        self, tree: InspectorTree, run_root: Path, *, reader: TimelineReader | None = None
+        self,
+        tree: InspectorTree,
+        run_root: Path,
+        *,
+        reader: TimelineReader | None = None,
+        layout: InspectorTree | None = None,
     ) -> None:
         self._tree = tree
+        self._layout = tree if layout is None else layout
         self._run_root = run_root
         self._reader = reader if reader is not None else TimelineReader()
         self._view = SelectionView(tree.selected, tree.log_owner, "idle")
@@ -61,22 +77,27 @@ class InspectorSelection:
         neither a late success nor a late error can disturb a subsequent selection.
         """
         self._tree.select(index)
-        selected, owner = self._tree.selected, self._tree.log_owner
+        selected = self._tree.selected
         if selected.state is None:
             self._view = SelectionView(selected, None, "not-run")
             return
-        if owner is None:
+        owners = self._owners(selected)
+        if not owners:
             self._view = SelectionView(
                 selected, None, "unavailable", message="log unavailable: no recorded timeline owner"
             )
             return
 
-        pending = SelectionView(selected, owner, "loading")
+        pending = SelectionView(selected, owners[0], "loading", merged=owners[1:])
         self._view = pending
         try:
-            timeline = await self._reader.read_reference(
-                self._run_root, cast(str, owner.record["log_path"])
-            )
+            reads = [
+                await self._reader.read_reference(
+                    self._run_root, cast(str, owner.record["log_path"])
+                )
+                for owner in owners
+            ]
+            timeline = reads[0] if len(reads) == 1 else merge_reads(reads)
         except BaseException:
             # A cancelled worker may finish independently. Clear only this request's
             # loading state, and never turn a packaging defect into damaged evidence.
@@ -93,8 +114,23 @@ class InspectorSelection:
             pending, status="unavailable" if unavailable else "ready", timeline=timeline
         )
 
+    def _owners(self, selected: TreeRow) -> tuple[TreeRow, ...]:
+        """The recorded timeline owners behind the selected line, the selected node's first.
+
+        A line draws one node, or a component with its folded root. Each node that ran
+        contributes its nearest recorded owner once; a folded node selected by its own
+        index is read alone, as the record has it.
+        """
+        line = self._layout.line(selected.index)
+        indices = [node.index for node in line.nodes] if line.index == selected.index else []
+        owners: dict[int, TreeRow] = {}
+        for node in [self._tree.rows[index] for index in indices] or [selected]:
+            if node.log_owner_index is not None:
+                owners.setdefault(node.log_owner_index, self._tree.rows[node.log_owner_index])
+        return tuple(owners.values())
+
     async def move(self, offset: int) -> None:
-        """Move by a signed row count, clamp at either end, and load that selection."""
+        """Move by a signed line count, clamp at either end, and load that selection."""
         self._tree.move(offset)
         await self.select(self._tree.selected.index)
 

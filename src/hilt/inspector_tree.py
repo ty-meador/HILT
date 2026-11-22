@@ -7,6 +7,7 @@ recalculating verdicts or reconstructing live framework objects.
 """
 
 import asyncio
+from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal, cast
@@ -50,17 +51,74 @@ class TreeRow:
         return tuple(key for key in declared if key not in evidence)
 
 
+@dataclass(frozen=True, slots=True)
+class TreeLine:
+    """One drawn line of the tree: a recorded node and any same-named root folded into it.
+
+    A component is recorded as two nodes, itself and the composition its ``build_suite``
+    returned, and the two usually carry one name. The record keeps both; the screen
+    draws them once (``docs/inspector.md``, The fold). ``row`` is the node the cursor
+    selects and Re-Run executes. ``folded`` holds the nodes drawn with it, outermost
+    first. ``depth``, ``parent_index`` and ``path`` describe the drawn tree and so step
+    over folded nodes; ``parent_index`` is the ``index`` of the parent line.
+    """
+
+    row: TreeRow
+    folded: tuple[TreeRow, ...]
+    depth: int
+    parent_index: int | None
+    path: tuple[str, ...]
+
+    @property
+    def index(self) -> int:
+        """The saved index of the node this line selects; folded nodes keep their own."""
+        return self.row.index
+
+    @property
+    def name(self) -> str:
+        """The one name every node on this line carries."""
+        return self.path[-1]
+
+    @property
+    def state(self) -> RecordedState:
+        """The state the line shows; folded nodes agree with it, or they are not folded."""
+        return self.row.state
+
+    @property
+    def nodes(self) -> tuple[TreeRow, ...]:
+        """Every recorded node this line draws, the selected one first."""
+        return (self.row, *self.folded)
+
+    @property
+    def not_taken(self) -> tuple[str, ...]:
+        """Readings any node on the line declared and did not take, each named once."""
+        return readings_not_taken(self.nodes)
+
+
+def readings_not_taken(nodes: Iterable[TreeRow]) -> tuple[str, ...]:
+    """Name every declared reading the given nodes did not take, once, in node order."""
+    return tuple(dict.fromkeys(key for node in nodes for key in node.not_taken))
+
+
 class InspectorTree:
     """Own a mutable cursor over a validated, saved root result's fixed preorder rows.
 
     Construct through ``TreeReader`` at the file boundary. The supplied result must
     already satisfy the version-1 schema. Result and row records are retained intact
     and treated as read-only; cursor operations never edit them or touch the filesystem.
+
+    ``rows`` is the record, one row per saved node. ``lines`` is what a screen draws:
+    the same rows with each same-named root folded into its component. The cursor moves
+    over lines, so it never rests on a node the screen does not draw.
     """
 
     def __init__(self, result: JsonObject) -> None:
         self.result = result
         self._rows = _rows(cast(JsonObject, result["summary_tree"]))
+        self._lines = _lines(self._rows)
+        self._line_positions = {
+            node.index: position for position, line in enumerate(self._lines) for node in line.nodes
+        }
         self._cursor = 0
 
     @property
@@ -69,9 +127,20 @@ class InspectorTree:
         return self._rows
 
     @property
+    def lines(self) -> tuple[TreeLine, ...]:
+        """The drawn tree in preorder: every node appears on exactly one line."""
+        return self._lines
+
+    def line(self, index: int) -> TreeLine:
+        """The line that draws the node at ``index``; raise IndexError outside the tree."""
+        if not 0 <= index < len(self._rows):
+            raise IndexError(f"tree row {index} is outside the saved tree")
+        return self._lines[self._line_positions[index]]
+
+    @property
     def failures(self) -> tuple[TreeRow, ...]:
-        """The same rows restricted to Fail and Aborted, preserving order and identity."""
-        return tuple(row for row in self._rows if row.needs_attention)
+        """The drawn rows restricted to Fail and Aborted, preserving order and identity."""
+        return tuple(line.row for line in self._lines if line.row.needs_attention)
 
     @property
     def selected(self) -> TreeRow:
@@ -92,28 +161,31 @@ class InspectorTree:
         """Select a tree row by index; raise IndexError without moving on invalid input.
 
         Failure-list rows carry these same indices, so switching views requires no
-        lookup by ambiguous display name or reconstruction of a second tree.
+        lookup by ambiguous display name or reconstruction of a second tree. A screen
+        selects a line's ``index``; a folded node's own index is still accepted, for a
+        caller that addresses the record instead of the drawing.
         """
         if not 0 <= index < len(self._rows):
             raise IndexError(f"tree row {index} is outside the saved tree")
         self._cursor = index
 
     def move(self, offset: int) -> None:
-        """Move by a signed row count, stopping at the first or last row without wrapping."""
-        self._cursor = min(max(0, self._cursor + offset), len(self._rows) - 1)
+        """Move by a signed count of drawn lines, stopping at either end without wrapping."""
+        position = self._line_positions[self._cursor] + offset
+        self._cursor = self._lines[min(max(0, position), len(self._lines) - 1)].index
 
     def next_failure(self) -> None:
-        """Select the next Fail or Aborted row; stay put when none follows."""
-        self._jump(range(self._cursor + 1, len(self._rows)))
+        """Select the next Fail or Aborted line; stay put when none follows."""
+        self._jump(range(self._line_positions[self._cursor] + 1, len(self._lines)))
 
     def previous_failure(self) -> None:
-        """Select the previous Fail or Aborted row; stay put when none precedes."""
-        self._jump(range(self._cursor - 1, -1, -1))
+        """Select the previous Fail or Aborted line; stay put when none precedes."""
+        self._jump(range(self._line_positions[self._cursor] - 1, -1, -1))
 
     def _jump(self, candidates: range) -> None:
-        for index in candidates:
-            if self._rows[index].needs_attention:
-                self._cursor = index
+        for position in candidates:
+            if self._lines[position].row.needs_attention:
+                self._cursor = self._lines[position].index
                 return
 
 
@@ -184,3 +256,44 @@ def _rows(root: JsonObject) -> tuple[TreeRow, ...]:
         children = cast(list[JsonObject], record["children"])
         frontier.extend((child, index, names, owner) for child in reversed(children))
     return tuple(rows)
+
+
+def _lines(rows: tuple[TreeRow, ...]) -> tuple[TreeLine, ...]:
+    """Fold every same-named root into its component and give the rest a line each."""
+    heads: dict[int, int] = {}
+    folded: dict[int, list[TreeRow]] = {}
+    shapes: dict[int, tuple[int, int | None, tuple[str, ...]]] = {}
+    for row in rows:
+        name = row.ancestor_names[-1]
+        if row.parent_index is None:
+            shapes[row.index] = (0, None, (name,))
+        else:
+            parent = rows[row.parent_index]
+            head = heads[parent.index]
+            if _folds(parent, row):
+                heads[row.index] = head
+                folded[head].append(row)
+                continue
+            depth, _, path = shapes[head]
+            shapes[row.index] = (depth + 1, head, (*path, name))
+        heads[row.index] = row.index
+        folded[row.index] = []
+    return tuple(TreeLine(rows[index], tuple(folded[index]), *shapes[index]) for index in shapes)
+
+
+def _folds(parent: TreeRow, child: TreeRow) -> bool:
+    """Whether ``child`` is the same-named root of the component ``parent``.
+
+    The name must match exactly, because a root the author named differently is a level
+    they meant to show. The states must agree, so that the row that failed is the row
+    the technician sees. The engine settles the pair alike in every run it writes
+    today: a cleanup failure is logged without changing the verdict, and a component
+    that fails in configure records no root. The rule guards a record that says
+    otherwise, whether an older or hand-edited archive or a later engine.
+    """
+    return (
+        parent.record["type"] == "suite"
+        and len(cast(list[JsonObject], parent.record["children"])) == 1
+        and child.record["name"] == parent.record["name"]
+        and child.state == parent.state
+    )

@@ -56,7 +56,6 @@ class SequencedDevice(TestComponent):
         the wrong fault. The sequence encodes that reasoning so it holds on every run.
         """
         return self.sequence(
-            self.name,
             [
                 self.test("boot-check", self._boot_check),
                 self.test("firmware-version", self._firmware_version_check),
@@ -117,7 +116,6 @@ class ParallelDevice(TestComponent):
         failure behind the temperature failure and cost the FT a second run.
         """
         return self.parallel(
-            self.name,
             [
                 self.test("temperature", self._temperature),
                 self.test("voltage", self._voltage),

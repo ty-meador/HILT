@@ -295,3 +295,135 @@ class TestInspectorSelection:
                 for row in view.timeline.rows
             )
         assert {path: path.read_bytes() for path in before} == before
+
+
+def _stamped(message: str, second: int) -> str:
+    return (
+        json.dumps(
+            {
+                "format_version": 1,
+                "timestamp": f"2026-09-08T12:00:{second:02d}Z",
+                "scope": ["rack", message],
+                "level": "info",
+                "message": message,
+            }
+        )
+        + "\n"
+    )
+
+
+def _messages(selection: InspectorSelection) -> list[object]:
+    timeline = selection.view.timeline
+    assert timeline is not None
+    return [
+        row.data["message"] if isinstance(row, TimelineRecord) else row.kind
+        for row in timeline.rows
+    ]
+
+
+def _component(root_log: str | None, **changes: JsonValue) -> JsonObject:
+    """A component ``rack`` and its same-named root, each node with the log it is given."""
+    root = _node("rack", type="sequence", log_path=root_log, children=[_node("claim")])
+    return _node("rack", type="suite", log_path="rack.jsonl", children=[root], **changes)
+
+
+class TestFoldedSelection:
+    """A folded line has two nodes behind it, and its chronology is both of their logs."""
+
+    async def test_a_folded_line_reads_the_component_and_its_root_in_time_order(
+        self, tmp_path: Path
+    ) -> None:
+        tree = InspectorTree({"summary_tree": _component("root.jsonl")})
+        (tmp_path / "rack.jsonl").write_text(_stamped("configure", 1) + _stamped("cleanup", 9))
+        (tmp_path / "root.jsonl").write_text(_stamped("claim ran", 5))
+        selection = InspectorSelection(tree, tmp_path)
+
+        await selection.select(0)
+        view = selection.view
+        assert view.status == "ready"
+        assert view.owner is tree.rows[0]
+        assert view.merged == (tree.rows[1],)
+        assert view.timeline is not None
+        assert view.timeline.reference == "rack.jsonl"
+        assert _messages(selection) == ["configure", "claim ran", "cleanup"]
+
+        # A claim under the folded root rolled into the root's file, and reads that alone.
+        await selection.select(2)
+        assert selection.view.owner is tree.rows[1]
+        assert selection.view.merged == ()
+        assert _messages(selection) == ["claim ran"]
+
+        # The record stays addressable: the root by its own index is read as recorded.
+        await selection.select(1)
+        assert selection.view.owner is tree.rows[1]
+        assert selection.view.merged == ()
+        assert _messages(selection) == ["claim ran"]
+
+    async def test_a_root_that_rolled_into_its_component_is_one_file_read_once(
+        self, tmp_path: Path
+    ) -> None:
+        tree = InspectorTree({"summary_tree": _component(None)})
+        (tmp_path / "rack.jsonl").write_text(_stamped("configure", 1) + _stamped("claim ran", 5))
+        selection = InspectorSelection(tree, tmp_path)
+
+        await selection.select(0)
+
+        assert selection.view.owner is tree.rows[0]
+        assert selection.view.merged == ()
+        assert _messages(selection) == ["configure", "claim ran"]
+
+    async def test_one_missing_file_is_named_and_the_other_is_still_shown(
+        self, tmp_path: Path
+    ) -> None:
+        tree = InspectorTree({"summary_tree": _component("root.jsonl")})
+        (tmp_path / "rack.jsonl").write_text(_stamped("configure", 1))
+        selection = InspectorSelection(tree, tmp_path)
+
+        await selection.select(0)
+
+        assert selection.view.status == "unavailable"
+        assert _messages(selection) == ["unavailable", "configure"]
+        assert selection.view.timeline is not None
+        missing = selection.view.timeline.rows[0]
+        assert isinstance(missing, TimelineDiagnostic)
+        assert "root.jsonl" in missing.message
+
+    async def test_the_layout_tree_decides_what_is_merged(self, tmp_path: Path) -> None:
+        # The Re-Run tab draws the saved run's lines over a re-run's records. Here the
+        # re-run's own states would draw the pair apart; the layout still folds them.
+        saved = InspectorTree({"summary_tree": _component("root.jsonl")})
+        rerun = InspectorTree({"summary_tree": _component("root.jsonl", state="Fail")})
+        assert len(rerun.lines) == 3
+        (tmp_path / "rack.jsonl").write_text(_stamped("configure", 1))
+        (tmp_path / "root.jsonl").write_text(_stamped("claim ran", 5))
+
+        alone = InspectorSelection(rerun, tmp_path)
+        await alone.select(0)
+        assert _messages(alone) == ["configure"]
+
+        folded = InspectorSelection(rerun, tmp_path, layout=saved)
+        await folded.select(0)
+        assert folded.view.owner is rerun.rows[0]
+        assert folded.view.merged == (rerun.rows[1],)
+        assert _messages(folded) == ["configure", "claim ran"]
+
+    async def test_a_folded_node_the_bench_never_reached_contributes_no_log(
+        self, tmp_path: Path
+    ) -> None:
+        saved = InspectorTree({"summary_tree": _component("root.jsonl")})
+        pending_root = _node("rack", type="sequence", state=None, log_path="root.jsonl")
+        rerun = InspectorTree(
+            {
+                "summary_tree": _node(
+                    "rack", type="suite", log_path="rack.jsonl", children=[pending_root]
+                )
+            }
+        )
+        (tmp_path / "rack.jsonl").write_text(_stamped("configure", 1))
+        (tmp_path / "root.jsonl").write_text(_stamped("never part of this run", 5))
+        selection = InspectorSelection(rerun, tmp_path, layout=saved)
+
+        await selection.select(0)
+
+        assert selection.view.merged == ()
+        assert _messages(selection) == ["configure"]

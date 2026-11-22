@@ -146,23 +146,36 @@ record.
   ---------------------------------------------------------
     rack  Aborted
     └─ servers  Aborted  ←
-       ├─ server-01  Pass
-       ├─ server-02  Fail
+    ─────────────────────────────────────────────────────
+       ├─ server-07  Pass
+       │  └─ thermal check  Pass
+       ├─ server-08  Fail
   >    │  └─ thermal check  Fail  not taken: fan_rpm
-       ├─ server-03  Aborted
-       └─ firmware check  Pending
+       ├─ server-09  Aborted
+       │  └─ thermal check  Aborted
+       ├─ server-10  Pass
+       │  └─ thermal check  Pass
+       ├─ server-11  Pass
   ---------------------------------------------------------
   log: rack/servers  (rolled up: thermal check has no own log)
-  page 4/7  errors only: off  captures: 1  (1-9 opens a capture)
+  page 9/14  errors only: off  captures: 1  (1-9 opens a capture)
       14:02:11Z info     starting thermal ramp
   [1] 14:02:45Z info     survey captured
       14:03:02Z error    temperature 87 C exceeds 75 C
-  q Quit  Tab Inspect / Re-Run  ← → failures  h Hide passes  n p page  f Errors only
+  Tab Inspect / Re-Run  q Quit  ← → Failures  h Hide passes  l Log full  ⏎ Re-run node  n p Page  f Errors only  shift+↑ shift+↓ Sibling
 ```
 
-- **← / →** jump between failures, skipping everything that passed. **h** folds the
-  passing branches out of a large rack.
-- The highlighted node's timeline follows the cursor. **1–9** open captured artifacts.
+- **← / →** jump between failures, skipping everything that passed. **h** hides the
+  passing branches of a large rack.
+- **Shift-↑ / Shift-↓** (or Alt) step between siblings: from one server to the next,
+  without walking through the first one's checks.
+- When a deep tree scrolls, the rows above the first one shown stay pinned at the top,
+  above a rule, so a check never loses its rack and its device.
+- Each component is one row. The record keeps a component and the suite it built as two
+  nodes of the same name; the tree draws them once and reads their two logs as one.
+- The highlighted node's timeline follows the cursor in the bottom quarter of the
+  screen. **l** gives the log the whole screen, and **l** again brings the tree back.
+  **1–9** open captured artifacts.
 - Missing readings are shown as **not taken** by name, so an absent value is never
   mistaken for zero.
 

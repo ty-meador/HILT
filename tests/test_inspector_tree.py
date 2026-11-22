@@ -5,11 +5,12 @@ import json
 from pathlib import Path
 
 import pytest
+from tests.inspector_rack import record_bay_run
 
 from hilt import PASS, TestComponent, TestFailure, TestUtils, Verdict
 from hilt.inspector_artifacts import ArtifactDiagnostic
 from hilt.inspector_run import SavedRunReader
-from hilt.inspector_tree import InspectorTree, SelectedTree, TreeReader
+from hilt.inspector_tree import InspectorTree, SelectedTree, TreeLine, TreeReader
 from hilt.run_data import JsonObject, JsonValue
 
 
@@ -338,3 +339,191 @@ class TestInspectorTree:
             assert owner is tree.rows[2 + i * 2]
             assert owner is not None
             assert owner.record["name"] == f"dut-{i:02d}"
+
+
+def _suite(name: str, *children: JsonObject, **changes: JsonValue) -> JsonObject:
+    return _node(name, type="suite", children=list(children), **changes)
+
+
+def _drawn(tree: InspectorTree) -> list[tuple[int, str, int, int | None]]:
+    return [(line.index, line.name, line.depth, line.parent_index) for line in tree.lines]
+
+
+class TestFold:
+    """The record keeps a component and its root as two nodes; the drawn tree shows one line."""
+
+    async def test_a_same_named_root_is_drawn_inside_its_component(self, tmp_path: Path) -> None:
+        root = _suite(
+            "rack",
+            _node(
+                "rack",
+                type="parallel",
+                children=[
+                    _suite("sata", _node("sata", type="sequence", children=[_node("present")])),
+                    _node("label"),
+                ],
+            ),
+        )
+        path = _save(tmp_path, root)
+        original = path.read_bytes()
+        tree = await TreeReader().read(path)
+        assert isinstance(tree, InspectorTree)
+
+        # The record is untouched: five nodes, their indices and their full name paths.
+        assert [row.index for row in tree.rows] == [0, 1, 2, 3, 4, 5]
+        assert tree.rows[4].ancestor_names == ("rack", "rack", "sata", "sata", "present")
+        assert tree.rows[4].parent_index == 3
+        # The drawing has one line per name, at the depth the eye expects.
+        assert _drawn(tree) == [
+            (0, "rack", 0, None),
+            (2, "sata", 1, 0),
+            (4, "present", 2, 2),
+            (5, "label", 1, 0),
+        ]
+        assert [line.path for line in tree.lines] == [
+            ("rack",),
+            ("rack", "sata"),
+            ("rack", "sata", "present"),
+            ("rack", "label"),
+        ]
+        assert [[node.index for node in line.folded] for line in tree.lines] == [[1], [3], [], []]
+        assert tree.lines[1].nodes == (tree.rows[2], tree.rows[3])
+        # Either node of a folded pair leads to the line that draws it.
+        assert tree.line(2) is tree.line(3) is tree.lines[1]
+        for index in (-1, 6):
+            with pytest.raises(IndexError, match="tree row"):
+                tree.line(index)
+        assert path.read_bytes() == original
+
+    @pytest.mark.parametrize(
+        ("component", "reason"),
+        [
+            (_suite("wifi", _node("checks", type="sequence")), "a root named for itself"),
+            (_suite("wifi", _node("Wifi", type="sequence")), "a name that differs in case"),
+            (
+                _suite("wifi", _node("wifi", type="sequence", state=None), state="Fail"),
+                "a component that failed before its root ran",
+            ),
+            (
+                _suite("wifi", _node("wifi", type="sequence", state="Aborted"), state="Fail"),
+                "a pair that settled differently",
+            ),
+            (_suite("wifi", _node("wifi"), _node("other")), "a child that is not the only one"),
+            (
+                _node("wifi", type="sequence", children=[_node("wifi")]),
+                "a composition, which has no root of its own",
+            ),
+        ],
+    )
+    async def test_every_other_pair_keeps_both_rows(
+        self, tmp_path: Path, component: JsonObject, reason: str
+    ) -> None:
+        tree = await TreeReader().read(_save(tmp_path, _suite("rack", component)))
+        assert isinstance(tree, InspectorTree)
+
+        assert len(tree.lines) == len(tree.rows), reason
+        assert all(line.folded == () for line in tree.lines), reason
+        assert [line.depth for line in tree.lines] == [len(r.ancestor_names) - 1 for r in tree.rows]
+
+    async def test_a_chain_of_same_named_components_folds_onto_one_line(
+        self, tmp_path: Path
+    ) -> None:
+        # A component whose root is another component of the same name, which has its
+        # own same-named root. Pending nodes agree with each other and fold as well.
+        root = _suite(
+            "rack",
+            _suite("dut", _suite("dut", _node("dut", type="sequence", children=[_node("claim")]))),
+            _suite("spare", _node("spare", type="sequence", state=None), state=None),
+        )
+        tree = await TreeReader().read(_save(tmp_path, root))
+        assert isinstance(tree, InspectorTree)
+
+        assert _drawn(tree) == [
+            (0, "rack", 0, None),
+            (1, "dut", 1, 0),
+            (4, "claim", 2, 1),
+            (5, "spare", 1, 0),
+        ]
+        assert [node.index for node in tree.lines[1].folded] == [2, 3]
+        assert tree.lines[3].state is None
+
+    async def test_the_cursor_and_the_failure_list_move_over_drawn_lines(
+        self, tmp_path: Path
+    ) -> None:
+        failing = _suite(
+            "nvme",
+            _node("nvme", type="sequence", state="Fail", children=[_node("spins", state="Fail")]),
+            state="Fail",
+        )
+        root = _suite(
+            "rack",
+            _suite("sata", _node("sata", type="sequence", children=[_node("present")])),
+            failing,
+            state="Fail",
+        )
+        tree = await TreeReader().read(_save(tmp_path, root))
+        assert isinstance(tree, InspectorTree)
+
+        # rack 0; sata 1+2, present 3; nvme 4+5, spins 6.
+        assert [line.index for line in tree.lines] == [0, 1, 3, 4, 6]
+        assert [row.index for row in tree.failures] == [0, 4, 6]
+        visited: list[int] = []
+        for _ in range(5):
+            tree.move(1)
+            visited.append(tree.selected.index)
+        assert visited == [1, 3, 4, 6, 6]
+        tree.move(-2)
+        assert tree.selected.index == 3
+        tree.next_failure()
+        assert tree.selected.index == 4
+        tree.next_failure()
+        assert tree.selected.index == 6
+        tree.previous_failure()
+        assert tree.selected.index == 4
+        # The record stays addressable: a folded node is selected by its own index, and
+        # the cursor then moves on from the line that draws it.
+        tree.select(5)
+        assert tree.selected is tree.rows[5]
+        tree.move(1)
+        assert tree.selected.index == 6
+
+    async def test_a_folded_line_names_the_readings_of_every_node_it_draws(
+        self, tmp_path: Path
+    ) -> None:
+        # A component whose root is a single claim of the same name.
+        claim = _node("probe", evidence_declared=["volts", "amps"], evidence={"volts": 3.3})
+        tree = await TreeReader().read(_save(tmp_path, _suite("rack", _suite("probe", claim))))
+        assert isinstance(tree, InspectorTree)
+
+        (rack, probe) = tree.lines
+        assert isinstance(probe, TreeLine)
+        assert (probe.index, [node.index for node in probe.folded]) == (1, [2])
+        assert probe.row.not_taken == ()
+        assert probe.not_taken == ("amps",)
+        assert rack.not_taken == ()
+
+    async def test_the_recorded_bay_folds_each_component_that_settled_with_its_root(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        saved = await record_bay_run(tmp_path, monkeypatch)
+        tree = saved.tree
+
+        assert len(tree.rows) == 13
+        assert [(line.name, line.depth, line.state) for line in tree.lines] == [
+            ("bay", 0, "Fail"),
+            ("sata", 1, "Pass"),
+            ("present", 2, "Pass"),
+            ("spins", 2, "Pass"),
+            ("nvme", 1, "Fail"),
+            ("present", 2, "Pass"),
+            ("spins", 2, "Fail"),
+            ("fan", 1, "Pass"),
+            ("checks", 2, "Pass"),
+            ("turns", 3, "Pass"),
+        ]
+        folded = [line.name for line in tree.lines if line.folded]
+        assert folded == ["bay", "sata", "nvme"]
+        assert {str(node.record["type"]) for line in tree.lines for node in line.folded} == {
+            "parallel",
+            "sequence",
+        }

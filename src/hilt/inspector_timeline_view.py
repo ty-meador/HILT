@@ -55,6 +55,7 @@ class TimelineView:
         self._visible = self._all_rows
         self._errors_only = False
         self._page_index = self.page_count - 1
+        self._place = self._page_index * self._page_size
 
     @property
     def timeline(self) -> TimelineRead:
@@ -107,10 +108,12 @@ class TimelineView:
     def next_page(self) -> None:
         """Advance one page, staying at the tail when no next page exists."""
         self._page_index = min(self._page_index + 1, self.page_count - 1)
+        self._place = self._page_index * self._page_size
 
     def previous_page(self) -> None:
         """Return one page, staying at the beginning rather than wrapping."""
         self._page_index = max(self._page_index - 1, 0)
+        self._place = self._page_index * self._page_size
 
     def toggle_errors(self) -> None:
         """Toggle severity filtering and return to page zero without renumbering captures.
@@ -129,11 +132,19 @@ class TimelineView:
                 or cast(str, row.record.data["level"]).lower() in {"error", "critical"}
             )
         self._page_index = 0
+        self._place = 0
 
     def resize(self, page_size: int) -> None:
-        """Set records per page and clamp the current page; reject invalid sizes unchanged."""
+        """Set records per page and keep the reader's place; reject invalid sizes unchanged.
+
+        The place is the row that headed the page when the reader last paged or
+        filtered, or the page the view opened on. It is not re-derived from the page a
+        resize produced: a pane that grows and shrinks back, as the log does when it
+        goes full screen and returns, then shows the page it left, where following
+        each intermediate page would drift toward the top of the chronology.
+        """
         self._page_size = _page_size(page_size)
-        self._page_index = min(self._page_index, self.page_count - 1)
+        self._page_index = min(self._place // self._page_size, self.page_count - 1)
 
 
 def _page_size(value: int) -> int:

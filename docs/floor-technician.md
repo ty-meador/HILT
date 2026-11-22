@@ -5,10 +5,12 @@ You do not need the suite source, a Slack thread, or a software engineer to
 categorize what happened. You need `result.json`, the scoped log next to it, and
 the recovery protocol below.
 
-The Inspector TUI is not in this port yet. Until it is, you read the same two
-records the Inspector will: the structural tree in `result.json`, and the
-temporal log at each node's `log_path`. Every field below is the field in
-`docs/inspector-json.md`, explained from this side of the bench.
+`hilt inspect` puts both records on one screen; [the section
+below](#the-same-records-in-the-inspector) says how that screen is laid out.
+Without it you read the same two records the Inspector does: the structural
+tree in `result.json`, and the temporal log at each node's `log_path`. Every
+field below is the field in `docs/inspector-json.md`, explained from this side
+of the bench.
 
 **Clock rule.** A station whose system clock is not on NTP cannot produce
 trustworthy evidence. Do not execute tests on it. The log is used as chronology
@@ -45,7 +47,7 @@ framework's job is to make the call obvious.
 |---|---|---|---|
 | `Pass` | `failure` is `null` | The claim held | Ship. You are done. |
 | `Fail` | `name` is `TestFailure` (or a suite-authored subclass), `bug` absent or `false` | **Hardware.** The unit did not meet a check the suite named. | Pull the unit. Follow the station protocol for that failure name. The `fail_message` is written in your language; `expected` / `received` are the comparison when there is one. |
-| `Fail` | `banner` is `CONTRACT VIOLATION`, or `bug` is `true` | **Author.** The suite broke its contract. This is not the unit. | Do not scrap the unit on this evidence. Escalate to the suite author. The message names the node and the fix. |
+| `Fail` | `banner` is `CONTRACT VIOLATION`, or `bug` is `true` | **Author.** The suite broke its contract. This is not the unit. | Do not scrap the unit on this evidence. Escalate to the suite author. The message names the node and the fix. Where an exception escaped the suite's code, the lines under the banner in the node's log are its traceback: send them along, they name the file and line. |
 | `Fail` | `banner` is `FRAMEWORK CONTRACT VIOLATION` | **Framework.** Should be unreachable. | Escalate to the framework maintainers with the full run directory. Not the unit, not the suite author. |
 | `Aborted` | `name` is `ExternalIntegrationFailure` | **Integration / harness.** The shop-floor DB, the coordinator, the hook around the suite. | Fix the harness. Re-run. The unit was not judged. |
 | `Aborted` | `name` is `MissingVerdict`, or `bug` is `true` with `state` `Aborted` | **Author.** The test method returned nothing the framework will accept as a verdict. | Escalate to the suite author. Do not treat this as a hardware Fail. |
@@ -72,9 +74,38 @@ an array of names. Names may contain `/`, so the array is the durable form.
 Use **`bread_crumbs`** only to display that path. It is exactly
 `ancestor_names` joined with `/`. Do not parse it back into names.
 
+A component is two nodes: itself (`type` `suite`) and, as its only child, the
+sequence or parallel it built, which usually carries the same name. So a path often
+reads `rack`, `rack`, `sata`, `sata`, `present`. That is the record, not a mistake.
+The component's `timeline.jsonl` holds its configure and cleanup; its child's holds the
+tests. The Inspector draws such a pair as one row and shows both timelines as one log,
+merged in time order (`docs/inspector.md`, The fold).
+
 A node whose `summary_tree` `state` is `null` never ran (a sequence stopped
 before it). That is not a fourth terminal state. It has no log and no failure.
 The declared tree is still complete, so you can see what was skipped.
+
+## The same records in the Inspector
+
+`hilt inspect` opens the latest run with the tree above and the highlighted
+node's log below. Every key is in the
+[Inspector guide](inspector.md#key-bindings-quick-reference). Three things about
+the screen are worth knowing before you need them:
+
+- **The log has the bottom quarter of the screen**, and never fewer than six
+  lines. Press `l` to give it the whole screen, and `l` again to get the tree
+  back. Your node, your errors-only filter, and your place in the log are where
+  you left them. The arrows still move through the tree while it is hidden; the
+  first line of the log names the node you are on.
+- **Parents stay in view.** When a deep tree scrolls, the rows above the first
+  one shown stay pinned at the top, above a rule, so you can always see which
+  rack, device, and step the highlighted check belongs to. On a short screen
+  only the nearest parents are pinned; the first line of the log has the full
+  path.
+- **`Shift-↑` and `Shift-↓` move between the rows under one parent.** From one
+  device they go to the next device, without stepping through its checks. They
+  stop at the parent's first and last row and never leave it. `Alt-↑` and `Alt-↓`
+  do the same, in a terminal that does not keep those keys for itself.
 
 ## Every field, from this side of the bench
 
@@ -222,5 +253,5 @@ decoder can refuse a version it was not written for, loudly.
 It is not the authoring guide (`docs/idioms.md`, `docs/contracts.md`). It is
 not the runner's exit-code table (`docs/hilt-run.md`) — though exit `0`/`1`/`2`
 match Pass/Fail/Aborted, and exit `3` means there is no `result.json` because
-no run happened. It is not the Inspector TUI; when that lands, it will consume
-exactly these files.
+no run happened. It is not the Inspector guide (`docs/inspector.md`); the
+Inspector consumes exactly these files.

@@ -7,7 +7,9 @@ filter can keep damage visible without treating it as a logged hardware failure.
 
 import asyncio
 import json
+from collections.abc import Sequence
 from dataclasses import dataclass, replace
+from datetime import UTC, datetime
 from pathlib import Path, PurePosixPath
 from typing import Literal
 
@@ -51,6 +53,44 @@ class TimelineRead:
     path: Path | None
     rows: tuple[TimelineRecord | TimelineDiagnostic, ...]
     reference: str | None = None
+
+
+def merge_reads(reads: Sequence[TimelineRead]) -> TimelineRead:
+    """Interleave several timelines by recorded time, for a tree line that draws several nodes.
+
+    A folded line shows a component's records and its root's as one chronology
+    (``docs/inspector.md``, The fold). Each file keeps its own order: a row is never
+    moved ahead of one that precedes it in its file, so a diagnostic, or a record whose
+    timestamp cannot be read, stays directly behind the row it followed. Rows of equal
+    time keep the order of ``reads``. A diagnostic that names a line gains its file's
+    reference, because a line number alone no longer names one file. The merged read
+    carries the first read's path and reference, the owner the pane names.
+    """
+    keyed: list[tuple[datetime, int, int, TimelineRecord | TimelineDiagnostic]] = []
+    for order, read in enumerate(reads):
+        moment = _BEFORE_ANY_RECORD
+        for position, row in enumerate(read.rows):
+            if isinstance(row, TimelineRecord):
+                moment = max(moment, _moment(row) or moment)
+            elif row.line_number is not None:
+                source = read.reference if read.reference is not None else str(read.path)
+                row = replace(row, message=f"{source}: {row.message}")
+            keyed.append((moment, order, position, row))
+    keyed.sort(key=lambda entry: entry[:3])
+    first = reads[0]
+    return TimelineRead(first.path, tuple(entry[3] for entry in keyed), first.reference)
+
+
+_BEFORE_ANY_RECORD = datetime.min.replace(tzinfo=UTC)
+
+
+def _moment(record: TimelineRecord) -> datetime | None:
+    """The record's timestamp as an aware instant, or None when it is not one."""
+    try:
+        moment = datetime.fromisoformat(str(record.data.get("timestamp")))
+    except ValueError:
+        return None
+    return moment if moment.tzinfo is not None else moment.replace(tzinfo=UTC)
 
 
 class TimelineReader:

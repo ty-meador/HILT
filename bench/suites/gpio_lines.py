@@ -92,7 +92,6 @@ class GpioHeader(TestComponent):
     def build_suite(self) -> TestComponent:
         """Three lines, three independent claims."""
         return self.parallel(
-            self.name,
             [
                 self.test("input-follows-drive", self._input_follows, fail_after=10.0),
                 self.test("output-reaches-sim", self._output_reaches, fail_after=10.0),

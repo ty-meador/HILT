@@ -31,7 +31,8 @@ emits has:
 - an annotated `__init__` whose extra parameters carry defaults, so `hilt run`
   can construct the class from its name alone
 - `configure` returning a narrowed `TypedDict` ctx
-- a pure `build_suite` that returns `self.test(...)`
+- a pure `build_suite` that returns `self.sequence([self.test(...)])`: the root
+  sequence takes the suite's name, and the next claim is one more entry in its list
 - one test method whose `return PASS` sits inside an explicit pass predicate
 - `cleanup`
 

@@ -450,6 +450,43 @@ class TestRecordContainment:
         result_json = json.loads(next(root.rglob("result.json")).read_text())
         assert result_json["run_data"]["sid"] == REDACTED
 
+    async def test_the_traceback_of_a_stray_exception_is_masked_in_the_timeline(
+        self, tmp_path: Path, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        # The traceback's last line repeats the exception's message, so it is a
+        # second place the secret would reach the run directory (issue #167).
+        class Suite(TestComponent):
+            redact_ctx = ("sid",)
+
+            async def configure(self, utils: TestUtils) -> dict[str, Any]:
+                return {"sid": _SID}
+
+            def build_suite(self) -> TestComponent:
+                return self.sequence([self.test("login", self._login)])
+
+            async def _login(self, utils: TestUtils) -> Verdict:
+                raise RuntimeError(f"socket for {utils.ctx['sid']} vanished")
+
+        with caplog.at_level(logging.DEBUG, logger="hilt"):
+            result = await Suite(name="pihole").run(env={"PHYSICAL_LOCATION": "bench-167"})
+
+        assert result.state is State.FAIL
+        # The run directory and the process log, which are where a traceback is
+        # written. The stray exception object itself is the author's and is left as
+        # raised (`bind_redactions`), so it is not part of this haystack.
+        assert _SID.encode() not in _artifact_bytes(tmp_path / "artifacts")
+        assert _SID not in "\n".join(record.getMessage() for record in caplog.records)
+        entries = [
+            json.loads(line)
+            for path in (tmp_path / "artifacts").rglob("timeline.jsonl")
+            for line in path.read_text().splitlines()
+        ]
+        errors = [entry["message"] for entry in entries if entry["level"] == "error"]
+        assert errors[0].startswith("CONTRACT VIOLATION IN login: RuntimeError escaped the node")
+        assert errors[1] == "Traceback (most recent call last):"
+        assert errors[2].endswith(", in _login")
+        assert errors[-1] == f"RuntimeError: socket for {REDACTED} vanished"
+
     @pytest.mark.parametrize("write", ["setdefault", "ior"])
     async def test_a_secret_inserted_by_setdefault_or_ior_is_masked_run_wide(
         self, tmp_path: Path, caplog: pytest.LogCaptureFixture, write: str

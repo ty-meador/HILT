@@ -10,7 +10,87 @@ leave a fresh Unreleased section above it. Use the
 
 ## Unreleased
 
-Nothing yet.
+### Added
+
+- `self.sequence([...])` and `self.parallel([...])`: the composition `build_suite()`
+  returns may be written without a name and takes the component's name (issue #165).
+  The component was already named at construction, and
+  `self.sequence(self.name, [...])` said it a second time. Both forms are typed
+  overloads; `self.sequence(name, children)` is unchanged and every existing suite
+  keeps working. Only the root may go without a name: a nameless composition nested
+  inside another one is a `ContractViolation` raised where it is nested, and a name
+  with no children is refused with a message that names both forms. The examples, the
+  bench suites, `docs/idioms.md`, and the suite `hilt new` writes use the nameless
+  root. `hilt new` now scaffolds its claim inside that root sequence, so the next claim
+  is one more entry in a list.
+- Inspector, pinned ancestors (issue #164): when the tree is scrolled, the ancestors of
+  the first row in view stay pinned at the top of the tree pane, root first, each drawn
+  as its own row with its state and owner mark, above a dim rule. A header leaves when
+  the last row of its subtree has scrolled past. The pinned lines take at most a third
+  of the pane and drop their outermost levels first; no row is drawn under them, so the
+  highlighted row is never hidden. It holds with passes hidden and on the Re-Run tab.
+- Inspector, `l` (issue #164): shows the log full screen and brings the tree back. The
+  highlighted node, the errors-only filter, and the place in the log are kept, and the
+  arrows still move the selection while the tree is out of sight.
+- Inspector, `Shift-↑` / `Shift-↓` (issue #164): move to the highlighted row's previous
+  or next sibling, the row before or after it under the same parent, without stepping
+  through the rows nested between. The jump never leaves the parent; the cursor stays
+  put when there is no such row. Both tabs.
+  `Alt-↑` / `Alt-↓` do the same. Both pairs are bound because a terminal may keep one:
+  Terminator moves between its own panes on Alt with an arrow and never passes it on.
+- `max_sessions` on `TestUtils.use_shell` and `TestUtils.get_shell`: the most commands
+  the opened SSH connection runs at once. Every `exec` opens its own session, and an
+  sshd refuses a session past its `MaxSessions` (10 by default), so a wide `parallel`
+  under one hop could Fail a healthy device with `transport closed: open failed`. With
+  the bound set at or below the device's limit, a command past it waits its turn, in
+  call order, instead of being refused. The bound belongs to the node that opens the
+  hop and is shared by every node that inherits the route; the `ssh connect:` line
+  states it. The default, `None`, leaves commands unbounded, as before.
+
+### Changed
+
+- `hilt inspect` draws a component and its same-named root as one row (issue #165).
+  The record holds two nodes per component, the component and the composition its
+  `build_suite()` returned, and the tree printed nearly every name twice. A `suite`
+  row is now drawn together with its only child when the two carry the same name and
+  recorded the same state. The row's log is both timelines merged in time order, the
+  owner arrow for a rolled-up claim sits on the folded row, paths on screen name each
+  level once, and Enter on the Re-Run tab re-runs the component. A differently named
+  root keeps its row, and so does a pair whose states differ. Nothing in the record
+  changes: `result.json` stays at `format_version` 1 with both nodes, and runs saved
+  by earlier versions fold the same way. `docs/inspector.md` has the rule under "The
+  fold".
+- Inspector layout (issue #164): the log pane has a quarter of the body between the tab
+  bar and the footer, where it had half, and never fewer than six lines; on a short
+  terminal the tree yields first. The footer shows each pair of keys under one label
+  (`← → Failures`, `n p Page`) and lists `h` and `l` before the log keys, so both are
+  whole on a 100-column terminal.
+- Inspector log paging (issue #164): a change of height keeps the record the reader was
+  on in view. It used to keep the page number, which on a taller or shorter pane is a
+  different part of the chronology.
+- `README.md`, `docs/lifecycle.md`, and `docs/hilt-new.md` follow the changes above. The
+  README's Inspector section shows the new screen and its keys, and it is the PyPI
+  project page, so the change reaches that page with the next release. The lifecycle
+  page's examples and block table use the nameless root, and the `hilt new` page
+  describes the root sequence the scaffold now writes.
+
+### Fixed
+
+- An exception that escapes suite code is logged with its traceback (issue #167). The
+  `CONTRACT VIOLATION IN <node>: <Type> escaped the node: <message>` line told the
+  author that a bug existed and not where: no file or line was written anywhere in the
+  run directory, so a misspelled attribute read two calls below `configure` had to be
+  found by searching the source. The traceback now follows that line in the node's log,
+  at `error`, one entry per line, in `timeline.log`, `timeline.jsonl`, the console, and
+  the Inspector's log pane. It starts at the author's code and keeps a `raise ... from`
+  chain. The `cleanup failed (verdict unaffected)` line and the halt line of a hook
+  that threw are followed by theirs in the same way. A `TestFailure` is a verdict and
+  logs none. The lines pass through the node's logger, so a `redact_ctx` value is
+  masked in them. `result.json` is unchanged.
+- Inspector, pinned ancestors (issue #164): a tree pane of three lines pinned one
+  ancestor when the highlighted row was at the foot of the tree, against the rule in
+  `docs/inspector.md` that a pane under four rows pins nothing. The rule is now the
+  code.
 
 ## [1.0.1] - 2026-11-21
 

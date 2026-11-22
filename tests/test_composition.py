@@ -1,6 +1,6 @@
 """Composition factories and the serial semantics they expose to authored suites."""
 
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from typing import cast
 
 import pytest
@@ -14,6 +14,7 @@ from hilt import (
     TestUtils,
     Verdict,
 )
+from hilt.base import declared_tree
 from hilt.lifecycle import AuditSignal, Outcome, RunAbort, Slot, State, TimeBudgetClock
 
 
@@ -299,3 +300,102 @@ class TestSequenceExecution:
         assert outcome.state is State.PASS
         assert len(children) == 2
         assert all(child.state is State.PASS for child in children)
+
+
+class _Board(TestComponent):
+    """A component whose root takes its name, with a named level beneath it."""
+
+    def build_suite(self) -> TestComponent:
+        return self.sequence(
+            [
+                self.test("powers", self._claim),
+                self.parallel("rails", [self.test("3v3", self._claim)]),
+            ]
+        )
+
+    async def _claim(self, utils: TestUtils) -> Verdict:
+        return PASS
+
+
+class TestNamelessRoot:
+    """The root of ``build_suite()`` need not repeat the component's name (issue #165)."""
+
+    @pytest.mark.parametrize("kind", ["sequence", "parallel"])
+    async def test_a_nameless_composition_takes_its_component_s_name(self, kind: str) -> None:
+        class Suite(_Board):
+            def build_suite(self) -> TestComponent:
+                compose = self.sequence if kind == "sequence" else self.parallel
+                return compose([self.test("powers", self._claim)])
+
+        suite = Suite(name="board A")
+
+        declared = declared_tree(suite)
+        (authored,) = declared.children
+        assert (declared.name, declared.type.value) == ("board A", "suite")
+        assert (authored.name, authored.type.value) == ("board A", kind)
+        assert (await suite.main(TestUtils())).state is State.PASS
+
+    async def test_the_named_form_is_unchanged_and_may_sit_under_a_nameless_root(self) -> None:
+        suite = _Board(name="board")
+
+        (authored,) = declared_tree(suite).children
+        assert [child.name for child in authored.children] == ["powers", "rails"]
+        assert authored.name == "board"
+        assert _Board(name="x").sequence("named", [suite]).name == "named"
+        assert (await suite.main(TestUtils())).state is State.PASS
+
+    def test_a_nameless_composition_keeps_its_keyword_options(self) -> None:
+        board = _Board(name="board")
+        child = board.test("powers", board._claim)  # pyright: ignore[reportPrivateUsage]
+
+        rolled = board.sequence([child], discrete_log_file=False, fail_after=2.0)
+        owned = board.parallel([child], abort_after=3.0)
+
+        assert (rolled.name, owned.name) == ("board", "board")
+        assert rolled._discrete_log_file is False  # pyright: ignore[reportPrivateUsage]
+        assert owned._discrete_log_file is True  # pyright: ignore[reportPrivateUsage]
+        with pytest.raises(ContractViolation, match="at least one child"):
+            board.sequence([])
+
+    @pytest.mark.parametrize("outer", ["sequence", "parallel"])
+    @pytest.mark.parametrize("inner", ["sequence", "parallel"])
+    def test_a_nameless_composition_nested_deeper_is_refused_where_it_is_nested(
+        self, outer: str, inner: str
+    ) -> None:
+        board = _Board(name="board")
+        child = board.test("powers", board._claim)  # pyright: ignore[reportPrivateUsage]
+        nameless = (board.sequence if inner == "sequence" else board.parallel)([child])
+        compose = board.sequence if outer == "sequence" else board.parallel
+
+        with pytest.raises(ContractViolation) as named:
+            compose("stage", [child, nameless])
+        with pytest.raises(ContractViolation) as rooted:
+            compose([nameless])
+
+        for refusal, owner in ((named, "stage"), (rooted, "board")):
+            message = str(refusal.value)
+            assert f"nested under {owner!r}" in message
+            assert "only the root of build_suite() may omit its name" in message
+            assert "self.sequence(name, children)" in message
+
+    @pytest.mark.parametrize("kind", ["sequence", "parallel"])
+    def test_a_call_that_is_neither_form_names_both(self, kind: str) -> None:
+        board = _Board(name="board")
+        child = board.test("powers", board._claim)  # pyright: ignore[reportPrivateUsage]
+        compose = cast(Callable[..., TestComponent], getattr(board, kind))
+        forms = (
+            f"call self.{kind}(children) at the root of build_suite(), "
+            f"or self.{kind}(name, children) for a named level"
+        )
+
+        with pytest.raises(ContractViolation) as lone_name:
+            compose("stage")
+        with pytest.raises(ContractViolation) as two_lists:
+            compose([child], [child])
+
+        assert f"self.{kind}() was given a name and no children; {forms}" in str(lone_name.value)
+        assert "IN stage" in str(lone_name.value)
+        assert f"self.{kind}() was given two child lists and no name; {forms}" in str(
+            two_lists.value
+        )
+        assert "IN board" in str(two_lists.value)

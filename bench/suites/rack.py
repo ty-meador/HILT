@@ -33,4 +33,4 @@ class Rack(TestComponent):
 
     def build_suite(self) -> TestComponent:
         """Independent devices, so independent verdicts."""
-        return self.parallel(self.name, [self._guest, self._pihole, self._coap, self._serial])
+        return self.parallel([self._guest, self._pihole, self._coap, self._serial])

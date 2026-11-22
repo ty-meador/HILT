@@ -157,9 +157,14 @@ class TestCleanupGuarantee:
             outcome = await Suite(name="rack").main(TestUtils())
 
         assert outcome.state is State.PASS
-        assert len(caplog.records) == 1
-        assert "cleanup failed (verdict unaffected)" in caplog.records[0].getMessage()
-        assert "CONTRACT VIOLATION IN rack" in caplog.records[0].getMessage()
+        messages = [record.getMessage() for record in caplog.records]
+        assert "cleanup failed (verdict unaffected)" in messages[0]
+        assert "CONTRACT VIOLATION IN rack" in messages[0]
+        # One event: the swallow line, then the traceback that says where (#167).
+        assert messages[1] == "Traceback (most recent call last):"
+        assert messages[2].endswith(", in cleanup")
+        assert messages[-1] == "RuntimeError: relay refused neutral state"
+        assert sum("verdict unaffected" in message for message in messages) == 1
 
     async def test_cancellation_waits_for_shielded_cleanup(self) -> None:
         cleanup_started = asyncio.Event()

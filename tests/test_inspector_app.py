@@ -10,18 +10,29 @@ from typing import cast
 
 import pytest
 from tests.inspector_rack import (
+    BAY_TREE,
+    DEVICE_COUNT,
     MIXED_ROWS,
     PARK,
+    bay_suite,
     device_row,
     mixed_suite,
     parked_suite,
+    record_bay_run,
     record_mixed_run,
     record_parked_run,
     record_seventy_dut_run,
     saved_bytes,
 )
+from textual._xterm_parser import XTermParser
+from textual.binding import Binding
+from textual.events import Key
+from textual.widgets import Footer
+from textual.widgets._footer import FooterKey
 
 from hilt.inspector_app import (
+    LOG_FLOOR_LINES,
+    LOG_HEADER_LINES,
     ArtifactScreen,
     InspectorApp,
     RowDisplay,
@@ -29,6 +40,8 @@ from hilt.inspector_app import (
     _log_row_text,  # pyright: ignore[reportPrivateUsage]
     _modal_body,  # pyright: ignore[reportPrivateUsage]
     _modal_title,  # pyright: ignore[reportPrivateUsage]
+    _pane_lines,  # pyright: ignore[reportPrivateUsage]
+    _pinned_window,  # pyright: ignore[reportPrivateUsage]
     _row_text,  # pyright: ignore[reportPrivateUsage]
     _tree_prefixes,  # pyright: ignore[reportPrivateUsage]
     _window,  # pyright: ignore[reportPrivateUsage]
@@ -36,13 +49,19 @@ from hilt.inspector_app import (
 from hilt.inspector_artifact_view import ArtifactModal
 from hilt.inspector_artifacts import ArtifactReader
 from hilt.inspector_rerun import RerunRecord, RerunSession
-from hilt.inspector_run import SavedRun
+from hilt.inspector_run import SavedRun, SavedRunReader
 from hilt.inspector_selection import SelectionView
 from hilt.inspector_timeline import TimelineDiagnostic, TimelineRead, TimelineRecord
 from hilt.inspector_timeline_view import TimelineEntry, TimelineView
-from hilt.inspector_tree import TreeRow
+from hilt.inspector_tree import InspectorTree, TreeRow
 
 SIZE = (100, 30)
+
+TALL = (100, 60)
+"""A terminal whose log pane, a quarter of the body, holds twelve records on one page.
+
+For the tests that read a whole merged chronology at once and still look at the tree.
+"""
 
 MIXED_TREE = (
     "> rack  Aborted",
@@ -63,6 +82,36 @@ def _row_name(line: str) -> str:
 
 def _selected(app: InspectorApp) -> str:
     return app.selection.view.selected.ancestor_names[-1]
+
+
+def _path(app: InspectorApp) -> str:
+    """The highlighted row's drawn path, which tells two rows of one name apart."""
+    return "/".join(app.saved_tree.line(app.selection.view.selected.index).path)
+
+
+def _pinned_rule(app: InspectorApp) -> int | None:
+    """Where the rule under the pinned ancestors sits in the tree pane, if anything is pinned."""
+    rules = [number for number, line in enumerate(app.tree_lines) if set(line) == {"─"}]
+    assert len(rules) <= 1
+    return rules[0] if rules else None
+
+
+def _assert_highlight_is_below_the_pinned_block(app: InspectorApp) -> None:
+    """The pane shows the highlighted row exactly once, and never among the pinned lines."""
+    marked = [number for number, line in enumerate(app.tree_lines) if line.startswith("> ")]
+    assert len(marked) == 1, app.tree_lines
+    assert _row_name(app.tree_lines[marked[0]]) == _selected(app)
+    rule = _pinned_rule(app)
+    assert rule is None or marked[0] > rule, app.tree_lines
+
+
+def _parents(depths: list[int]) -> list[int | None]:
+    """Each row's parent position, from preorder depths: the nearest shallower row above."""
+    parents: list[int | None] = []
+    for position, depth in enumerate(depths):
+        above = [other for other in range(position) if depths[other] < depth]
+        parents.append(above[-1] if above else None)
+    return parents
 
 
 def _text_of(file: str) -> str:
@@ -428,6 +477,740 @@ class TestRerunTab:
         assert record.row.state == "Aborted"
 
 
+BAY_ROOT_NOTE = "  (with its root's log, in time order)"
+
+
+class TestFoldedTree:
+    """A component and its same-named root are two saved nodes and one row on the screen."""
+
+    async def test_each_component_is_drawn_once_and_reads_as_one_log(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        saved = await record_bay_run(tmp_path, monkeypatch)
+        assert len(saved.tree.rows) == 13
+        app = InspectorApp(saved)
+
+        async with app.run_test(size=TALL) as pilot:
+            await pilot.pause()
+            assert app.tree_lines == BAY_TREE
+            assert app.log_lines[0] == "log: bay" + BAY_ROOT_NOTE
+
+            await pilot.press("down")
+            await pilot.pause()
+            assert _selected(app) == "sata"
+            assert app.selection.view.selected.record["type"] == "suite"
+            # One name in the path, and the component's records around its root's.
+            assert app.log_lines[0] == "log: bay/sata" + BAY_ROOT_NOTE
+            messages = [line for line in app.log_lines[2:] if "sata " in line]
+            assert [line.split()[-1] for line in messages] == ["powered", "answers", "released"]
+            assert not any(line.endswith("←") for line in app.tree_lines)
+
+            # A claim rolled into the root's file. The root is drawn inside the
+            # component, so that row carries the arrow and the path names it once.
+            await pilot.press("down")
+            await pilot.pause()
+            assert _selected(app) == "present"
+            assert app.log_lines[0] == "log: bay/sata  (rolled up: present has no own log)"
+            assert app.tree_lines[1] == "  ├─ sata  Pass  ←"
+            assert sum(line.endswith("←") for line in app.tree_lines) == 1
+            assert any("sata answers" in line for line in app.log_lines)
+            assert not any("sata powered" in line for line in app.log_lines)
+
+    async def test_failure_arrows_and_hidden_passes_keep_to_drawn_rows(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        saved = await record_bay_run(tmp_path, monkeypatch)
+        app = InspectorApp(saved)
+
+        async with app.run_test(size=SIZE) as pilot:
+            visited: list[tuple[str, object]] = []
+            for _ in range(3):
+                await pilot.press("right")
+                await pilot.pause()
+                visited.append((_selected(app), app.selection.view.selected.record["type"]))
+            # Never the folded root, which fails with its component and has no row.
+            assert visited == [("nvme", "suite"), ("spins", "test"), ("spins", "test")]
+
+            await pilot.press("h")
+            await pilot.pause()
+            assert app.tree_lines == (
+                "  bay  Fail",
+                "  └─ nvme  Fail  ←",
+                ">    └─ spins  Fail",
+            )
+            await pilot.press("up", "up")
+            await pilot.pause()
+            assert app.tree_lines[0] == "> bay  Fail"
+            assert app.log_lines[0] == "log: bay" + BAY_ROOT_NOTE
+
+    async def test_a_pair_that_settled_differently_keeps_both_rows(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        recorded = await record_bay_run(tmp_path, monkeypatch)
+        path = recorded.run_root / "result.json"
+        result = json.loads(path.read_text())
+        sata = result["summary_tree"]["children"][0]["children"][0]
+        assert (sata["name"], sata["children"][0]["name"]) == ("sata", "sata")
+        sata["children"][0]["state"] = "Aborted"
+        path.write_text(json.dumps(result))
+        saved = await SavedRunReader().read(path)
+        assert isinstance(saved, SavedRun), saved
+        app = InspectorApp(saved)
+
+        async with app.run_test(size=SIZE) as pilot:
+            await pilot.pause()
+            assert app.tree_lines[:6] == (
+                "> bay  Fail",
+                "  ├─ sata  Pass",
+                "  │  └─ sata  Aborted",
+                "  │     ├─ present  Pass",
+                "  │     └─ spins  Pass",
+                "  ├─ nvme  Fail",
+            )
+            # Each row of the pair is read on its own, as the record has it.
+            await pilot.press("down")
+            await pilot.pause()
+            assert app.log_lines[0] == "log: bay/sata"
+            await pilot.press("down")
+            await pilot.pause()
+            assert app.log_lines[0] == "log: bay/sata/sata"
+
+    async def test_enter_on_a_folded_row_re_runs_the_component(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        saved = await record_bay_run(tmp_path, monkeypatch, refuse_execution=False)
+        before = saved_bytes(saved.run_root)
+        session = RerunSession(saved, bay_suite, scratch_parent=tmp_path)
+        app = InspectorApp(saved, session)
+
+        async with app.run_test(size=TALL) as pilot:
+            await pilot.press("down", "tab")
+            await pilot.pause()
+            assert app.tab == "rerun"
+            assert session.available is True, session.unavailable
+            assert [_row_name(line) for line in app.tree_lines] == [
+                _row_name(line) for line in BAY_TREE
+            ]
+            assert all(line.endswith("not re-run") for line in app.tree_lines)
+
+            await pilot.press("enter")
+            await app.workers.wait_for_complete()  # pyright: ignore[reportUnknownMemberType]
+            await pilot.pause()
+
+            # The cursor rests on the component, so the component is what ran: its own
+            # lifecycle, its root, and both claims. The bay above it ran one branch.
+            assert [session.record(index) is not None for index in range(6)] == [True] * 6
+            assert session.record(6) is None
+            assert app.tree_lines[:5] == (
+                "  bay  partly re-run",
+                "> ├─ sata  Pass",
+                "  │  ├─ present  Pass",
+                "  │  └─ spins  Pass",
+                "  ├─ nvme  not re-run",
+            )
+            assert app.log_lines[0] == "log: bay/sata" + BAY_ROOT_NOTE
+            messages = [line for line in app.log_lines[2:] if "sata " in line]
+            assert [line.split()[-1] for line in messages] == ["powered", "answers", "released"]
+
+            await pilot.press("down")
+            await pilot.pause()
+            assert app.log_lines[0] == "log: bay/sata  (rolled up: present has no own log)"
+            assert app.tree_lines[1] == "  ├─ sata  Pass  ←"
+
+        assert saved_bytes(saved.run_root) == before
+        assert session.scratch_root is None
+
+
+class TestPinnedAncestors:
+    async def test_a_scrolled_tree_pins_the_ancestors_of_its_first_row_above_a_rule(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        saved = await record_seventy_dut_run(tmp_path, monkeypatch)
+        app = InspectorApp(saved)
+
+        async with app.run_test(size=(80, 24)) as pilot:
+            await pilot.pause()
+            # Unscrolled, the ancestors are simply the first rows: nothing to pin.
+            pane_height = len(app.tree_lines)
+            assert _pinned_rule(app) is None
+
+            for _ in range(device_row(25)):
+                await pilot.press("down")
+            await pilot.pause()
+
+            assert app.tree_lines[0] == "  rack  Pass"
+            assert app.tree_lines[1] == "  └─ devices  Pass"
+            assert _pinned_rule(app) == 2
+            assert app.tree_lines[2] == "─" * 78
+            # The rows under the rule are consecutive rows of the saved tree, and the
+            # first of them is a child of the innermost pinned line.
+            below = [_row_name(line) for line in app.tree_lines[3:]]
+            assert below[0].startswith("dut-")
+            first = next(row.index for row in saved.tree.rows if row.ancestor_names[-1] == below[0])
+            assert below == [
+                row.ancestor_names[-1] for row in saved.tree.rows[first : first + len(below)]
+            ]
+            assert len(app.tree_lines) == pane_height
+            _assert_highlight_is_below_the_pinned_block(app)
+
+            # The Re-Run tab pins the same lines with the labels that tab draws.
+            await pilot.press("tab")
+            await pilot.pause()
+            assert app.tree_lines[0] == "  rack  not re-run"
+            assert app.tree_lines[1] == "  └─ devices  not re-run"
+            assert _pinned_rule(app) == 2
+            _assert_highlight_is_below_the_pinned_block(app)
+
+    async def test_a_capped_block_keeps_the_innermost_ancestor_with_its_owner_mark(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        saved = await record_mixed_run(tmp_path, monkeypatch)
+        app = InspectorApp(saved)
+
+        # Thirteen lines leave the tree four rows, so a third of the pane is one line.
+        async with app.run_test(size=(100, 13)) as pilot:
+            for _ in range(4):
+                await pilot.press("down")
+            await pilot.pause()
+
+            assert _selected(app) == "volts"
+            # rack and steps are dropped; checks is nearest, and it owns the log.
+            assert app.tree_lines == (
+                "     ├─ checks  Aborted  ←",
+                "─" * 98,
+                ">    │  ├─ volts  Fail",
+                "     │  └─ slow  Aborted",
+            )
+
+            # With the passes hidden the chain closes on rows that are still shown.
+            await pilot.press("h", "down")
+            await pilot.pause()
+            assert _selected(app) == "slow"
+            assert app.tree_lines == (
+                "     ├─ checks  Aborted  ←",
+                "─" * 98,
+                ">    │  └─ slow  Aborted",
+                "     └─ later  Pending",
+            )
+
+    async def test_a_folded_component_is_pinned_as_the_one_line_it_is_drawn_on(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        saved = await record_bay_run(tmp_path, monkeypatch)
+        app = InspectorApp(saved)
+
+        async with app.run_test(size=(100, 13)) as pilot:
+            await pilot.press("right", "right")
+            await pilot.pause()
+            assert _selected(app) == "spins"
+            # The claim's saved parent is nvme's root, which has no line: the line
+            # above it on screen is the component, and that is what is pinned. It
+            # also draws the root that owns the claim's log, so it carries the mark.
+            assert app.tree_lines == (
+                "  ├─ nvme  Fail  ←",
+                "─" * 98,
+                "> │  └─ spins  Fail",
+                "  └─ fan  Pass",
+            )
+
+            # Room for two pinned lines, and nvme itself now leads the scrolling rows:
+            # above it there is one line, the bay, though the record has two nodes.
+            await pilot.resize_terminal(100, 17)
+            await pilot.pause()
+            assert app.tree_lines == (
+                "  bay  Fail",
+                "─" * 98,
+                "  ├─ nvme  Fail  ←",
+                "  │  ├─ present  Pass",
+                "> │  └─ spins  Fail",
+                "  └─ fan  Pass",
+                "     └─ checks  Pass",
+                "        └─ turns  Pass",
+            )
+
+            for key in ("down", "down", "down", "alt+up", "left", "up", "up", "up", "up"):
+                await pilot.press(key)
+                await pilot.pause()
+                _assert_highlight_is_below_the_pinned_block(app)
+
+    async def test_the_highlighted_row_is_never_drawn_under_the_pinned_block(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        saved = await record_seventy_dut_run(tmp_path, monkeypatch)
+        app = InspectorApp(saved)
+
+        async with app.run_test(size=(80, 24)) as pilot:
+            pinned_at_some_point = False
+            # Down through the scroll, then the ways the selection can jump or the
+            # pane be redrawn: a sibling at a time, a log page, the errors filter.
+            keys = (
+                ["down"] * 40
+                + ["alt+up"] * 6
+                + ["p", "up", "p", "n", "f", "left", "right"]
+                + ["up"] * 30
+                + ["alt+down"] * 12
+            )
+            for key in keys:
+                await pilot.press(key)
+                await pilot.pause()
+                _assert_highlight_is_below_the_pinned_block(app)
+                pinned_at_some_point = pinned_at_some_point or _pinned_rule(app) is not None
+            assert pinned_at_some_point
+
+            # The selection moves while the tree is out of sight; it comes back clear.
+            await pilot.press("l", "down", "down", "down", "l")
+            await pilot.pause()
+            _assert_highlight_is_below_the_pinned_block(app)
+
+            for height in (12, 13, 16, 40):
+                await pilot.resize_terminal(80, height)
+                await pilot.pause()
+                _assert_highlight_is_below_the_pinned_block(app)
+
+    async def test_jumps_between_failures_and_the_pass_filter_keep_the_highlight_clear(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        saved = await record_mixed_run(tmp_path, monkeypatch)
+        app = InspectorApp(saved)
+
+        async with app.run_test(size=(100, 13)) as pilot:
+            keys = ["right"] * 4 + ["p", "left", "h", "left", "h", "left", "left"]
+            for key in keys:
+                await pilot.press(key)
+                await pilot.pause()
+                _assert_highlight_is_below_the_pinned_block(app)
+            assert _selected(app) == "rack"
+            assert _pinned_rule(app) is None
+
+
+class TestSiblingJump:
+    async def test_alt_arrows_move_between_siblings_and_stay_put_at_either_end(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        saved = await record_mixed_run(tmp_path, monkeypatch)
+        app = InspectorApp(saved)
+
+        async with app.run_test(size=SIZE) as pilot:
+            # The root has no parent and so no sibling.
+            await pilot.press("alt+down", "alt+up")
+            await pilot.pause()
+            assert _selected(app) == "rack"
+
+            await pilot.press("down", "down")
+            await pilot.pause()
+            assert _selected(app) == "power"
+
+            # checks has two rows nested under it; the jump goes over them to later.
+            await pilot.press("alt+down")
+            await pilot.pause()
+            assert _selected(app) == "checks"
+            assert app.log_lines[0] == "log: rack/steps/checks"
+            await pilot.press("alt+down")
+            await pilot.pause()
+            assert _selected(app) == "later"
+            assert app.log_lines[0] == "log: not run: the node never executed"
+            await pilot.press("alt+down")
+            await pilot.pause()
+            assert _selected(app) == "later"
+
+            await pilot.press("alt+up", "alt+up", "alt+up")
+            await pilot.pause()
+            assert _selected(app) == "power"
+
+    async def test_the_jump_never_leaves_the_parent_on_either_tab(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        saved = await record_seventy_dut_run(tmp_path, monkeypatch)
+        app = InspectorApp(saved)
+
+        def device(index: int) -> int:
+            return device_row(index) - 1
+
+        async with app.run_test(size=(80, 24)) as pilot:
+            for _ in range(device_row(3)):
+                await pilot.press("down")
+            # A device's one claim is an only child. The next device's claim sits at
+            # the same depth one row further down, and is a cousin: not reached.
+            for key in ("alt+down", "alt+up"):
+                await pilot.press(key)
+                await pilot.pause()
+                assert app.selection.view.selected.index == device_row(3)
+
+            # The devices are siblings: one to the next, over the claim between them.
+            await pilot.press("up", "alt+down")
+            await pilot.pause()
+            assert app.selection.view.selected.index == device(4)
+            assert app.log_lines[0] == "log: rack/devices/dut-04"
+            await pilot.press("alt+up", "alt+up")
+            await pilot.pause()
+            assert app.selection.view.selected.index == device(2)
+
+            # The same key on the Re-Run tab, where the log follows the cursor too.
+            await pilot.press("tab", "alt+down")
+            await pilot.pause()
+            assert app.tab == "rerun"
+            assert app.selection.view.selected.index == device(3)
+
+            for _ in range(DEVICE_COUNT):
+                await pilot.press("alt+down")
+            await pilot.pause()
+            assert app.selection.view.selected.index == device(DEVICE_COUNT - 1)
+
+    async def test_on_a_folded_tree_claims_keep_to_their_component_and_components_step(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        saved = await record_bay_run(tmp_path, monkeypatch)
+        app = InspectorApp(saved)
+
+        async with app.run_test(size=SIZE) as pilot:
+            await pilot.press("down", "down")
+            await pilot.pause()
+            assert app.tree_lines[2] == "> │  ├─ present  Pass"
+
+            visited: list[str] = []
+            for key in ("alt+down", "alt+down", "alt+up", "alt+up"):
+                await pilot.press(key)
+                await pilot.pause()
+                visited.append(_path(app))
+            # sata's two claims and no further: nvme's claims are drawn in the same
+            # column directly below, under another parent.
+            assert visited == [
+                "bay/sata/spins",
+                "bay/sata/spins",
+                "bay/sata/present",
+                "bay/sata/present",
+            ]
+
+            # Components step to components, landing on the node Re-Run would execute.
+            # The bay is their one parent on screen, though the record hangs them on
+            # its folded root.
+            await pilot.press("up")
+            await pilot.pause()
+            assert _path(app) == "bay/sata"
+            visited = []
+            for key in ("alt+down", "alt+down", "alt+down", "alt+up", "alt+up", "alt+up"):
+                await pilot.press(key)
+                await pilot.pause()
+                assert app.selection.view.selected.record["type"] == "suite"
+                visited.append(_path(app))
+            assert visited == [
+                "bay/nvme",
+                "bay/fan",
+                "bay/fan",
+                "bay/nvme",
+                "bay/sata",
+                "bay/sata",
+            ]
+
+    async def test_the_jump_steps_over_hidden_passes(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        saved = await record_mixed_run(tmp_path, monkeypatch)
+        app = InspectorApp(saved)
+
+        async with app.run_test(size=SIZE) as pilot:
+            await pilot.press("down", "down", "down", "h")
+            await pilot.pause()
+            assert _selected(app) == "checks"
+            # power is a sibling but hidden with the passes: nothing above to land on.
+            await pilot.press("alt+up")
+            await pilot.pause()
+            assert _selected(app) == "checks"
+            await pilot.press("alt+down")
+            await pilot.pause()
+            assert _selected(app) == "later"
+
+    async def test_the_footer_offers_the_sibling_keys_and_the_log_key(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        saved = await record_mixed_run(tmp_path, monkeypatch)
+        app = InspectorApp(saved)
+
+        async with app.run_test(size=SIZE) as pilot:
+            for tab in ("inspect", "rerun"):
+                await pilot.pause()
+                assert app.tab == tab
+                offered = app.screen.active_bindings
+                for key in ("shift+up", "shift+down", "l"):
+                    assert offered[key].binding.show, key
+                    assert offered[key].enabled, key
+                # Alt works wherever the terminal passes it on, and is not advertised:
+                # the footer names the pair that arrives in every terminal tried.
+                for key in ("alt+up", "alt+down"):
+                    assert not offered[key].binding.show, key
+                    assert offered[key].enabled, key
+                await pilot.press("tab")
+
+    @pytest.mark.parametrize("modifier", ["shift", "alt"])
+    async def test_either_modifier_makes_the_same_jump(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, modifier: str
+    ) -> None:
+        saved = await record_bay_run(tmp_path, monkeypatch)
+        app = InspectorApp(saved)
+
+        async with app.run_test(size=SIZE) as pilot:
+            await pilot.press("down")
+            await pilot.pause()
+            assert _path(app) == "bay/sata"
+            visited: list[str] = []
+            for key in ("down", "down", "down", "up", "up", "up"):
+                await pilot.press(f"{modifier}+{key}")
+                await pilot.pause()
+                visited.append(_path(app))
+            assert visited == ["bay/nvme", "bay/fan", "bay/fan", "bay/nvme", "bay/sata", "bay/sata"]
+
+    @pytest.mark.parametrize(
+        ("sequence", "key"),
+        [
+            ("\x1b[1;2A", "shift+up"),
+            ("\x1b[1;2B", "shift+down"),
+            ("\x1b[1;3A", "alt+up"),
+            ("\x1b[1;3B", "alt+down"),
+        ],
+    )
+    def test_the_bound_names_are_what_a_terminal_s_bytes_are_read_as(
+        self, sequence: str, key: str
+    ) -> None:
+        # The pilot presses a key by name and so never meets a terminal. These are
+        # the bytes an xterm-compatible terminal sends for each key; the binding is
+        # only reachable if the reader gives them the name it is registered under.
+        read = [event.key for event in XTermParser().feed(sequence) if isinstance(event, Key)]
+
+        assert read == [key]
+        bound = {
+            binding.key: binding.action
+            for binding in InspectorApp.BINDINGS
+            if isinstance(binding, Binding)
+        }
+        assert bound[key] == ("sibling(-1)" if key.endswith("up") else "sibling(1)")
+
+    async def test_the_footer_shows_the_keys_that_cannot_be_guessed_whole_at_100_columns(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        saved = await record_mixed_run(tmp_path, monkeypatch)
+        app = InspectorApp(saved)
+
+        async with app.run_test(size=(100, 30)) as pilot:
+            await pilot.pause()
+            footer = app.query_one(Footer)
+            # The footer is one line: an entry past its right edge, or under the
+            # palette key docked there, is cut. These four must not be.
+            docked = [key.region.x for key in footer.query("FooterKey.-command-palette")]
+            edge = min([footer.region.right, *docked])
+            whole = {
+                key.key
+                for key in footer.query(FooterKey)
+                if key.region.width and key.region.right <= edge
+            }
+            assert {"tab", "q", "h", "l"} <= whole
+            # Further right the list is cut, as it always was at this width.
+            assert "shift+down" not in whole
+
+
+class TestLogSplit:
+    @pytest.mark.parametrize(
+        ("body", "tree", "log"),
+        [
+            # A 24-line terminal: a quarter of the 22-line body is under the floor.
+            (22, 15, LOG_FLOOR_LINES),
+            (28, 20, 7),
+            (46, 34, 11),
+            # Shorter still, the log holds its six lines and the tree gives way,
+            (10, 3, LOG_FLOOR_LINES),
+            (8, 1, LOG_FLOOR_LINES),
+            # until no row fits above the tree's rule and the log has the body.
+            (7, 0, 7),
+            (4, 0, 4),
+            (0, 0, 0),
+        ],
+    )
+    def test_the_log_has_a_quarter_of_the_body_with_a_floor_and_the_tree_yields_first(
+        self, body: int, tree: int, log: int
+    ) -> None:
+        assert _pane_lines(body, log_full=False) == (tree, log)
+        assert _pane_lines(body, log_full=True) == (0, body)
+
+    async def test_the_panes_on_screen_are_the_split_at_every_terminal_height(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        saved = await record_seventy_dut_run(tmp_path, monkeypatch)
+        app = InspectorApp(saved)
+
+        async with app.run_test(size=(80, 24)) as pilot:
+            for height, tree, log in ((24, 15, 6), (30, 20, 7), (48, 34, 11), (12, 3, 6)):
+                await pilot.resize_terminal(80, height)
+                await pilot.pause()
+                # What Textual laid out is what the redraw paged and windowed by.
+                assert app.query_one("#tree").size.height == tree
+                assert app.query_one("#log").size.height == log
+                assert len(app.tree_lines) == tree
+                assert app.timeline_view is not None
+                assert len(app.log_lines) <= log
+                assert app.timeline_view.page_count == 1
+
+            # Too short for a tree row: the log is all there is between tabs and footer.
+            await pilot.resize_terminal(80, 9)
+            await pilot.pause()
+            assert app.query_one("#tree").display is False
+            assert app.query_one("#log").size.height == 7
+            assert app.tree_lines == ()
+            assert app.log_lines[0] == "log: rack"
+
+    async def test_l_shows_the_log_full_screen_and_returns_to_the_same_first_record(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        saved = await record_mixed_run(tmp_path, monkeypatch)
+        app = InspectorApp(saved)
+
+        async with app.run_test(size=(100, 12)) as pilot:
+            await pilot.press("down", "down")
+            await pilot.pause()
+            assert _selected(app) == "power"
+            assert app.timeline_view is not None
+            # The chronology opened at its tail, on the second of two pages.
+            assert app.timeline_view.page_index == 1
+            tree_before, log_before = app.tree_lines, app.log_lines
+            first = log_before[LOG_HEADER_LINES]
+
+            await pilot.press("l")
+            await pilot.pause()
+            assert app.log_full is True
+            assert app.query_one("#tree").display is False
+            assert app.query_one("#log").size.height == 10
+            assert app.query_one("#tabs").size.height == 1
+            assert app.tree_lines == ()
+            assert _selected(app) == "power"
+            # The taller page starts earlier and still holds the record the reader
+            # was on; nothing was reloaded to get there.
+            assert app.log_lines[0] == log_before[0]
+            assert app.log_lines[1].startswith("page 1/1")
+            assert app.log_lines[LOG_HEADER_LINES] != first
+            assert first in app.log_lines
+
+            await pilot.press("l")
+            await pilot.pause()
+            assert app.log_full is False
+            assert app.log_lines == log_before
+            assert app.tree_lines == tree_before
+
+            # The errors-only filter rides through the toggle in both directions.
+            await pilot.press("f", "l")
+            await pilot.pause()
+            assert "errors only: on" in app.log_lines[1]
+            filtered = app.log_lines[LOG_HEADER_LINES:]
+            await pilot.press("l")
+            await pilot.pause()
+            assert "errors only: on" in app.log_lines[1]
+            assert app.log_lines[LOG_HEADER_LINES:] == filtered
+
+    async def test_every_key_keeps_working_while_the_log_is_full_screen(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        saved = await record_mixed_run(tmp_path, monkeypatch)
+        app = InspectorApp(saved)
+
+        async with app.run_test(size=SIZE) as pilot:
+            await pilot.press("l", "down", "down")
+            await pilot.pause()
+            # The tree is out of sight; the log header says where the cursor went.
+            assert app.tree_lines == ()
+            assert _selected(app) == "power"
+            assert app.log_lines[0] == "log: rack/steps  (rolled up: power has no own log)"
+
+            await pilot.press("alt+down", "right")
+            await pilot.pause()
+            assert _selected(app) == "volts"
+            assert app.log_lines[0] == "log: rack/steps/checks  (rolled up: volts has no own log)"
+
+            # The layout belongs to the screen, not to a tab.
+            await pilot.press("tab")
+            await pilot.pause()
+            assert app.tab == "rerun"
+            assert app.log_full is True
+            assert app.tree_lines == ()
+
+            await pilot.press("tab", "l")
+            await pilot.pause()
+            assert app.log_full is False
+            assert app.tree_lines[4].startswith(">    │  ├─ volts  Fail")
+
+
+class TestPinnedWindow:
+    RACK: tuple[int, ...] = (0, 1, *([2, 3] * 10))
+    """Depths of a rack: the root, one parallel, then ten devices of one claim each."""
+
+    def test_a_tree_that_fits_or_is_not_scrolled_pins_nothing(self) -> None:
+        assert _pinned_window(_parents([0, 1, 2, 2]), 3, 10) == ((), range(0, 4))
+        assert _pinned_window(_parents(list(self.RACK)), 7, 15) == ((), range(0, 15))
+
+    def test_the_first_scrolling_row_s_ancestors_are_pinned_root_first(self) -> None:
+        parents = _parents(list(self.RACK))
+        # Two pinned lines and the rule leave twelve rows; the first is a device, so
+        # no claim is ever shown without the device above it.
+        assert _pinned_window(parents, 8, 15) == ((0, 1), range(4, 16))
+        assert _pinned_window(parents, 9, 15) == ((0, 1), range(6, 18))
+        assert _pinned_window(parents, 21, 15) == ((0, 1), range(10, 22))
+
+    def test_a_header_leaves_when_its_subtree_has_scrolled_past(self) -> None:
+        # Root, then two groups: rows 2-6 under row 1, rows 8-13 under row 7.
+        parents = _parents([0, 1, 2, 2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2])
+        # The first group's last row is still on screen: its header stays.
+        assert _pinned_window(parents, 6, 6) == ((0, 1), range(6, 9))
+        # The second group's own row now leads: only the root is above it.
+        assert _pinned_window(parents, 7, 6) == ((0,), range(7, 11))
+        # One of its children leads: the second header has taken the first one's place.
+        assert _pinned_window(parents, 9, 6) == ((0, 7), range(9, 12))
+
+    def test_the_cap_is_a_third_of_the_pane_and_drops_the_outermost_levels(self) -> None:
+        # A chain twenty deep in a nine-line pane: three lines may be pinned.
+        pinned, scrolling = _pinned_window(_parents(list(range(20))), 12, 9)
+        assert pinned == (9, 10, 11)
+        assert scrolling == range(12, 17)
+
+    @pytest.mark.parametrize("height", [0, 1, 2, 3])
+    def test_a_pane_too_short_for_the_block_pins_nothing(self, height: int) -> None:
+        pinned, scrolling = _pinned_window(_parents(list(self.RACK)), 9, height)
+        assert pinned == ()
+        assert 9 in scrolling
+        assert len(scrolling) == max(1, height)
+
+    @pytest.mark.parametrize("depths", [list(RACK), list(range(10)), [0] * 10])
+    def test_a_three_line_pane_pins_nothing_at_the_foot_of_the_tree(
+        self, depths: list[int]
+    ) -> None:
+        # The window stops centring the selection on the last row, so one ancestor and
+        # the rule would fit above it. The guide's rule is that this pane pins nothing.
+        last = len(depths) - 1
+        assert _pinned_window(_parents(depths), last, 3) == ((), range(last - 2, last + 1))
+
+    def test_a_four_line_pane_is_the_shortest_that_pins(self) -> None:
+        last = len(self.RACK) - 1
+        pinned, scrolling = _pinned_window(_parents(list(self.RACK)), last, 4)
+        assert len(pinned) == 1
+        assert scrolling == range(last - 1, last + 1)
+
+    @pytest.mark.parametrize("height", range(1, 24))
+    def test_the_selection_is_always_among_the_scrolling_rows_and_the_pane_never_overflows(
+        self, height: int
+    ) -> None:
+        # Deep, shallow, and uneven subtrees, so every transition of the block occurs.
+        depths = [0, 1, 2, 3, 4, 5, 5, 1, 2, 2, 1, 2, 3, 3, 3, 4, 5, 6, 7, 2, 1, 1, 2, 3, 3, 1]
+        parents = _parents(depths)
+        for selected in range(len(depths)):
+            pinned, scrolling = _pinned_window(parents, selected, height)
+            assert selected in scrolling
+            assert len(pinned) <= height // 3
+            assert len(pinned) + bool(pinned) + len(scrolling) <= max(1, height)
+            # The pinned lines are exactly the nearest ancestors of the first row.
+            chain: list[int] = []
+            parent = parents[scrolling.start]
+            while parent is not None:
+                chain.append(parent)
+                parent = parents[parent]
+            assert list(pinned) == chain[: len(pinned)][::-1]
+            assert not pinned or len(pinned) == min(len(chain), height // 3)
+
+
 class TestRendering:
     def test_tree_row_shows_cursor_glyphs_state_readings_not_taken_and_owner(self) -> None:
         display = RowDisplay(
@@ -521,14 +1304,18 @@ class TestLogHeader:
             record={"name": "later", "state": None, "evidence": None, "evidence_declared": None},
             log_owner_index=None,
         )
+        # Only a ready view names an owner, so these states never consult the tree.
+        tree = InspectorTree(
+            {"summary_tree": {"name": "rack", "state": None, "log_path": None, "children": []}}
+        )
 
-        owner, page = _log_header(SelectionView(row, None, "loading"), None)
+        owner, page = _log_header(SelectionView(row, None, "loading"), None, tree)
         assert (owner.plain, page.plain) == ("log: loading", "")
-        owner, page = _log_header(SelectionView(row, None, "not-run"), None)
+        owner, page = _log_header(SelectionView(row, None, "not-run"), None, tree)
         assert (owner.plain, page.plain) == ("log: not run: the node never executed", "")
-        owner, page = _log_header(SelectionView(row, None, "unavailable", None, "gone"), None)
+        owner, page = _log_header(SelectionView(row, None, "unavailable", None, "gone"), None, tree)
         assert (owner.plain, page.plain) == ("log: unavailable: gone", "")
-        owner, page = _log_header(SelectionView(row, None, "idle"), None)
+        owner, page = _log_header(SelectionView(row, None, "idle"), None, tree)
         assert (owner.plain, page.plain) == ("log: idle: no chronology", "")
 
 

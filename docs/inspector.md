@@ -63,6 +63,11 @@ the Failures projection share the same rows: previous/next failure includes Fail
 Aborted, skips Pass and pending, and does not wrap. The model retains failure causes,
 timeout fields, and additive evidence; declared readings absent from evidence are
 exposed by name, while null and zero remain present observations.
+Beside those rows the tree exposes its drawn lines (`InspectorTree.lines`): the same
+nodes with each same-named root folded into its component, as
+[the fold](#the-fold-one-row-per-component) specifies. A line carries the node the
+cursor selects, the nodes drawn with it, and the depth, parent, and path of the drawing.
+The cursor and the failure projection move over lines; indices stay those of the rows.
 
 For an executed selection, the model identifies its own or nearest ancestor's recorded
 timeline link. A pending selection has no owner and must render **not run**. An owner
@@ -74,6 +79,8 @@ that tree to contained timeline loading for both Inspect and Failures. Its calle
 the validated tree and the opened directory containing that same result, then navigates
 through the selection model. Selection clears the previous chronology before I/O, keeps
 the claim and its recorded owner together, and reads only through `read_reference`.
+A folded line has more than one recorded owner behind it; the model reads each and
+publishes them as one chronology merged in time order, naming the further owners.
 Every request has its own identity: a delayed load cannot overwrite a later selection,
 even if the cursor returned to the same row. Pending rows render **not run**; executed
 rows with no owner or an unreadable file render **log unavailable**. Complete records,
@@ -154,10 +161,15 @@ the chronology pane from the models above and forwards the quick-reference keys,
 model call per key: Inspect and Re-Run share one cursor, the chronology loads on
 cursor movement without Enter and names its owner when the node's records rolled up,
 the owner's row carries the cyan arrow, arrows jump between Fail and Aborted rows
-without wrapping, `h` hides passing rows, `n`/`p` page, and `f` filters to errors while
-a truncation marker stays in place. Tree depth is drawn with the legacy glyphs (`├─`,
-`└─`, `│`), computed over the rows on screen so a hidden branch still closes on its
-last visible child. The plain text of every redraw is kept on the app so the
+without wrapping, `Shift-↑`/`Shift-↓` (or `Alt-↑`/`Alt-↓`) step between siblings, `h` hides passing
+rows, `n`/`p` page, `f` filters to errors while a truncation marker stays in place, and
+`l` gives the log the whole body and back. It draws the tree's lines, not its rows, so a
+component and its same-named root are one row. Tree depth is drawn with the legacy glyphs
+(`├─`, `└─`, `│`), computed over the rows on screen so a hidden branch still closes on
+its last visible child. The split between the two panes and the ancestors pinned above
+a scrolled tree are each one function of the terminal's height and the selection, so
+the screen holds no scroll position that could disagree with the cursor. The plain text
+of every redraw is kept on the app so the
 self-tests drive it against the recorded runs in `tests/inspector_rack.py` and a
 screenshot can be read back against this guide.
 
@@ -231,26 +243,66 @@ result publication. Preserve any surviving timeline evidence for diagnosis.
 ## The screen layout
 
 The terminal has a tab bar, the tree above, and the highlighted node's timeline below.
-This illustration shows the arrangement, not a captured run:
+This illustration shows the arrangement, not a captured run. The tree is scrolled: its
+first rows have left the pane, and the ancestors of the first row still in view are
+pinned above the rule.
 
 ```text
   [ Inspect ]   Re-Run
   ---------------------------------------------------------
     rack  Aborted
     └─ servers  Aborted  ←
-       ├─ server-01  Pass
-       ├─ server-02  Fail
+    ─────────────────────────────────────────────────────
+       ├─ server-07  Pass
+       │  └─ thermal check  Pass
+       ├─ server-08  Fail
   >    │  └─ thermal check  Fail  not taken: fan_rpm
-       ├─ server-03  Aborted
-       └─ firmware check  Pending
+       ├─ server-09  Aborted
+       │  └─ thermal check  Aborted
+       ├─ server-10  Pass
+       │  └─ thermal check  Pass
+       ├─ server-11  Pass
   ---------------------------------------------------------
   log: rack/servers  (rolled up: thermal check has no own log)
-  page 4/7  errors only: off  captures: 1  (1-9 opens a capture)
+  page 9/14  errors only: off  captures: 1  (1-9 opens a capture)
       14:02:11Z info     starting thermal ramp
   [1] 14:02:45Z info     survey captured
       14:03:02Z error    temperature 87 C exceeds 75 C
-  q Quit  Tab Inspect / Re-Run  ← → failures  h Hide passes  n p page  f Errors only
+  Tab Inspect / Re-Run  q Quit  ← → Failures  h Hide passes  l Log full  ⏎ Re-run node  n p Page  f Errors only  shift+↑ shift+↓ Sibling
 ```
+
+The footer lists the keys on one line, and a terminal too narrow for all of them cuts
+the list at its right edge. Quit, the tab key, and the two keys that change what the
+screen shows, `h` and `l`, come first and are whole at 100 columns. The
+[quick reference](#key-bindings-quick-reference) is complete at any width.
+
+**The split.** The body is everything between the tab bar and the footer. The log has a
+quarter of it, rounded down, and never fewer than six lines: its two header lines and
+four records. The tree has the rest. On a terminal too short for both, the tree gives up
+its rows first, because the log is the authoritative record; when not one tree row would
+fit, the log has the whole body.
+
+**The log full screen.** `l` puts the tree away and gives the log the whole body; `l`
+again brings the tree back. The tab bar and the footer stay. Nothing else changes: the
+highlighted node, the errors-only filter, and the reader's place in the log are kept.
+The record that headed the page before the toggle is on the page after it, and toggling
+twice returns the same page. Every key works in both layouts. The arrows still move the
+selection while the tree is out of sight, and the log's first line names the node.
+
+**Pinned ancestors.** When the tree is scrolled, the ancestors of the first row in view
+stay pinned at the top of the pane: one line per level, root first, each drawn exactly as
+its own row, with its indentation and glyphs, its name, its state, and the `←` owner mark
+when it owns the timeline. A dim rule separates the pinned lines from the rows that
+scroll beneath them. A header leaves when the last row of its subtree has scrolled past,
+and the next one takes its place. No row is drawn under the pinned lines, so the
+highlighted row is never hidden by them, whichever key moved it there. The pinned lines
+take at most a third of the tree pane. A deeper chain drops its outermost levels and
+keeps the nearest, because those are the context the highlighted row needs and the log's
+first line already names the full path. A tree pane under four rows pins nothing. Pinning
+holds with passing rows hidden, where a hidden ancestor is stepped over, and on the
+Re-Run tab, where a pinned line carries that tab's label. The ancestors are those of the
+drawn tree: a component [folded](#the-fold-one-row-per-component) with its root is pinned
+as the one row it is drawn on.
 
 The log updates on cursor movement. Enter is never required to read it. A delayed load
 for the previous selection must not overwrite the currently highlighted node's view.
@@ -267,6 +319,72 @@ Tree order is declaration order, including in parallel compositions. A parent ma
 Fail may summarize a failing child; keep the descendants visible so the technician can
 reach the actual claim. Use the root-to-node array of names as the path, not a split of
 the display breadcrumbs: names may themselves contain `/`.
+
+### The fold: one row per component
+
+The record holds two nodes for every component: the component itself (type `suite`,
+which owns `configure` and `cleanup`) and the composition its `build_suite()` returned.
+The root takes the component's name, so a tree drawn node for node prints nearly every
+name twice and spends half its depth doing it:
+
+```text
+  ├─ sata  Pass
+  │  └─ sata  Pass
+  │     ├─ present  Pass
+  │     └─ spins  Pass
+```
+
+The Inspector draws such a pair as one row (Ty, 2026-11-21, issue #165):
+
+```text
+  ├─ sata  Pass
+  │  ├─ present  Pass
+  │  └─ spins  Pass
+```
+
+This is a rule of the drawing only. `result.json` keeps both nodes at `format_version`
+1, a run saved before the rule opens and folds the same way, and every row index and
+Re-Run position still refers to the saved nodes. An author gets the pair by writing
+the root without a name, `self.sequence([...])`
+([idioms](idioms.md#composition-factories-selftest-selfsequence-selfparallel));
+`self.sequence(self.name, [...])` records the same two nodes and folds like it.
+
+**The rule.** A `suite` row is drawn together with its child when that child is its
+only child, carries exactly the same name (compared as written, case included), and
+recorded the same state. The rule applies again to that child, so a component whose
+root is a same-named component folds with that component's root as well. Nothing else
+folds:
+
+- A root the author named for itself, `self.sequence("checks", [...])` under `wifi`,
+  is a level they meant to show. It keeps its row.
+- A pair whose states differ keeps both rows, so the row that failed is the row the
+  technician sees. The engine settles a component and its root alike in every run it
+  writes today: a `cleanup` failure is logged without changing the verdict, and a
+  component that fails in `configure` records no root at all. The rule is for a record
+  that says otherwise.
+
+**What the one row shows.**
+
+- **State and readings.** The component's state, which is its root's too, and every
+  reading either node declared and did not take.
+- **Log.** Highlighting the row loads both nodes' timelines as one chronology, merged
+  in time order, so `configure`, the claims, and `cleanup` read top to bottom as they
+  happened. The header says so: `log: rack/sata  (with its root's log, in time order)`.
+  Each file keeps its own order in the merge. A damaged line stays behind the record
+  it followed and is labelled with its file, because a line number alone no longer
+  names one. A root that rolled into its component is one file, read once.
+- **Owner arrow.** A claim under a folded root rolled into the root's timeline. The
+  root has no row of its own, so the arrow sits on the folded row, and the pane shows
+  the root's file alone: `log: rack/sata  (rolled up: present has no own log)`.
+- **Paths.** Wherever the screen names a node it uses the drawn path,
+  `rack/sata/present`, not the saved one, `rack/rack/sata/sata/present`.
+- **Cursor.** Up, down, and the failure arrows move over drawn rows and never rest on
+  a folded root. `h` hides or keeps a folded row as the one row it is.
+- **Re-Run.** Enter on a folded row re-runs the component, which runs its root and
+  everything beneath it; the root has no key of its own. The Re-Run tab keeps the rows
+  the archive drew, so the tree does not change shape under the cursor after a re-run:
+  the row shows the component's re-run state, and its log merges the same two nodes'
+  re-run timelines.
 
 ## The tabs
 
@@ -286,6 +404,17 @@ Left and right arrows move backward and forward through nodes needing attention,
 skipping Pass and pending rows. Preserve the legacy implementation's inclusion of both
 Fail and Aborted in that navigation, while keeping their labels and recovery meanings
 distinct. At either end, leave the cursor where it is; do not wrap unexpectedly.
+
+`Shift-↑` and `Shift-↓` move to the highlighted row's previous and next sibling: the
+row before or after it under the same parent, stepping over everything nested between.
+From one server to the next, without walking the first one's checks. The jump never
+leaves the parent (Ty, 2026-11-22): a row at the same depth under the next parent is a
+cousin and is not reached, so on a parent's first or last row, and on an only child, the
+cursor stays where it is. The parent is the drawn one: a component folded with its root
+is one parent. Hidden passes are stepped over. Both tabs have the key. `Alt-↑` and `Alt-↓` do
+the same. Two modifiers reach one action because a terminal may keep one for itself:
+Terminator moves between its own panes on Alt with an arrow and never passes the key
+on. The footer names Shift, the pair that arrives there too.
 
 `h` hides every Pass row and shows them again. This replaces the legacy Failures list
 (Ty, 2026-09-10): the same recorded tree with the passing branches folded away, so a
@@ -369,7 +498,8 @@ the archive, not to the bench.
    `received` when present. Preserve bug banners, nested causes, hook names, and operator
    signals; a plain-language message alone does not establish hardware fault.
 3. **Read the timeline already below the tree.** `n` advances a page, `p` returns a
-   page, and `f` toggles the errors-only filter. Log severity does not replace the verdict.
+   page, and `f` toggles the errors-only filter. `l` gives a long log the whole screen
+   and returns to the tree at the same place. Log severity does not replace the verdict.
 4. **Open a referenced artifact.** Press its displayed digit, `1`–`9`. Survey captures
    can show whether the device's reported health agrees with what actually happened.
 5. **Choose the recovery protocol.** Read the failure's cause and the available evidence.
@@ -400,6 +530,8 @@ Resolve a node's non-null `log_path` relative to the selected run directory. A t
 node with a null link rolled its records into the nearest ancestor with a link; indicate
 that ancestor with the legacy cyan owner arrow. Keep each entry's `scope` visible so
 sibling records in the shared timeline cannot be mistaken for this leaf's readings.
+A [folded row](#the-fold-one-row-per-component) has two nodes behind it, each with its
+own link; its chronology is both files merged in time order, and the header says so.
 
 A pending node has no chronology anywhere. Show **not run**, not its parent's timeline
 as though the pending node produced evidence. A missing file for a node that did run
@@ -469,17 +601,22 @@ recorded differences, not an automatic diagnosis of hardware truth.
 | Main view | `Tab` | Switch Inspect / Re-Run. Held during a live re-run. |
 | Either tree | `↑` / `↓` | Move through the rows on screen; hidden passes are stepped over. |
 | Either tree | `←` / `→` | Previous / next Fail or Aborted node of the saved run; skip passed and pending rows. |
+| Either tree | `Shift-↑` / `Shift-↓`, or `Alt-↑` / `Alt-↓` | Previous / next sibling: the row on screen before or after the highlighted one under the same parent; stay put when there is none. Use Shift where the terminal keeps Alt with an arrow for itself. |
 | Inspect tree | `h` | Hide passing rows, or show them again. |
 | Re-Run tree | `Enter` | Execute the highlighted node and everything beneath it; nothing else runs anything. |
 | Log pane, no modal | `n` / `p` | Next / previous page. |
 | Log pane, no modal | `f` | Toggle errors-only filtering. |
 | Log pane, no modal | `1`–`9` | Open the artifact carrying that number. |
+| Main view | `l` | Show the log full screen, or bring the tree back; the selection, the filter, and the place in the log are kept. |
 | Artifact modal | `b`, `[`, `]`, `←`, `→`, `n`, `p`, `d` | Use the artifact controls above; the modal owns these keys until it closes. |
 
 ## Things that need careful reading
 
 - **An ancestor owns the log.** The owner arrow explains roll-up; it says nothing about
   context inheritance. The legacy `↑ctx` ancestor-configure replay is prohibited.
+- **One row, two records.** A component and its same-named root are one row on the
+  screen and two nodes in `result.json`, each with its own timeline. The row's log is
+  both, merged. Reading the files by hand, look in both directories.
 - **An error appears in a passing test.** Survey errors are logged but do not decide
   the verdict. Read the state and the surrounding capture, not just the line's color.
 - **Many nodes are Aborted.** An integration halt or operator interruption can affect
@@ -498,10 +635,18 @@ terminal and driven by a recorded 70-DUT rack:
   evidence, and missing declared readings from version-1 records alone.
 - Navigate failures and load the selected node's own or rolled-up timeline immediately,
   with correct owner and scope; never show stale content after a cursor change.
+- Draw a component and its same-named, same-state only child as one row on both tabs
+  and with passes hidden, with the merged chronology, the owner arrow, and the drawn
+  path; keep both rows for a differently named root and for a pair whose states differ.
+  The saved record is read, never rewritten.
 - Open numbered pointers, group artifacts by type, and compare captures using the
   specified keys, including the two-artifact index collision.
 - Preserve complete lines under truncation and distinguish unavailable evidence,
   malformed records, unsupported versions, and nodes that never ran.
+- Keep the reader's place on a deep tree and a long log. The highlighted row is never
+  drawn under the pinned ancestors, including after a jump upward or a filter change;
+  the log has a quarter of the body and at least six lines; and showing the log full
+  screen and returning lands on the same first visible record.
 - Make Inspect usable from saved evidence without source or hardware, hidden passes
   included; it never waits for a suite. The saved-view command and discovery rule are
   the ones under "Opening a run".

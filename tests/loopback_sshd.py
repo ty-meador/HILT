@@ -11,6 +11,21 @@ import pytest
 from tests.fake_console import SERIAL_BRIDGE_COMMAND, FakeConsole
 
 
+class _SessionCount:
+    """How many command sessions the sshd is serving now, and the most it ever was."""
+
+    def __init__(self) -> None:
+        self.active = 0
+        self.peak = 0
+
+    def __enter__(self) -> None:
+        self.active += 1
+        self.peak = max(self.peak, self.active)
+
+    def __exit__(self, *_exc: object) -> None:
+        self.active -= 1
+
+
 class LoopbackSshd:
     """In-process sshd so self-tests never need a machine's sshd."""
 
@@ -21,11 +36,18 @@ class LoopbackSshd:
         username: str,
         password: str | None,
         accepted: list[asyncssh.SSHServerConnection],
+        sessions: _SessionCount,
     ) -> None:
         self._listener = listener
         self.username = username
         self.password = password
         self._accepted = accepted
+        self._sessions = sessions
+
+    @property
+    def peak_sessions(self) -> int:
+        """The most command sessions this sshd served at one moment."""
+        return self._sessions.peak
 
     @property
     def connections(self) -> int:
@@ -80,6 +102,7 @@ class LoopbackSshd:
         authorized = authorized_key
         accepted: list[asyncssh.SSHServerConnection] = []
         drop = drop_on_connect
+        sessions = _SessionCount()
 
         class _Auth(asyncssh.SSHServer):
             def connection_made(self, conn: asyncssh.SSHServerConnection) -> None:
@@ -114,7 +137,8 @@ class LoopbackSshd:
                 return True
 
         async def process_factory(process: asyncssh.SSHServerProcess[Any]) -> None:
-            await LoopbackSshd._handle(process, encoding=encoding)
+            with sessions:
+                await LoopbackSshd._handle(process, encoding=encoding)
 
         listener = await asyncssh.listen(
             "127.0.0.1",
@@ -124,7 +148,13 @@ class LoopbackSshd:
             process_factory=process_factory,
             encoding=encoding,
         )
-        return cls(listener, username=username, password=password, accepted=accepted)
+        return cls(
+            listener,
+            username=username,
+            password=password,
+            accepted=accepted,
+            sessions=sessions,
+        )
 
     @staticmethod
     def ed25519() -> asyncssh.SSHKey:

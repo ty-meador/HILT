@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import asyncio
 from pathlib import Path
+from typing import Any
 
 import pytest
 
@@ -192,6 +193,109 @@ async def record_parked_run(tmp_path: Path) -> SavedRun:
     assert bench.log_path is not None
     moved = tmp_path / "parked"
     bench.log_path.parent.parent.rename(moved)
+    saved = await SavedRunReader().read(moved / "result.json")
+    assert isinstance(saved, SavedRun), saved
+    return saved
+
+
+class _Drive(TestComponent):
+    """One drive, authored the usual way: its root composition takes the drive's name.
+
+    ``configure`` and ``cleanup`` log to the component's timeline and the claims to the
+    root's, so the one line the Inspector draws for a drive has two files behind it.
+    """
+
+    def __init__(self, *, name: str, spins: bool = True) -> None:
+        super().__init__(name=name)
+        self._spins_up = spins
+
+    async def configure(self, utils: TestUtils) -> dict[str, Any]:
+        utils.logger.info("%s powered", self.name)
+        return {}
+
+    def build_suite(self) -> TestComponent:
+        return self.sequence([self.test("present", self._present), self.test("spins", self._spins)])
+
+    async def cleanup(self, utils: TestUtils) -> None:
+        utils.logger.info("%s released", self.name)
+
+    async def _present(self, utils: TestUtils) -> Verdict:
+        utils.logger.info("%s answers", self.name)
+        if utils.exec_route == "local":
+            return PASS
+        raise AssertionError("the bay run never leaves the test host")
+
+    async def _spins(self, utils: TestUtils) -> Verdict:
+        if self._spins_up:
+            return PASS
+        raise TestFailure("platters still", "7200 rpm", "0 rpm")
+
+
+class _Fan(TestComponent):
+    """A component whose root the author named for itself, a level they meant to show."""
+
+    def build_suite(self) -> TestComponent:
+        return self.sequence("checks", [self.test("turns", self._turns)])
+
+    async def _turns(self, utils: TestUtils) -> Verdict:
+        if utils.exec_route == "local":
+            return PASS
+        raise AssertionError("the bay run never leaves the test host")
+
+
+class _Bay(TestComponent):
+    """Components under a nameless root: the record doubles each name, the screen does not.
+
+    ``sata`` passes and ``nvme`` fails a claim; each folds with its root, as the bay
+    itself does. ``fan`` named its root ``checks``, a level of its own that stays drawn.
+    """
+
+    def build_suite(self) -> TestComponent:
+        return self.parallel(
+            [
+                _Drive(name="sata"),
+                _Drive(name="nvme", spins=False),
+                _Fan(name="fan"),
+            ]
+        )
+
+
+BAY_TREE = (
+    "> bay  Fail",
+    "  ├─ sata  Pass",
+    "  │  ├─ present  Pass",
+    "  │  └─ spins  Pass",
+    "  ├─ nvme  Fail",
+    "  │  ├─ present  Pass",
+    "  │  └─ spins  Fail",
+    "  └─ fan  Pass",
+    "     └─ checks  Pass",
+    "        └─ turns  Pass",
+)
+"""The bay run's Inspect tree with the root highlighted: thirteen saved nodes on ten lines."""
+
+
+def bay_suite() -> TestComponent:
+    """A fresh instance of the bay suite, the shape ``record_bay_run`` saved."""
+    return _Bay(name="bay")
+
+
+async def record_bay_run(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, *, refuse_execution: bool = True
+) -> SavedRun:
+    """Record the bay run, move it, forbid execution unless a Re-Run test asks, and reopen it."""
+    bay = _Bay(name="bay")
+    await bay.run()
+    assert bay.log_path is not None
+    moved = tmp_path / "bay"
+    bay.log_path.parent.parent.rename(moved)
+    del bay
+
+    def refuse(*args: object, **kwargs: object) -> None:
+        raise AssertionError("an Inspector test attempted suite execution")
+
+    if refuse_execution:
+        monkeypatch.setattr(TestComponent, "run", refuse)
     saved = await SavedRunReader().read(moved / "result.json")
     assert isinstance(saved, SavedRun), saved
     return saved

@@ -43,6 +43,15 @@ from hilt.remote import RemoteInterface
 type AuthPath = Literal["agent", "key", "key-file", "password", "none"]
 
 
+def _validate_max_sessions(max_sessions: int | None) -> int | None:
+    if max_sessions is not None and max_sessions < 1:
+        raise ValueError(
+            "max_sessions must be at least 1; pass the number of commands the "
+            "connection may run at once, or None for no bound"
+        )
+    return max_sessions
+
+
 @final
 @dataclass(frozen=True, slots=True)
 class AuthChoice:
@@ -106,6 +115,15 @@ class SshInterface(RemoteInterface):
         known_hosts entries). Default is to verify. Skipping writes a second
         provenance line naming the host, so an FT can see that verification
         was off.
+      - `max_sessions` bounds how many commands are in flight on this
+        connection at once. Each `exec` opens its own session channel, and an
+        sshd refuses the channel past its `MaxSessions` (10 by default): the
+        refused command settles at `exit_code == -1` with `open failed`, on a
+        healthy device. With a bound, an `exec` past it waits for a session to
+        end instead of being refused, in the order the calls were made. The
+        wait counts against the caller's time budget. `None` is unbounded.
+        The bound is per connection: a connection tunnelled through this one
+        has its own, and its tunnel channel is not a session here.
     """
 
     def __init__(
@@ -123,6 +141,7 @@ class SshInterface(RemoteInterface):
         via: SshInterface | None = None,
         tunnel: SshInterface | None = None,
         output_budget: int = DEFAULT_EXEC_OUTPUT_BUDGET,
+        max_sessions: int | None = None,
     ) -> None:
         """Create an unconnected SSH interface.
 
@@ -130,7 +149,9 @@ class SshInterface(RemoteInterface):
         upstream hop this connection tunnels through; it must be handed over
         unconnected and belongs to this interface from then on. `tunnel`, when
         given, is a borrowed upstream hop; it must be handed over connected and
-        its lifecycle stays with its owner.
+        its lifecycle stays with its owner. `max_sessions`, when given, is the
+        most commands this connection runs at once; set it at or below the
+        peer's sshd `MaxSessions`. Raises `ValueError` when it is below 1.
         """
         if via is not None and tunnel is not None:
             msg = "via and tunnel are mutually exclusive: own the hop or borrow it, never both"
@@ -148,12 +169,23 @@ class SshInterface(RemoteInterface):
         self._via = via
         self._tunnel = tunnel
         self._output_budget = _validate_output_budget(output_budget)
+        self._max_sessions = _validate_max_sessions(max_sessions)
+        # One slot per session the peer will grant. Held from channel open to
+        # settlement, so a slot is free exactly when the peer has a session free.
+        self._session_slots = (
+            None if self._max_sessions is None else asyncio.Semaphore(self._max_sessions)
+        )
         self._connection: asyncssh.SSHClientConnection | None = None
 
     @property
     def output_budget(self) -> int:
         """Stdout+stderr combined ceiling, in bytes, matching `LocalExec`."""
         return self._output_budget
+
+    @property
+    def max_sessions(self) -> int | None:
+        """Most commands in flight on this connection at once; `None` is unbounded."""
+        return self._max_sessions
 
     @property
     def host(self) -> str:
@@ -196,10 +228,15 @@ class SshInterface(RemoteInterface):
         """
         hop = self.hop
         via = "direct" if hop is None else hop.route_label
-        return (
+        line = (
             f"ssh connect: {self._username}@{self._host}:{self._port} "
             f"auth={self._auth_choice()} via={via}"
         )
+        if self._max_sessions is None:
+            return line
+        # Stated only when declared: a bounded connection makes parallel leaves
+        # take turns, and the FT reading a slow run needs to see that it was.
+        return f"{line} max_sessions={self._max_sessions}"
 
     @property
     def provenance_lines(self) -> tuple[str, ...]:
@@ -249,6 +286,17 @@ class SshInterface(RemoteInterface):
             await self._via.cancel_in_flight()
 
     async def _exec(self, command: str) -> ExecResult:
+        slots = self._session_slots
+        if slots is None:
+            return await self._run_session(command)
+        # Waiters are woken first-in, first-out, so commands reach the peer in
+        # the order they were issued. Cancelling a waiter releases nothing it
+        # did not hold; a transport that died while it waited is found by
+        # `_run_session` the same way as for a command that never waited.
+        async with slots:
+            return await self._run_session(command)
+
+    async def _run_session(self, command: str) -> ExecResult:
         connection = self._connection
         if connection is None:
             raise ConnectionError("remote interface is not connected")

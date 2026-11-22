@@ -8,7 +8,13 @@ from typing import cast
 import pytest
 
 from hilt import PASS, Artifact, TestComponent, TestFailure, TestUtils, Verdict
-from hilt.inspector_timeline import TimelineDiagnostic, TimelineReader, TimelineRecord
+from hilt.inspector_timeline import (
+    TimelineDiagnostic,
+    TimelineRead,
+    TimelineReader,
+    TimelineRecord,
+    merge_reads,
+)
 from hilt.inspector_tree import InspectorTree, TreeReader
 from hilt.run_data import JsonObject, JsonValue
 
@@ -231,3 +237,105 @@ class TestTimelineReader:
             )
         assert len(captures) == 70
         assert len({json.dumps(record["scope"]) for record in captures}) == 70
+
+
+def _at(line_number: int, timestamp: str, message: str) -> TimelineRecord:
+    return TimelineRecord(line_number, _record(timestamp=timestamp, message=message))
+
+
+def _order(read: TimelineRead) -> list[object]:
+    return [
+        row.data["message"] if isinstance(row, TimelineRecord) else row.message for row in read.rows
+    ]
+
+
+class TestMergeReads:
+    """A folded tree line shows two files as one chronology without reordering either."""
+
+    def test_rows_interleave_by_instant_not_by_the_text_of_the_timestamp(self) -> None:
+        # The writer drops the fraction at a whole second, so text order would put
+        # "13:00:01.5Z" ahead of "13:00:01Z".
+        component = TimelineRead(
+            Path("/run/a/timeline.jsonl"),
+            (
+                _at(1, "2026-09-07T13:00:01Z", "configure"),
+                _at(2, "2026-09-07T13:00:03Z", "cleanup"),
+            ),
+            "a/timeline.jsonl",
+        )
+        suite_root = TimelineRead(
+            Path("/run/b/timeline.jsonl"),
+            (
+                _at(1, "2026-09-07T13:00:01.500000Z", "claim"),
+                _at(2, "2026-09-07T15:00:02+02:00", "another zone, same day"),
+            ),
+            "b/timeline.jsonl",
+        )
+
+        merged = merge_reads([component, suite_root])
+
+        assert _order(merged) == ["configure", "claim", "another zone, same day", "cleanup"]
+        assert (merged.path, merged.reference) == (component.path, "a/timeline.jsonl")
+        # The records themselves are the readers' own, untouched.
+        assert merged.rows[1] is suite_root.rows[0]
+
+    def test_equal_instants_keep_the_order_the_reads_were_given(self) -> None:
+        first = TimelineRead(None, (_at(1, "2026-09-07T13:00:00Z", "component"),), "a")
+        second = TimelineRead(None, (_at(1, "2026-09-07T13:00:00Z", "root"),), "b")
+
+        assert _order(merge_reads([first, second])) == ["component", "root"]
+        assert _order(merge_reads([second, first])) == ["root", "component"]
+
+    def test_no_row_moves_ahead_of_one_that_precedes_it_in_its_file(self) -> None:
+        damaged = TimelineDiagnostic(2, "invalid-record", "bad JSON")
+        cut = TimelineDiagnostic(5, "truncated", "incomplete final line; log truncated")
+        component = TimelineRead(
+            None,
+            (
+                _at(1, "2026-09-07T13:00:05Z", "late start"),
+                damaged,
+                _at(3, "not a time", "unreadable stamp"),
+                _at(4, "2026-09-07T13:00:01Z", "stamped earlier, written later"),
+                cut,
+            ),
+            "a/timeline.jsonl",
+        )
+        suite_root = TimelineRead(
+            None,
+            (
+                _at(1, "2026-09-07T13:00:02Z", "root early"),
+                _at(2, "2026-09-07T13:00:09Z", "root late"),
+            ),
+            "b/timeline.jsonl",
+        )
+
+        merged = merge_reads([component, suite_root])
+
+        assert _order(merged) == [
+            "root early",
+            "late start",
+            "a/timeline.jsonl: bad JSON",
+            "unreadable stamp",
+            "stamped earlier, written later",
+            "a/timeline.jsonl: incomplete final line; log truncated",
+            "root late",
+        ]
+        # A line number alone would no longer name one file; the kind and number stay.
+        relabelled = merged.rows[2]
+        assert isinstance(relabelled, TimelineDiagnostic)
+        assert (relabelled.line_number, relabelled.kind) == (2, "invalid-record")
+
+    def test_a_file_that_could_not_be_opened_is_named_first_and_once(self) -> None:
+        missing = TimelineDiagnostic(None, "unavailable", "log unavailable: b: gone")
+        component = TimelineRead(None, (_at(1, "2026-09-07T13:00:01Z", "configure"),), "a")
+
+        merged = merge_reads([component, TimelineRead(None, (missing,), "b")])
+
+        assert _order(merged) == ["log unavailable: b: gone", "configure"]
+        assert merged.rows[0] is missing
+
+    def test_a_naive_timestamp_is_read_as_utc(self) -> None:
+        naive = TimelineRead(None, (_at(1, "2026-09-07T13:00:02", "naive"),), "a")
+        aware = TimelineRead(None, (_at(1, "2026-09-07T13:00:01Z", "aware"),), "b")
+
+        assert _order(merge_reads([naive, aware])) == ["aware", "naive"]

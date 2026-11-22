@@ -10,6 +10,7 @@ import asyncio
 from collections.abc import Callable, Coroutine
 from dataclasses import dataclass
 from enum import StrEnum
+from pathlib import Path
 from typing import Any, final
 
 import pytest
@@ -22,6 +23,7 @@ from hilt import (
     MissingVerdict,
     OperatorInterrupt,
     TestFailure,
+    lifecycle,
 )
 
 # Internal machinery on purpose: the boundary is the subject under test here, and the
@@ -483,12 +485,14 @@ class TestBugGuardLayers:
         self, caplog: pytest.LogCaptureFixture
     ) -> None:
         # Cleanup swallows the error to protect the verdict; the swallow log line is
-        # the record of it. A second banner line would read as a second bug.
+        # the record of it. A second banner line would read as a second bug. What
+        # follows the one banner is its traceback.
         with caplog.at_level("ERROR", logger="hilt"):
             boundary = ChildBoundary(NODE)
             await boundary.run(Slot.CLEANUP, self._raises(ValueError("kaboom")))
-        assert len(caplog.records) == 1
-        assert "CONTRACT VIOLATION" in caplog.records[0].getMessage()
+        messages = [record.getMessage() for record in caplog.records]
+        assert [message for message in messages if "CONTRACT VIOLATION" in message] == [messages[0]]
+        assert messages[1] == "Traceback (most recent call last):"
 
     async def test_an_undeclared_slot_is_a_framework_bug_caught_before_hardware(
         self, monkeypatch: pytest.MonkeyPatch
@@ -508,6 +512,132 @@ class TestBugGuardLayers:
     async def _never_runs(self) -> object:
         self.touched_hardware = True
         return PASS
+
+    async def _raises(self, error: BaseException) -> object:
+        raise error
+
+
+def _read_missing_field(spec: object) -> object:
+    return spec.cores  # pyright: ignore[reportAttributeAccessIssue, reportUnknownMemberType, reportUnknownVariableType]
+
+
+class TestEscapedTraceback:
+    """A stray exception is logged with where it was raised, not only what it was (#167)."""
+
+    async def test_the_traceback_follows_the_banner_and_ends_on_the_exception(
+        self, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        messages = await self._logged(caplog, Slot.CONFIGURE, self._reads_a_missing_field())
+
+        assert messages[0].startswith(f"CONTRACT VIOLATION IN {NODE}: AttributeError escaped")
+        assert messages[1] == "Traceback (most recent call last):"
+        assert messages[-1].startswith("AttributeError: 'object' object has no attribute 'cores'")
+        assert all(record.levelname == "ERROR" for record in caplog.records)
+
+    async def test_it_names_the_file_line_and_source_of_every_author_frame(
+        self, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        messages = await self._logged(caplog, Slot.CONFIGURE, self._reads_a_missing_field())
+
+        # The read that raised is one call below the function the boundary awaited,
+        # which is the case the banner alone cannot answer.
+        frames = [message for message in messages if message.startswith("  File ")]
+        assert [frame.rsplit(", in ", 1)[1] for frame in frames] == [
+            "_reads_a_missing_field",
+            "_read_missing_field",
+        ]
+        assert all(f'File "{__file__}", line ' in frame for frame in frames)
+        assert "    return spec.cores  # pyright: ignore" in "\n".join(messages)
+
+    async def test_it_starts_at_the_author_s_code_not_at_the_boundary(
+        self, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        messages = await self._logged(caplog, Slot.TEST_METHOD, self._raises(ValueError("kaboom")))
+
+        assert not any(lifecycle.__file__ in message for message in messages)
+        assert messages[2].endswith(", in _raises")
+
+    async def test_every_line_is_its_own_entry(self, caplog: pytest.LogCaptureFixture) -> None:
+        messages = await self._logged(caplog, Slot.TEST_METHOD, self._raises(ValueError("kaboom")))
+
+        assert len(messages) > 3
+        assert all(message.strip() and "\n" not in message for message in messages)
+
+    async def test_a_chained_exception_keeps_its_chain(
+        self, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        async def translates() -> object:
+            try:
+                int("not a number")
+            except ValueError as error:
+                raise KeyError("serial") from error
+
+        messages = await self._logged(caplog, Slot.TEST_METHOD, translates())
+
+        first = messages.index("ValueError: invalid literal for int() with base 10: 'not a number'")
+        link = messages.index(
+            "The above exception was the direct cause of the following exception:"
+        )
+        assert first < link < messages.index("KeyError: 'serial'")
+
+    @pytest.mark.parametrize("slot", [Slot.CLEANUP, Slot.SURVEY])
+    async def test_a_swallowed_exception_is_traced_under_its_swallow_line(
+        self, caplog: pytest.LogCaptureFixture, slot: Slot
+    ) -> None:
+        messages = await self._logged(caplog, slot, self._raises(RuntimeError("socket vanished")))
+
+        assert messages[0].startswith(f"{slot.value} failed (verdict unaffected): ")
+        assert messages[1] == "Traceback (most recent call last):"
+        assert messages[-1] == "RuntimeError: socket vanished"
+
+    @pytest.mark.parametrize("slot", [Slot.BEFORE_EACH, Slot.AFTER_EACH])
+    async def test_a_hook_that_throws_is_traced_under_its_halt_line(
+        self, caplog: pytest.LogCaptureFixture, slot: Slot
+    ) -> None:
+        with caplog.at_level("ERROR", logger="hilt"), pytest.raises(ExternalIntegrationFailure):
+            await ChildBoundary(NODE).run(slot, self._raises(RuntimeError("db down")))
+        messages = [record.getMessage() for record in caplog.records]
+
+        assert messages[0] == (
+            f"external integration hook {slot.value}() threw — test run halted: db down"
+        )
+        assert messages[1] == "Traceback (most recent call last):"
+        assert messages[-1] == "RuntimeError: db down"
+
+    @pytest.mark.parametrize("slot", [Slot.TEST_METHOD, Slot.CONFIGURE, Slot.CLEANUP])
+    async def test_a_verdict_is_not_a_bug_and_has_no_traceback(
+        self, caplog: pytest.LogCaptureFixture, slot: Slot
+    ) -> None:
+        messages = await self._logged(caplog, slot, self._raises(TestFailure("psu out of spec")))
+
+        assert not any(message.startswith("Traceback") for message in messages)
+
+    async def test_an_exception_raised_inside_the_framework_keeps_every_frame(
+        self, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        # No frame is the author's, so there is nowhere to start but the boundary:
+        # the bug is the framework's, and its maintainers need the whole path.
+        framework_file = Path(lifecycle.__file__).with_name("engine_under_test.py")
+        namespace: dict[str, Any] = {}
+        source = "async def broken():\n    raise ValueError('inside the framework')\n"
+        exec(compile(source, str(framework_file), "exec"), namespace)
+
+        messages = await self._logged(caplog, Slot.TEST_METHOD, namespace["broken"]())
+
+        frames = [message for message in messages if message.startswith("  File ")]
+        assert lifecycle.__file__ in frames[0]
+        assert str(framework_file) in frames[-1]
+        assert messages[-1] == "ValueError: inside the framework"
+
+    async def _logged(
+        self, caplog: pytest.LogCaptureFixture, slot: Slot, call: Coroutine[Any, Any, object]
+    ) -> list[str]:
+        with caplog.at_level("ERROR", logger="hilt"):
+            await ChildBoundary(NODE).run(slot, call)
+        return [record.getMessage() for record in caplog.records]
+
+    async def _reads_a_missing_field(self) -> object:
+        return {"cores": _read_missing_field(object())}
 
     async def _raises(self, error: BaseException) -> object:
         raise error
