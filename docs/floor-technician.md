@@ -5,10 +5,12 @@ You do not need the suite source, a Slack thread, or a software engineer to
 categorize what happened. You need `result.json`, the scoped log next to it, and
 the recovery protocol below.
 
-The Inspector TUI is not in this port yet. Until it is, you read the same two
-records the Inspector will: the structural tree in `result.json`, and the
-temporal log at each node's `log_path`. Every field below is the field in
-`docs/inspector-json.md`, explained from this side of the bench.
+`hilt inspect` puts both records on one screen; [the section
+below](#the-same-records-in-the-inspector) says how that screen is laid out.
+Without it you read the same two records the Inspector does: the structural
+tree in `result.json`, and the temporal log at each node's `log_path`. Every
+field below is the field in `docs/inspector-json.md`, explained from this side
+of the bench.
 
 **Clock rule.** A station whose system clock is not on NTP cannot produce
 trustworthy evidence. Do not execute tests on it. The log is used as chronology
@@ -82,6 +84,27 @@ merged in time order (`docs/inspector.md`, The fold).
 A node whose `summary_tree` `state` is `null` never ran (a sequence stopped
 before it). That is not a fourth terminal state. It has no log and no failure.
 The declared tree is still complete, so you can see what was skipped.
+
+## The same records in the Inspector
+
+`hilt inspect` opens the latest run with the tree above and the highlighted
+node's log below. Every key is in the
+[Inspector guide](inspector.md#key-bindings-quick-reference). Three things about
+the screen are worth knowing before you need them:
+
+- **The log has the bottom quarter of the screen**, and never fewer than six
+  lines. Press `l` to give it the whole screen, and `l` again to get the tree
+  back. Your node, your errors-only filter, and your place in the log are where
+  you left them. The arrows still move through the tree while it is hidden; the
+  first line of the log names the node you are on.
+- **Parents stay in view.** When a deep tree scrolls, the rows above the first
+  one shown stay pinned at the top, above a rule, so you can always see which
+  rack, device, and step the highlighted check belongs to. On a short screen
+  only the nearest parents are pinned; the first line of the log has the full
+  path.
+- **`Alt-↑` and `Alt-↓` move along one level.** From one device's check they go
+  to the row at the same depth under the next device, without stepping through
+  everything nested between. They stop at the last such row.
 
 ## Every field, from this side of the bench
 
@@ -229,5 +252,5 @@ decoder can refuse a version it was not written for, loudly.
 It is not the authoring guide (`docs/idioms.md`, `docs/contracts.md`). It is
 not the runner's exit-code table (`docs/hilt-run.md`) — though exit `0`/`1`/`2`
 match Pass/Fail/Aborted, and exit `3` means there is no `result.json` because
-no run happened. It is not the Inspector TUI; when that lands, it will consume
-exactly these files.
+no run happened. It is not the Inspector guide (`docs/inspector.md`); the
+Inspector consumes exactly these files.

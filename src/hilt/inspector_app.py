@@ -26,9 +26,11 @@ from dataclasses import dataclass
 from typing import ClassVar, Literal
 
 from rich.text import Text
+from textual import events
 from textual.app import App, ComposeResult
 from textual.binding import Binding, BindingType
 from textual.containers import Vertical
+from textual.geometry import Size
 from textual.screen import ModalScreen
 from textual.timer import Timer
 from textual.widgets import Footer, Static
@@ -81,6 +83,30 @@ _TAB_LABELS: tuple[tuple[Tab, str], ...] = (("inspect", "Inspect"), ("rerun", "R
 
 LOG_HEADER_LINES = 2
 """The owner line and the page line that precede the chronology in the log pane."""
+
+LOG_FLOOR_LINES = 6
+"""The least the log pane is given: its two header lines and four records."""
+
+_CHROME_LINES = 2
+"""The tab row and the footer; the body between them is what the two panes share."""
+
+_TREE_RULE_LINES = 1
+"""The rule under the tree pane, which comes out of the tree's share of the body."""
+
+_TREE_PADDING_COLUMNS = 2
+"""The tree pane's one column of padding on each side, which its rule does not cross."""
+
+_PINNED_RULE = "─"
+"""Drawn under the pinned ancestors, so the block is not read as more rows of the tree."""
+
+_LEVEL_KEYS = Binding.Group("Same level")
+_FAILURE_KEYS = Binding.Group("Failures")
+_PAGE_KEYS = Binding.Group("Page")
+"""One footer label per pair of keys, as the guide's illustration draws them.
+
+The footer is a single line, cut at the right edge of a narrow terminal. Spelling
+each pair out as two entries would push the keys after it further past that edge.
+"""
 
 
 @dataclass(frozen=True, slots=True)
@@ -152,6 +178,76 @@ def _window(count: int, selected: int, height: int) -> range:
     return range(start, min(count, start + height))
 
 
+def _pane_lines(body: int, *, log_full: bool) -> tuple[int, int]:
+    """Split the body's lines between the two panes: the tree's rows, then the log's lines.
+
+    The log takes a quarter of the body, rounded down, and never less than
+    ``LOG_FLOOR_LINES``; the tree has the rest, less its rule. On a short terminal the
+    tree therefore yields first, because the log is the authoritative record (issue
+    #164). When no tree row would fit above the rule, or the log is shown full screen,
+    the tree is not drawn and the log has the whole body.
+    """
+    body = max(0, body)
+    log = min(body, max(LOG_FLOOR_LINES, body // 4))
+    tree = body - log - _TREE_RULE_LINES
+    if log_full or tree < 1:
+        return 0, body
+    return tree, log
+
+
+def _shown_parents(shown: Sequence[TreeLine], tree: InspectorTree) -> list[int | None]:
+    """For each line on screen, the position on screen of its nearest ancestor shown there.
+
+    The walk goes up the drawn tree, line to parent line, never the saved one: a root
+    folded into its component is a saved parent with no line of its own, and pinning it
+    would draw a row the tree does not have. An ancestor hidden with the passes is
+    stepped over, so the chain closes on lines that are drawn.
+    """
+    positions = {line.index: position for position, line in enumerate(shown)}
+    parents: list[int | None] = []
+    for line in shown:
+        parent = line.parent_index
+        while parent is not None and parent not in positions:
+            parent = tree.line(parent).parent_index
+        parents.append(None if parent is None else positions[parent])
+    return parents
+
+
+def _pinned_window(
+    parents: Sequence[int | None], selected: int, height: int
+) -> tuple[tuple[int, ...], range]:
+    """The ancestors pinned at the top of a scrolled tree, and the rows that scroll under them.
+
+    ``parents`` is ``_shown_parents``: positions among the rows on screen. The plain
+    window around the selection is taken first. The pinned block and its rule then
+    occupy lines at the top of that window, and the first row left beneath them
+    decides who is pinned: its whole chain of ancestors, root first. A header
+    therefore stays until the last row of its subtree has scrolled past, and no row
+    is drawn under the block, so the highlighted row cannot be hidden by it.
+
+    At most a third of the pane is pinned. A deeper chain loses its outermost levels:
+    the nearest ancestors are the context the row needs, and the log header already
+    names the full path (issue #164). The first row is the earliest one whose block
+    fits in the lines above it, so pinning never pushes the highlighted row down the
+    pane; where no such row precedes the selection, as in a pane of three lines,
+    nothing is pinned.
+    """
+    height = max(1, height)
+    plain = _window(len(parents), selected, height)
+    cap = height // 3
+    for first in range(plain.start, selected + 1):
+        chain: list[int] = []
+        parent = parents[first]
+        while parent is not None and len(chain) < cap:
+            chain.append(parent)
+            parent = parents[parent]
+        # The rule costs a line too, but only when there is a block for it to close.
+        block = len(chain) + 1 if chain else 0
+        if block <= first - plain.start:
+            return tuple(reversed(chain)), range(first, min(len(parents), first + height - block))
+    return (), plain
+
+
 def _log_header(
     view: SelectionView, timeline: TimelineView | None, tree: InspectorTree
 ) -> tuple[Text, Text]:
@@ -207,7 +303,7 @@ class InspectorApp(App[None]):
     CSS = """
     #tabs { height: 1; padding: 0 1; background: $surface; }
     #tree { height: 1fr; padding: 0 1; border-bottom: solid $secondary; }
-    #log { height: 1fr; padding: 0 1; }
+    #log { height: 6; padding: 0 1; }
     """
     BINDINGS: ClassVar[list[BindingType]] = [
         Binding("q", "quit", "Quit", priority=True),
@@ -219,13 +315,21 @@ class InspectorApp(App[None]):
         Binding("tab", "cycle_tab", "Inspect / Re-Run", priority=True),
         Binding("up", "move(-1)", "Up", show=False),
         Binding("down", "move(1)", "Down", show=False),
-        Binding("left", "failure(-1)", "Previous failure"),
-        Binding("right", "failure(1)", "Next failure"),
+        Binding("left", "failure(-1)", "Previous failure", group=_FAILURE_KEYS),
+        Binding("right", "failure(1)", "Next failure", group=_FAILURE_KEYS),
         Binding("h", "toggle_passes", "Hide passes"),
+        # The footer draws these in this order and is cut at the right edge. The two
+        # keys that change what the screen shows come first, since neither can be
+        # guessed; the label is short so that both are whole at 100 columns.
+        Binding("l", "toggle_log", "Log full"),
         Binding("enter", "rerun", "Re-run node", priority=True),
-        Binding("n", "page(1)", "Next page"),
-        Binding("p", "page(-1)", "Previous page"),
+        Binding("n", "page(1)", "Next page", group=_PAGE_KEYS),
+        Binding("p", "page(-1)", "Previous page", group=_PAGE_KEYS),
         Binding("f", "toggle_errors", "Errors only"),
+        # Last, where only a wide terminal shows them: they refine the plain arrows,
+        # which the footer does not list at all.
+        Binding("alt+up", "level(-1)", "Previous at this level", group=_LEVEL_KEYS),
+        Binding("alt+down", "level(1)", "Next at this level", group=_LEVEL_KEYS),
         # Digits open the capture carrying that number in the complete chronology;
         # the number never changes with paging or filtering (TimelineView).
         *[
@@ -249,9 +353,11 @@ class InspectorApp(App[None]):
         )
         self.tab: Tab = "inspect"
         self.hide_passes = False
+        self.log_full = False
         self.timeline_view: TimelineView | None = None
         self._timeline_source: object = None
         self._page_size = 1
+        self._terminal = Size(0, 0)
         self._quit_after_run = False
         self._spin = 0
         self._ticker: Timer | None = None
@@ -259,7 +365,7 @@ class InspectorApp(App[None]):
         self.log_lines: tuple[str, ...] = ()
 
     def compose(self) -> ComposeResult:
-        """Three panes and a footer; the layout is fixed and only the content is redrawn."""
+        """Three panes and a footer; ``redraw`` shares the body between the tree and the log."""
         yield Static(id="tabs")
         yield Static(id="tree")
         yield Static(id="log")
@@ -268,6 +374,7 @@ class InspectorApp(App[None]):
     async def on_mount(self) -> None:
         """Open on the root with its log loaded, so the first screen already answers."""
         self.sub_title = str(self.saved.run_root)
+        self._terminal = self.size
         await self.selection.select(0)
         self.redraw()
 
@@ -275,8 +382,14 @@ class InspectorApp(App[None]):
         """Scratch evidence goes with the screen; the command line closes it again, harmlessly."""
         self.session.close()
 
-    def on_resize(self) -> None:
-        """Redraw so the tree and log fit the new height; nothing else changes."""
+    def on_resize(self, event: events.Resize) -> None:
+        """Redraw so the tree and log fit the new height; nothing else changes.
+
+        The size is taken from the event: this handler runs before Textual records the
+        new size on the app and lays the panes out again, so both would still give the
+        old one here.
+        """
+        self._terminal = event.size
         self.redraw()
 
     def check_action(self, action: str, parameters: tuple[object, ...]) -> bool | None:
@@ -343,6 +456,30 @@ class InspectorApp(App[None]):
         await self._sync_rerun_log()
         self.redraw()
 
+    async def action_level(self, direction: int) -> None:
+        """Alt with up or down: the nearest row on screen at the highlighted row's depth.
+
+        Depth alone decides, so the jump crosses from one parent to the next: from one
+        device's check to the same check on the next device, without stepping through
+        the rows nested between them. Hidden passes are stepped over, and with no such
+        row in that direction the cursor stays where it is.
+        """
+        visible = self._visible_rows()
+        selected = self.selection.view.selected.index
+        position = next((i for i, row in enumerate(visible) if row.index == selected), None)
+        if position is None:
+            return
+        candidates = visible[position + 1 :] if direction > 0 else visible[:position][::-1]
+        # The drawn depth, which a folded root does not add to: two checks that sit
+        # level on screen are level here, however many saved nodes are above each.
+        depth = visible[position].depth
+        target = next((row for row in candidates if row.depth == depth), None)
+        if target is None:
+            return
+        await self.selection.select(target.index)
+        await self._sync_rerun_log()
+        self.redraw()
+
     async def action_failure(self, direction: int) -> None:
         """Jump between failed nodes, so the next problem is reached without walking the tree."""
         if direction > 0:
@@ -392,6 +529,16 @@ class InspectorApp(App[None]):
             self.timeline_view.toggle_errors()
             self.redraw()
 
+    def action_toggle_log(self) -> None:
+        """Give the log the whole body, or bring the tree back; every other key keeps working.
+
+        Nothing but the split changes. The cursor, the errors-only filter, and the
+        reader's place in the log are left alone, and the arrows still move the
+        selection while the tree is out of sight: the log header names the node.
+        """
+        self.log_full = not self.log_full
+        self.redraw()
+
     def action_open_capture(self, number: int) -> None:
         """Open the numbered capture in the modal; a digit with no capture does nothing."""
         if self.timeline_view is None or self.timeline_view.artifact(number) is None:
@@ -404,20 +551,30 @@ class InspectorApp(App[None]):
     def redraw(self) -> None:
         """Render every pane from the models; the only place the screen reads them."""
         view = self.selection.view if self.tab == "inspect" else self.session.view
-        self._sync_timeline_view(view)
+        # The split is worked out here from the terminal's size and then given to the
+        # panes, never read back from them: a pane reports its new height only after
+        # the next layout, which would page the log by the height it just left.
+        tree_height, log_height = _pane_lines(
+            self._terminal.height - _CHROME_LINES, log_full=self.log_full
+        )
+        self._sync_timeline_view(view, max(1, log_height - LOG_HEADER_LINES))
         tabs = Text()
         for name, label in _TAB_LABELS:
             tabs.append(f" {label} ", style="reverse" if self.tab == name else "")
             tabs.append("  ")
-        tree_lines = self._tree_lines(view)
+        tree_lines = self._tree_lines(view, tree_height) if tree_height else []
         log_lines = [*self._log_header(view)]
         if self.timeline_view is not None:
             log_lines.extend(_log_row_text(row) for row in self.timeline_view.rows)
         self.tree_lines = tuple(line.plain for line in tree_lines)
         self.log_lines = tuple(line.plain for line in log_lines)
+        tree = self.query_one("#tree", Static)
+        log = self.query_one("#log", Static)
+        tree.display = tree_height > 0
+        log.styles.height = log_height
         self.query_one("#tabs", Static).update(tabs)
-        self.query_one("#tree", Static).update(Text("\n").join(tree_lines))
-        self.query_one("#log", Static).update(Text("\n").join(log_lines))
+        tree.update(Text("\n").join(tree_lines))
+        log.update(Text("\n").join(log_lines))
 
     def _log_header(self, view: SelectionView | None) -> tuple[Text, Text]:
         if view is not None:
@@ -444,13 +601,13 @@ class InspectorApp(App[None]):
             return tuple(row for row in rows if row.state != "Pass")
         return rows
 
-    def _tree_lines(self, view: SelectionView | None) -> list[Text]:
+    def _tree_lines(self, view: SelectionView | None, height: int) -> list[Text]:
         rows = self._visible_rows()
         if not rows:
             return [Text("every node passed; h shows them again", style="dim")]
         selected = self.selection.view.selected.index
         position = next((i for i, row in enumerate(rows) if row.index == selected), 0)
-        height = self.query_one("#tree", Static).size.height
+        pinned, scrolling = _pinned_window(_shown_parents(rows, self.saved_tree), position, height)
         prefixes = _tree_prefixes([row.depth for row in rows])
         owner: int | None = None
         if view is not None and view.owner is not None:
@@ -461,7 +618,9 @@ class InspectorApp(App[None]):
                 owner = None
         running = self.session.running_indices() if self.tab == "rerun" else range(0)
         lines: list[Text] = []
-        for index in _window(len(rows), position, height):
+        # A pinned ancestor is drawn exactly as its own row is, glyphs and state and
+        # owner mark, so the block reads as the top of the same tree.
+        for index in (*pinned, *scrolling):
             row = rows[index]
             evidence: TreeRow | None = row.row
             nodes: Sequence[TreeRow] = row.nodes
@@ -495,6 +654,9 @@ class InspectorApp(App[None]):
                     )
                 )
             )
+        if pinned:
+            width = max(1, self._terminal.width - _TREE_PADDING_COLUMNS)
+            lines.insert(len(pinned), Text(_PINNED_RULE * width, style="dim"))
         return lines
 
     async def _sync_rerun_log(self) -> None:
@@ -502,9 +664,8 @@ class InspectorApp(App[None]):
         if self.tab == "rerun":
             await self.session.select(self.selection.view.selected.index)
 
-    def _sync_timeline_view(self, view: SelectionView | None) -> None:
+    def _sync_timeline_view(self, view: SelectionView | None, page_size: int) -> None:
         """A fresh presentation model per loaded chronology; a resize keeps the current one."""
-        page_size = max(1, self.query_one("#log", Static).size.height - LOG_HEADER_LINES)
         timeline = None if view is None else view.timeline
         if timeline is None:
             self.timeline_view = None

@@ -161,11 +161,15 @@ the chronology pane from the models above and forwards the quick-reference keys,
 model call per key: Inspect and Re-Run share one cursor, the chronology loads on
 cursor movement without Enter and names its owner when the node's records rolled up,
 the owner's row carries the cyan arrow, arrows jump between Fail and Aborted rows
-without wrapping, `h` hides passing rows, `n`/`p` page, and `f` filters to errors while
-a truncation marker stays in place. It draws the tree's lines, not its rows, so a
-component and its same-named root are one row. Tree depth is drawn with the legacy glyphs (`├─`,
-`└─`, `│`), computed over the rows on screen so a hidden branch still closes on its
-last visible child. The plain text of every redraw is kept on the app so the
+without wrapping, `Alt-↑`/`Alt-↓` step along one depth of the tree, `h` hides passing
+rows, `n`/`p` page, `f` filters to errors while a truncation marker stays in place, and
+`l` gives the log the whole body and back. It draws the tree's lines, not its rows, so a
+component and its same-named root are one row. Tree depth is drawn with the legacy glyphs
+(`├─`, `└─`, `│`), computed over the rows on screen so a hidden branch still closes on
+its last visible child. The split between the two panes and the ancestors pinned above
+a scrolled tree are each one function of the terminal's height and the selection, so
+the screen holds no scroll position that could disagree with the cursor. The plain text
+of every redraw is kept on the app so the
 self-tests drive it against the recorded runs in `tests/inspector_rack.py` and a
 screenshot can be read back against this guide.
 
@@ -239,26 +243,66 @@ result publication. Preserve any surviving timeline evidence for diagnosis.
 ## The screen layout
 
 The terminal has a tab bar, the tree above, and the highlighted node's timeline below.
-This illustration shows the arrangement, not a captured run:
+This illustration shows the arrangement, not a captured run. The tree is scrolled: its
+first rows have left the pane, and the ancestors of the first row still in view are
+pinned above the rule.
 
 ```text
   [ Inspect ]   Re-Run
   ---------------------------------------------------------
     rack  Aborted
     └─ servers  Aborted  ←
-       ├─ server-01  Pass
-       ├─ server-02  Fail
+    ─────────────────────────────────────────────────────
+       ├─ server-07  Pass
+       │  └─ thermal check  Pass
+       ├─ server-08  Fail
   >    │  └─ thermal check  Fail  not taken: fan_rpm
-       ├─ server-03  Aborted
-       └─ firmware check  Pending
+       ├─ server-09  Aborted
+       │  └─ thermal check  Aborted
+       ├─ server-10  Pass
+       │  └─ thermal check  Pass
+       ├─ server-11  Pass
   ---------------------------------------------------------
   log: rack/servers  (rolled up: thermal check has no own log)
-  page 4/7  errors only: off  captures: 1  (1-9 opens a capture)
+  page 9/14  errors only: off  captures: 1  (1-9 opens a capture)
       14:02:11Z info     starting thermal ramp
   [1] 14:02:45Z info     survey captured
       14:03:02Z error    temperature 87 C exceeds 75 C
-  q Quit  Tab Inspect / Re-Run  ← → failures  h Hide passes  n p page  f Errors only
+  Tab Inspect / Re-Run  q Quit  ← → Failures  h Hide passes  l Log full  ⏎ Re-run node  n p Page  f Errors only  alt+↑ alt+↓ Same level
 ```
+
+The footer lists the keys on one line, and a terminal too narrow for all of them cuts
+the list at its right edge. Quit, the tab key, and the two keys that change what the
+screen shows, `h` and `l`, come first and are whole at 100 columns. The
+[quick reference](#key-bindings-quick-reference) is complete at any width.
+
+**The split.** The body is everything between the tab bar and the footer. The log has a
+quarter of it, rounded down, and never fewer than six lines: its two header lines and
+four records. The tree has the rest. On a terminal too short for both, the tree gives up
+its rows first, because the log is the authoritative record; when not one tree row would
+fit, the log has the whole body.
+
+**The log full screen.** `l` puts the tree away and gives the log the whole body; `l`
+again brings the tree back. The tab bar and the footer stay. Nothing else changes: the
+highlighted node, the errors-only filter, and the reader's place in the log are kept.
+The record that headed the page before the toggle is on the page after it, and toggling
+twice returns the same page. Every key works in both layouts. The arrows still move the
+selection while the tree is out of sight, and the log's first line names the node.
+
+**Pinned ancestors.** When the tree is scrolled, the ancestors of the first row in view
+stay pinned at the top of the pane: one line per level, root first, each drawn exactly as
+its own row, with its indentation and glyphs, its name, its state, and the `←` owner mark
+when it owns the timeline. A dim rule separates the pinned lines from the rows that
+scroll beneath them. A header leaves when the last row of its subtree has scrolled past,
+and the next one takes its place. No row is drawn under the pinned lines, so the
+highlighted row is never hidden by them, whichever key moved it there. The pinned lines
+take at most a third of the tree pane. A deeper chain drops its outermost levels and
+keeps the nearest, because those are the context the highlighted row needs and the log's
+first line already names the full path. A tree pane under four rows pins nothing. Pinning
+holds with passing rows hidden, where a hidden ancestor is stepped over, and on the
+Re-Run tab, where a pinned line carries that tab's label. The ancestors are those of the
+drawn tree: a component [folded](#the-fold-one-row-per-component) with its root is pinned
+as the one row it is drawn on.
 
 The log updates on cursor movement. Enter is never required to read it. A delayed load
 for the previous selection must not overwrite the currently highlighted node's view.
@@ -361,6 +405,13 @@ skipping Pass and pending rows. Preserve the legacy implementation's inclusion o
 Fail and Aborted in that navigation, while keeping their labels and recovery meanings
 distinct. At either end, leave the cursor where it is; do not wrap unexpectedly.
 
+`Alt-↑` and `Alt-↓` move to the previous and next row on screen at the highlighted row's
+depth, stepping over everything nested between: from one server's thermal check to the
+next server's, without walking the rows in between. Depth alone decides, so the jump
+crosses from one parent to the next, and it is the depth drawn: a root folded into its
+component is not a level. Hidden passes are stepped over. With no such row in that
+direction the cursor stays where it is. Both tabs have the key.
+
 `h` hides every Pass row and shows them again. This replaces the legacy Failures list
 (Ty, 2026-09-10): the same recorded tree with the passing branches folded away, so a
 failure buried inside a large rack is found without leaving the tree or losing its
@@ -443,7 +494,8 @@ the archive, not to the bench.
    `received` when present. Preserve bug banners, nested causes, hook names, and operator
    signals; a plain-language message alone does not establish hardware fault.
 3. **Read the timeline already below the tree.** `n` advances a page, `p` returns a
-   page, and `f` toggles the errors-only filter. Log severity does not replace the verdict.
+   page, and `f` toggles the errors-only filter. `l` gives a long log the whole screen
+   and returns to the tree at the same place. Log severity does not replace the verdict.
 4. **Open a referenced artifact.** Press its displayed digit, `1`–`9`. Survey captures
    can show whether the device's reported health agrees with what actually happened.
 5. **Choose the recovery protocol.** Read the failure's cause and the available evidence.
@@ -545,11 +597,13 @@ recorded differences, not an automatic diagnosis of hardware truth.
 | Main view | `Tab` | Switch Inspect / Re-Run. Held during a live re-run. |
 | Either tree | `↑` / `↓` | Move through the rows on screen; hidden passes are stepped over. |
 | Either tree | `←` / `→` | Previous / next Fail or Aborted node of the saved run; skip passed and pending rows. |
+| Either tree | `Alt-↑` / `Alt-↓` | Previous / next row on screen at the highlighted row's depth, whatever its parent; stay put when there is none. |
 | Inspect tree | `h` | Hide passing rows, or show them again. |
 | Re-Run tree | `Enter` | Execute the highlighted node and everything beneath it; nothing else runs anything. |
 | Log pane, no modal | `n` / `p` | Next / previous page. |
 | Log pane, no modal | `f` | Toggle errors-only filtering. |
 | Log pane, no modal | `1`–`9` | Open the artifact carrying that number. |
+| Main view | `l` | Show the log full screen, or bring the tree back; the selection, the filter, and the place in the log are kept. |
 | Artifact modal | `b`, `[`, `]`, `←`, `→`, `n`, `p`, `d` | Use the artifact controls above; the modal owns these keys until it closes. |
 
 ## Things that need careful reading
@@ -585,6 +639,10 @@ terminal and driven by a recorded 70-DUT rack:
   specified keys, including the two-artifact index collision.
 - Preserve complete lines under truncation and distinguish unavailable evidence,
   malformed records, unsupported versions, and nodes that never ran.
+- Keep the reader's place on a deep tree and a long log. The highlighted row is never
+  drawn under the pinned ancestors, including after a jump upward or a filter change;
+  the log has a quarter of the body and at least six lines; and showing the log full
+  screen and returning lands on the same first visible record.
 - Make Inspect usable from saved evidence without source or hardware, hidden passes
   included; it never waits for a suite. The saved-view command and discovery rule are
   the ones under "Opening a run".

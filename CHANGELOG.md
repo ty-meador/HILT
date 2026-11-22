@@ -23,6 +23,18 @@ leave a fresh Unreleased section above it. Use the
   bench suites, `docs/idioms.md`, and the suite `hilt new` writes use the nameless
   root. `hilt new` now scaffolds its claim inside that root sequence, so the next claim
   is one more entry in a list.
+- Inspector, pinned ancestors (issue #164): when the tree is scrolled, the ancestors of
+  the first row in view stay pinned at the top of the tree pane, root first, each drawn
+  as its own row with its state and owner mark, above a dim rule. A header leaves when
+  the last row of its subtree has scrolled past. The pinned lines take at most a third
+  of the pane and drop their outermost levels first; no row is drawn under them, so the
+  highlighted row is never hidden. It holds with passes hidden and on the Re-Run tab.
+- Inspector, `l` (issue #164): shows the log full screen and brings the tree back. The
+  highlighted node, the errors-only filter, and the place in the log are kept, and the
+  arrows still move the selection while the tree is out of sight.
+- Inspector, `Alt-↑` / `Alt-↓` (issue #164): move to the previous or next row on screen
+  at the highlighted row's depth, whatever its parent, without stepping through the
+  rows nested between; the cursor stays put when there is none. Both tabs.
 
 ### Changed
 
@@ -37,6 +49,14 @@ leave a fresh Unreleased section above it. Use the
   changes: `result.json` stays at `format_version` 1 with both nodes, and runs saved
   by earlier versions fold the same way. `docs/inspector.md` has the rule under "The
   fold".
+- Inspector layout (issue #164): the log pane has a quarter of the body between the tab
+  bar and the footer, where it had half, and never fewer than six lines; on a short
+  terminal the tree yields first. The footer shows each pair of keys under one label
+  (`← → Failures`, `n p Page`) and lists `h` and `l` before the log keys, so both are
+  whole on a 100-column terminal.
+- Inspector log paging (issue #164): a change of height keeps the record the reader was
+  on in view. It used to keep the page number, which on a taller or shorter pane is a
+  different part of the chronology.
 
 ## [1.0.1] - 2026-11-21
 

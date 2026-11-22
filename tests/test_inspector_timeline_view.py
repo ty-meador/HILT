@@ -147,17 +147,49 @@ class TestTimelineView:
         assert view.artifact_count == 0
         assert view.artifact(1) is None
 
-    def test_resize_clamps_page_and_never_changes_capture_targets(self) -> None:
+    def test_resize_keeps_the_reader_s_row_in_view_and_never_changes_capture_targets(
+        self,
+    ) -> None:
         pointers = tuple(_pointer(number) for number in range(1, 6))
         view = TimelineView(TimelineRead(None, pointers), page_size=2)
         view.resize(4)
         assert view.page_count == 2
         assert view.page_index == 1
         assert view.rows == (TimelineEntry(pointers[-1], 5),)
+        # Shrinking stays on the row the view opened at, the tail; clamping the page
+        # number instead would land on the second record, far from where the reader was.
         view.resize(1)
-        assert view.page_index == 1
-        assert view.rows == (TimelineEntry(pointers[1], 2),)
+        assert view.page_index == 4
+        assert view.rows == (TimelineEntry(pointers[-1], 5),)
         assert view.artifact(5) is pointers[-1]
+
+    def test_growing_and_shrinking_back_returns_the_page_the_reader_left(self) -> None:
+        records = tuple(_record(number) for number in range(1, 31))
+        view = TimelineView(TimelineRead(None, records), page_size=4)
+        for _ in range(3):
+            view.previous_page()
+        left = view.rows
+        assert left[0] == TimelineEntry(records[16], None)
+
+        # Sixteen is not a multiple of seven: the larger page starts two rows earlier
+        # and still holds the row. Following that page back would start at row 12.
+        view.resize(7)
+        assert view.rows[0] == TimelineEntry(records[14], None)
+        assert left[0] in view.rows
+        view.resize(4)
+        assert view.rows == left
+
+        # Paging while larger moves the place, and the smaller page follows it.
+        view.resize(7)
+        view.next_page()
+        view.resize(4)
+        assert view.rows[0] == TimelineEntry(records[20], None)
+
+        # The filter returns to its first page, and a resize stays there.
+        view.toggle_errors()
+        view.toggle_errors()
+        view.resize(7)
+        assert view.page_index == 0
 
     @pytest.mark.parametrize("size", [0, -1, True, 1.5, "2"])
     def test_invalid_page_size_is_rejected_without_changing_current_page(
