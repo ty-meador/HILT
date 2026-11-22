@@ -1174,6 +1174,21 @@ class TestPinnedWindow:
         assert 9 in scrolling
         assert len(scrolling) == max(1, height)
 
+    @pytest.mark.parametrize("depths", [list(RACK), list(range(10)), [0] * 10])
+    def test_a_three_line_pane_pins_nothing_at_the_foot_of_the_tree(
+        self, depths: list[int]
+    ) -> None:
+        # The window stops centring the selection on the last row, so one ancestor and
+        # the rule would fit above it. The guide's rule is that this pane pins nothing.
+        last = len(depths) - 1
+        assert _pinned_window(_parents(depths), last, 3) == ((), range(last - 2, last + 1))
+
+    def test_a_four_line_pane_is_the_shortest_that_pins(self) -> None:
+        last = len(self.RACK) - 1
+        pinned, scrolling = _pinned_window(_parents(list(self.RACK)), last, 4)
+        assert len(pinned) == 1
+        assert scrolling == range(last - 1, last + 1)
+
     @pytest.mark.parametrize("height", range(1, 24))
     def test_the_selection_is_always_among_the_scrolling_rows_and_the_pane_never_overflows(
         self, height: int

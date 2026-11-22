@@ -74,6 +74,13 @@ leave a fresh Unreleased section above it. Use the
   page's examples and block table use the nameless root, and the `hilt new` page
   describes the root sequence the scaffold now writes.
 
+### Fixed
+
+- Inspector, pinned ancestors (issue #164): a tree pane of three lines pinned one
+  ancestor when the highlighted row was at the foot of the tree, against the rule in
+  `docs/inspector.md` that a pane under four rows pins nothing. The rule is now the
+  code.
+
 ## [1.0.1] - 2026-11-21
 
 The distribution is renamed from `hilt-core` to `open-hilt`, and this is the first

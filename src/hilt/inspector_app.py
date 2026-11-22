@@ -99,6 +99,9 @@ _TREE_PADDING_COLUMNS = 2
 _PINNED_RULE = "─"
 """Drawn under the pinned ancestors, so the block is not read as more rows of the tree."""
 
+_SHORTEST_PINNING_PANE = 4
+"""The fewest tree lines that pin an ancestor: one pinned, the rule, and two rows."""
+
 _SIBLING_KEYS = Binding.Group("Sibling")
 _FAILURE_KEYS = Binding.Group("Failures")
 _PAGE_KEYS = Binding.Group("Page")
@@ -229,11 +232,18 @@ def _pinned_window(
     the nearest ancestors are the context the row needs, and the log header already
     names the full path (issue #164). The first row is the earliest one whose block
     fits in the lines above it, so pinning never pushes the highlighted row down the
-    pane; where no such row precedes the selection, as in a pane of three lines,
-    nothing is pinned.
+    pane; where no such row precedes the selection, nothing is pinned.
+
+    A pane under four lines pins nothing, whatever fits. At three lines a block is
+    one ancestor and the rule, which leaves the tree a single row.
     """
     height = max(1, height)
     plain = _window(len(parents), selected, height)
+    if height < _SHORTEST_PINNING_PANE:
+        # The guide's rule (docs/inspector.md, Pinned ancestors). The arithmetic below
+        # does not give it: at the foot of the tree the window stops centring the
+        # selection, and one ancestor fits above it in three lines.
+        return (), plain
     cap = height // 3
     for first in range(plain.start, selected + 1):
         chain: list[int] = []

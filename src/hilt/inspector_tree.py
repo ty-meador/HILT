@@ -285,9 +285,11 @@ def _folds(parent: TreeRow, child: TreeRow) -> bool:
     """Whether ``child`` is the same-named root of the component ``parent``.
 
     The name must match exactly, because a root the author named differently is a level
-    they meant to show. The states must agree, because a component can settle apart
-    from its root (a cleanup failure, a time budget on one of them), and then the row
-    that failed is the row the technician has to see.
+    they meant to show. The states must agree, so that the row that failed is the row
+    the technician sees. The engine settles the pair alike in every run it writes
+    today: a cleanup failure is logged without changing the verdict, and a component
+    that fails in configure records no root. The rule guards a record that says
+    otherwise, whether an older or hand-edited archive or a later engine.
     """
     return (
         parent.record["type"] == "suite"
