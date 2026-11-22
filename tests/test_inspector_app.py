@@ -742,7 +742,7 @@ class TestPinnedAncestors:
         async with app.run_test(size=(80, 24)) as pilot:
             pinned_at_some_point = False
             # Down through the scroll, then the ways the selection can jump or the
-            # pane be redrawn: a level at a time, a log page, the errors filter.
+            # pane be redrawn: a sibling at a time, a log page, the errors filter.
             keys = (
                 ["down"] * 40
                 + ["alt+up"] * 6
@@ -783,15 +783,15 @@ class TestPinnedAncestors:
             assert _pinned_rule(app) is None
 
 
-class TestSameLevelJump:
-    async def test_alt_arrows_move_along_one_depth_and_stay_put_at_either_end(
+class TestSiblingJump:
+    async def test_alt_arrows_move_between_siblings_and_stay_put_at_either_end(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         saved = await record_mixed_run(tmp_path, monkeypatch)
         app = InspectorApp(saved)
 
         async with app.run_test(size=SIZE) as pilot:
-            # The root is alone at its depth.
+            # The root has no parent and so no sibling.
             await pilot.press("alt+down", "alt+up")
             await pilot.pause()
             assert _selected(app) == "rack"
@@ -817,38 +817,46 @@ class TestSameLevelJump:
             await pilot.pause()
             assert _selected(app) == "power"
 
-    async def test_the_jump_crosses_from_one_parent_to_the_next_on_both_tabs(
+    async def test_the_jump_never_leaves_the_parent_on_either_tab(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         saved = await record_seventy_dut_run(tmp_path, monkeypatch)
         app = InspectorApp(saved)
 
+        def device(index: int) -> int:
+            return device_row(index) - 1
+
         async with app.run_test(size=(80, 24)) as pilot:
             for _ in range(device_row(3)):
                 await pilot.press("down")
-            await pilot.press("alt+down")
+            # A device's one claim is an only child. The next device's claim sits at
+            # the same depth one row further down, and is a cousin: not reached.
+            for key in ("alt+down", "alt+up"):
+                await pilot.press(key)
+                await pilot.pause()
+                assert app.selection.view.selected.index == device_row(3)
+
+            # The devices are siblings: one to the next, over the claim between them.
+            await pilot.press("up", "alt+down")
             await pilot.pause()
-            # From one device's claim to the next device's: a cousin, not a sibling.
-            assert app.selection.view.selected.index == device_row(4)
-            assert (
-                app.log_lines[0] == "log: rack/devices/dut-04  (rolled up: voltage has no own log)"
-            )
+            assert app.selection.view.selected.index == device(4)
+            assert app.log_lines[0] == "log: rack/devices/dut-04"
             await pilot.press("alt+up", "alt+up")
             await pilot.pause()
-            assert app.selection.view.selected.index == device_row(2)
+            assert app.selection.view.selected.index == device(2)
 
             # The same key on the Re-Run tab, where the log follows the cursor too.
             await pilot.press("tab", "alt+down")
             await pilot.pause()
             assert app.tab == "rerun"
-            assert app.selection.view.selected.index == device_row(3)
+            assert app.selection.view.selected.index == device(3)
 
             for _ in range(DEVICE_COUNT):
                 await pilot.press("alt+down")
             await pilot.pause()
-            assert app.selection.view.selected.index == device_row(DEVICE_COUNT - 1)
+            assert app.selection.view.selected.index == device(DEVICE_COUNT - 1)
 
-    async def test_the_jump_goes_by_the_depth_drawn_not_the_depth_saved(
+    async def test_on_a_folded_tree_claims_keep_to_their_component_and_components_step(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         saved = await record_bay_run(tmp_path, monkeypatch)
@@ -860,23 +868,39 @@ class TestSameLevelJump:
             assert app.tree_lines[2] == "> │  ├─ present  Pass"
 
             visited: list[str] = []
-            for _ in range(5):
-                await pilot.press("alt+down")
+            for key in ("alt+down", "alt+down", "alt+up", "alt+up"):
+                await pilot.press(key)
                 await pilot.pause()
-                visited.append(_row_name(next(line for line in app.tree_lines if line[0] == ">")))
-            # The drives' claims, then fan's checks: all one column on screen. In the
-            # record checks sits a node higher than the claims, because a drive's root
-            # is folded into the drive, and turns is the node level with them.
-            assert visited == ["spins", "present", "spins", "checks", "checks"]
+                visited.append(_path(app))
+            # sata's two claims and no further: nvme's claims are drawn in the same
+            # column directly below, under another parent.
+            assert visited == [
+                "bay/sata/spins",
+                "bay/sata/spins",
+                "bay/sata/present",
+                "bay/sata/present",
+            ]
 
             # Components step to components, landing on the node Re-Run would execute.
-            await pilot.press("up", "alt+up", "alt+up", "alt+up")
+            # The bay is their one parent on screen, though the record hangs them on
+            # its folded root.
+            await pilot.press("up")
             await pilot.pause()
-            assert _selected(app) == "sata"
-            assert app.selection.view.selected.record["type"] == "suite"
-            await pilot.press("alt+down", "alt+down", "alt+down")
-            await pilot.pause()
-            assert _selected(app) == "fan"
+            assert _path(app) == "bay/sata"
+            visited = []
+            for key in ("alt+down", "alt+down", "alt+down", "alt+up", "alt+up", "alt+up"):
+                await pilot.press(key)
+                await pilot.pause()
+                assert app.selection.view.selected.record["type"] == "suite"
+                visited.append(_path(app))
+            assert visited == [
+                "bay/nvme",
+                "bay/fan",
+                "bay/fan",
+                "bay/nvme",
+                "bay/sata",
+                "bay/sata",
+            ]
 
     async def test_the_jump_steps_over_hidden_passes(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
@@ -888,7 +912,7 @@ class TestSameLevelJump:
             await pilot.press("down", "down", "down", "h")
             await pilot.pause()
             assert _selected(app) == "checks"
-            # power is at this depth but hidden with the passes: nothing above to land on.
+            # power is a sibling but hidden with the passes: nothing above to land on.
             await pilot.press("alt+up")
             await pilot.pause()
             assert _selected(app) == "checks"
@@ -896,7 +920,7 @@ class TestSameLevelJump:
             await pilot.pause()
             assert _selected(app) == "later"
 
-    async def test_the_footer_offers_the_level_keys_and_the_log_key(
+    async def test_the_footer_offers_the_sibling_keys_and_the_log_key(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         saved = await record_mixed_run(tmp_path, monkeypatch)
@@ -925,25 +949,15 @@ class TestSameLevelJump:
         app = InspectorApp(saved)
 
         async with app.run_test(size=SIZE) as pilot:
-            await pilot.press("down", "down")
+            await pilot.press("down")
             await pilot.pause()
-            assert _path(app) == "bay/sata/present"
+            assert _path(app) == "bay/sata"
             visited: list[str] = []
-            for key in ("down", "down", "down", "up", "up", "up", "up"):
+            for key in ("down", "down", "down", "up", "up", "up"):
                 await pilot.press(f"{modifier}+{key}")
                 await pilot.pause()
                 visited.append(_path(app))
-            # The claims of one drive, then the next drive's, across the parent; back
-            # the same way, and still at the first one.
-            assert visited == [
-                "bay/sata/spins",
-                "bay/nvme/present",
-                "bay/nvme/spins",
-                "bay/nvme/present",
-                "bay/sata/spins",
-                "bay/sata/present",
-                "bay/sata/present",
-            ]
+            assert visited == ["bay/nvme", "bay/fan", "bay/fan", "bay/nvme", "bay/sata", "bay/sata"]
 
     @pytest.mark.parametrize(
         ("sequence", "key"),
@@ -968,7 +982,7 @@ class TestSameLevelJump:
             for binding in InspectorApp.BINDINGS
             if isinstance(binding, Binding)
         }
-        assert bound[key] == ("level(-1)" if key.endswith("up") else "level(1)")
+        assert bound[key] == ("sibling(-1)" if key.endswith("up") else "sibling(1)")
 
     async def test_the_footer_shows_the_keys_that_cannot_be_guessed_whole_at_100_columns(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch

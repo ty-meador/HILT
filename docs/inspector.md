@@ -161,7 +161,7 @@ the chronology pane from the models above and forwards the quick-reference keys,
 model call per key: Inspect and Re-Run share one cursor, the chronology loads on
 cursor movement without Enter and names its owner when the node's records rolled up,
 the owner's row carries the cyan arrow, arrows jump between Fail and Aborted rows
-without wrapping, `Shift-↑`/`Shift-↓` (or `Alt-↑`/`Alt-↓`) step along one depth of the tree, `h` hides passing
+without wrapping, `Shift-↑`/`Shift-↓` (or `Alt-↑`/`Alt-↓`) step between siblings, `h` hides passing
 rows, `n`/`p` page, `f` filters to errors while a truncation marker stays in place, and
 `l` gives the log the whole body and back. It draws the tree's lines, not its rows, so a
 component and its same-named root are one row. Tree depth is drawn with the legacy glyphs
@@ -268,7 +268,7 @@ pinned above the rule.
       14:02:11Z info     starting thermal ramp
   [1] 14:02:45Z info     survey captured
       14:03:02Z error    temperature 87 C exceeds 75 C
-  Tab Inspect / Re-Run  q Quit  ← → Failures  h Hide passes  l Log full  ⏎ Re-run node  n p Page  f Errors only  shift+↑ shift+↓ Same level
+  Tab Inspect / Re-Run  q Quit  ← → Failures  h Hide passes  l Log full  ⏎ Re-run node  n p Page  f Errors only  shift+↑ shift+↓ Sibling
 ```
 
 The footer lists the keys on one line, and a terminal too narrow for all of them cuts
@@ -405,12 +405,13 @@ skipping Pass and pending rows. Preserve the legacy implementation's inclusion o
 Fail and Aborted in that navigation, while keeping their labels and recovery meanings
 distinct. At either end, leave the cursor where it is; do not wrap unexpectedly.
 
-`Shift-↑` and `Shift-↓` move to the previous and next row on screen at the highlighted row's
-depth, stepping over everything nested between: from one server's thermal check to the
-next server's, without walking the rows in between. Depth alone decides, so the jump
-crosses from one parent to the next, and it is the depth drawn: a root folded into its
-component is not a level. Hidden passes are stepped over. With no such row in that
-direction the cursor stays where it is. Both tabs have the key. `Alt-↑` and `Alt-↓` do
+`Shift-↑` and `Shift-↓` move to the highlighted row's previous and next sibling: the
+row before or after it under the same parent, stepping over everything nested between.
+From one server to the next, without walking the first one's checks. The jump never
+leaves the parent (Ty, 2026-11-22): a row at the same depth under the next parent is a
+cousin and is not reached, so on a parent's first or last row, and on an only child, the
+cursor stays where it is. The parent is the drawn one: a component folded with its root
+is one parent. Hidden passes are stepped over. Both tabs have the key. `Alt-↑` and `Alt-↓` do
 the same. Two modifiers reach one action because a terminal may keep one for itself:
 Terminator moves between its own panes on Alt with an arrow and never passes the key
 on. The footer names Shift, the pair that arrives there too.
@@ -600,7 +601,7 @@ recorded differences, not an automatic diagnosis of hardware truth.
 | Main view | `Tab` | Switch Inspect / Re-Run. Held during a live re-run. |
 | Either tree | `↑` / `↓` | Move through the rows on screen; hidden passes are stepped over. |
 | Either tree | `←` / `→` | Previous / next Fail or Aborted node of the saved run; skip passed and pending rows. |
-| Either tree | `Shift-↑` / `Shift-↓`, or `Alt-↑` / `Alt-↓` | Previous / next row on screen at the highlighted row's depth, whatever its parent; stay put when there is none. Use Shift where the terminal keeps Alt with an arrow for itself. |
+| Either tree | `Shift-↑` / `Shift-↓`, or `Alt-↑` / `Alt-↓` | Previous / next sibling: the row on screen before or after the highlighted one under the same parent; stay put when there is none. Use Shift where the terminal keeps Alt with an arrow for itself. |
 | Inspect tree | `h` | Hide passing rows, or show them again. |
 | Re-Run tree | `Enter` | Execute the highlighted node and everything beneath it; nothing else runs anything. |
 | Log pane, no modal | `n` / `p` | Next / previous page. |

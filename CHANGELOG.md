@@ -32,9 +32,10 @@ leave a fresh Unreleased section above it. Use the
 - Inspector, `l` (issue #164): shows the log full screen and brings the tree back. The
   highlighted node, the errors-only filter, and the place in the log are kept, and the
   arrows still move the selection while the tree is out of sight.
-- Inspector, `Shift-↑` / `Shift-↓` (issue #164): move to the previous or next row on
-  screen at the highlighted row's depth, whatever its parent, without stepping through
-  the rows nested between; the cursor stays put when there is none. Both tabs.
+- Inspector, `Shift-↑` / `Shift-↓` (issue #164): move to the highlighted row's previous
+  or next sibling, the row before or after it under the same parent, without stepping
+  through the rows nested between. The jump never leaves the parent; the cursor stays
+  put when there is no such row. Both tabs.
   `Alt-↑` / `Alt-↓` do the same. Both pairs are bound because a terminal may keep one:
   Terminator moves between its own panes on Alt with an arrow and never passes it on.
 - `max_sessions` on `TestUtils.use_shell` and `TestUtils.get_shell`: the most commands

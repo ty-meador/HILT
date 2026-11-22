@@ -99,7 +99,7 @@ _TREE_PADDING_COLUMNS = 2
 _PINNED_RULE = "─"
 """Drawn under the pinned ancestors, so the block is not read as more rows of the tree."""
 
-_LEVEL_KEYS = Binding.Group("Same level")
+_SIBLING_KEYS = Binding.Group("Sibling")
 _FAILURE_KEYS = Binding.Group("Failures")
 _PAGE_KEYS = Binding.Group("Page")
 """One footer label per pair of keys, as the guide's illustration draws them.
@@ -331,10 +331,10 @@ class InspectorApp(App[None]):
         # a terminal may keep one for itself: Terminator, for one, moves between its
         # own panes on Alt with an arrow and never passes the key on. The footer names
         # Shift, the pair that arrives there too.
-        Binding("shift+up", "level(-1)", "Previous at this level", group=_LEVEL_KEYS),
-        Binding("shift+down", "level(1)", "Next at this level", group=_LEVEL_KEYS),
-        Binding("alt+up", "level(-1)", "Previous at this level", show=False),
-        Binding("alt+down", "level(1)", "Next at this level", show=False),
+        Binding("shift+up", "sibling(-1)", "Previous sibling", group=_SIBLING_KEYS),
+        Binding("shift+down", "sibling(1)", "Next sibling", group=_SIBLING_KEYS),
+        Binding("alt+up", "sibling(-1)", "Previous sibling", show=False),
+        Binding("alt+down", "sibling(1)", "Next sibling", show=False),
         # Digits open the capture carrying that number in the complete chronology;
         # the number never changes with paging or filtering (TimelineView).
         *[
@@ -461,13 +461,14 @@ class InspectorApp(App[None]):
         await self._sync_rerun_log()
         self.redraw()
 
-    async def action_level(self, direction: int) -> None:
-        """Shift or Alt with up or down: the nearest row on screen at the highlighted row's depth.
+    async def action_sibling(self, direction: int) -> None:
+        """Shift or Alt with up or down: the previous or next row under the same parent.
 
-        Depth alone decides, so the jump crosses from one parent to the next: from one
-        device's check to the same check on the next device, without stepping through
-        the rows nested between them. Hidden passes are stepped over, and with no such
-        row in that direction the cursor stays where it is.
+        From one device to the next without stepping through the first one's checks.
+        The jump never leaves the parent (Ty, 2026-11-22, after trying a jump that went
+        by depth alone and so crossed into the next parent's rows): on a parent's first
+        or last row, and on an only child, the cursor stays where it is. Hidden passes
+        are stepped over.
         """
         visible = self._visible_rows()
         selected = self.selection.view.selected.index
@@ -475,10 +476,10 @@ class InspectorApp(App[None]):
         if position is None:
             return
         candidates = visible[position + 1 :] if direction > 0 else visible[:position][::-1]
-        # The drawn depth, which a folded root does not add to: two checks that sit
-        # level on screen are level here, however many saved nodes are above each.
-        depth = visible[position].depth
-        target = next((row for row in candidates if row.depth == depth), None)
+        # The drawn parent: a component folded with its root is one parent, and the
+        # rows under it are siblings whichever of its two nodes the record hangs them on.
+        parent = visible[position].parent_index
+        target = next((row for row in candidates if row.parent_index == parent), None)
         if target is None:
             return
         await self.selection.select(target.index)
