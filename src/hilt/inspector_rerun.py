@@ -176,7 +176,7 @@ class RerunSession:
             await suite.run(env=env, subtree=subtree_of(self._saved.tree.rows, index))
             await self._adopt(index, node_root)
         except Exception as error:
-            name = "/".join(row.ancestor_names)
+            name = "/".join(self._saved.tree.line(row.index).path)
             self.diagnostic = f"re-run of {name} did not settle: {_describe(error)}"
         finally:
             self.running = None
@@ -245,7 +245,11 @@ class RerunSession:
             )
             return
         executed = subtree_indices(saved_rows, source)
-        self._selections[source] = InspectorSelection(rerun.tree, rerun.run_root)
+        # The tab draws the saved run's lines, so the bench folds what the archive folds
+        # even when this re-run's own states would have drawn the pair apart.
+        self._selections[source] = InspectorSelection(
+            rerun.tree, rerun.run_root, layout=self._saved.tree
+        )
         for row in rerun.tree.rows:
             if row.state is not None:
                 self._records[row.index] = RerunRecord(

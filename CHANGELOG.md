@@ -10,7 +10,33 @@ leave a fresh Unreleased section above it. Use the
 
 ## Unreleased
 
-Nothing yet.
+### Added
+
+- `self.sequence([...])` and `self.parallel([...])`: the composition `build_suite()`
+  returns may be written without a name and takes the component's name (issue #165).
+  The component was already named at construction, and
+  `self.sequence(self.name, [...])` said it a second time. Both forms are typed
+  overloads; `self.sequence(name, children)` is unchanged and every existing suite
+  keeps working. Only the root may go without a name: a nameless composition nested
+  inside another one is a `ContractViolation` raised where it is nested, and a name
+  with no children is refused with a message that names both forms. The examples, the
+  bench suites, `docs/idioms.md`, and the suite `hilt new` writes use the nameless
+  root. `hilt new` now scaffolds its claim inside that root sequence, so the next claim
+  is one more entry in a list.
+
+### Changed
+
+- `hilt inspect` draws a component and its same-named root as one row (issue #165).
+  The record holds two nodes per component, the component and the composition its
+  `build_suite()` returned, and the tree printed nearly every name twice. A `suite`
+  row is now drawn together with its only child when the two carry the same name and
+  recorded the same state. The row's log is both timelines merged in time order, the
+  owner arrow for a rolled-up claim sits on the folded row, paths on screen name each
+  level once, and Enter on the Re-Run tab re-runs the component. A differently named
+  root keeps its row, and so does a pair whose states differ. Nothing in the record
+  changes: `result.json` stays at `format_version` 1 with both nodes, and runs saved
+  by earlier versions fold the same way. `docs/inspector.md` has the rule under "The
+  fold".
 
 ## [1.0.1] - 2026-11-21
 

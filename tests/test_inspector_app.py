@@ -10,11 +10,14 @@ from typing import cast
 
 import pytest
 from tests.inspector_rack import (
+    BAY_TREE,
     MIXED_ROWS,
     PARK,
+    bay_suite,
     device_row,
     mixed_suite,
     parked_suite,
+    record_bay_run,
     record_mixed_run,
     record_parked_run,
     record_seventy_dut_run,
@@ -36,11 +39,11 @@ from hilt.inspector_app import (
 from hilt.inspector_artifact_view import ArtifactModal
 from hilt.inspector_artifacts import ArtifactReader
 from hilt.inspector_rerun import RerunRecord, RerunSession
-from hilt.inspector_run import SavedRun
+from hilt.inspector_run import SavedRun, SavedRunReader
 from hilt.inspector_selection import SelectionView
 from hilt.inspector_timeline import TimelineDiagnostic, TimelineRead, TimelineRecord
 from hilt.inspector_timeline_view import TimelineEntry, TimelineView
-from hilt.inspector_tree import TreeRow
+from hilt.inspector_tree import InspectorTree, TreeRow
 
 SIZE = (100, 30)
 
@@ -428,6 +431,150 @@ class TestRerunTab:
         assert record.row.state == "Aborted"
 
 
+BAY_ROOT_NOTE = "  (with its root's log, in time order)"
+
+
+class TestFoldedTree:
+    """A component and its same-named root are two saved nodes and one row on the screen."""
+
+    async def test_each_component_is_drawn_once_and_reads_as_one_log(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        saved = await record_bay_run(tmp_path, monkeypatch)
+        assert len(saved.tree.rows) == 13
+        app = InspectorApp(saved)
+
+        async with app.run_test(size=SIZE) as pilot:
+            await pilot.pause()
+            assert app.tree_lines == BAY_TREE
+            assert app.log_lines[0] == "log: bay" + BAY_ROOT_NOTE
+
+            await pilot.press("down")
+            await pilot.pause()
+            assert _selected(app) == "sata"
+            assert app.selection.view.selected.record["type"] == "suite"
+            # One name in the path, and the component's records around its root's.
+            assert app.log_lines[0] == "log: bay/sata" + BAY_ROOT_NOTE
+            messages = [line for line in app.log_lines[2:] if "sata " in line]
+            assert [line.split()[-1] for line in messages] == ["powered", "answers", "released"]
+            assert not any(line.endswith("←") for line in app.tree_lines)
+
+            # A claim rolled into the root's file. The root is drawn inside the
+            # component, so that row carries the arrow and the path names it once.
+            await pilot.press("down")
+            await pilot.pause()
+            assert _selected(app) == "present"
+            assert app.log_lines[0] == "log: bay/sata  (rolled up: present has no own log)"
+            assert app.tree_lines[1] == "  ├─ sata  Pass  ←"
+            assert sum(line.endswith("←") for line in app.tree_lines) == 1
+            assert any("sata answers" in line for line in app.log_lines)
+            assert not any("sata powered" in line for line in app.log_lines)
+
+    async def test_failure_arrows_and_hidden_passes_keep_to_drawn_rows(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        saved = await record_bay_run(tmp_path, monkeypatch)
+        app = InspectorApp(saved)
+
+        async with app.run_test(size=SIZE) as pilot:
+            visited: list[tuple[str, object]] = []
+            for _ in range(3):
+                await pilot.press("right")
+                await pilot.pause()
+                visited.append((_selected(app), app.selection.view.selected.record["type"]))
+            # Never the folded root, which fails with its component and has no row.
+            assert visited == [("nvme", "suite"), ("spins", "test"), ("spins", "test")]
+
+            await pilot.press("h")
+            await pilot.pause()
+            assert app.tree_lines == (
+                "  bay  Fail",
+                "  └─ nvme  Fail  ←",
+                ">    └─ spins  Fail",
+            )
+            await pilot.press("up", "up")
+            await pilot.pause()
+            assert app.tree_lines[0] == "> bay  Fail"
+            assert app.log_lines[0] == "log: bay" + BAY_ROOT_NOTE
+
+    async def test_a_pair_that_settled_differently_keeps_both_rows(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        recorded = await record_bay_run(tmp_path, monkeypatch)
+        path = recorded.run_root / "result.json"
+        result = json.loads(path.read_text())
+        sata = result["summary_tree"]["children"][0]["children"][0]
+        assert (sata["name"], sata["children"][0]["name"]) == ("sata", "sata")
+        sata["children"][0]["state"] = "Aborted"
+        path.write_text(json.dumps(result))
+        saved = await SavedRunReader().read(path)
+        assert isinstance(saved, SavedRun), saved
+        app = InspectorApp(saved)
+
+        async with app.run_test(size=SIZE) as pilot:
+            await pilot.pause()
+            assert app.tree_lines[:6] == (
+                "> bay  Fail",
+                "  ├─ sata  Pass",
+                "  │  └─ sata  Aborted",
+                "  │     ├─ present  Pass",
+                "  │     └─ spins  Pass",
+                "  ├─ nvme  Fail",
+            )
+            # Each row of the pair is read on its own, as the record has it.
+            await pilot.press("down")
+            await pilot.pause()
+            assert app.log_lines[0] == "log: bay/sata"
+            await pilot.press("down")
+            await pilot.pause()
+            assert app.log_lines[0] == "log: bay/sata/sata"
+
+    async def test_enter_on_a_folded_row_re_runs_the_component(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        saved = await record_bay_run(tmp_path, monkeypatch, refuse_execution=False)
+        before = saved_bytes(saved.run_root)
+        session = RerunSession(saved, bay_suite, scratch_parent=tmp_path)
+        app = InspectorApp(saved, session)
+
+        async with app.run_test(size=SIZE) as pilot:
+            await pilot.press("down", "tab")
+            await pilot.pause()
+            assert app.tab == "rerun"
+            assert session.available is True, session.unavailable
+            assert [_row_name(line) for line in app.tree_lines] == [
+                _row_name(line) for line in BAY_TREE
+            ]
+            assert all(line.endswith("not re-run") for line in app.tree_lines)
+
+            await pilot.press("enter")
+            await app.workers.wait_for_complete()  # pyright: ignore[reportUnknownMemberType]
+            await pilot.pause()
+
+            # The cursor rests on the component, so the component is what ran: its own
+            # lifecycle, its root, and both claims. The bay above it ran one branch.
+            assert [session.record(index) is not None for index in range(6)] == [True] * 6
+            assert session.record(6) is None
+            assert app.tree_lines[:5] == (
+                "  bay  partly re-run",
+                "> ├─ sata  Pass",
+                "  │  ├─ present  Pass",
+                "  │  └─ spins  Pass",
+                "  ├─ nvme  not re-run",
+            )
+            assert app.log_lines[0] == "log: bay/sata" + BAY_ROOT_NOTE
+            messages = [line for line in app.log_lines[2:] if "sata " in line]
+            assert [line.split()[-1] for line in messages] == ["powered", "answers", "released"]
+
+            await pilot.press("down")
+            await pilot.pause()
+            assert app.log_lines[0] == "log: bay/sata  (rolled up: present has no own log)"
+            assert app.tree_lines[1] == "  ├─ sata  Pass  ←"
+
+        assert saved_bytes(saved.run_root) == before
+        assert session.scratch_root is None
+
+
 class TestRendering:
     def test_tree_row_shows_cursor_glyphs_state_readings_not_taken_and_owner(self) -> None:
         display = RowDisplay(
@@ -521,14 +668,18 @@ class TestLogHeader:
             record={"name": "later", "state": None, "evidence": None, "evidence_declared": None},
             log_owner_index=None,
         )
+        # Only a ready view names an owner, so these states never consult the tree.
+        tree = InspectorTree(
+            {"summary_tree": {"name": "rack", "state": None, "log_path": None, "children": []}}
+        )
 
-        owner, page = _log_header(SelectionView(row, None, "loading"), None)
+        owner, page = _log_header(SelectionView(row, None, "loading"), None, tree)
         assert (owner.plain, page.plain) == ("log: loading", "")
-        owner, page = _log_header(SelectionView(row, None, "not-run"), None)
+        owner, page = _log_header(SelectionView(row, None, "not-run"), None, tree)
         assert (owner.plain, page.plain) == ("log: not run: the node never executed", "")
-        owner, page = _log_header(SelectionView(row, None, "unavailable", None, "gone"), None)
+        owner, page = _log_header(SelectionView(row, None, "unavailable", None, "gone"), None, tree)
         assert (owner.plain, page.plain) == ("log: unavailable: gone", "")
-        owner, page = _log_header(SelectionView(row, None, "idle"), None)
+        owner, page = _log_header(SelectionView(row, None, "idle"), None, tree)
         assert (owner.plain, page.plain) == ("log: idle: no chronology", "")
 
 

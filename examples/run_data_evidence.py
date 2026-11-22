@@ -90,7 +90,6 @@ class PowerSupply(TestComponent):
     def build_suite(self) -> TestComponent:
         """Independent claims: voltage and temperature do not depend on each other."""
         return self.parallel(
-            self.name,
             [
                 self.test("output-voltage", self._check_voltage),
                 self.test("temperature", self._check_temperature),

@@ -105,6 +105,10 @@ two `self.test` blocks:
 | `self.parallel(name, [...])` | Runs the children at the same time and collects every failure. |
 | Another component, such as `FanSuite(name="fan A")` | Runs that component's own lifecycle. See [Components nest](#components-nest). |
 
+The block that `build_suite` returns may leave its name out: `self.sequence([...])`
+takes the component's own name. Name it, as the examples here do, when the name adds
+something. See [Composition Factories](idioms.md#composition-factories-selftest-selfsequence-selfparallel).
+
 ## The same thing in code
 
 A fan test: power it on, check its speed and its current draw, power it off. This is

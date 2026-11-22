@@ -11,7 +11,7 @@ import signal
 import weakref
 from collections.abc import AsyncGenerator, Awaitable, Callable, Iterable, Mapping, Sequence
 from pathlib import Path
-from typing import Any, ClassVar, cast, final
+from typing import Any, ClassVar, cast, final, overload
 
 from hilt.artifacts import Artifact
 from hilt.errors import (
@@ -389,6 +389,7 @@ class TestComponent[CtxT: Mapping[str, Any] = Mapping[str, Any]](metaclass=_Test
         "_fn",
         "_frozen",
         "_has_run",
+        "_inherits_name",
         "_log_path",
         "_name",
         "_summary_tree",
@@ -433,6 +434,8 @@ class TestComponent[CtxT: Mapping[str, Any] = Mapping[str, Any]](metaclass=_Test
         self._frozen = False
         self._has_run = False
         self._name = name
+        # True only for a composition built without a name, which is a root by contract.
+        self._inherits_name = False
         self._discrete_log_file = discrete_log_file
         self._time_budget = _time_budget(
             name,
@@ -598,6 +601,18 @@ class TestComponent[CtxT: Mapping[str, Any] = Mapping[str, Any]](metaclass=_Test
             evidence_declared=declared_evidence(fn),
         )
 
+    @overload
+    def parallel(
+        self,
+        children: Sequence[TestComponent[Any]],
+        /,
+        *,
+        discrete_log_file: bool = True,
+        fail_after: float | None = None,
+        abort_after: float | None = None,
+    ) -> TestComponent[Any]: ...
+
+    @overload
     def parallel(
         self,
         name: str,
@@ -606,8 +621,24 @@ class TestComponent[CtxT: Mapping[str, Any] = Mapping[str, Any]](metaclass=_Test
         discrete_log_file: bool = True,
         fail_after: float | None = None,
         abort_after: float | None = None,
+    ) -> TestComponent[Any]: ...
+
+    def parallel(
+        self,
+        name: str | Sequence[TestComponent[Any]],
+        children: Sequence[TestComponent[Any]] | None = None,
+        *,
+        discrete_log_file: bool = True,
+        fail_after: float | None = None,
+        abort_after: float | None = None,
     ) -> TestComponent[Any]:
-        """Compose independent children under one structured-concurrency owner."""
+        """Compose independent children under one structured-concurrency owner.
+
+        ``self.parallel(children)`` is the root of ``build_suite()`` and takes this
+        component's name; ``self.parallel(name, children)`` names a level of its own.
+        See ``sequence`` for the rule the two forms share.
+        """
+        name, children, inherits_name = self._composition("parallel", name, children)
         if not children:
             raise ContractViolation(
                 name,
@@ -620,8 +651,21 @@ class TestComponent[CtxT: Mapping[str, Any] = Mapping[str, Any]](metaclass=_Test
             discrete_log_file=discrete_log_file,
             fail_after=fail_after,
             abort_after=abort_after,
+            inherits_name=inherits_name,
         )
 
+    @overload
+    def sequence(
+        self,
+        children: Sequence[TestComponent[Any]],
+        /,
+        *,
+        discrete_log_file: bool = True,
+        fail_after: float | None = None,
+        abort_after: float | None = None,
+    ) -> TestComponent[Any]: ...
+
+    @overload
     def sequence(
         self,
         name: str,
@@ -630,8 +674,27 @@ class TestComponent[CtxT: Mapping[str, Any] = Mapping[str, Any]](metaclass=_Test
         discrete_log_file: bool = True,
         fail_after: float | None = None,
         abort_after: float | None = None,
+    ) -> TestComponent[Any]: ...
+
+    def sequence(
+        self,
+        name: str | Sequence[TestComponent[Any]],
+        children: Sequence[TestComponent[Any]] | None = None,
+        *,
+        discrete_log_file: bool = True,
+        fail_after: float | None = None,
+        abort_after: float | None = None,
     ) -> TestComponent[Any]:
-        """Compose dependent children that stop at the first non-pass verdict."""
+        """Compose dependent children that stop at the first non-pass verdict.
+
+        Two call forms. ``self.sequence(children)`` is the root of ``build_suite()``:
+        the component already has a name, and its root takes that name instead of being
+        given it a second time. ``self.sequence(name, children)`` names a level of its
+        own, at the root or below it. A nameless composition is the root only: placing
+        one inside another composition is a ``ContractViolation`` where it is nested,
+        because two levels would then carry one name and siblings could share it.
+        """
+        name, children, inherits_name = self._composition("sequence", name, children)
         if not children:
             raise ContractViolation(
                 name,
@@ -644,7 +707,44 @@ class TestComponent[CtxT: Mapping[str, Any] = Mapping[str, Any]](metaclass=_Test
             discrete_log_file=discrete_log_file,
             fail_after=fail_after,
             abort_after=abort_after,
+            inherits_name=inherits_name,
         )
+
+    def _composition(
+        self,
+        kind: str,
+        name: str | Sequence[TestComponent[Any]],
+        children: Sequence[TestComponent[Any]] | None,
+    ) -> tuple[str, Sequence[TestComponent[Any]], bool]:
+        """Resolve either call form to a name, the children, and whether the name is inherited."""
+        forms = (
+            f"call self.{kind}(children) at the root of build_suite(), "
+            f"or self.{kind}(name, children) for a named level"
+        )
+        if isinstance(name, str):
+            if children is None:
+                raise ContractViolation(
+                    name, f"self.{kind}() was given a name and no children; {forms}"
+                )
+            inherits_name = False
+        else:
+            if children is not None:
+                raise ContractViolation(
+                    self.name,
+                    f"self.{kind}() was given two child lists and no name; {forms}",
+                )
+            name, children, inherits_name = self.name, name, True
+        for child in children:
+            # Only the framework can tell a root from a nested node, and it can tell
+            # here: the root is returned from build_suite(), never passed as a child.
+            if child._inherits_name:
+                raise ContractViolation(
+                    name,
+                    f"a nameless composition is nested under {name!r}; only the root of "
+                    "build_suite() may omit its name, so give the nested one a name of "
+                    "its own, such as self.sequence(name, children)",
+                )
+        return name, children, inherits_name
 
     @final
     def use_survey(self, fn: HookFunction, *, phases: Iterable[Phase] | None = None) -> None:
@@ -2108,6 +2208,7 @@ class _Parallel(TestComponent[Any]):
         discrete_log_file: bool,
         fail_after: float | None,
         abort_after: float | None,
+        inherits_name: bool,
     ) -> None:
         super().__init__(
             name=name,
@@ -2116,6 +2217,7 @@ class _Parallel(TestComponent[Any]):
             abort_after=abort_after,
         )
         self._children = tuple(children)
+        self._inherits_name = inherits_name
 
     def build_suite(self) -> TestComponent[Any]:
         """Satisfy the structural contract; parallel execution owns its child tasks."""
@@ -2139,6 +2241,7 @@ class _Sequence(TestComponent[Any]):
         discrete_log_file: bool,
         fail_after: float | None,
         abort_after: float | None,
+        inherits_name: bool,
     ) -> None:
         super().__init__(
             name=name,
@@ -2147,6 +2250,7 @@ class _Sequence(TestComponent[Any]):
             abort_after=abort_after,
         )
         self._children = tuple(children)
+        self._inherits_name = inherits_name
 
     def build_suite(self) -> TestComponent[Any]:
         """Satisfy the structural contract; sequence execution owns child order."""

@@ -135,7 +135,6 @@ class DebianGuest(TestComponent):
     def build_suite(self) -> TestComponent:
         """Identity, then the units, then the independent resource readings."""
         return self.sequence(
-            self.name,
             [
                 self.test("kernel-identity", self._kernel_identity, fail_after=15.0),
                 self.parallel(

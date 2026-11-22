@@ -165,8 +165,11 @@ class {class_name}(TestComponent):
         )
 
     def build_suite(self) -> TestComponent:
-        """Build one leaf whose pass predicate is explicit."""
-        return self.test("claim ready", self._claim_ready)
+        """Build one claim whose pass predicate is explicit.
+
+        The root takes this suite's name; add each further claim to its list.
+        """
+        return self.sequence([self.test("claim ready", self._claim_ready)])
 
     async def _claim_ready(self, utils: TestUtils) -> Verdict:
         target = utils.ctx["target"]

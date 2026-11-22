@@ -77,7 +77,6 @@ class CoapDevice(TestComponent):
         suite died with one request per handle and was flattened to a sequence).
         """
         return self.sequence(
-            self.name,
             [
                 self.test("hello", self._hello, fail_after=10.0),
                 self.parallel(

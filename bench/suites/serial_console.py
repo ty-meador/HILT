@@ -81,7 +81,6 @@ class SerialConsole(TestComponent):
     def build_suite(self) -> TestComponent:
         """Prompt sync first; every later claim assumes the console answers."""
         return self.sequence(
-            self.name,
             [
                 self.test("prompt-sync", self._prompt_sync, fail_after=10.0),
                 self.test("exit-status-is-data", self._exit_status, fail_after=10.0),

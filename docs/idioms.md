@@ -273,11 +273,26 @@ each; `case` and `group` are retired (issue #110) and `hilt/retired-names` flags
 - `self.test(name, fn, *, fail_after=None, abort_after=None)` — the leaf: one verdict
   method, named here at composition time. Defaults to `discrete_log_file=False` so
   entries roll up to the parent artifact.
-- `self.sequence(name, children, ...)` — serial execution, bails on first failure, and
-  owns a discrete timeline by default.
-- `self.parallel(name, children, ...)` — concurrent execution via `asyncio.TaskGroup`,
-  collects all failures, and owns a discrete timeline by default. The name says so:
-  nobody misses that two children share a bus.
+- `self.sequence(children, ...)` or `self.sequence(name, children, ...)` — serial
+  execution, bails on first failure, and owns a discrete timeline by default.
+- `self.parallel(children, ...)` or `self.parallel(name, children, ...)` — concurrent
+  execution via `asyncio.TaskGroup`, collects all failures, and owns a discrete timeline
+  by default. The name says so: nobody misses that two children share a bus.
+
+**The root of `build_suite()` takes no name.** The component already has one, given at
+construction, and the composition `build_suite()` returns is that component's body, not
+a second thing to name. Write `self.sequence([...])` or `self.parallel([...])` there and
+the root takes the component's name; the Inspector then draws the component and its
+root as one row ([the fold](inspector.md#the-fold-one-row-per-component)). Give a name
+when it says something the component's does not: every composition below the root, and
+a root that is a stage of its own, such as `self.sequence("burn-in", [...])`.
+
+Only the root may go without. A nameless composition placed inside another one is a
+`ContractViolation` raised where it is nested, at composition and before any hardware
+is touched: two levels would carry one name, and siblings could share it. A name with
+no children, `self.sequence("stage")`, is refused the same way, and the message names
+both forms. `self.sequence(self.name, [...])`, the spelling before the nameless form
+existed, still works and records exactly the same tree.
 
 Pass `discrete_log_file=False` to `self.sequence()` or `self.parallel()` when that
 composition is too small to merit a separate Inspector timeline. Its records then roll
@@ -291,11 +306,10 @@ run has an authoritative temporal backbone.
 ```python
 def build_suite(self) -> TestComponent:
     return self.sequence(
-        self.name,
         [
             self.test("check reachable", self._check_reachable),
             self.test("check firmware", self._check_firmware),
-        ],
+        ]
     )
 
 
@@ -597,11 +611,10 @@ class MyDevice(TestComponent):
 
     def build_suite(self) -> TestComponent:
         return self.sequence(
-            self.name,
             [
                 self.test("survey", self._capture_survey),
                 self.test("reachable", self._check_reachable),
-            ],
+            ]
         )
 
     async def _check_reachable(self, utils: TestUtils) -> Verdict:
@@ -745,7 +758,7 @@ resolved = await arp.resolve()
 return {**resolved, "arp": arp}
 
 # Gateway.build_suite() — the parent names what sits behind its hop:
-return self.sequence(self.name, [self.test("gateway-up", self._gateway_up), DutDevice(name="dut")])
+return self.sequence([self.test("gateway-up", self._gateway_up), DutDevice(name="dut")])
 ```
 
 See `examples/networked_device.py`. `hilt run ...::DutDevice` reads the test host's ARP table; `hilt run ...::Gateway` runs the same DUT class through the hop.

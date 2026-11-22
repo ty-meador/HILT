@@ -39,7 +39,7 @@ from hilt.inspector_run import SavedRun
 from hilt.inspector_selection import InspectorSelection, SelectionView
 from hilt.inspector_timeline import TimelineDiagnostic
 from hilt.inspector_timeline_view import TimelineEntry, TimelineView
-from hilt.inspector_tree import TreeRow
+from hilt.inspector_tree import InspectorTree, TreeLine, TreeRow, readings_not_taken
 
 type Tab = Literal["inspect", "rerun"]
 
@@ -152,13 +152,22 @@ def _window(count: int, selected: int, height: int) -> range:
     return range(start, min(count, start + height))
 
 
-def _log_header(view: SelectionView, timeline: TimelineView | None) -> tuple[Text, Text]:
-    """The two lines above the chronology: whose log this is, and where the page is."""
+def _log_header(
+    view: SelectionView, timeline: TimelineView | None, tree: InspectorTree
+) -> tuple[Text, Text]:
+    """The two lines above the chronology: whose log this is, and where the page is.
+
+    The owner is named by its drawn path, the names the tree shows from the root down,
+    so a folded component is not spelled twice.
+    """
     owner = Text("log: ")
     if view.status == "ready" and view.owner is not None:
-        owner.append("/".join(view.owner.ancestor_names))
-        if view.owner.index != view.selected.index:
+        owner_line = tree.line(view.owner.index)
+        owner.append("/".join(owner_line.path))
+        if owner_line.index != tree.line(view.selected.index).index:
             owner.append(f"  (rolled up: {view.selected.ancestor_names[-1]} has no own log)", "dim")
+        if view.merged:
+            owner.append("  (with its root's log, in time order)", "dim")
     elif view.status == "loading":
         owner.append("loading", "dim")
     elif view.status == "not-run":
@@ -412,13 +421,13 @@ class InspectorApp(App[None]):
 
     def _log_header(self, view: SelectionView | None) -> tuple[Text, Text]:
         if view is not None:
-            return _log_header(view, self.timeline_view)
+            return _log_header(view, self.timeline_view, self.saved_tree)
         # Re-Run with nothing to show for the highlighted node: say what the bench is
         # doing, or what it is waiting for, rather than an empty pane.
         owner = Text("log: ")
         running = self.session.running
         if running is not None:
-            name = "/".join(self.saved_tree.rows[running].ancestor_names)
+            name = "/".join(self.saved_tree.line(running).path)
             owner.append(f"running {name}", _RUNNING_STYLE)
         elif self.session.diagnostic is not None:
             owner.append(self.session.diagnostic, "yellow")
@@ -428,8 +437,9 @@ class InspectorApp(App[None]):
             owner.append("not re-run yet: press Enter on a node to execute it", "dim")
         return owner, Text()
 
-    def _visible_rows(self) -> tuple[TreeRow, ...]:
-        rows = self.saved_tree.rows
+    def _visible_rows(self) -> tuple[TreeLine, ...]:
+        """The drawn lines the tab shows: a same-named root is already inside its component."""
+        rows = self.saved_tree.lines
         if self.tab == "inspect" and self.hide_passes:
             return tuple(row for row in rows if row.state != "Pass")
         return rows
@@ -441,20 +451,28 @@ class InspectorApp(App[None]):
         selected = self.selection.view.selected.index
         position = next((i for i, row in enumerate(rows) if row.index == selected), 0)
         height = self.query_one("#tree", Static).size.height
-        prefixes = _tree_prefixes([len(row.ancestor_names) - 1 for row in rows])
+        prefixes = _tree_prefixes([row.depth for row in rows])
         owner: int | None = None
-        if view is not None and view.owner is not None and view.owner.index != view.selected.index:
-            owner = view.owner.index
+        if view is not None and view.owner is not None:
+            # The owner may be a root folded into its component; the mark goes on the
+            # line that draws it, and nowhere when that is the highlighted line itself.
+            owner = self.saved_tree.line(view.owner.index).index
+            if owner == self.saved_tree.line(view.selected.index).index:
+                owner = None
         running = self.session.running_indices() if self.tab == "rerun" else range(0)
         lines: list[Text] = []
         for index in _window(len(rows), position, height):
             row = rows[index]
-            evidence: TreeRow | None = row
+            evidence: TreeRow | None = row.row
+            nodes: Sequence[TreeRow] = row.nodes
             partial = False
             if self.tab == "rerun":
-                record = self.session.record(row.index)
-                evidence = None if record is None else record.row
-                partial = record is not None and record.partial
+                # The line keeps the archive's shape. Its state is the component's from
+                # the bench, and its readings are those of every node it draws there.
+                records = [self.session.record(node.index) for node in row.nodes]
+                evidence = None if records[0] is None else records[0].row
+                nodes = [record.row for record in records if record is not None]
+                partial = records[0] is not None and records[0].partial
             if row.index in running:
                 frame = _RUNNING_FRAMES[self._spin % len(_RUNNING_FRAMES)]
                 label, style = f"{frame} Running", _RUNNING_STYLE
@@ -467,11 +485,11 @@ class InspectorApp(App[None]):
             lines.append(
                 _row_text(
                     RowDisplay(
-                        name=row.ancestor_names[-1],
+                        name=row.name,
                         prefix=prefixes[index],
                         label=label,
                         style=style,
-                        not_taken=() if evidence is None else evidence.not_taken,
+                        not_taken=() if evidence is None else readings_not_taken(nodes),
                         selected=row.index == selected,
                         owner=row.index == owner,
                     )

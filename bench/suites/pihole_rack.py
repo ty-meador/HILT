@@ -83,7 +83,6 @@ class PiHole(TestComponent):
     def build_suite(self) -> TestComponent:
         """FTL must be listening before anything behind the hop is worth asking."""
         return self.sequence(
-            self.name,
             [
                 self.test("ftl-listening", self._ftl_listening, fail_after=30.0),
                 self._behind,
@@ -222,7 +221,6 @@ class BlocklistRoundTrip(TestComponent):
     def build_suite(self) -> TestComponent:
         """Resolver works, then the block is visible on the wire, then in the log."""
         return self.sequence(
-            self.name,
             [
                 self.test("blocking-enabled", self._blocking_enabled, fail_after=15.0),
                 self.test("resolver-answers", self._resolver_answers, fail_after=15.0),

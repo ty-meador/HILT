@@ -111,7 +111,6 @@ class DutDevice(TestComponent):
     def build_suite(self) -> TestComponent:
         """Reachability first: firmware is meaningless if the device is gone."""
         return self.sequence(
-            self.name,
             [
                 self.test("reachability", self._reachability),
                 self.test("firmware-version", self._firmware_version_check),
@@ -215,7 +214,6 @@ class Gateway(TestComponent):
     def build_suite(self) -> TestComponent:
         """Prove the hop executes, then run the device behind it through the hop."""
         return self.sequence(
-            self.name,
             [
                 self.test("gateway-up", self._gateway_up),
                 self._behind,

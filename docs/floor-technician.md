@@ -72,6 +72,13 @@ an array of names. Names may contain `/`, so the array is the durable form.
 Use **`bread_crumbs`** only to display that path. It is exactly
 `ancestor_names` joined with `/`. Do not parse it back into names.
 
+A component is two nodes: itself (`type` `suite`) and, as its only child, the
+sequence or parallel it built, which usually carries the same name. So a path often
+reads `rack`, `rack`, `sata`, `sata`, `present`. That is the record, not a mistake.
+The component's `timeline.jsonl` holds its configure and cleanup; its child's holds the
+tests. The Inspector draws such a pair as one row and shows both timelines as one log,
+merged in time order (`docs/inspector.md`, The fold).
+
 A node whose `summary_tree` `state` is `null` never ran (a sequence stopped
 before it). That is not a fourth terminal state. It has no log and no failure.
 The declared tree is still complete, so you can see what was skipped.

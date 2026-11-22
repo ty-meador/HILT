@@ -107,7 +107,6 @@ class SshDevice(TestComponent):
         and a disk reading taken in that state would be noise.
         """
         return self.sequence(
-            self.name,
             [
                 self.test("uptime", self._check_uptime),
                 self.test("disk-space", self._check_disk_space),
