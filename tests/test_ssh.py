@@ -1179,3 +1179,203 @@ class TestSshOutputBudget:
         finally:
             await opened.disconnect()
             await peer.aclose()
+
+
+class TestMaxSessions:
+    """`max_sessions` makes commands wait for a session instead of being refused.
+
+    An sshd grants a bounded number of sessions per connection and refuses the
+    channel past it. The loopback sshd grants every session and reports the most
+    it served at once, so these tests judge the client's own bound.
+    """
+
+    async def test_commands_past_the_bound_wait_and_all_complete(self) -> None:
+        peer = await _LoopbackSshd.start()
+        ssh = SshInterface(
+            host="127.0.0.1",
+            port=peer.port,
+            username=peer.username,
+            password=peer.password,
+            skip_host_verification=True,
+            max_sessions=2,
+        )
+        try:
+            await ssh.connect()
+            results = await asyncio.gather(*(ssh.exec("sleep 0.05") for _ in range(6)))
+        finally:
+            await ssh.disconnect()
+            await peer.aclose()
+
+        assert [result.exit_code for result in results] == [0] * 6
+        assert peer.peak_sessions == 2
+
+    async def test_without_a_bound_every_command_opens_its_session_at_once(self) -> None:
+        peer = await _LoopbackSshd.start()
+        ssh = SshInterface(
+            host="127.0.0.1",
+            port=peer.port,
+            username=peer.username,
+            password=peer.password,
+            skip_host_verification=True,
+        )
+        try:
+            await ssh.connect()
+            results = await asyncio.gather(*(ssh.exec("sleep 0.05") for _ in range(6)))
+        finally:
+            await ssh.disconnect()
+            await peer.aclose()
+
+        assert [result.exit_code for result in results] == [0] * 6
+        assert ssh.max_sessions is None
+        assert peer.peak_sessions == 6
+
+    async def test_a_cancelled_waiter_gives_its_turn_to_the_next_command(self) -> None:
+        peer = await _LoopbackSshd.start()
+        ssh = SshInterface(
+            host="127.0.0.1",
+            port=peer.port,
+            username=peer.username,
+            password=peer.password,
+            skip_host_verification=True,
+            max_sessions=1,
+        )
+        try:
+            await ssh.connect()
+            running = asyncio.create_task(ssh.exec("sleep 0.05"))
+            waiting = asyncio.create_task(ssh.exec("sleep 30"))
+            await asyncio.sleep(0)
+            waiting.cancel()
+            with pytest.raises(asyncio.CancelledError):
+                await waiting
+            assert (await running).exit_code == 0
+            # The cancelled waiter never held the slot, so the next command runs.
+            result = await asyncio.wait_for(ssh.exec("uname"), timeout=5)
+        finally:
+            await ssh.disconnect()
+            await peer.aclose()
+
+        assert result == ExecResult(stdout="uname", stderr="", exit_code=0)
+        assert peer.peak_sessions == 1
+
+    async def test_a_command_waiting_when_the_transport_is_cancelled_meets_it_closed(
+        self,
+    ) -> None:
+        peer = await _LoopbackSshd.start()
+        ssh = SshInterface(
+            host="127.0.0.1",
+            port=peer.port,
+            username=peer.username,
+            password=peer.password,
+            skip_host_verification=True,
+            max_sessions=1,
+        )
+        try:
+            await ssh.connect()
+            running = asyncio.create_task(ssh.exec("sleep 30"))
+            waiting = asyncio.create_task(ssh.exec("uname"))
+            await asyncio.sleep(0.05)
+            await ssh.cancel_in_flight()
+            first = await asyncio.wait_for(running, timeout=5)
+            # The command behind it must not run after the halt: it gets the same
+            # closed-transport error as any `exec` issued after `cancel_in_flight`,
+            # which `TestUtils.exec` settles at exit -1.
+            with pytest.raises(ConnectionError, match="not connected"):
+                await asyncio.wait_for(waiting, timeout=5)
+        finally:
+            await ssh.disconnect()
+            await peer.aclose()
+
+        assert first.exit_code == -1
+        assert peer.peak_sessions == 1
+
+    @pytest.mark.parametrize("max_sessions", [0, -1])
+    def test_a_bound_below_one_is_refused_at_construction(self, max_sessions: int) -> None:
+        with pytest.raises(ValueError, match="max_sessions must be at least 1"):
+            SshInterface(host="127.0.0.1", username="root", max_sessions=max_sessions)
+
+    def test_the_connect_line_states_a_declared_bound_and_only_then(self) -> None:
+        bounded = SshInterface(host="10.0.0.2", username="root", password="x", max_sessions=8)
+        unbounded = SshInterface(host="10.0.0.2", username="root", password="x")
+
+        assert bounded.connect_provenance == (
+            "ssh connect: root@10.0.0.2:22 auth=password via=direct max_sessions=8"
+        )
+        assert unbounded.connect_provenance == (
+            "ssh connect: root@10.0.0.2:22 auth=password via=direct"
+        )
+
+    async def test_use_shell_declares_the_bound_for_every_leaf_under_the_route(self) -> None:
+        peer = await _LoopbackSshd.start()
+        opened: list[RemoteInterface] = []
+
+        class Leaves(TestComponent):
+            def build_suite(self) -> TestComponent:
+                return self.parallel(
+                    "leaves", [self.test(f"leaf-{index}", self._sleeps) for index in range(4)]
+                )
+
+            async def _sleeps(self, utils: TestUtils) -> Verdict:
+                result = await utils.exec("sleep 0.05")
+                if result.exit_code == 0:
+                    return PASS
+                raise AssertionError(result.stderr)
+
+        class Hop(TestComponent):
+            async def configure(self, utils: TestUtils) -> dict[str, object]:
+                shell = await utils.use_shell(
+                    host="127.0.0.1",
+                    port=peer.port,
+                    username=peer.username,
+                    password=peer.password,
+                    skip_host_verification=True,
+                    max_sessions=2,
+                )
+                if shell.ssh is not None:
+                    opened.append(shell.ssh)
+                return {}
+
+            def build_suite(self) -> TestComponent:
+                # Two components that inherit the route share the hop's one bound.
+                return self.parallel("devices", [Leaves(name="a"), Leaves(name="b")])
+
+        try:
+            outcome = await Hop(name="hop").run()
+        finally:
+            for remote in opened:
+                await remote.disconnect()
+            await peer.aclose()
+
+        assert outcome.state is State.PASS
+        assert peer.peak_sessions == 2
+
+    async def test_get_shell_bounds_the_auxiliary_connection_it_opens(self) -> None:
+        peer = await _LoopbackSshd.start()
+
+        async def local_exec(command: str) -> ExecResult:
+            return ExecResult(stdout=f"local:{command}", stderr="", exit_code=0)
+
+        routing = ExecRouting(local_exec, connector=SshConnector())
+        try:
+            shell = await routing.get_shell(
+                host="127.0.0.1",
+                port=peer.port,
+                username=peer.username,
+                password=peer.password,
+                skip_host_verification=True,
+                max_sessions=3,
+            )
+            assert isinstance(shell.ssh, SshInterface)
+            assert shell.ssh.max_sessions == 3
+        finally:
+            for remote in routing.opened:
+                await remote.disconnect()
+            await peer.aclose()
+
+    async def test_a_bound_without_a_connection_to_open_is_refused(self) -> None:
+        async def local_exec(command: str) -> ExecResult:
+            return ExecResult(stdout=f"local:{command}", stderr="", exit_code=0)
+
+        routing = ExecRouting(local_exec, connector=SshConnector())
+
+        with pytest.raises(TypeError, match="max_sessions bounds the connection"):
+            await routing.use_shell(max_sessions=4)

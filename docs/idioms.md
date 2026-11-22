@@ -716,6 +716,8 @@ Independent claims can still share one resource. A single `DeviceApi` handle ope
 
 The same holds for a routed console. `use_serial(device=...)` in `configure()` binds `utils.exec` for the node and its descendants to one `SerialInterface`, and `parallel` leaves under it take turns on it in call order (`docs/hil/serial.md`, Serial Turn Contract). A console costs more to share than a handle does: the leaves share one shell's state, so a `cd` or an exported variable in one leaf is visible to the next. Claims that need isolation want one console each, via `get_serial(device=...)`.
 
+An SSH hop is shared differently: each `utils.exec` opens its own session on the one connection, so `parallel` leaves really do run at once on the device, up to the number of sessions its sshd grants per connection (`MaxSessions`, 10 by default). Past that the sshd refuses the session, and a healthy device reads Fail with `transport closed: open failed`. A hop with a wide tree under it declares the bound where it opens the connection, `use_shell(host=..., username=..., max_sessions=8)`, and commands past the bound take turns in call order. The leaves stay `parallel`: they are independent, and the bound is a property of the hop, not a dependency between claims. Do not reach for `sequence` to stay under the limit; it would stop at the first failure and hide the rest.
+
 ---
 
 ## ArpResolver — MAC to IP

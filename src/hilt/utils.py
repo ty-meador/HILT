@@ -1363,6 +1363,7 @@ class TestUtils[CtxT: Mapping[str, Any] = Mapping[str, Any]]:
         via: Shell | None = None,
         inherit: bool = True,
         propagate: bool = True,
+        max_sessions: int | None = None,
     ) -> Shell:
         """Declare this node's exec route from ``configure()``, or read the active one.
 
@@ -1373,6 +1374,16 @@ class TestUtils[CtxT: Mapping[str, Any] = Mapping[str, Any]]:
         written when configure returns and the FT reads it as true for the whole node
         (Exec Routing Contract). From any other slot the declaring call raises
         ``ContractViolation`` before the router is touched.
+
+        ``max_sessions`` is the most commands the opened connection runs at once.
+        Every ``exec`` under this route opens its own SSH session, and an sshd
+        refuses a session past its ``MaxSessions`` (10 by default), so a wide
+        ``parallel`` under one hop can Fail a healthy device with ``open failed``.
+        Set it at or below the device's limit and the commands past it wait their
+        turn, in call order, instead of being refused; the wait counts against the
+        waiting leaf's time budget. The default, ``None``, does not bound them. It is
+        accepted only with ``host``: it belongs to the node that opens the hop, and
+        every node that inherits the route shares the one bound.
         """
         require_connection_pair(host, username)
         declares = host is not None or via is not None or not inherit or not propagate
@@ -1401,6 +1412,7 @@ class TestUtils[CtxT: Mapping[str, Any] = Mapping[str, Any]]:
             via=via,
             inherit=inherit,
             propagate=propagate,
+            max_sessions=max_sessions,
         )
 
     async def get_shell(
@@ -1418,8 +1430,13 @@ class TestUtils[CtxT: Mapping[str, Any] = Mapping[str, Any]]:
         via: Shell | None = None,
         inherit: bool = True,
         propagate: bool = True,
+        max_sessions: int | None = None,
     ) -> Shell:
-        """Open an auxiliary endpoint without changing this node's exec route."""
+        """Open an auxiliary endpoint without changing this node's exec route.
+
+        ``max_sessions`` bounds the commands in flight on the opened connection, as
+        it does for ``use_shell``.
+        """
         return await self._runtime.routing.get_shell(
             host=host,
             username=username,
@@ -1433,6 +1450,7 @@ class TestUtils[CtxT: Mapping[str, Any] = Mapping[str, Any]]:
             via=via,
             inherit=inherit,
             propagate=propagate,
+            max_sessions=max_sessions,
         )
 
     async def use_serial(

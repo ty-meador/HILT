@@ -86,6 +86,7 @@ class ShellOpenRequest:
     agent: str | None = None
     skip_host_verification: bool = False
     via: RemoteInterface | None = None
+    max_sessions: int | None = None
 
 
 class ShellConnector(Protocol):
@@ -141,6 +142,7 @@ class SshConnector:
             skip_host_verification=request.skip_host_verification,
             tunnel=via,
             output_budget=self._output_budget,
+            max_sessions=request.max_sessions,
         )
         await ssh.connect()
         return ssh
@@ -470,6 +472,7 @@ class ExecRouting:
         via: Shell | None = None,
         inherit: bool = True,
         propagate: bool = True,
+        max_sessions: int | None = None,
     ) -> Shell:
         """Declare this node's exec policy and optionally open a primary shell.
 
@@ -480,8 +483,16 @@ class ExecRouting:
           - `use_shell()` — return the active Shell (inherited or local).
 
         `propagate=False` stops this node's router from flowing to children.
+        `max_sessions` bounds the commands in flight on the connection this call
+        opens, so it is only accepted on the connection forms.
         """
         require_connection_pair(host, username)
+        if host is None and max_sessions is not None:
+            msg = (
+                "use_shell max_sessions bounds the connection the call opens; "
+                "pass it together with host= and username=, on the node that owns the hop"
+            )
+            raise TypeError(msg)
         self._propagate = propagate
         if host is None:
             if not inherit:
@@ -504,6 +515,7 @@ class ExecRouting:
             via=via,
             inherit=inherit,
             propagate=propagate,
+            max_sessions=max_sessions,
         )
         if shell.ssh is None:
             msg = "use_shell connection form did not yield a remote interface"
@@ -526,11 +538,13 @@ class ExecRouting:
         via: Shell | None = None,
         inherit: bool = True,
         propagate: bool = True,
+        max_sessions: int | None = None,
     ) -> Shell:
         """Open an extra endpoint. Does not write the router or propagate flag.
 
         `inherit` picks the auto-tunnel default when `via` is omitted.
         `propagate` is a documented no-op: this method does not touch it.
+        `max_sessions` bounds the commands in flight on the opened connection.
         """
         del propagate
         tunnel = self._resolve_tunnel(via=via, inherit=inherit)
@@ -545,6 +559,7 @@ class ExecRouting:
             agent=agent,
             skip_host_verification=skip_host_verification,
             via=tunnel,
+            max_sessions=max_sessions,
         )
         remote = await self._connector.open(request)
         return self._admit(remote)

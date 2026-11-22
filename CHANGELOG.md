@@ -35,6 +35,14 @@ leave a fresh Unreleased section above it. Use the
 - Inspector, `Alt-↑` / `Alt-↓` (issue #164): move to the previous or next row on screen
   at the highlighted row's depth, whatever its parent, without stepping through the
   rows nested between; the cursor stays put when there is none. Both tabs.
+- `max_sessions` on `TestUtils.use_shell` and `TestUtils.get_shell`: the most commands
+  the opened SSH connection runs at once. Every `exec` opens its own session, and an
+  sshd refuses a session past its `MaxSessions` (10 by default), so a wide `parallel`
+  under one hop could Fail a healthy device with `transport closed: open failed`. With
+  the bound set at or below the device's limit, a command past it waits its turn, in
+  call order, instead of being refused. The bound belongs to the node that opens the
+  hop and is shared by every node that inherits the route; the `ssh connect:` line
+  states it. The default, `None`, leaves commands unbounded, as before.
 
 ### Changed
 
