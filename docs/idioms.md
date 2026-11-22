@@ -345,11 +345,10 @@ class Compute(TestComponent):
 
     def build_suite(self) -> TestComponent:
         return self.parallel(
-            "stress",
             [
                 self.test(f"cpu{i}_stress", self._cpu_stress, cpu=i, fail_after=120.0)
                 for i in range(self._cpu_count)
-            ],
+            ]
         )
 ```
 
@@ -376,7 +375,6 @@ harness should stop waiting without claiming the hardware failed.
 ```python
 def build_suite(self) -> TestComponent:
     return self.parallel(
-        "rack claims",
         [
             self.test("BMC ready", self._bmc_ready, fail_after=45.0),
             self.test("optional telemetry", self._telemetry, abort_after=10.0),
