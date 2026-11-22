@@ -1,0 +1,2611 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Python HIL testing with a pit of success: composable tests, guardrails that make a bad test hard to write, and an engine that won't let an unhandled failure pass silently.">
+      
+      
+      
+        <link rel="canonical" href="https://gitlab.com/Tyler-Meador/HILT/-/tree/main/docs/idioms.html">
+      
+      
+        <link rel="prev" href="lifecycle.html">
+      
+      
+        <link rel="next" href="utilities.html">
+      
+      
+        
+      
+      
+      <link rel="icon" href="assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.1">
+    
+    
+      
+        <title>Idioms - HILT</title>
+      
+    
+    
+      <link rel="stylesheet" href="assets/stylesheets/main.57a0d79d.min.css">
+      
+        
+        <link rel="stylesheet" href="assets/stylesheets/palette.fb2fffe2.min.css">
+      
+      
+
+
+    
+    
+      
+        <script src="assets/javascripts/iframe-worker-shim.js"></script>
+      
+    
+    
+      
+    
+    
+      <link rel="stylesheet" href="assets/_mkdocstrings.css">
+    
+      <link rel="stylesheet" href="assets/stylesheets/hilt.css">
+    
+    <script>__md_scope=new URL(".",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="custom">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#framework-idioms-patterns" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="index.html" title="HILT" class="md-header__button md-logo" aria-label="HILT" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M6 4h12v1h3v2h-3v2h3v2h-3v2h3v2h-3v2h3v2h-3v1H6v-1H3v-2h3v-2H3v-2h3v-2H3V9h3V7H3V5h3zm5 11v3h1v-3zm2 0v3h1v-3zm2 0v3h1v-3z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            HILT
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Idioms
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme)" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="custom"  aria-label="Following the system setting. Switch to light mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Following the system setting. Switch to light mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m14.3 16-.7-2h-3.2l-.7 2H7.8L11 7h2l3.2 9zM20 8.69V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12zm-9.15 3.96h2.3L12 9z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="custom"  aria-label="Light mode. Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Light mode. Switch to dark mode" for="__palette_2" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5s-1.65.15-2.39.42zM3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29zm.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14zM20.65 7l-1.77 3.79a7.02 7.02 0 0 0-2.38-4.15zm-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29zM12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="custom" data-md-color-accent="custom"  aria-label="Dark mode. Switch to the system setting"  type="radio" name="__palette" id="__palette_2">
+    
+      <label class="md-header__button md-icon" title="Dark mode. Switch to the system setting" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3zm3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://gitlab.com/Tyler-Meador/HILT" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="m504 204.6-.7-1.8L433.6 21c-1.4-3.6-3.9-6.6-7.2-8.6-2.4-1.6-5.1-2.5-8-2.8s-5.7.1-8.4 1.1-5.1 2.7-7.1 4.8c-1.9 2.1-3.3 4.7-4.1 7.4l-47 144H161.3l-47.1-144c-.8-2.8-2.2-5.3-4.1-7.4-2-2.1-4.4-3.7-7.1-4.8-2.6-1-5.5-1.4-8.4-1.1s-5.6 1.2-8 2.8c-3.2 2-5.8 5.1-7.2 8.6L9.8 202.8l-.8 1.8c-10 26.2-11.3 55-3.5 82 7.7 26.9 24 50.7 46.4 67.6l.3.2.6.4 106 79.5c38.5 29.1 66.7 50.3 84.6 63.9 3.7 1.9 8.3 4.3 13 4.3s9.3-2.4 13-4.3c17.9-13.5 46.1-34.9 84.6-63.9l106.7-79.9.3-.3c22.4-16.9 38.7-40.6 45.6-67.5 8.6-27 7.4-55.8-2.6-82"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitLab
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="index.html" title="HILT" class="md-nav__button md-logo" aria-label="HILT" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M6 4h12v1h3v2h-3v2h3v2h-3v2h3v2h-3v2h3v2h-3v1H6v-1H3v-2h3v-2H3v-2h3v-2H3V9h3V7H3V5h3zm5 11v3h1v-3zm2 0v3h1v-3zm2 0v3h1v-3z"/></svg>
+
+    </a>
+    HILT
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://gitlab.com/Tyler-Meador/HILT" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="m504 204.6-.7-1.8L433.6 21c-1.4-3.6-3.9-6.6-7.2-8.6-2.4-1.6-5.1-2.5-8-2.8s-5.7.1-8.4 1.1-5.1 2.7-7.1 4.8c-1.9 2.1-3.3 4.7-4.1 7.4l-47 144H161.3l-47.1-144c-.8-2.8-2.2-5.3-4.1-7.4-2-2.1-4.4-3.7-7.1-4.8-2.6-1-5.5-1.4-8.4-1.1s-5.6 1.2-8 2.8c-3.2 2-5.8 5.1-7.2 8.6L9.8 202.8l-.8 1.8c-10 26.2-11.3 55-3.5 82 7.7 26.9 24 50.7 46.4 67.6l.3.2.6.4 106 79.5c38.5 29.1 66.7 50.3 84.6 63.9 3.7 1.9 8.3 4.3 13 4.3s9.3-2.4 13-4.3c17.9-13.5 46.1-34.9 84.6-63.9l106.7-79.9.3-.3c22.4-16.9 38.7-40.6 45.6-67.5 8.6-27 7.4-55.8-2.6-82"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitLab
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="index.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="getting-started.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="floor-technician.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Floor Technician
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="overview.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="lifecycle.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Lifecycle
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Idioms
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="idioms.html" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Idioms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#the-golden-rule" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Golden Rule
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#immutable-self-convention" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Immutable-self Convention
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#evidence-travels-with-the-verdict" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Evidence Travels With the Verdict
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-parent-owns-the-route" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Parent Owns the Route
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="The Parent Owns the Route">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-node-names-what-it-needs-the-framework-decides-where-it-comes-from" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Node Names What It Needs; the Framework Decides Where It Comes From
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#run_data-automatic-structured-evidence" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        run_data — Automatic Structured Evidence
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#measurements-utilsmeasure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Measurements: utils.measure
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#composition-factories-selftest-selfsequence-selfparallel" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Composition Factories: self.test, self.sequence, self.parallel
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Composition Factories: self.test, self.sequence, self.parallel">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#enumerate-leaves-at-runtime" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Enumerate Leaves at Runtime
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#selftest-or-configure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        self.test() or configure()?
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#time-budgets-name-the-meaning-of-too-long" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Time Budgets: Name the Meaning of “Too Long”
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#passfailaborted-contract" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pass/Fail/Aborted Contract
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#constructor-only-hooks-use_survey-and-use_audit" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Constructor-Only Hooks: use_survey and use_audit
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#integration-hooks-before_each-after_each-on-the-run-params" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Integration Hooks: before_each / after_each on the Run Params
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#configure-returns-context-pattern" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Configure-Returns-Context Pattern
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Configure-Returns-Context Pattern">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#carrying-the-same-type-into-the-test-methods" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Carrying the same type into the test methods
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#composability" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Composability
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#environment-variables" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Environment Variables
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#testutils-injection" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TestUtils Injection
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#logging" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Logging
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Logging">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#point-in-time-artifacts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Point-in-Time Artifacts
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#runresult-navigation-ancestor_names-and-bread_crumbs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        RunResult Navigation — ancestor_names and bread_crumbs
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fractal-design-hilt-exposes-a-single-class" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fractal Design: HILT exposes a single class
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#selfsequence-vs-selfparallel" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        self.sequence() vs self.parallel()
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#arpresolver-mac-to-ip" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ArpResolver — MAC to IP
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#arpresolver-behind-a-gateway" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ArpResolver Behind a Gateway
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ssh-device-class-owned-connection" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SSH Device — Class-Owned Connection
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ssh-tunneling" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SSH Tunneling
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#device-api-coaphttp" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Device API — CoAP/HTTP
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#wait_for-patterns" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        wait_for Patterns
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="utilities.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Utilities
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="contracts.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Contracts
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="inspector-json.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Inspector JSON
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="inspector.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Inspector (target specification)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="measurements.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Measurements
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="junit-xml.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    JUnit XML
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="hilt-run.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    hilt run
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="hilt-new.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    hilt new
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="hilt-check.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    hilt-check
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="api-stability.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API stability
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="api.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_18" >
+        
+          
+          <label class="md-nav__link" for="__nav_18" id="__nav_18_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    HIL interfaces
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_18_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_18">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    HIL interfaces
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="hil/index.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="hil/gpio.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    GPIO (design note)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="hil/pwm.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    PWM (design note)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="hil/can.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CAN bus (design note)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="hil/i2c-spi.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    I2C/SPI (design note)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="hil/device-api.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Device API (design note)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="hil/serial.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Serial/UART (design note)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#the-golden-rule" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Golden Rule
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#immutable-self-convention" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Immutable-self Convention
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#evidence-travels-with-the-verdict" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Evidence Travels With the Verdict
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-parent-owns-the-route" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Parent Owns the Route
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="The Parent Owns the Route">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-node-names-what-it-needs-the-framework-decides-where-it-comes-from" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Node Names What It Needs; the Framework Decides Where It Comes From
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#run_data-automatic-structured-evidence" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        run_data — Automatic Structured Evidence
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#measurements-utilsmeasure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Measurements: utils.measure
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#composition-factories-selftest-selfsequence-selfparallel" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Composition Factories: self.test, self.sequence, self.parallel
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Composition Factories: self.test, self.sequence, self.parallel">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#enumerate-leaves-at-runtime" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Enumerate Leaves at Runtime
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#selftest-or-configure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        self.test() or configure()?
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#time-budgets-name-the-meaning-of-too-long" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Time Budgets: Name the Meaning of “Too Long”
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#passfailaborted-contract" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pass/Fail/Aborted Contract
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#constructor-only-hooks-use_survey-and-use_audit" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Constructor-Only Hooks: use_survey and use_audit
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#integration-hooks-before_each-after_each-on-the-run-params" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Integration Hooks: before_each / after_each on the Run Params
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#configure-returns-context-pattern" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Configure-Returns-Context Pattern
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Configure-Returns-Context Pattern">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#carrying-the-same-type-into-the-test-methods" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Carrying the same type into the test methods
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#composability" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Composability
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#environment-variables" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Environment Variables
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#testutils-injection" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TestUtils Injection
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#logging" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Logging
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Logging">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#point-in-time-artifacts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Point-in-Time Artifacts
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#runresult-navigation-ancestor_names-and-bread_crumbs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        RunResult Navigation — ancestor_names and bread_crumbs
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fractal-design-hilt-exposes-a-single-class" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fractal Design: HILT exposes a single class
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#selfsequence-vs-selfparallel" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        self.sequence() vs self.parallel()
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#arpresolver-mac-to-ip" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ArpResolver — MAC to IP
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#arpresolver-behind-a-gateway" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ArpResolver Behind a Gateway
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ssh-device-class-owned-connection" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SSH Device — Class-Owned Connection
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ssh-tunneling" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SSH Tunneling
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#device-api-coaphttp" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Device API — CoAP/HTTP
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#wait_for-patterns" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        wait_for Patterns
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="framework-idioms-patterns">Framework Idioms &amp; Patterns<a class="headerlink" href="#framework-idioms-patterns" title="Permanent link">&para;</a></h1>
+<h2 id="the-golden-rule">The Golden Rule<a class="headerlink" href="#the-golden-rule" title="Permanent link">&para;</a></h2>
+<p>If implementing something feels awkward or "ugly", you are fighting the framework. Seek the idiomatic approach.</p>
+<p>Treat that friction as a design-review signal, not a style preference and not immediate
+evidence that the framework needs another feature. Ask:</p>
+<blockquote>
+<p>What established HILT idiom is this design fighting, and which problem-domain concept
+would let composition, lifecycle boundaries, or <code>utils</code> express the intent coherently?</p>
+</blockquote>
+<p>Resolve that question before expanding the public API. A new abstraction is warranted only
+when the existing idioms cannot express a real manufacturing-test concept without obscuring
+evidence, hardware ownership, or verdict integrity. Convenience alone is not sufficient.</p>
+<p>The most important application is the React boundary in the port plan's section 1. HILT
+borrows React's component model—composition, inversion of control, hooks, and local state—not
+its runtime model. Reconciliation, re-rendering, and reactivity are out of scope because a
+hardware test executes once and may produce irreversible physical side effects. If a proposal
+feels awkward because it tries to import that runtime model, the friction identifies a crossed
+boundary, not a missing HILT feature.</p>
+<h2 id="immutable-self-convention">Immutable-self Convention<a class="headerlink" href="#immutable-self-convention" title="Permanent link">&para;</a></h2>
+<p>After <code>__init__</code> runs, <code>self</code> is read-only. What the tests need flows through configure's return value into <code>utils.ctx</code>, and what they observed leaves with the verdict. This eliminates hidden state coupling and makes the data flow explicit.</p>
+<p><strong>Rules:</strong>
+- <code>__init__</code> sets read-only config (MAC, credentials, site, etc.)
+- <code>configure()</code> returns what the tests will read, as a plain dict — the framework merges it into <code>utils.ctx</code> and closes it
+- test methods, <code>cleanup()</code>, and all child test bodies read from <code>utils.ctx</code>, not from <code>self</code>; every key they read with <code>[]</code> is one <code>configure()</code> returned, and a key it did not provide is read with <code>.get()</code> or not at all — a missing <code>[]</code> read is a <code>ContractViolation</code>, not a <code>KeyError</code> (issue #112)
+- <code>cleanup()</code> reads every key with <code>.get()</code> or <code>in</code>, never <code>[]</code>: it also runs when <code>configure()</code> raised before it returned, and then ctx holds nothing <code>configure()</code> would have provided. A <code>[]</code> read there logs a <code>ContractViolation</code> beside the real Fail (issue #152)
+- No <code>self.field = value</code> after construction, and no write to <code>utils.ctx</code> after <code>configure()</code> — a reading travels with the verdict, <code>PASS({...})</code>, and a thing that changes mid-run (an address, a connection) is an object in ctx that manages itself (issue #118)</p>
+<p><strong>Why:</strong> Mutable state, on <code>self</code> or in ctx, creates hidden coupling between lifecycle phases. When inputs flow through ctx and readings flow out with the verdict, the data path is explicit and traceable. The Floor Technician benefits because each leaf's record carries exactly what that leaf handed back, beside the limits it judged against.</p>
+<p><strong>Enforcement:</strong> This is a tier-1 runtime guard, not merely a lint convention.
+<code>TestComponent</code> freezes only after the most-derived <code>__init__</code> returns, so subclasses may
+finish declaring their identity after <code>super().__init__()</code>. Ordinary assignment and
+deletion then raise <code>AttributeError</code>. Framework-owned lifecycle and evidence transitions
+use <code>object.__setattr__</code> directly; suite code receives no framework escape-hatch method.
+The static no-self-mutation rule remains defense in depth.</p>
+<p><strong>Scope note:</strong> ctx is strictly instance-local. A parent's ctx never flows into composed children — composition is the only coupling mechanism, and ctx inheritance would smuggle hidden state across it. One leaf never reads another's reading either: what a sibling observed is on that sibling's record, not in ctx.</p>
+<h2 id="evidence-travels-with-the-verdict">Evidence Travels With the Verdict<a class="headerlink" href="#evidence-travels-with-the-verdict" title="Permanent link">&para;</a></h2>
+<p>A test method is a function from <code>utils.ctx</code> to a verdict. Its readings leave with the
+verdict: <code>PASS({...})</code> on the pass path, <code>TestFailure(..., evidence={...})</code> on the fail
+path. <code>@evidence</code> is the method's return signature — it names the keys a pass must
+carry, beside the code that keeps the promise (issue #118).</p>
+<div class="highlight"><pre><span></span><code><span class="nd">@evidence</span><span class="p">(</span><span class="s2">"output_voltage_v"</span><span class="p">)</span>
+<span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">_check_voltage</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">utils</span><span class="p">:</span> <span class="n">TestUtils</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Verdict</span><span class="p">:</span>
+    <span class="n">v</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_read</span><span class="p">(</span><span class="n">utils</span><span class="p">,</span> <span class="n">utils</span><span class="o">.</span><span class="n">ctx</span><span class="p">[</span><span class="s2">"ip"</span><span class="p">])</span>
+    <span class="n">reading</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"output_voltage_v"</span><span class="p">:</span> <span class="n">v</span><span class="p">}</span>
+    <span class="k">if</span> <span class="n">v</span> <span class="o">&lt;=</span> <span class="n">utils</span><span class="o">.</span><span class="n">ctx</span><span class="p">[</span><span class="s2">"voltage_high_v"</span><span class="p">]:</span>
+        <span class="k">return</span> <span class="n">PASS</span><span class="p">(</span><span class="n">reading</span><span class="p">)</span>
+    <span class="k">raise</span> <span class="n">TestFailure</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">v</span><span class="si">}</span><span class="s2"> V exceeds limit"</span><span class="p">,</span> <span class="n">evidence</span><span class="o">=</span><span class="n">reading</span><span class="p">)</span>
+</code></pre></div>
+<ul>
+<li>The declaration is fixed at class definition and never computed at run time. Pass
+  criteria that vary by SKU or fixture are a leaf argument or a different leaf, decided
+  before <code>build_suite</code> runs.</li>
+<li>A pass without its declared evidence is not a pass: the child boundary refuses it as a
+  <code>ContractViolation</code> naming the leaf and the key. Extra keys are allowed; the
+  declaration is a floor. A failure is not held to it, since a failure may fire before
+  every reading was taken; it records what it is handed.</li>
+<li>The payload is validated entry by entry. A value that is not JSON, or a key that shadows
+  a ctx entry or the framework-owned <code>measurements</code> slot, is a <code>ContractViolation</code> naming
+  the key. Nothing is stripped silently.</li>
+<li>Ctx and evidence are one namespace, because they land on one record. A key
+  <code>configure()</code> returns names the limit or the target (<code>kernel</code>, <code>domain</code>, <code>voltage_high_v</code>);
+  a key <code>@evidence</code> declares names the reading judged against it (<code>kernel_running</code>,
+  <code>queried</code>, <code>output_voltage_v</code>). The same word cannot do both, so pick the evidence name
+  with the ctx key in view. <code>hilt-check</code> flags the clash on the declaring literal as
+  <code>hilt/evidence-shadows-ctx</code> (bench finding F14, issue #161).</li>
+<li>A measurement is not evidence. <code>utils.measure</code> records a number beside the verdict
+  (see <em>Measurements</em> below); it does not satisfy an <code>@evidence</code> declaration, so a claim
+  that wants the reading in both records names it in both.</li>
+<li>An undecorated method may still return <code>PASS(payload)</code>; the payload is recorded
+  unchecked. Declare when you want to be held to it.</li>
+<li>The same decorator accepts a <code>TypedDict</code>. With <code>-&gt; Verdict[MyEvidence]</code> on the method,
+  pyright checks the <code>PASS({...})</code> payload against the shape at write time; at run time
+  the <code>TypedDict</code>'s required keys are the declaration.</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">VoltageEvidence</span><span class="p">(</span><span class="n">TypedDict</span><span class="p">):</span>
+    <span class="n">output_voltage_v</span><span class="p">:</span> <span class="nb">float</span>
+
+
+<span class="nd">@evidence</span><span class="p">(</span><span class="n">VoltageEvidence</span><span class="p">)</span>
+<span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">_check_voltage</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">utils</span><span class="p">:</span> <span class="n">TestUtils</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Verdict</span><span class="p">[</span><span class="n">VoltageEvidence</span><span class="p">]:</span> <span class="o">...</span>
+</code></pre></div>
+<p><code>hilt-check</code> enforces the declaration statically as <code>hilt/evidence-fulfilled</code>, the one
+namespace as <code>hilt/evidence-shadows-ctx</code>, and the read-only context as part of
+<code>hilt/ctx-provenance</code>.</p>
+<h2 id="the-parent-owns-the-route">The Parent Owns the Route<a class="headerlink" href="#the-parent-owns-the-route" title="Permanent link">&para;</a></h2>
+<p>The node that opens a hop owns it, and everything composed under it inherits it. A
+gateway is a parent node: its <code>configure()</code> calls <code>utils.use_shell(host=..., ...)</code>,
+and its <code>build_suite()</code> composes the devices behind the hop. The framework routes the
+gateway's own <code>utils.exec</code> through that hop and hands the route to every child, so a
+device's configure, surveys, tests, and audits all land on the far side without the
+device saying so. A device class never takes a routing argument; it is written once
+and reused on every bench.</p>
+<div class="highlight"><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">Gateway</span><span class="p">(</span><span class="n">TestComponent</span><span class="p">):</span>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">configure</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">utils</span><span class="p">:</span> <span class="n">TestUtils</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+        <span class="k">await</span> <span class="n">utils</span><span class="o">.</span><span class="n">use_shell</span><span class="p">(</span><span class="n">host</span><span class="o">=</span><span class="s2">"10.0.0.1"</span><span class="p">,</span> <span class="n">username</span><span class="o">=</span><span class="s2">"ops"</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">{}</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">build_suite</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TestComponent</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">MyDevice</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"target"</span><span class="p">,</span> <span class="n">mac</span><span class="o">=</span><span class="s2">"aa:bb:cc:dd:ee:ff"</span><span class="p">)</span>
+</code></pre></div>
+<p><code>MyDevice</code> run on its own reads the test host; composed under <code>Gateway</code> it reads the
+gateway. Same bytes. A child that must run locally declares <code>use_shell(inherit=False)</code>
+in its own <code>configure()</code>; a parent that must not hand its route down declares
+<code>propagate=False</code>. The hop stays up until the parent's own teardown, after every
+child has cleaned up — a child that fails or expires loses only the transports it
+opened itself, never its parent's hop. A gateway that cannot come up Fails in its
+own <code>configure()</code>, and the children it never composed stay pending: the bench was
+not ready, so the device was never asked.</p>
+<p>The only <code>via</code> in the framework is the tunnel argument to <code>use_shell</code> / <code>get_shell</code>
+(see SSH Tunnel below). That is the parent's tool for reaching through a jump host
+inside its own <code>configure()</code>; it is never a child's burden.</p>
+<h3 id="the-node-names-what-it-needs-the-framework-decides-where-it-comes-from">The Node Names What It Needs; the Framework Decides Where It Comes From<a class="headerlink" href="#the-node-names-what-it-needs-the-framework-decides-where-it-comes-from" title="Permanent link">&para;</a></h3>
+<p>Ruled on issue #142 (2026-09-12). A constructor argument is identity, fixed at
+composition time: a name, a MAC, the SKU-specific pass criteria. Runtime state comes
+from <code>utils</code> in <code>configure()</code>, as one call with no fallback: the IP, the shell, the
+tunnel, the resolver, the device API. When a parent and a child both could provide the
+same thing, that thing belongs in <code>TestUtils</code>, where the framework inherits it down the
+tree and records which way it went; it never travels through ctx or the constructor. A
+fallback in <code>configure()</code> is the smell that says a utility is missing.</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># Not allowed: two sources of truth for one ctx key, a branch the suite engineer</span>
+<span class="c1"># wrote, and a record that cannot say which path produced the value.</span>
+<span class="n">ip</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ip</span> <span class="ow">or</span> <span class="k">await</span> <span class="n">utils</span><span class="o">.</span><span class="n">get_arp_resolver</span><span class="p">(</span><span class="n">mac</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_mac</span><span class="p">)</span><span class="o">.</span><span class="n">resolve</span><span class="p">()</span>
+</code></pre></div>
+<p>The framework already does this twice. The route flows down through <code>use_shell</code> and is
+inherited by every composed child; the ARP resolver is scoped to the node's current
+route and its cache is keyed by the routing label, so devices behind one gateway share
+ARP state without the suite engineer writing anything to arrange it.</p>
+<p>Identity reaches a root node through <code>utils.env</code> when no parent composed it: the
+<code>DUT_MAC</code> a bench-run device reads is the same MAC a rack parent passes to the
+constructor, and the run's environment is published on the record either way (see
+Environment Variables below). That is the run's declared input, not discovery, and it
+is what keeps the bench-run device and the composed one the same bytes.</p>
+<h2 id="run_data-automatic-structured-evidence">run_data — Automatic Structured Evidence<a class="headerlink" href="#run_data-automatic-structured-evidence" title="Permanent link">&para;</a></h2>
+<p>The default <code>run_data</code> returns a detached snapshot of all serializable values from
+<code>utils.ctx</code>: the ctx view. JSON primitives (with finite numbers), plain dicts with string
+keys, and lists survive; class instances (<code>SshInterface</code>, etc.), functions, live handles,
+non-finite floats, and cycles are stripped automatically. A leaf's <code>RunResult.run_data</code> is
+that view plus the evidence its verdict carried, flat, so the limit sits beside the
+reading; the leaf's <code>summary_tree</code> node carries the same evidence and its declaration.
+A non-leaf node's <code>run_data</code> is the ctx view alone.</p>
+<p>Stripping is deterministic and all-or-nothing at each top-level ctx entry. If a list or
+dict contains one invalid nested value, that complete entry is absent from <code>run_data</code>.
+HILT does not remove only the handle and leave a plausible-looking partial record.</p>
+<p>A value the claims need but the record must not carry, such as a session credential
+obtained in <code>configure()</code>, is named in <code>redact_ctx</code> on the suite class (issue #154).
+Each entry is a ctx key, exact or as a regular expression the key matches whole. The
+key appears in <code>run_data</code> as <code>&lt;REDACTED&gt;</code>, and the string under it is masked on every
+record surface, including a log line or a <code>TestFailure</code> the author hands it to. The
+record shows that the key was held; it never shows what. ctx itself is unchanged: the
+claims read the real value.</p>
+<div class="highlight"><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">BlocklistRoundTrip</span><span class="p">(</span><span class="n">TestComponent</span><span class="p">):</span>
+    <span class="n">redact_ctx</span> <span class="o">=</span> <span class="p">(</span><span class="s2">"sid"</span><span class="p">,</span> <span class="sa">r</span><span class="s2">"api_.*"</span><span class="p">)</span>
+
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">configure</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">utils</span><span class="p">:</span> <span class="n">TestUtils</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+        <span class="n">sid</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_login</span><span class="p">(</span><span class="n">utils</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s2">"sid"</span><span class="p">:</span> <span class="n">sid</span><span class="p">,</span> <span class="s2">"api_token"</span><span class="p">:</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_token</span><span class="p">(</span><span class="n">utils</span><span class="p">,</span> <span class="n">sid</span><span class="p">),</span> <span class="s2">"domain"</span><span class="p">:</span> <span class="s2">"x.test"</span><span class="p">}</span>
+
+
+<span class="c1"># RunResult.run_data =&gt; {</span>
+<span class="c1">#     "measurements": [],</span>
+<span class="c1">#     "sid": "&lt;REDACTED&gt;",</span>
+<span class="c1">#     "api_token": "&lt;REDACTED&gt;",</span>
+<span class="c1">#     "domain": "x.test",</span>
+<span class="c1"># }</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code><span class="c1"># configure returns data — it appears in run_data automatically</span>
+<span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">configure</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">utils</span><span class="p">:</span> <span class="n">TestUtils</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+    <span class="n">ip</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_resolve</span><span class="p">()</span>
+    <span class="k">return</span> <span class="p">{</span><span class="s2">"ip"</span><span class="p">:</span> <span class="n">ip</span><span class="p">,</span> <span class="s2">"hostname"</span><span class="p">:</span> <span class="s2">"switch-01"</span><span class="p">}</span>
+
+
+<span class="c1"># RunResult.run_data =&gt; {</span>
+<span class="c1">#     "measurements": [],</span>
+<span class="c1">#     "ip": "10.0.0.1",</span>
+<span class="c1">#     "hostname": "switch-01",</span>
+<span class="c1"># }</span>
+</code></pre></div>
+<p>Override <code>run_data</code> only when you need computed or filtered output from the context.
+An override sees the ctx view, not the readings, which are merged when the leaf settles:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">hilt</span><span class="w"> </span><span class="kn">import</span> <span class="n">JsonObject</span>
+
+
+<span class="nd">@property</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">run_data</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">JsonObject</span><span class="p">:</span>
+    <span class="n">base</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">run_data</span>
+    <span class="k">return</span> <span class="p">{</span><span class="o">**</span><span class="n">base</span><span class="p">,</span> <span class="s2">"within_spec"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_spec</span><span class="p">(</span><span class="n">base</span><span class="p">)}</span>
+</code></pre></div>
+<p><strong>Note:</strong> non-JSON-safe objects (<code>datetime</code>, sets, arbitrary classes) are stripped by
+default. Override <code>run_data</code> if you need custom serialization for these types, and
+return only JSON-safe data from the override.</p>
+<p>Every snapshot includes <code>run_data["measurements"]</code>, the list <code>utils.measure</code> fills. It
+is framework-owned: a ctx entry with that key does not populate or replace it, and it
+is written after any <code>run_data</code> override runs, so an override cannot drop it.</p>
+<h2 id="measurements-utilsmeasure">Measurements: <code>utils.measure</code><a class="headerlink" href="#measurements-utilsmeasure" title="Permanent link">&para;</a></h2>
+<p>A reading with a unit and a window that a process engineer will chart belongs in
+<code>utils.measure</code>, not only in the evidence payload. The call records and returns; the
+verdict stays whatever the gated <code>PASS</code> says, because a limit is evidence, never a
+verdict (<code>docs/measurements.md</code>):</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">hilt</span><span class="w"> </span><span class="kn">import</span> <span class="n">PASS</span><span class="p">,</span> <span class="n">TestComponent</span><span class="p">,</span> <span class="n">TestFailure</span><span class="p">,</span> <span class="n">TestUtils</span><span class="p">,</span> <span class="n">Verdict</span><span class="p">,</span> <span class="n">evidence</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Rail</span><span class="p">(</span><span class="n">TestComponent</span><span class="p">):</span>
+    <span class="nd">@evidence</span><span class="p">(</span><span class="s2">"output_voltage_v"</span><span class="p">)</span>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">_output_rail</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">utils</span><span class="p">:</span> <span class="n">TestUtils</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Verdict</span><span class="p">:</span>
+        <span class="n">volts</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_read_rail</span><span class="p">(</span><span class="n">utils</span><span class="p">)</span>
+        <span class="n">rail</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">measure</span><span class="p">(</span><span class="s2">"output_voltage_v"</span><span class="p">,</span> <span class="n">volts</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">"V"</span><span class="p">,</span> <span class="n">limits</span><span class="o">=</span><span class="p">(</span><span class="mf">4.75</span><span class="p">,</span> <span class="mf">5.25</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">rail</span><span class="o">.</span><span class="n">in_limits</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">PASS</span><span class="p">({</span><span class="s2">"output_voltage_v"</span><span class="p">:</span> <span class="n">volts</span><span class="p">})</span>
+        <span class="k">raise</span> <span class="n">TestFailure</span><span class="p">(</span><span class="s2">"rail outside window"</span><span class="p">,</span> <span class="s2">"4.75-5.25 V"</span><span class="p">,</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">volts</span><span class="si">}</span><span class="s2"> V"</span><span class="p">)</span>
+</code></pre></div>
+<p>The gate reads in plain sight, so <code>hilt/gated-pass</code> sees the predicate and the next
+reader sees the criterion. Name the quantity once per node, in the unit it will always
+carry; the consumer keys its series on that name. Record for trend without a window by
+passing <code>limits=None</code>. Measure from <code>configure()</code> (a bring-up reading) or the test
+method only; <code>cleanup</code>, surveys, audits, and hooks are refused. <code>from hilt import
+measure</code> is the same call resolved to the running node when a helper does not have
+<code>utils</code> in hand.</p>
+<p>When the reading comes over a shell, parse it to <code>float | None</code> and hand <code>measure</code> the
+<code>None</code> instead of wrapping the parse in a <code>try</code>: a reading not taken is recorded as
+such, it is never inside its window, and the same gate fails the claim (issue #159).
+Keep <code>NaN</code> out of the call; that is a bug in the suite's arithmetic, not a blank from
+the device, and the framework refuses it.</p>
+<h2 id="composition-factories-selftest-selfsequence-selfparallel">Composition Factories: <code>self.test</code>, <code>self.sequence</code>, <code>self.parallel</code><a class="headerlink" href="#composition-factories-selftest-selfsequence-selfparallel" title="Permanent link">&para;</a></h2>
+<p><code>TestComponent</code> exposes three instance factories for building the suite. The names are
+the vocabulary a suite reads aloud in: a leaf is a <em>test</em>, dependent children run in
+<em>sequence</em>, independent children run in <em>parallel</em>. There is exactly one spelling for
+each; <code>case</code> and <code>group</code> are retired (issue #110) and <code>hilt/retired-names</code> flags them.</p>
+<ul>
+<li><code>self.test(name, fn, *, fail_after=None, abort_after=None)</code> — the leaf: one verdict
+  method, named here at composition time. Defaults to <code>discrete_log_file=False</code> so
+  entries roll up to the parent artifact.</li>
+<li><code>self.sequence(children, ...)</code> or <code>self.sequence(name, children, ...)</code> — serial
+  execution, bails on first failure, and owns a discrete timeline by default.</li>
+<li><code>self.parallel(children, ...)</code> or <code>self.parallel(name, children, ...)</code> — concurrent
+  execution via <code>asyncio.TaskGroup</code>, collects all failures, and owns a discrete timeline
+  by default. The name says so: nobody misses that two children share a bus.</li>
+</ul>
+<p><strong>The root of <code>build_suite()</code> takes no name.</strong> The component already has one, given at
+construction, and the composition <code>build_suite()</code> returns is that component's body, not
+a second thing to name. Write <code>self.sequence([...])</code> or <code>self.parallel([...])</code> there and
+the root takes the component's name; the Inspector then draws the component and its
+root as one row (<a href="inspector.html#the-fold-one-row-per-component">the fold</a>). Give a name
+when it says something the component's does not: every composition below the root, and
+a root that is a stage of its own, such as <code>self.sequence("burn-in", [...])</code>.</p>
+<p>Only the root may go without. A nameless composition placed inside another one is a
+<code>ContractViolation</code> raised where it is nested, at composition and before any hardware
+is touched: two levels would carry one name, and siblings could share it. A name with
+no children, <code>self.sequence("stage")</code>, is refused the same way, and the message names
+both forms. <code>self.sequence(self.name, [...])</code>, the spelling before the nameless form
+existed, still works and records exactly the same tree.</p>
+<p>Pass <code>discrete_log_file=False</code> to <code>self.sequence()</code> or <code>self.parallel()</code> when that
+composition is too small to merit a separate Inspector timeline. Its records then roll
+into the nearest owning ancestor, just as leaves do. Authored <code>TestComponent</code>
+subclasses also default to a discrete timeline and may opt into roll-up through
+<code>super().__init__(..., discrete_log_file=False)</code>. The root always owns a log so every
+run has an authoritative temporal backbone.</p>
+<p><strong>Private methods pass as references directly — Python bound methods carry <code>self</code> for free.</strong></p>
+<div class="highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">build_suite</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TestComponent</span><span class="p">:</span>
+    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">sequence</span><span class="p">(</span>
+        <span class="p">[</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">test</span><span class="p">(</span><span class="s2">"check reachable"</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_reachable</span><span class="p">),</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">test</span><span class="p">(</span><span class="s2">"check firmware"</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_firmware</span><span class="p">),</span>
+        <span class="p">]</span>
+    <span class="p">)</span>
+
+
+<span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">_check_reachable</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">utils</span><span class="p">:</span> <span class="n">TestUtils</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Verdict</span><span class="p">:</span>
+    <span class="c1"># `self` is preserved — bound at attribute access, no wrapping needed</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="k">await</span> <span class="n">utils</span><span class="o">.</span><span class="n">exec</span><span class="p">(</span><span class="s2">"true"</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">result</span><span class="o">.</span><span class="n">exit_code</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">PASS</span>
+    <span class="k">raise</span> <span class="n">TestFailure</span><span class="p">(</span><span class="s2">"device unreachable"</span><span class="p">,</span> <span class="s2">"exit 0"</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">exit_code</span><span class="p">))</span>
+</code></pre></div>
+<p>Every <code>return PASS</code> sits under the predicate that earns it; <code>hilt-check</code> (the
+<code>hilt/gated-pass</code> rule) flags a bare one, and the examples show the gated shape.</p>
+<h3 id="enumerate-leaves-at-runtime">Enumerate Leaves at Runtime<a class="headerlink" href="#enumerate-leaves-at-runtime" title="Permanent link">&para;</a></h3>
+<p>A leaf's name is decided where the tree is composed, not where the method is defined.
+One method, many leaves: pass the value that varies straight to <code>self.test()</code> after the
+method, and name each leaf in a comprehension. The framework calls
+<code>fn(utils, *args, **kwargs)</code>; <code>utils</code> is always first, and the developer's arguments
+follow. <code>fail_after</code> and <code>abort_after</code> are the leaf's budget, never the method's
+parameters. The arguments are checked against the method's signature when the tree is
+built, so a leaf that could never be called fails <code>build_suite</code> with a
+<code>ContractViolation</code> before any hardware is touched.</p>
+<div class="highlight"><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">Compute</span><span class="p">(</span><span class="n">TestComponent</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">cpu_count</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cpu_count</span> <span class="o">=</span> <span class="n">cpu_count</span>
+
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">_cpu_stress</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">utils</span><span class="p">:</span> <span class="n">TestUtils</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">cpu</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Verdict</span><span class="p">:</span> <span class="o">...</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">build_suite</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TestComponent</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">parallel</span><span class="p">(</span>
+            <span class="p">[</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">test</span><span class="p">(</span><span class="sa">f</span><span class="s2">"cpu</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">_stress"</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cpu_stress</span><span class="p">,</span> <span class="n">cpu</span><span class="o">=</span><span class="n">i</span><span class="p">,</span> <span class="n">fail_after</span><span class="o">=</span><span class="mf">120.0</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_cpu_count</span><span class="p">)</span>
+            <span class="p">]</span>
+        <span class="p">)</span>
+</code></pre></div>
+<p>The comprehension maps a known population (every core, every rail, every channel) onto
+leaves; it does not choose among them. A comprehension with an <code>if</code> filter decides at
+build time which claims exist, and <code>hilt/pure-build-suite</code> flags it. The population
+is identity, like a hook: it comes in through <code>__init__</code>, never out of <code>configure()</code>.</p>
+<h3 id="selftest-or-configure"><code>self.test()</code> or <code>configure()</code>?<a class="headerlink" href="#selftest-or-configure" title="Permanent link">&para;</a></h3>
+<p>A long operation such as a firmware flash or a provisioning step is a <code>self.test(...)</code>
+when the Floor Technician should see it in the report with its own verdict and its own
+budget. When it is preparation the report should not itemize, it belongs in
+<code>configure()</code>, where a <code>TestFailure</code> means "the device did not reach a testable state"
+(see overview.md) and the node reads Fail without a phantom leaf. Ask whether the Floor
+Technician acts differently when this step fails on its own line. If so, it is a leaf.</p>
+<h2 id="time-budgets-name-the-meaning-of-too-long">Time Budgets: Name the Meaning of “Too Long”<a class="headerlink" href="#time-budgets-name-the-meaning-of-too-long" title="Permanent link">&para;</a></h2>
+<p>Declare a budget on the composition line that owns the work. Use <code>fail_after</code> when
+missing the time limit is a negative hardware verdict, and <code>abort_after</code> when the
+harness should stop waiting without claiming the hardware failed.</p>
+<div class="highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">build_suite</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TestComponent</span><span class="p">:</span>
+    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">parallel</span><span class="p">(</span>
+        <span class="p">[</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">test</span><span class="p">(</span><span class="s2">"BMC ready"</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_bmc_ready</span><span class="p">,</span> <span class="n">fail_after</span><span class="o">=</span><span class="mf">45.0</span><span class="p">),</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">test</span><span class="p">(</span><span class="s2">"optional telemetry"</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_telemetry</span><span class="p">,</span> <span class="n">abort_after</span><span class="o">=</span><span class="mf">10.0</span><span class="p">),</span>
+        <span class="p">],</span>
+        <span class="n">fail_after</span><span class="o">=</span><span class="mf">120.0</span><span class="p">,</span>
+    <span class="p">)</span>
+
+
+<span class="n">result</span> <span class="o">=</span> <span class="k">await</span> <span class="n">rack</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">abort_after</span><span class="o">=</span><span class="mf">300.0</span><span class="p">)</span>
+</code></pre></div>
+<p>The run budget bounds the whole rack. The parallel node and its leaves may tighten that
+bound; they cannot lengthen it. If the 45-second leaf is reached with only 8 seconds left on the
+run clock, the run clock fires after those 8 seconds and its <code>abort_after</code> state applies.
+The resulting <code>timeout</code> evidence names <code>reason="timeout"</code>, the declared budget, active
+elapsed time, and the root-to-node path of the winning clock.</p>
+<p>The timed window is configure through the test method or last child. Cleanup retains
+its separate finalization allowance. Root-owned <code>before_each</code>/<code>after_each</code> hooks are
+excluded from every time-budget clock, so a slow shop-floor database cannot manufacture
+a hardware Fail. In a parallel node, however, a sibling still inside its timed
+window keeps the shared ancestor clock moving; another sibling's hook or cleanup cannot
+lend it extra time. Do not catch or suppress <code>asyncio.CancelledError</code> around awaited
+work.</p>
+<p>A deadline closes only transports opened by the cut node. An inherited route remains
+the parent's resource; this is what keeps a timed-out DUT from taking down a healthy
+sibling behind the same gateway.</p>
+<p>A gateway parent may declare the same budget pair. Its clock begins when it enters
+<code>configure</code>; if the hop is not open by then, the Fail or Aborted state and its timeout
+evidence are the gateway's own, and the devices behind it are never asked.</p>
+<h2 id="passfailaborted-contract">Pass/Fail/Aborted Contract<a class="headerlink" href="#passfailaborted-contract" title="Permanent link">&para;</a></h2>
+<ul>
+<li>A test method returning <code>PASS</code>, or <code>PASS(evidence)</code> with its readings → test passes (state <code>Pass</code>). The check is <code>isinstance(result, Verdict)</code>, and only <code>PASS</code> mints one. The string <code>"PASS"</code> does not pass, and a <code>PASS</code> missing a key its <code>@evidence</code> declared is a contract violation, not a pass.</li>
+<li>A test method raising <code>TestFailure</code> (or subclass) → test fails with structured data (state <code>Fail</code>)</li>
+<li>A test method raising any other exception → <code>ContractViolation</code> Fail (banner <code>CONTRACT VIOLATION</code>, <code>bug: true</code>): the developer didn't model this failure mode. The node's log carries the traceback under the banner, starting at the suite's own code</li>
+<li>A test method returning anything other than the <code>PASS</code> sentinel (including falling through with <code>None</code>) → node-local <code>Aborted</code>. No verdict was produced, so the framework refuses to forge one. Siblings are unaffected.</li>
+<li>An integration hook (<code>before_each</code> / <code>after_each</code>) throwing anywhere in the tree → state <code>Aborted</code> on the enclosing node AND every ancestor</li>
+</ul>
+<p><code>Aborted</code> is a peer state to <code>Pass</code> and <code>Fail</code>, not a flavor of failure. It signals that no verdict was produced — either the harness around the test broke, or the test method finished without rendering one. The Floor Technician's recovery protocol is "check the integration layer / the test method," not "check the hardware."</p>
+<h2 id="constructor-only-hooks-use_survey-and-use_audit">Constructor-Only Hooks: <code>use_survey</code> and <code>use_audit</code><a class="headerlink" href="#constructor-only-hooks-use_survey-and-use_audit" title="Permanent link">&para;</a></h2>
+<p>Survey and audit hooks are registered in <code>__init__</code>, not in <code>configure()</code>. They are stackable — multiple calls register multiple independent hooks, each firing on its own schedule.</p>
+<div class="highlight"><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">ComputeBlade</span><span class="p">(</span><span class="n">TestComponent</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">:</span> <span class="n">TestParams</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
+
+        <span class="c1"># Passive snapshot at every lifecycle phase boundary</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">use_survey</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_dmesg_snapshot</span><span class="p">)</span>
+
+        <span class="c1"># Active monitoring that can fail the test</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">use_audit</span><span class="p">(</span><span class="n">interval</span><span class="o">=</span><span class="mf">5.0</span><span class="p">,</span> <span class="n">fn</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_check_thermals</span><span class="p">)</span>
+</code></pre></div>
+<p><strong>Why constructor-registration, not configure-registration?</strong>
+Survey and audit are part of the test's <em>identity</em> — stable across runs, visible on the class — not runtime-configured state. Registering them in the constructor makes them discoverable and keeps <code>configure()</code> focused on runtime wiring.</p>
+<p>Survey errors are swallowed (never affect the verdict). Audit errors are real failures — a throwing audit cancels in-flight test methods immediately and fails the test.</p>
+<p><strong>Scheduling a survey.</strong> A survey fires at all six <code>Phase</code> boundaries unless the
+constructor says otherwise. A survey that reads the device through <code>utils.exec</code> has no
+device to read at <code>pre-configure</code>, before <code>use_shell</code> has run; its dispatch there execs
+on the test host and records the developer's machine as device evidence. Say which
+boundaries the survey observes, and guard the route:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">hilt</span><span class="w"> </span><span class="kn">import</span> <span class="n">TestComponent</span><span class="p">,</span> <span class="n">Phase</span><span class="p">,</span> <span class="n">TestUtils</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">PiHole</span><span class="p">(</span><span class="n">TestComponent</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">use_survey</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_ftl_tail</span><span class="p">,</span>
+            <span class="n">phases</span><span class="o">=</span><span class="p">[</span><span class="n">phase</span> <span class="k">for</span> <span class="n">phase</span> <span class="ow">in</span> <span class="n">Phase</span> <span class="k">if</span> <span class="n">phase</span> <span class="o">&gt;=</span> <span class="n">Phase</span><span class="o">.</span><span class="n">POST_CONFIGURE</span><span class="p">],</span>
+        <span class="p">)</span>
+
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">_ftl_tail</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">utils</span><span class="p">:</span> <span class="n">TestUtils</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">object</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">utils</span><span class="o">.</span><span class="n">exec_route</span> <span class="o">==</span> <span class="s2">"local"</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>  <span class="c1"># no device on the other end of exec at this boundary</span>
+        <span class="k">return</span> <span class="p">(</span><span class="k">await</span> <span class="n">utils</span><span class="o">.</span><span class="n">exec</span><span class="p">(</span><span class="s2">"tail -n 50 /var/log/pihole/FTL.log"</span><span class="p">))</span><span class="o">.</span><span class="n">stdout</span>
+</code></pre></div>
+<p>Both halves are needed. The phase list is the schedule; the route check is the guard.
+Order is not reach: when <code>configure</code> fails before <code>use_shell</code> returns, the engine
+skips <code>post-configure</code>, <code>pre-test</code>, and <code>post-test</code> and still fires <code>pre-cleanup</code> and
+<code>post-cleanup</code>, and at those two <code>utils.exec</code> is on the test host. <code>utils.exec_route</code>
+answers <code>"local"</code> there and the hop's endpoint (<code>"10.10.10.10"</code>) once the route is
+up, so a survey that compares against it never tails the wrong machine. An empty
+<code>phases=</code> is a <code>ValueError</code> at registration, not a survey that silently never fires.</p>
+<p>Survey artifacts are named for the lifecycle dispatch point and hook index. Audit
+artifacts use the same <code>survey</code> artifact type and add the audit hook and dispatch indexes
+to the name. Every non-<code>None</code> return is captured, including empty containers. Python
+cannot distinguish an explicit or delegated <code>None</code> return from fall-through at runtime,
+so <code>None</code> writes only an informational log entry. A hook that needs to preserve a
+deliberate null observation calls <code>await utils.capture_artifact(Artifact(..., data=None))</code>
+directly. Once a hook produces an observation, framework shutdown waits for its artifact
+publication within the bounded evidence budget, even under repeated cancellation. Audit
+intervals must be positive and finite, and the framework stops every audit loop as soon
+as the authored suite settles.</p>
+<p>See <code>examples/hardware_device_lifecycle.py</code> for survey and audit around a device
+with real state transitions — rail up in <code>configure</code>, thermal audit during the claim,
+rail down in <code>cleanup</code>.</p>
+<h2 id="integration-hooks-before_each-after_each-on-the-run-params">Integration Hooks: <code>before_each</code> / <code>after_each</code> on the Run Params<a class="headerlink" href="#integration-hooks-before_each-after_each-on-the-run-params" title="Permanent link">&para;</a></h2>
+<p>For composing HILT into a larger harness (shop-floor DB, lab coordinator, audit pipeline), pass <code>before_each</code> and <code>after_each</code> to the root <code>run()</code> call:</p>
+<div class="highlight"><pre><span></span><code><span class="k">await</span> <span class="n">root</span><span class="o">.</span><span class="n">run</span><span class="p">(</span>
+    <span class="n">before_each</span><span class="o">=</span><span class="k">lambda</span> <span class="n">ctx</span><span class="p">:</span> <span class="n">shopfloor_db</span><span class="o">.</span><span class="n">record_started</span><span class="p">(</span>
+        <span class="n">fn</span><span class="o">=</span><span class="n">ctx</span><span class="o">.</span><span class="n">bread_crumbs</span><span class="p">,</span>
+        <span class="n">station</span><span class="o">=</span><span class="n">ctx</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"STATION_ID"</span><span class="p">),</span>
+        <span class="n">at</span><span class="o">=</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(</span><span class="n">UTC</span><span class="p">),</span>
+    <span class="p">),</span>
+    <span class="n">after_each</span><span class="o">=</span><span class="k">lambda</span> <span class="n">ctx</span><span class="p">:</span> <span class="n">shopfloor_db</span><span class="o">.</span><span class="n">record_finished</span><span class="p">(</span>
+        <span class="n">fn</span><span class="o">=</span><span class="n">ctx</span><span class="o">.</span><span class="n">bread_crumbs</span><span class="p">,</span>
+        <span class="n">state</span><span class="o">=</span><span class="n">ctx</span><span class="o">.</span><span class="n">result</span><span class="o">.</span><span class="n">state</span><span class="p">,</span>
+        <span class="n">failure</span><span class="o">=</span><span class="n">ctx</span><span class="o">.</span><span class="n">result</span><span class="o">.</span><span class="n">failure</span><span class="o">.</span><span class="n">fail_message</span> <span class="k">if</span> <span class="n">ctx</span><span class="o">.</span><span class="n">result</span><span class="o">.</span><span class="n">failure</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">at</span><span class="o">=</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(</span><span class="n">UTC</span><span class="p">),</span>
+    <span class="p">),</span>
+<span class="p">)</span>
+</code></pre></div>
+<p>Register once at the root — the framework fires them around every executed test in the tree. The hook context is deliberately narrow (node name, <code>ancestor_names</code>, <code>bread_crumbs</code>, <code>logger</code>, <code>env</code>) — NOT <code>exec</code> or <code>get_shell</code>. Integration hooks are for external coordination, not for exercising the hardware.</p>
+<p><strong>Pair invariant:</strong> <code>after_each</code> fires even when <code>before_each</code> threw. Register them as a pair or pass <code>allow_unpaired_hooks=True</code> to opt out of the warning.</p>
+<p>The exception-path behavior is: throw from either hook → run halts → every enclosing node transitions to <code>Aborted</code> → every in-flight SSH session and subprocess is killed immediately. A 30-minute firmware flash mid-abort must NOT continue to mutate the hardware.</p>
+<h2 id="configure-returns-context-pattern">Configure-Returns-Context Pattern<a class="headerlink" href="#configure-returns-context-pattern" title="Permanent link">&para;</a></h2>
+<p><code>configure()</code> returns a plain dict; the framework merges it into <code>utils.ctx</code> for test methods, survey hooks, <code>cleanup()</code>, and all descendant leaves, then closes it. No instance fields are needed for configure-phase data.</p>
+<p>The return value is the contract with the test methods: it names every key they read with <code>[]</code>, and it is all they will ever find there. Seed no placeholders — a reading belongs on the verdict, not in ctx — and nothing writes ctx after configure returns. <code>hilt-check</code> enforces both statically as <code>hilt/ctx-provenance</code>; at run time a <code>[]</code> read of a missing key, or any later write, is a <code>ContractViolation</code> naming the test and the key, while <code>.get()</code> and <code>in</code> read an optional key (issues #112, #118).</p>
+<p>The framework annotation is <code>Mapping[str, Any]</code>; a plain <code>dict[str, Any]</code> return is the
+default and satisfies it. When a suite benefits from precise key types, define a local
+<code>TypedDict</code> and use it as the covariant return annotation — pyright strict accepts the
+override because a <code>TypedDict</code> is a <code>Mapping</code>, which <code>dict[str, Any]</code> as the base
+annotation would not allow. This is static information only: a <code>TypedDict</code> is still an
+ordinary mutable dict at runtime, and the framework copies it into <code>utils.ctx</code>. A context dataclass is deliberately out of contract because it would fight
+dict merge semantics and require special handling in the default <code>run_data</code> path.</p>
+<div class="highlight"><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">DeviceContext</span><span class="p">(</span><span class="n">TypedDict</span><span class="p">):</span>
+    <span class="n">ssh</span><span class="p">:</span> <span class="n">RemoteInterface</span>
+    <span class="n">token</span><span class="p">:</span> <span class="nb">str</span>
+
+
+<span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">configure</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">utils</span><span class="p">:</span> <span class="n">TestUtils</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DeviceContext</span><span class="p">:</span> <span class="o">...</span>
+</code></pre></div>
+<h3 id="carrying-the-same-type-into-the-test-methods">Carrying the same type into the test methods<a class="headerlink" href="#carrying-the-same-type-into-the-test-methods" title="Permanent link">&para;</a></h3>
+<p>A <code>TypedDict</code> return tells the reader the shape, but <code>utils.ctx</code> still hands the test
+methods a <code>Mapping[str, Any]</code>, so a misspelled key survives pyright and reaches the
+floor as a <code>ContextInsufficient</code> contract violation — a Fail under the bug banner,
+where the author meant to take a reading (issue #112). Naming the type once on the
+class closes that gap: declare
+<code>class MySuite(TestComponent[MyCtx])</code> and annotate the lifecycle methods
+<code>utils: TestUtils[MyCtx]</code>, and <code>utils.ctx["volts"]</code> is a <code>float</code> to the editor while
+<code>utils.ctx["volt"]</code> is a type error before it is ever run (issue #75).</p>
+<div class="highlight"><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">PowerCtx</span><span class="p">(</span><span class="n">TypedDict</span><span class="p">):</span>
+    <span class="n">rail</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">volts</span><span class="p">:</span> <span class="nb">float</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">PowerSuite</span><span class="p">(</span><span class="n">TestComponent</span><span class="p">[</span><span class="n">PowerCtx</span><span class="p">]):</span>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">configure</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">utils</span><span class="p">:</span> <span class="n">TestUtils</span><span class="p">[</span><span class="n">PowerCtx</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">PowerCtx</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s2">"rail"</span><span class="p">:</span> <span class="s2">"3v3"</span><span class="p">,</span> <span class="s2">"volts"</span><span class="p">:</span> <span class="mf">3.3</span><span class="p">}</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">build_suite</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TestComponent</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">test</span><span class="p">(</span><span class="s2">"rail"</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rail_is_up</span><span class="p">)</span>
+
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">_rail_is_up</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">utils</span><span class="p">:</span> <span class="n">TestUtils</span><span class="p">[</span><span class="n">PowerCtx</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Verdict</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">utils</span><span class="o">.</span><span class="n">ctx</span><span class="p">[</span><span class="s2">"volts"</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mf">3.0</span><span class="p">:</span>  <span class="c1"># a float here, not Any</span>
+            <span class="k">return</span> <span class="n">PASS</span>
+        <span class="k">raise</span> <span class="n">TestFailure</span><span class="p">(</span><span class="s2">"rail low"</span><span class="p">,</span> <span class="s2">"&gt; 3.0V"</span><span class="p">,</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">utils</span><span class="o">.</span><span class="n">ctx</span><span class="p">[</span><span class="s1">'volts'</span><span class="p">]</span><span class="si">}</span><span class="s2">V"</span><span class="p">)</span>
+</code></pre></div>
+<p>This is sugar, and it is opt-in in both directions. Writing <code>TestComponent</code> and
+<code>TestUtils</code> bare means what it always did — the parameter defaults to
+<code>Mapping[str, Any]</code> — so no existing suite has to change, and a suite that adopts the
+parameter is making a claim to its own reader, not to the framework. Nothing about the
+run moves: the context object is the framework's <code>RunContext</code>, a <code>dict[str, Any]</code> it
+owns; a key <code>configure()</code> never provided is still a runtime <code>ContractViolation</code> rather
+than a static one; and <code>run_data</code> still strips class instances, functions, and live
+handles value by value.</p>
+<p>Composition stays unparameterized on purpose. <code>self.test()</code>, <code>self.sequence()</code>, and
+<code>self.parallel()</code> speak of <code>TestComponent</code> nodes of any context shape, because a rack composes suites that do not share one context — pinning them to
+a single <code>CtxT</code> would make the parameter contagious rather than opt-in.</p>
+<div class="highlight"><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">MyDevice</span><span class="p">(</span><span class="n">TestComponent</span><span class="p">):</span>
+    <span class="c1"># configure ALWAYS returns the context your test provides to its</span>
+    <span class="c1"># lifecycle methods and children. This tells future devs exactly what</span>
+    <span class="c1"># context your test requires and what it supplies — important, for</span>
+    <span class="c1"># example, for ssh chaining, which requires an "ssh" entry in ctx.</span>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">configure</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">utils</span><span class="p">:</span> <span class="n">TestUtils</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+        <span class="c1"># utils.env.require raises TestFailure when the variable is unset or</span>
+        <span class="c1"># blank: a verdict from configure — the test lands in Fail without the</span>
+        <span class="c1"># suite ever running. The verdict means "did not reach a testable</span>
+        <span class="c1"># state"; whether the cause is config/infra or DUT is the human's call</span>
+        <span class="c1"># from logs and survey artifacts. Model as many failure modes as</span>
+        <span class="c1"># possible so they surface as verdicts rather than bugs. utils.env.port</span>
+        <span class="c1"># does the same for a port, defaulting to 22 and rejecting a typo.</span>
+        <span class="c1"># utils.env.int and utils.env.float do it for a number: unset uses the</span>
+        <span class="c1"># default when one was given, and a bad value Fails naming the variable</span>
+        <span class="c1"># and the value.</span>
+        <span class="n">username</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">require</span><span class="p">(</span><span class="s2">"TARGET_USER"</span><span class="p">)</span>
+        <span class="n">password</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">require</span><span class="p">(</span><span class="s2">"TARGET_PASSWORD"</span><span class="p">)</span>
+        <span class="n">address</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">require</span><span class="p">(</span><span class="s2">"TARGET_ADDRESS"</span><span class="p">)</span>
+        <span class="n">shell</span> <span class="o">=</span> <span class="k">await</span> <span class="n">utils</span><span class="o">.</span><span class="n">use_shell</span><span class="p">(</span><span class="n">host</span><span class="o">=</span><span class="n">address</span><span class="p">,</span> <span class="n">username</span><span class="o">=</span><span class="n">username</span><span class="p">,</span> <span class="n">password</span><span class="o">=</span><span class="n">password</span><span class="p">)</span>
+        <span class="c1"># use_shell wires utils.exec to route through SSH automatically</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s2">"ssh"</span><span class="p">:</span> <span class="n">shell</span><span class="o">.</span><span class="n">ssh</span><span class="p">,</span> <span class="s2">"token"</span><span class="p">:</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_authenticate</span><span class="p">()}</span>
+
+    <span class="c1"># pass or fail, cleanup is GUARANTEED to run at the end of the lifecycle.</span>
+    <span class="c1"># Use it to close any opened connections, put the device into a neutral state, etc.</span>
+    <span class="c1"># It runs after a configure Fail too, so read ctx with .get(): "token" may never</span>
+    <span class="c1"># have been returned.</span>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">cleanup</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">utils</span><span class="p">:</span> <span class="n">TestUtils</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">pass</span>  <span class="c1"># ssh auto-disconnected by framework, after the post-cleanup survey</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">build_suite</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TestComponent</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">sequence</span><span class="p">(</span>
+            <span class="p">[</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">test</span><span class="p">(</span><span class="s2">"survey"</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_capture_survey</span><span class="p">),</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">test</span><span class="p">(</span><span class="s2">"reachable"</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_reachable</span><span class="p">),</span>
+            <span class="p">]</span>
+        <span class="p">)</span>
+
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">_check_reachable</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">utils</span><span class="p">:</span> <span class="n">TestUtils</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Verdict</span><span class="p">:</span>
+        <span class="c1"># utils.exec already routed through ssh</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="k">await</span> <span class="n">utils</span><span class="o">.</span><span class="n">exec</span><span class="p">(</span><span class="s2">"true"</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">result</span><span class="o">.</span><span class="n">exit_code</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">PASS</span>
+        <span class="k">raise</span> <span class="n">TestFailure</span><span class="p">(</span><span class="s2">"device unreachable"</span><span class="p">,</span> <span class="s2">"exit 0"</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">exit_code</span><span class="p">))</span>
+</code></pre></div>
+<h2 id="composability">Composability<a class="headerlink" href="#composability" title="Permanent link">&para;</a></h2>
+<p>A device-level test can be dropped into a rack-level test without modification. "Push state up" to higher-level components; trust the framework lifecycle.</p>
+<h2 id="environment-variables">Environment Variables<a class="headerlink" href="#environment-variables" title="Permanent link">&para;</a></h2>
+<p>Always use <code>utils.env</code> inside test code. Never <code>os.environ</code> directly. The env snapshot is stored in every <code>RunResult</code> for post-run auditing — filtered by the run's <code>env_allow</code> or <code>env_deny</code> list when one was declared, verbatim otherwise (see <code>docs/inspector-json.md</code>). <code>text</code>, <code>require</code>, and <code>port</code> read a string, a required string, and a TCP port. <code>int</code> and <code>float</code> read a number the same way: a bad value Fails the run naming the variable and the value, and a missing one uses the <code>default</code> when the call passed one.</p>
+<h2 id="testutils-injection">TestUtils Injection<a class="headerlink" href="#testutils-injection" title="Permanent link">&para;</a></h2>
+<p>Call <code>await root.run()</code> to execute a suite. The framework constructs <code>TestUtils</code>; suite
+authors import it for lifecycle annotations, not as plumbing they must assemble.</p>
+<p>Every node receives a distinct <code>TestUtils</code> object with a logger scoped to that node's
+full root-to-leaf path. Leaves, sequences, and parallel nodes built by one authored
+instance share that instance's <code>utils.ctx</code> dict, while a composed <code>TestComponent</code> subclass
+starts with a fresh context. The environment snapshot is immutable and shared across
+the run; the halt signal is read-only from suite code.</p>
+<h2 id="logging">Logging<a class="headerlink" href="#logging" title="Permanent link">&para;</a></h2>
+<ul>
+<li><code>utils.logger</code> is scoped per node — never <code>print()</code>, so evidence is captured in artifacts</li>
+<li>Artifacts captured automatically</li>
+<li><code>discrete_log_file=False</code> rolls log entries into the parent logger. <code>discrete_log_file=True</code> (the default on class-based tests) gives the node its own log file. Inline <code>self.test()</code> bodies default to <code>False</code>.</li>
+<li>Every full run creates a timestamped directory under the configured artifact root.
+  A logging owner streams both <code>timeline.log</code> for humans and versioned
+  <code>timeline.jsonl</code> for the Inspector, flushing both on every entry. Treat
+  <code>TestComponent.log_path</code> as the authoritative path; directory names are not an API.</li>
+<li>While a durable timeline is attached, <code>utils.logger.isEnabledFor(...)</code> is true at
+  every level so developer-side guards cannot suppress the authoritative chronology.
+  Process logging handlers still apply their own level policy.</li>
+</ul>
+<h3 id="point-in-time-artifacts">Point-in-Time Artifacts<a class="headerlink" href="#point-in-time-artifacts" title="Permanent link">&para;</a></h3>
+<p>Construct an immutable <code>Artifact</code> and pass it to <code>utils.capture_artifact()</code>. The method
+persists the JSON artifact under <code>HILT_ARTIFACT_ROOT</code>, then emits a structured pointer
+through the same scoped logger that records the surrounding test events. <code>Artifact</code>
+deliberately has no <code>write()</code> or <code>write_file()</code> method: a file without its pointer would
+be absent from the authoritative chronology.</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">hilt</span><span class="w"> </span><span class="kn">import</span> <span class="n">Artifact</span>
+
+<span class="n">snapshot</span> <span class="o">=</span> <span class="n">Artifact</span><span class="p">(</span>
+    <span class="n">name</span><span class="o">=</span><span class="s2">"pre-flash"</span><span class="p">,</span>
+    <span class="nb">type</span><span class="o">=</span><span class="s2">"hardware-survey"</span><span class="p">,</span>
+    <span class="n">data</span><span class="o">=</span><span class="p">{</span><span class="s2">"firmware"</span><span class="p">:</span> <span class="s2">"2.4.1"</span><span class="p">,</span> <span class="s2">"healthy"</span><span class="p">:</span> <span class="kc">True</span><span class="p">},</span>
+<span class="p">)</span>
+<span class="n">artifact_path</span> <span class="o">=</span> <span class="k">await</span> <span class="n">utils</span><span class="o">.</span><span class="n">capture_artifact</span><span class="p">(</span><span class="n">snapshot</span><span class="p">)</span>
+</code></pre></div>
+<p>Artifact names and types accept letters, numbers, dashes, and underscores. Payloads must
+be JSON serializable. Capture is async, never overwrites an existing artifact, and
+returns the absolute path recorded in the pointer entry.</p>
+<h2 id="runresult-navigation-ancestor_names-and-bread_crumbs">RunResult Navigation — <code>ancestor_names</code> and <code>bread_crumbs</code><a class="headerlink" href="#runresult-navigation-ancestor_names-and-bread_crumbs" title="Permanent link">&para;</a></h2>
+<p>Every <code>RunResult</code> carries the node's position in the tree:</p>
+<ul>
+<li><code>ancestor_names: list[str]</code> — canonical form, root-to-this inclusive. Use for programmatic aggregation (DB keys, leaf identity).</li>
+<li><code>bread_crumbs: str</code> — <code>"/".join(ancestor_names)</code> precomputed. Use for display, log lines, error messages.</li>
+<li><code>summary_tree: SummaryTreeNode</code> — snapshot of this node's subtree at completion. Enables downstream integrators to reconstruct the full Inspector tree from the root's RunResult alone.</li>
+</ul>
+<p>The versioned payload and recursive node fields are defined in
+<a href="inspector-json.html"><code>inspector-json.md</code></a>.</p>
+<p>A full <code>run()</code> also persists the root payload automatically as <code>result.json</code> in that
+run's artifact directory. Authored suites should consume the returned <code>RunResult</code> when
+they need the live value; they never write the canonical Inspector file themselves.</p>
+<h2 id="fractal-design-hilt-exposes-a-single-class">Fractal Design: HILT exposes a single class<a class="headerlink" href="#fractal-design-hilt-exposes-a-single-class" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Need</th>
+<th>Use</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Physical hardware component</td>
+<td><code>TestComponent</code></td>
+</tr>
+<tr>
+<td>Networked device (MAC-based)</td>
+<td><code>TestComponent</code> + <code>utils.get_arp_resolver()</code> in configure</td>
+</tr>
+<tr>
+<td>Device reached over SSH, connection shared across tests</td>
+<td><code>TestComponent</code> with configure returning <code>{"ssh": ...}</code></td>
+</tr>
+<tr>
+<td>Device behind a jump host or OOB gateway</td>
+<td>The gateway is a <code>TestComponent</code> whose <code>configure()</code> opens the hop and whose <code>build_suite()</code> composes the device</td>
+</tr>
+<tr>
+<td>Standalone test procedure</td>
+<td><code>TestComponent</code></td>
+</tr>
+</tbody>
+</table>
+<hr />
+<p>The Python <code>examples/</code> tree is the authoring reference. A broken example means
+the API changed and the docs need updating.</p>
+<hr />
+<h2 id="selfsequence-vs-selfparallel"><code>self.sequence()</code> vs <code>self.parallel()</code><a class="headerlink" href="#selfsequence-vs-selfparallel" title="Permanent link">&para;</a></h2>
+<p><strong><code>self.sequence()</code></strong> — serial, stops on the first failure.
+Use when later tests depend on earlier ones. The Floor Technician sees exactly where the chain broke and nothing beyond it.</p>
+<p><strong><code>self.parallel()</code></strong> — concurrent via <code>asyncio.TaskGroup</code>, collects all failures.
+Use when tests are fully independent. The Floor Technician sees everything broken at once. One child's Fail never cancels its siblings — Fail is returned, not raised, at the child boundary; only a harness-level abort cancels the parallel node, and then cancelling everything is exactly what Aborted means.</p>
+<p>Independent claims can still share one resource. A single <code>DeviceApi</code> handle opened in <code>configure()</code> and read from ctx by every leaf serialises their requests: the leaves run concurrently, their requests go out one at a time in call order, and a latency measured around <code>request</code> includes the wait for siblings. That is correct when the claim is about the bytes; when the claim is about the DUT's own latency, give each leaf its own handle.</p>
+<p>The same holds for a routed console. <code>use_serial(device=...)</code> in <code>configure()</code> binds <code>utils.exec</code> for the node and its descendants to one <code>SerialInterface</code>, and <code>parallel</code> leaves under it take turns on it in call order (<code>docs/hil/serial.md</code>, Serial Turn Contract). A console costs more to share than a handle does: the leaves share one shell's state, so a <code>cd</code> or an exported variable in one leaf is visible to the next. Claims that need isolation want one console each, via <code>get_serial(device=...)</code>.</p>
+<p>An SSH hop is shared differently: each <code>utils.exec</code> opens its own session on the one connection, so <code>parallel</code> leaves really do run at once on the device, up to the number of sessions its sshd grants per connection (<code>MaxSessions</code>, 10 by default). Past that the sshd refuses the session, and a healthy device reads Fail with <code>transport closed: open failed</code>. A hop with a wide tree under it declares the bound where it opens the connection, <code>use_shell(host=..., username=..., max_sessions=8)</code>, and commands past the bound take turns in call order. The leaves stay <code>parallel</code>: they are independent, and the bound is a property of the hop, not a dependency between claims. Do not reach for <code>sequence</code> to stay under the limit; it would stop at the first failure and hide the rest.</p>
+<hr />
+<h2 id="arpresolver-mac-to-ip">ArpResolver — MAC to IP<a class="headerlink" href="#arpresolver-mac-to-ip" title="Permanent link">&para;</a></h2>
+<p><code>ArpResolver</code> is a composable utility for resolving a device's IP from its MAC. Create one via <code>utils.get_arp_resolver()</code> in <code>configure()</code>, call <code>resolve()</code>, and return both the resolved data and the resolver into ctx. Test methods read the IP and the resolver from <code>utils.ctx</code>. Call <code>arp.ping(utils)</code> for reachability. Call <code>arp.reacquire(utils)</code> after anything that may change the IP (reboot, firmware flash, DHCP churn): it returns the new address and the resolver remembers it, so a later <code>ping</code> dials the address it last resolved while ctx stays as <code>configure()</code> left it. Carry the new address as evidence on the verdict if the Floor Technician should see it.</p>
+<p><code>ArpResolutionFailure</code> is not a <code>TestFailure</code>. Catch it in <code>configure</code> and re-raise as <code>TestFailure</code> so a missing ARP entry is a verdict. Uncaught, it is a developer bug — the suite did not model the failure mode.</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># In configure():</span>
+<span class="n">arp</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">get_arp_resolver</span><span class="p">(</span><span class="n">mac</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_mac</span><span class="p">)</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">resolved</span> <span class="o">=</span> <span class="k">await</span> <span class="n">arp</span><span class="o">.</span><span class="n">resolve</span><span class="p">()</span>
+<span class="k">except</span> <span class="n">ArpResolutionFailure</span> <span class="k">as</span> <span class="n">error</span><span class="p">:</span>
+    <span class="k">raise</span> <span class="n">TestFailure</span><span class="p">(</span>
+        <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">error</span><span class="o">.</span><span class="n">mac</span><span class="si">}</span><span class="s2"> did not appear on the network"</span><span class="p">,</span>
+        <span class="n">error</span><span class="o">.</span><span class="n">mac</span><span class="p">,</span>
+        <span class="n">error</span><span class="o">.</span><span class="n">host</span><span class="p">,</span>
+    <span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">error</span>
+<span class="k">return</span> <span class="p">{</span><span class="o">**</span><span class="n">resolved</span><span class="p">,</span> <span class="s2">"arp"</span><span class="p">:</span> <span class="n">arp</span><span class="p">}</span>
+
+<span class="c1"># In build_suite():</span>
+<span class="bp">self</span><span class="o">.</span><span class="n">test</span><span class="p">(</span><span class="s2">"reachability"</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_reachability</span><span class="p">)</span>
+</code></pre></div>
+<p>See <code>examples/networked_device.py</code>.</p>
+<hr />
+<h2 id="arpresolver-behind-a-gateway">ArpResolver Behind a Gateway<a class="headerlink" href="#arpresolver-behind-a-gateway" title="Permanent link">&para;</a></h2>
+<p>When the test host cannot reach the target network directly, the SE code is identical to the local case. Compose the device under a gateway parent whose <code>configure()</code> opened the hop, and the framework routes the lookup — the SE never touches SSH.</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># DutDevice.configure() — no SSH awareness, identical to local ArpResolver usage:</span>
+<span class="n">arp</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">get_arp_resolver</span><span class="p">(</span><span class="n">mac</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_mac</span><span class="p">)</span>
+<span class="n">resolved</span> <span class="o">=</span> <span class="k">await</span> <span class="n">arp</span><span class="o">.</span><span class="n">resolve</span><span class="p">()</span>
+<span class="k">return</span> <span class="p">{</span><span class="o">**</span><span class="n">resolved</span><span class="p">,</span> <span class="s2">"arp"</span><span class="p">:</span> <span class="n">arp</span><span class="p">}</span>
+
+<span class="c1"># Gateway.build_suite() — the parent names what sits behind its hop:</span>
+<span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">sequence</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">test</span><span class="p">(</span><span class="s2">"gateway-up"</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_gateway_up</span><span class="p">),</span> <span class="n">DutDevice</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"dut"</span><span class="p">)])</span>
+</code></pre></div>
+<p>See <code>examples/networked_device.py</code>. <code>hilt run ...::DutDevice</code> reads the test host's ARP table; <code>hilt run ...::Gateway</code> runs the same DUT class through the hop.</p>
+<hr />
+<h2 id="ssh-device-class-owned-connection">SSH Device — Class-Owned Connection<a class="headerlink" href="#ssh-device-class-owned-connection" title="Permanent link">&para;</a></h2>
+<p>Extend <code>TestComponent</code> when one SSH connection must be shared across all of the device's leaves. Open in <code>configure()</code> via <code>utils.use_shell()</code> and let the framework route <code>utils.exec</code> through it automatically.</p>
+<p>Returning <code>{"ssh": ...}</code> from <code>configure()</code> also makes the device eligible as a <code>via</code> target. Pass it as <code>via</code> in <code>TestParams</code> — the framework manages the lifecycle and scopes <code>utils.exec</code> automatically.</p>
+<p><code>use_shell</code> vs <code>get_shell</code>: <code>use_shell</code> answers "where does <code>utils.exec</code> go" — it rebinds the routing for this test and its descendants. <code>get_shell</code> hands you an additional interface without touching the routing.</p>
+<p>A console by device path is the same idiom: <code>await utils.use_serial(device="/dev/ttyUSB0")</code> in <code>configure()</code> declares it as the node's exec route and <code>get_serial</code> opens one as an auxiliary endpoint; both hand back a <code>Shell</code>, the framework closes the port after the post-cleanup survey and from the abort sweep, and no transport is imported or carried in ctx. Behind a hop, pass an SSH <code>Shell</code> as <code>via</code> or let the console inherit the parent's <code>use_shell</code> route. The policy-only shapes (<code>inherit=False</code>, <code>propagate=False</code>) stay with <code>use_shell</code>.</p>
+<p>See <code>examples/remote_device_ssh.py</code>. The pi-hole dogfood suite
+(<code>examples/pi_hole_server.py</code>) is the same class-owned hop plus phase-boundary
+surveys that tail service logs for the Floor Technician.</p>
+<hr />
+<h2 id="ssh-tunneling">SSH Tunneling<a class="headerlink" href="#ssh-tunneling" title="Permanent link">&para;</a></h2>
+<p>Pass the <code>Shell</code> an earlier <code>utils.get_shell()</code> returned as the <code>via</code> argument to the next <code>utils.get_shell()</code> to tunnel the new connection through it. Both interfaces are framework-managed — no <code>cleanup()</code> override is needed.</p>
+<div class="highlight"><pre><span></span><code><span class="n">jump</span> <span class="o">=</span> <span class="k">await</span> <span class="n">utils</span><span class="o">.</span><span class="n">get_shell</span><span class="p">(</span><span class="n">host</span><span class="o">=</span><span class="n">jump_host</span><span class="p">,</span> <span class="n">username</span><span class="o">=</span><span class="n">jump_user</span><span class="p">)</span>
+<span class="n">target</span> <span class="o">=</span> <span class="k">await</span> <span class="n">utils</span><span class="o">.</span><span class="n">get_shell</span><span class="p">(</span><span class="n">host</span><span class="o">=</span><span class="n">target_host</span><span class="p">,</span> <span class="n">username</span><span class="o">=</span><span class="n">target_user</span><span class="p">,</span> <span class="n">via</span><span class="o">=</span><span class="n">jump</span><span class="p">)</span>
+</code></pre></div>
+<p>See <code>examples/ssh_tunneling.py</code>.</p>
+<hr />
+<h2 id="device-api-coaphttp">Device API — CoAP/HTTP<a class="headerlink" href="#device-api-coaphttp" title="Permanent link">&para;</a></h2>
+<p>A device API is not <code>exec</code> with a URL. Open a session from <code>configure()</code> with
+<code>utils.get_http</code> or <code>utils.get_coap</code>, then <code>request</code> a typed
+<code>DeviceRequest</code>. The response's <code>status</code> is data — HTTP 4xx/5xx is not an
+exception, and neither is a CoAP 4.xx. On HTTP, <code>status</code> is the integer. On
+CoAP it is the dotted code (<code>CoapCode.CONTENT</code> is <code>"2.05"</code>), which is what the
+record stores when the claim puts <code>response.status</code> on the verdict. Catch
+<code>DeviceApiOperationFailure</code> when the transfer itself did not complete (timeout,
+refused connection) and model it as a <code>TestFailure</code>.</p>
+<p>Retries default to zero. Each declared attempt is logged. POST refuses retry
+unless <code>retry_non_idempotent=True</code>. Attempt logs keep header names and withhold
+every value unless the author lists that name in <code>evidence_headers</code>. Abort
+closes the session; it does not invent a shutdown PUT.</p>
+<p>One handle carries one request at a time. Leaves under a <code>parallel</code> that share
+the handle <code>configure()</code> opened queue on it in call order — nothing collides and
+nothing is refused — so a round trip timed in the leaf includes the queue. A
+request still waiting when the handle is cancelled or closed is never sent; it
+fails with <code>DeviceApiOperationFailure</code>, the same class as any other transfer
+that did not complete. Measure the DUT alone with one handle per leaf.</p>
+<div class="highlight"><pre><span></span><code><span class="n">api</span> <span class="o">=</span> <span class="k">await</span> <span class="n">utils</span><span class="o">.</span><span class="n">get_http</span><span class="p">(</span><span class="n">base_url</span><span class="o">=</span><span class="s2">"https://dut.local"</span><span class="p">)</span>
+<span class="n">response</span> <span class="o">=</span> <span class="k">await</span> <span class="n">api</span><span class="o">.</span><span class="n">request</span><span class="p">(</span><span class="n">DeviceRequest</span><span class="p">(</span><span class="n">method</span><span class="o">=</span><span class="s2">"GET"</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="s2">"/whoami"</span><span class="p">))</span>
+<span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">status</span> <span class="o">!=</span> <span class="mi">200</span><span class="p">:</span>
+    <span class="k">raise</span> <span class="n">TestFailure</span><span class="p">(</span><span class="s2">"whoami rejected"</span><span class="p">,</span> <span class="mi">200</span><span class="p">,</span> <span class="n">response</span><span class="o">.</span><span class="n">status</span><span class="p">)</span>
+<span class="k">return</span> <span class="n">PASS</span><span class="p">({</span><span class="s2">"status"</span><span class="p">:</span> <span class="n">response</span><span class="o">.</span><span class="n">status</span><span class="p">})</span>
+</code></pre></div>
+<p>The backends stay off the public surface, the way <code>SshInterface</code> does.</p>
+<p>For a JSON body, declare <code>json=</code> instead of encoding bytes and setting a header by
+hand. Read it back with <code>.json()</code>, or select the parser with
+<code>.parse(response_type="json")</code> / <code>.parse(response_type="yaml")</code> (YAML needs
+<code>open-hilt[yaml]</code>). Both leave the original bytes and status available. Parser errors
+propagate, so model a malformed response as <code>TestFailure</code> when it is a DUT failure
+mode. Neither the transfer nor the parser chooses a verdict.</p>
+<div class="highlight"><pre><span></span><code><span class="n">response</span> <span class="o">=</span> <span class="k">await</span> <span class="n">api</span><span class="o">.</span><span class="n">request</span><span class="p">(</span><span class="n">DeviceRequest</span><span class="p">(</span><span class="n">method</span><span class="o">=</span><span class="s2">"PUT"</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="s2">"/settings"</span><span class="p">,</span> <span class="n">json</span><span class="o">=</span><span class="p">{</span><span class="s2">"enabled"</span><span class="p">:</span> <span class="kc">True</span><span class="p">}))</span>
+<span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">status</span> <span class="o">==</span> <span class="mi">200</span> <span class="ow">and</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"enabled"</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">:</span>
+    <span class="k">return</span> <span class="n">PASS</span><span class="p">({</span><span class="s2">"enabled"</span><span class="p">:</span> <span class="kc">True</span><span class="p">})</span>
+<span class="k">raise</span> <span class="n">TestFailure</span><span class="p">(</span><span class="s2">"device did not enable"</span><span class="p">,</span> <span class="s2">"enabled"</span><span class="p">,</span> <span class="n">response</span><span class="o">.</span><span class="n">status</span><span class="p">)</span>
+</code></pre></div>
+<hr />
+<h2 id="wait_for-patterns">wait_for Patterns<a class="headerlink" href="#wait_for-patterns" title="Permanent link">&para;</a></h2>
+<p>Where <code>wait_for()</code> is called determines what the timeout <em>means</em>, not what gets raised — both raise <code>TestFailure</code>:</p>
+<ul>
+<li><strong>In <code>configure()</code></strong> — timeout becomes a <code>TestFailure</code> that halts the lifecycle. The test lands in Fail; the suite never runs. The verdict means "the device did not reach a testable state." Whether the cause is hardware or infrastructure is <strong>not knowable from code</strong> — the human triager makes that call from logs and survey artifacts.</li>
+<li><strong>In a test method</strong> — timeout becomes a <code>TestFailure</code> that is the verdict itself. The device was reachable but failed to reach the expected state.</li>
+</ul>
+<p><code>looking_for</code> is required and must be plain language — it becomes the Floor Technician's primary diagnostic string when a wait times out. The call returns the predicate's truthy value (<code>True</code> stays <code>True</code>); a claim that needs what was observed returns it from the predicate instead of closing over a list.</p>
+<p>The runnable <a href="https://gitlab.com/Tyler-Meador/HILT/-/blob/main/examples/wait_for_patterns.py"><code>examples/wait_for_patterns.py</code></a> ports
+both placements from the legacy example. It also shows how polling observations flow
+through scoped logs, phase-boundary surveys, point-in-time artifacts, <code>run_data</code>, and the
+root <code>summary_tree</code> without adding another evidence API.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="lifecycle.html" class="md-footer__link md-footer__link--prev" aria-label="Previous: Lifecycle">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                Lifecycle
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="utilities.html" class="md-footer__link md-footer__link--next" aria-label="Next: Utilities">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                Utilities
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright 2026 Tyler Meador
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": ".", "features": ["navigation.sections", "navigation.top", "navigation.footer", "toc.follow", "search.suggest", "search.highlight", "content.code.copy"], "search": "assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="assets/javascripts/bundle.a5f9d56c.min.js"></script>
+      
+    
+  </body>
+</html>
