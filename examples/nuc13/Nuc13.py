@@ -21,7 +21,8 @@ It reads the way the line works, top down:
 - A system part number is a subclass of ``Nuc13``, in a module of its own beside
   this one, and that module is the suite to run. It says what the part number
   reports about itself, how many of each component it is built from, and how its
-  drive leaves the line partitioned.
+  drive leaves the line partitioned. The ``nuc13`` package lists the system part
+  numbers in its own ``mpns``, where a harness looks a unit's system line up.
 
 Nothing below the root knows the unit is remote, and nothing in the tree names one
 unit. Which unit is the station's to say, never the suite's: the target comes from
@@ -41,7 +42,8 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Literal, TypedDict, Unpack
 
-from nuc13 import Bom, cpus, drives, firmwares, memory, motherboards
+from nuc13 import cpus, drives, firmwares, memory, motherboards
+from nuc13.Bom import Bom
 from nuc13.drives.NvmeDrive import PartitionTable
 from nuc13.kernel import NOT_READ, read_text
 from nuc13.memory.Memory import Memory
