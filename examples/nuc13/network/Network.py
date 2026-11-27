@@ -1,17 +1,17 @@
-"""Networking: each interface, and its link where the record requires one.
+"""Networking: each interface, and its link where one is required.
 
-The subsystem composes one component per recorded interface. An interface whose
-record requires a link composes that link as a part of its own; one whose record
-does not has no link node at all, so nothing is claimed about its carrier:
+The subsystem composes one component per expected interface. An interface that must
+have a link is composed with that link as a part of its own; one that need not has
+no link node at all, so nothing is claimed about its carrier:
 
     network
-    └─ <interface>            one per recorded interface, such as ``ethernet``
+    └─ <interface>            one per expected interface, such as ``ethernet``
        ├─ present             the kernel has the interface
        └─ details
           ├─ pci-address      the PCI function behind it
           ├─ driver           the driver bound to that function
           ├─ kind             wired or wireless
-          └─ link             only where the record requires a link
+          └─ link             only where a link is required
              ├─ carrier       the link is up
              └─ negotiation
                 ├─ speed      negotiated speed
@@ -24,47 +24,48 @@ leave it exactly as they found it.
 
 from __future__ import annotations
 
-from typing import TypedDict
+from collections.abc import Sequence
+from typing import Literal, TypedDict, Unpack
 
-from nuc13.probe import read_int, read_link_name, read_text
-from nuc13.spec import LinkKind, LinkSpec, NetworkSpec
+from nuc13.kernel import read_int, read_link_name, read_text
 
 from hilt import PASS, TestComponent, TestFailure, TestUtils, Verdict, evidence
+
+type LinkKind = Literal["ethernet", "wireless"]
 
 _INTERFACES = "/sys/class/net"
 _NOT_READ = "(not read)"
 
 
-class RequiredLink(TypedDict):
-    """What a required link must have negotiated."""
+class LinkIdentity(TypedDict):
+    """What a required link must have negotiated.
+
+    Attributes:
+        interface: Kernel name of the interface whose link this is.
+        speed_mbps: Negotiated speed.
+        duplex: Negotiated duplex, ``full`` or ``half``.
+    """
 
     interface: str
     speed_mbps: int
     duplex: str
 
 
-class NetworkLink(TestComponent[RequiredLink]):
-    """Judge the link of an interface whose record requires one."""
+class NetworkLink(TestComponent[LinkIdentity]):
+    """Judge the link of an interface that must have one.
 
-    def __init__(self, *, name: str, interface: str, spec: LinkSpec) -> None:
-        """Hold the link's record and the interface it belongs to.
+    Args:
+        name: Node name used by logs, artifacts, and failures.
+        **identity: The interface, and what its link must have negotiated.
+    """
 
-        Args:
-            name: Node name used by logs, artifacts, and failures.
-            interface: Kernel name of the interface whose link this is.
-            spec: The speed and duplex the link must have negotiated.
-        """
+    def __init__(self, *, name: str, **identity: Unpack[LinkIdentity]) -> None:
         super().__init__(name=name)
-        self._interface = interface
-        self._spec = spec
+        self._identity = identity
 
-    async def configure(self, utils: TestUtils[RequiredLink]) -> RequiredLink:
-        """Provide the record the claims judge against."""
-        return {
-            "interface": self._interface,
-            "speed_mbps": self._spec.speed_mbps,
-            "duplex": self._spec.duplex,
-        }
+    async def configure(self, utils: TestUtils[LinkIdentity]) -> LinkIdentity:
+        """Provide the identity the claims judge against."""
+        return self._identity
 
     def build_suite(self) -> TestComponent:
         """Carrier first: without it nothing was negotiated, so speed and duplex are noise.
@@ -86,7 +87,7 @@ class NetworkLink(TestComponent[RequiredLink]):
         )
 
     @evidence("carrier")
-    async def _carrier(self, utils: TestUtils[RequiredLink]) -> Verdict:
+    async def _carrier(self, utils: TestUtils[LinkIdentity]) -> Verdict:
         interface = utils.ctx["interface"]
         carrier = await read_int(utils, f"{_INTERFACES}/{interface}/carrier")
         reading = {"carrier": carrier}
@@ -100,10 +101,10 @@ class NetworkLink(TestComponent[RequiredLink]):
         )
 
     @evidence("negotiated_speed_mbps")
-    async def _speed(self, utils: TestUtils[RequiredLink]) -> Verdict:
+    async def _speed(self, utils: TestUtils[LinkIdentity]) -> Verdict:
         interface = utils.ctx["interface"]
         expected = utils.ctx["speed_mbps"]
-        # Recorded without a window: a link speed is one of a few fixed rates, and
+        # Measured without a window: a link speed is one of a few fixed rates, and
         # the claim is that it is this one.
         speed = utils.measure(
             "negotiated_speed_mbps",
@@ -125,7 +126,7 @@ class NetworkLink(TestComponent[RequiredLink]):
         )
 
     @evidence("negotiated_duplex")
-    async def _duplex(self, utils: TestUtils[RequiredLink]) -> Verdict:
+    async def _duplex(self, utils: TestUtils[LinkIdentity]) -> Verdict:
         interface = utils.ctx["interface"]
         expected = utils.ctx["duplex"]
         duplex = await read_text(utils, f"{_INTERFACES}/{interface}/duplex")
@@ -139,8 +140,15 @@ class NetworkLink(TestComponent[RequiredLink]):
         )
 
 
-class Interface(TypedDict):
-    """What one interface must show."""
+class InterfaceIdentity(TypedDict):
+    """What one interface must show.
+
+    Attributes:
+        interface: Kernel interface name.
+        pci_address: PCI function behind the interface.
+        driver: Kernel driver bound to that function.
+        kind: Wired or wireless.
+    """
 
     interface: str
     pci_address: str
@@ -148,36 +156,27 @@ class Interface(TypedDict):
     kind: LinkKind
 
 
-class NetworkInterface(TestComponent[Interface]):
-    """Judge one network interface and, where its record requires one, its link."""
+class NetworkInterface(TestComponent[InterfaceIdentity]):
+    """Judge one network interface and, where it must have one, its link.
 
-    def __init__(self, *, name: str, spec: NetworkSpec) -> None:
-        """Hold the interface's record and build its link where one is required.
+    Args:
+        name: Node name used by logs, artifacts, and failures.
+        link: The link the interface must have, or ``None`` where none is required.
+            An interface composed without one gets no carrier claim that could pass
+            or fail on whatever network happens to be in range.
+        **identity: What the interface must show.
+    """
 
-        Args:
-            name: Node name used by logs, artifacts, and failures.
-            spec: The interface's name, PCI function, driver, kind, and link.
-        """
+    def __init__(
+        self, *, name: str, link: NetworkLink | None, **identity: Unpack[InterfaceIdentity]
+    ) -> None:
         super().__init__(name=name)
-        self._spec = spec
-        # Whether there is a link to judge is identity, so it is decided here: an
-        # interface recorded without a link gets no link node, and so no carrier
-        # claim that could pass or fail on whatever network happens to be in range.
-        self._links = (
-            ()
-            if spec.link is None
-            else (NetworkLink(name="link", interface=spec.interface, spec=spec.link),)
-        )
+        self._identity = identity
+        self._links = () if link is None else (link,)
 
-    async def configure(self, utils: TestUtils[Interface]) -> Interface:
-        """Provide the record the claims judge against."""
-        spec = self._spec
-        return {
-            "interface": spec.interface,
-            "pci_address": spec.pci_address,
-            "driver": spec.driver,
-            "kind": spec.kind,
-        }
+    async def configure(self, utils: TestUtils[InterfaceIdentity]) -> InterfaceIdentity:
+        """Provide the identity the claims judge against."""
+        return self._identity
 
     def build_suite(self) -> TestComponent:
         """Presence first: an interface that is not there has nothing behind it to judge.
@@ -202,7 +201,7 @@ class NetworkInterface(TestComponent[Interface]):
         )
 
     @evidence("enumerated_as")
-    async def _present(self, utils: TestUtils[Interface]) -> Verdict:
+    async def _present(self, utils: TestUtils[InterfaceIdentity]) -> Verdict:
         interface = utils.ctx["interface"]
         entry = await read_link_name(utils, f"{_INTERFACES}/{interface}")
         reading = {"enumerated_as": entry}
@@ -216,7 +215,7 @@ class NetworkInterface(TestComponent[Interface]):
         )
 
     @evidence("backing_device")
-    async def _pci_address(self, utils: TestUtils[Interface]) -> Verdict:
+    async def _pci_address(self, utils: TestUtils[InterfaceIdentity]) -> Verdict:
         interface = utils.ctx["interface"]
         expected = utils.ctx["pci_address"]
         device = await read_link_name(utils, f"{_INTERFACES}/{interface}/device")
@@ -224,14 +223,14 @@ class NetworkInterface(TestComponent[Interface]):
         if device == expected:
             return PASS(reading)
         raise TestFailure(
-            f"{interface} is not on the recorded PCI function",
+            f"{interface} is not on the expected PCI function",
             expected,
             device or "(no device behind it)",
             evidence=reading,
         )
 
     @evidence("bound_driver")
-    async def _driver(self, utils: TestUtils[Interface]) -> Verdict:
+    async def _driver(self, utils: TestUtils[InterfaceIdentity]) -> Verdict:
         interface = utils.ctx["interface"]
         expected = utils.ctx["driver"]
         bound = await read_link_name(utils, f"{_INTERFACES}/{interface}/device/driver")
@@ -239,14 +238,14 @@ class NetworkInterface(TestComponent[Interface]):
         if bound == expected:
             return PASS(reading)
         raise TestFailure(
-            f"driver behind {interface} is not the recorded one",
+            f"driver behind {interface} is not the expected one",
             expected,
             bound or "(no driver bound)",
             evidence=reading,
         )
 
     @evidence("wireless_radio", "observed_kind")
-    async def _kind(self, utils: TestUtils[Interface]) -> Verdict:
+    async def _kind(self, utils: TestUtils[InterfaceIdentity]) -> Verdict:
         interface = utils.ctx["interface"]
         expected = utils.ctx["kind"]
         # A wireless interface links to its 802.11 radio; a wired one has no such
@@ -258,7 +257,7 @@ class NetworkInterface(TestComponent[Interface]):
         if observed == expected:
             return PASS(reading)
         raise TestFailure(
-            f"{interface} is not the recorded kind of interface",
+            f"{interface} is not the expected kind of interface",
             expected,
             observed,
             evidence=reading,
@@ -266,17 +265,16 @@ class NetworkInterface(TestComponent[Interface]):
 
 
 class Network(TestComponent):
-    """Judge every network interface on record."""
+    """Judge every network interface the machine must have.
 
-    def __init__(self, *, name: str, interfaces: tuple[NetworkSpec, ...]) -> None:
-        """Build one component per recorded interface.
+    Args:
+        name: Node name used by logs, artifacts, and failures.
+        interfaces: Every interface to judge.
+    """
 
-        Args:
-            name: Node name used by logs, artifacts, and failures.
-            interfaces: Every interface to judge.
-        """
+    def __init__(self, *, name: str, interfaces: Sequence[NetworkInterface]) -> None:
         super().__init__(name=name)
-        self._interfaces = tuple(NetworkInterface(name=spec.name, spec=spec) for spec in interfaces)
+        self._interfaces = tuple(interfaces)
 
     def build_suite(self) -> TestComponent:
         """Independent interfaces, so independent verdicts."""

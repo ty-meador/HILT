@@ -4,32 +4,32 @@ The subsystem makes one claim of its own (how many buses there are) and composes
 one component per root hub and one per permanently attached device:
 
     usb
-    ├─ bus-count              as many buses as root hubs on record
-    ├─ bus-<n>                one per recorded root hub
+    ├─ bus-count              as many buses as root hubs composed
+    ├─ bus-<n>                one per expected root hub
     │  ├─ present             the kernel registers the bus
     │  └─ details
     │     ├─ controller       the PCI function that owns the bus
     │     ├─ version          the USB version the hub advertises
     │     ├─ ports            downstream ports
     │     └─ speed            bus speed
-    └─ <device>               one per recorded device, such as ``bluetooth``
-       ├─ present             something is attached at the recorded port
+    └─ <device>               one per expected device, such as ``bluetooth``
+       ├─ present             something is attached at the expected port
        └─ details
           ├─ kind             vendor:product IDs
           └─ driver           the driver bound to its first interface
 
 A device's kind is judged on the IDs it reports. Its product name in ``lsusb`` and
 ``lshw`` is looked up in the usb.ids database (a device need not carry a product
-string, and the one on record does not), so the name is a label on the record and
-is never compared.
+string of its own), so the name travels in the identity as a label and is never
+compared.
 """
 
 from __future__ import annotations
 
-from typing import TypedDict
+from collections.abc import Sequence
+from typing import TypedDict, Unpack
 
-from nuc13.probe import list_dir, read_files, read_int, read_link, read_link_name, read_text
-from nuc13.spec import UsbDeviceSpec, UsbRootHubSpec
+from nuc13.kernel import list_dir, read_files, read_int, read_link, read_link_name, read_text
 
 from hilt import PASS, TestComponent, TestFailure, TestUtils, Verdict, evidence
 
@@ -37,8 +37,16 @@ _DEVICES = "/sys/bus/usb/devices"
 _NOT_READ = "(not read)"
 
 
-class RootHub(TypedDict):
-    """What one root hub must show."""
+class RootHubIdentity(TypedDict):
+    """What one root hub must show.
+
+    Attributes:
+        bus: The kernel's name for the bus, such as ``usb3``.
+        controller: PCI function of the controller that owns the bus.
+        usb_version: Version the hub advertises, such as ``2.00`` or ``3.10``.
+        ports: Downstream ports.
+        speed_mbps: Bus speed, as ``/sys/bus/usb/devices/usbN/speed`` reports it.
+    """
 
     bus: str
     controller: str
@@ -47,29 +55,21 @@ class RootHub(TypedDict):
     speed_mbps: int
 
 
-class UsbRootHub(TestComponent[RootHub]):
-    """Judge one USB bus through its root hub."""
+class UsbRootHub(TestComponent[RootHubIdentity]):
+    """Judge one USB bus through its root hub.
 
-    def __init__(self, *, name: str, spec: UsbRootHubSpec) -> None:
-        """Hold the root hub's record.
+    Args:
+        name: Node name used by logs, artifacts, and failures.
+        **identity: What the root hub must show.
+    """
 
-        Args:
-            name: Node name used by logs, artifacts, and failures.
-            spec: The bus number, its controller, and what the hub advertises.
-        """
+    def __init__(self, *, name: str, **identity: Unpack[RootHubIdentity]) -> None:
         super().__init__(name=name)
-        self._spec = spec
+        self._identity = identity
 
-    async def configure(self, utils: TestUtils[RootHub]) -> RootHub:
-        """Provide the record the claims judge against."""
-        spec = self._spec
-        return {
-            "bus": f"usb{spec.bus}",
-            "controller": spec.controller_address,
-            "usb_version": spec.usb_version,
-            "ports": spec.ports,
-            "speed_mbps": spec.speed_mbps,
-        }
+    async def configure(self, utils: TestUtils[RootHubIdentity]) -> RootHubIdentity:
+        """Provide the identity the claims judge against."""
+        return self._identity
 
     def build_suite(self) -> TestComponent:
         """Presence first: a bus that is not there has no owner, version, ports, or speed.
@@ -94,7 +94,7 @@ class UsbRootHub(TestComponent[RootHub]):
         )
 
     @evidence("enumerated_as")
-    async def _present(self, utils: TestUtils[RootHub]) -> Verdict:
+    async def _present(self, utils: TestUtils[RootHubIdentity]) -> Verdict:
         bus = utils.ctx["bus"]
         entry = await read_link_name(utils, f"{_DEVICES}/{bus}")
         reading = {"enumerated_as": entry}
@@ -103,7 +103,7 @@ class UsbRootHub(TestComponent[RootHub]):
         raise TestFailure(f"no USB bus {bus}", bus, entry or "(not registered)", evidence=reading)
 
     @evidence("owning_controller")
-    async def _controller(self, utils: TestUtils[RootHub]) -> Verdict:
+    async def _controller(self, utils: TestUtils[RootHubIdentity]) -> Verdict:
         bus = utils.ctx["bus"]
         expected = utils.ctx["controller"]
         # A root hub hangs directly off its controller, so the bus links to
@@ -119,7 +119,7 @@ class UsbRootHub(TestComponent[RootHub]):
         )
 
     @evidence("advertised_version")
-    async def _version(self, utils: TestUtils[RootHub]) -> Verdict:
+    async def _version(self, utils: TestUtils[RootHubIdentity]) -> Verdict:
         bus = utils.ctx["bus"]
         expected = utils.ctx["usb_version"]
         version = await read_text(utils, f"{_DEVICES}/{bus}/version")
@@ -133,7 +133,7 @@ class UsbRootHub(TestComponent[RootHub]):
         )
 
     @evidence("downstream_ports")
-    async def _ports(self, utils: TestUtils[RootHub]) -> Verdict:
+    async def _ports(self, utils: TestUtils[RootHubIdentity]) -> Verdict:
         bus = utils.ctx["bus"]
         expected = utils.ctx["ports"]
         ports = await read_int(utils, f"{_DEVICES}/{bus}/maxchild")
@@ -147,10 +147,10 @@ class UsbRootHub(TestComponent[RootHub]):
         )
 
     @evidence("bus_speed_mbps")
-    async def _speed(self, utils: TestUtils[RootHub]) -> Verdict:
+    async def _speed(self, utils: TestUtils[RootHubIdentity]) -> Verdict:
         bus = utils.ctx["bus"]
         expected = utils.ctx["speed_mbps"]
-        # Recorded without a window: a bus speed is one of a few fixed rates, and
+        # Measured without a window: a bus speed is one of a few fixed rates, and
         # the claim is that it is this one.
         speed = utils.measure(
             "bus_speed_mbps", await read_int(utils, f"{_DEVICES}/{bus}/speed"), unit="Mbit/s"
@@ -168,43 +168,39 @@ class UsbRootHub(TestComponent[RootHub]):
         )
 
 
-class AttachedDevice(TypedDict):
-    """What one attached device must show, in the notation ``lsusb`` prints."""
+class UsbDeviceIdentity(TypedDict):
+    """What one attached device must show, in the notation ``lsusb`` prints.
+
+    Attributes:
+        device: The kernel's name for the port it is wired to, bus then root-hub
+            port, such as ``3-10``.
+        label: The usb.ids name for the IDs below, such as ``AX211 Bluetooth``. For
+            the reader only.
+        vendor_product: ``idVendor`` and ``idProduct``, the ``8087:0033`` of lsusb.
+        driver: Kernel driver bound to its first interface.
+    """
 
     device: str
-    interface: str
     label: str
     vendor_product: str
     driver: str
 
 
-class UsbDevice(TestComponent[AttachedDevice]):
-    """Judge one device wired to a root-hub port."""
+class UsbDevice(TestComponent[UsbDeviceIdentity]):
+    """Judge one device wired to a root-hub port.
 
-    def __init__(self, *, name: str, spec: UsbDeviceSpec) -> None:
-        """Hold the device's record.
+    Args:
+        name: Node name used by logs, artifacts, and failures.
+        **identity: What the device must show.
+    """
 
-        Args:
-            name: Node name used by logs, artifacts, and failures.
-            spec: The bus and port, the device's IDs, and its driver.
-        """
+    def __init__(self, *, name: str, **identity: Unpack[UsbDeviceIdentity]) -> None:
         super().__init__(name=name)
-        self._spec = spec
+        self._identity = identity
 
-    async def configure(self, utils: TestUtils[AttachedDevice]) -> AttachedDevice:
-        """Provide the record the claims judge against."""
-        spec = self._spec
-        device = f"{spec.bus}-{spec.port}"
-        return {
-            "device": device,
-            # USB drivers bind to interfaces, not to the device, which the kernel's
-            # generic `usb` driver always holds. Every configured device has
-            # interface 0 of configuration 1.
-            "interface": f"{device}:1.0",
-            "label": spec.product,
-            "vendor_product": f"{spec.vendor_id:04x}:{spec.product_id:04x}",
-            "driver": spec.driver,
-        }
+    async def configure(self, utils: TestUtils[UsbDeviceIdentity]) -> UsbDeviceIdentity:
+        """Provide the identity the claims judge against."""
+        return self._identity
 
     def build_suite(self) -> TestComponent:
         """Presence first: with nothing at the port, kind and driver say nothing.
@@ -227,7 +223,7 @@ class UsbDevice(TestComponent[AttachedDevice]):
         )
 
     @evidence("enumerated_as")
-    async def _present(self, utils: TestUtils[AttachedDevice]) -> Verdict:
+    async def _present(self, utils: TestUtils[UsbDeviceIdentity]) -> Verdict:
         device = utils.ctx["device"]
         entry = await read_link_name(utils, f"{_DEVICES}/{device}")
         reading = {"enumerated_as": entry}
@@ -241,7 +237,7 @@ class UsbDevice(TestComponent[AttachedDevice]):
         )
 
     @evidence("reported_vendor_product")
-    async def _kind(self, utils: TestUtils[AttachedDevice]) -> Verdict:
+    async def _kind(self, utils: TestUtils[UsbDeviceIdentity]) -> Verdict:
         device = utils.ctx["device"]
         expected = utils.ctx["vendor_product"]
         node = f"{_DEVICES}/{device}"
@@ -254,15 +250,18 @@ class UsbDevice(TestComponent[AttachedDevice]):
         if reported is None:
             raise TestFailure(f"IDs of USB device {device} could not be read", expected, _NOT_READ)
         raise TestFailure(
-            f"USB device {device} is not the recorded one ({utils.ctx['label']})",
+            f"USB device {device} is not the expected one ({utils.ctx['label']})",
             expected,
             reported,
             evidence=reading,
         )
 
     @evidence("bound_driver")
-    async def _driver(self, utils: TestUtils[AttachedDevice]) -> Verdict:
-        interface = utils.ctx["interface"]
+    async def _driver(self, utils: TestUtils[UsbDeviceIdentity]) -> Verdict:
+        # USB drivers bind to interfaces, not to the device, which the kernel's generic
+        # `usb` driver always holds. Every configured device has interface 0 of
+        # configuration 1.
+        interface = f"{utils.ctx['device']}:1.0"
         expected = utils.ctx["driver"]
         bound = await read_link_name(utils, f"{_DEVICES}/{interface}/driver")
         reading = {"bound_driver": bound}
@@ -270,44 +269,41 @@ class UsbDevice(TestComponent[AttachedDevice]):
             return PASS(reading)
         raise TestFailure(
             f"driver bound to USB interface {interface} ({utils.ctx['label']}) "
-            "is not the recorded one",
+            "is not the expected one",
             expected,
             bound or "(no driver bound)",
             evidence=reading,
         )
 
 
-class UsbBuses(TypedDict):
+class UsbIdentity(TypedDict):
     """How many buses the machine must register."""
 
     bus_count: int
 
 
-class Usb(TestComponent[UsbBuses]):
-    """Judge the number of USB buses, then every root hub and attached device."""
+class Usb(TestComponent[UsbIdentity]):
+    """Judge the number of USB buses, then every root hub and attached device.
+
+    The bus count is read off the root hubs it is composed with.
+
+    Args:
+        name: Node name used by logs, artifacts, and failures.
+        hubs: Every root hub, one per bus.
+        devices: Every device permanently wired to one of those buses.
+    """
 
     def __init__(
-        self,
-        *,
-        name: str,
-        hubs: tuple[UsbRootHubSpec, ...],
-        devices: tuple[UsbDeviceSpec, ...],
+        self, *, name: str, hubs: Sequence[UsbRootHub], devices: Sequence[UsbDevice]
     ) -> None:
-        """Build one component per recorded root hub and attached device.
-
-        Args:
-            name: Node name used by logs, artifacts, and failures.
-            hubs: Every root hub, one per bus.
-            devices: Every device permanently wired to one of those buses.
-        """
         super().__init__(name=name)
-        self._bus_count = len(hubs)
-        self._hubs = tuple(UsbRootHub(name=f"bus-{spec.bus}", spec=spec) for spec in hubs)
-        self._devices = tuple(UsbDevice(name=spec.name, spec=spec) for spec in devices)
+        self._hubs = tuple(hubs)
+        self._devices = tuple(devices)
+        self._identity: UsbIdentity = {"bus_count": len(self._hubs)}
 
-    async def configure(self, utils: TestUtils[UsbBuses]) -> UsbBuses:
+    async def configure(self, utils: TestUtils[UsbIdentity]) -> UsbIdentity:
         """Provide the count the bus claim judges against."""
-        return {"bus_count": self._bus_count}
+        return self._identity
 
     def build_suite(self) -> TestComponent:
         """Independent claims: the count, each bus, and each device are judged on their own."""
@@ -317,7 +313,7 @@ class Usb(TestComponent[UsbBuses]):
         )
 
     @evidence("root_hubs")
-    async def _bus_count_matches(self, utils: TestUtils[UsbBuses]) -> Verdict:
+    async def _bus_count_matches(self, utils: TestUtils[UsbIdentity]) -> Verdict:
         expected = utils.ctx["bus_count"]
         listing = await list_dir(utils, _DEVICES)
         if listing is None:
@@ -329,7 +325,7 @@ class Usb(TestComponent[UsbBuses]):
         if len(root_hubs) == expected:
             return PASS(reading)
         raise TestFailure(
-            "number of USB buses differs from the record",
+            "number of USB buses differs from the root hubs expected",
             f"{expected} buses",
             f"{len(root_hubs)} buses: {', '.join(root_hubs) or 'none'}",
             evidence=reading,

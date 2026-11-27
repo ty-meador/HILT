@@ -1,6 +1,6 @@
 """Shared readers for the kernel's text interfaces.
 
-Every component in this package takes its readings the same way: one read-only
+Every component in the suite takes its readings the same way: one read-only
 command through ``utils.exec``, parsed here into a value or ``None``. ``None`` means
 the reading was not taken (the file is absent, unreadable, or not in the expected
 form), which a claim reports as such instead of guessing.
@@ -32,7 +32,7 @@ async def read_files(utils: TestUtils, *patterns: str) -> dict[str, str]:
     up with ``.get`` and treats ``None`` as a reading not taken.
 
     The patterns are expanded by the device's shell, so they are not quoted: they
-    must come from the spec, never from a reading.
+    must come from identity, never from a reading.
     """
     # `tail -v` heads each file with "==> path <=="; unlike `grep -H`, that survives
     # the colons in PCI paths. Its exit status is not judged: it is non-zero when

@@ -1,27 +1,28 @@
 """The PCI bus: what the kernel enumerates on it, then each function.
 
 The bus makes one claim of its own (the functions enumerated are exactly the ones
-on record) and composes one component per function, each with its own claims:
+it was composed with) and composes one component per function, each with its own
+claims:
 
     pci
     ├─ enumeration            nothing missing, nothing unexpected
-    └─ <function>             one per recorded function, such as ``display``
+    └─ <function>             one per expected function, such as ``display``
        ├─ present             the kernel enumerates a function at the address
        └─ details
           ├─ kind             class and vendor:device IDs
-          └─ driver           the bound driver, or none where none is recorded
+          └─ driver           the bound driver, or none where none is expected
 
 Kind is judged on the numbers the function itself reports. The names beside them
 in ``lspci`` and ``lshw`` are looked up in the pci.ids database on whichever machine
-ran the tool, so they travel on the record as a label and are never compared.
+ran the tool, so they travel in the identity as a label and are never compared.
 """
 
 from __future__ import annotations
 
-from typing import TypedDict
+from collections.abc import Sequence
+from typing import TypedDict, Unpack
 
-from nuc13.probe import list_dir, read_files, read_link_name
-from nuc13.spec import PciDeviceSpec
+from nuc13.kernel import list_dir, read_files, read_link_name
 
 from hilt import PASS, TestComponent, TestFailure, TestUtils, Verdict, evidence
 
@@ -30,8 +31,17 @@ _NOT_READ = "(not read)"
 _NO_DRIVER = "(no driver bound)"
 
 
-class PciFunction(TypedDict):
-    """What one function must show, in the notation ``lspci -nn`` prints."""
+class PciDeviceIdentity(TypedDict):
+    """What one function must show, in the notation ``lspci -nn`` prints.
+
+    Attributes:
+        address: Domain-qualified address, such as ``0000:00:02.0``.
+        label: The pci.ids names for the IDs below, such as ``VGA compatible
+            controller: Raptor Lake-P [Iris Xe Graphics]``. For the reader only.
+        class_code: Base class and subclass, the ``0300`` of ``[0300]``.
+        vendor_device: Vendor and device IDs, the ``8086:a7a0`` of ``[8086:a7a0]``.
+        driver: Kernel driver that must be bound, or ``None`` where none binds.
+    """
 
     address: str
     label: str
@@ -40,29 +50,26 @@ class PciFunction(TypedDict):
     driver: str | None
 
 
-class PciDevice(TestComponent[PciFunction]):
-    """Judge one PCI function against its record."""
+class PciDevice(TestComponent[PciDeviceIdentity]):
+    """Judge one PCI function against its identity.
 
-    def __init__(self, *, name: str, spec: PciDeviceSpec) -> None:
-        """Hold the function's record.
+    Args:
+        name: Node name used by logs, artifacts, and failures.
+        **identity: What the function must show.
+    """
 
-        Args:
-            name: Node name used by logs, artifacts, and failures.
-            spec: The function's address, IDs, and driver.
-        """
+    def __init__(self, *, name: str, **identity: Unpack[PciDeviceIdentity]) -> None:
         super().__init__(name=name)
-        self._spec = spec
+        self._identity = identity
 
-    async def configure(self, utils: TestUtils[PciFunction]) -> PciFunction:
-        """Provide the record the claims judge against."""
-        spec = self._spec
-        return {
-            "address": spec.address,
-            "label": f"{spec.description}: {spec.product}",
-            "class_code": f"{spec.class_code:04x}",
-            "vendor_device": f"{spec.vendor_id:04x}:{spec.device_id:04x}",
-            "driver": spec.driver,
-        }
+    @property
+    def address(self) -> str:
+        """Where the function sits, which the bus counts in its population."""
+        return self._identity["address"]
+
+    async def configure(self, utils: TestUtils[PciDeviceIdentity]) -> PciDeviceIdentity:
+        """Provide the identity the claims judge against."""
+        return self._identity
 
     def build_suite(self) -> TestComponent:
         """Presence first: with no function at the address, kind and driver say nothing.
@@ -86,7 +93,7 @@ class PciDevice(TestComponent[PciFunction]):
         )
 
     @evidence("enumerated_as")
-    async def _present(self, utils: TestUtils[PciFunction]) -> Verdict:
+    async def _present(self, utils: TestUtils[PciDeviceIdentity]) -> Verdict:
         address = utils.ctx["address"]
         # The bus directory holds one link per enumerated function, named for it.
         entry = await read_link_name(utils, f"{_DEVICES}/{address}")
@@ -101,7 +108,7 @@ class PciDevice(TestComponent[PciFunction]):
         )
 
     @evidence("reported_class", "reported_vendor_device")
-    async def _kind(self, utils: TestUtils[PciFunction]) -> Verdict:
+    async def _kind(self, utils: TestUtils[PciDeviceIdentity]) -> Verdict:
         address = utils.ctx["address"]
         node = f"{_DEVICES}/{address}"
         files = await read_files(utils, f"{node}/class", f"{node}/vendor", f"{node}/device")
@@ -125,54 +132,58 @@ class PciDevice(TestComponent[PciFunction]):
                 evidence=reading,
             )
         raise TestFailure(
-            f"{address} is not the recorded device ({utils.ctx['label']})",
+            f"{address} is not the expected device ({utils.ctx['label']})",
             expected,
             f"[{reading['reported_class']}] [{reading['reported_vendor_device']}]",
             evidence=reading,
         )
 
     @evidence("bound_driver")
-    async def _driver(self, utils: TestUtils[PciFunction]) -> Verdict:
+    async def _driver(self, utils: TestUtils[PciDeviceIdentity]) -> Verdict:
         address = utils.ctx["address"]
         expected = utils.ctx["driver"]
-        # No link is the kernel's way of saying nothing is bound, and three functions
-        # are recorded that way. It can be read as that, and not as a missing
-        # function, only because this claim runs after `present` passed.
+        # No link is the kernel's way of saying nothing is bound, which is what some
+        # functions expect. It can be read as that, and not as a missing function,
+        # only because this claim runs after `present` passed.
         bound = await read_link_name(utils, f"{_DEVICES}/{address}/driver")
         reading = {"bound_driver": bound}
         if bound == expected:
             return PASS(reading)
         raise TestFailure(
-            f"driver bound to {address} ({utils.ctx['label']}) is not the recorded one",
+            f"driver bound to {address} ({utils.ctx['label']}) is not the expected one",
             expected or _NO_DRIVER,
             bound or _NO_DRIVER,
             evidence=reading,
         )
 
 
-class PciEnumeration(TypedDict):
+class PciBusIdentity(TypedDict):
     """Every address the bus must enumerate, sorted."""
 
     addresses: list[str]
 
 
-class PciBus(TestComponent[PciEnumeration]):
-    """Judge the bus's population, then every function on it."""
+class PciBus(TestComponent[PciBusIdentity]):
+    """Judge the bus's population, then every function on it.
 
-    def __init__(self, *, name: str, devices: tuple[PciDeviceSpec, ...]) -> None:
-        """Build one component per recorded function.
+    The bus's identity is its population, so it is read off the functions it is
+    composed with.
 
-        Args:
-            name: Node name used by logs, artifacts, and failures.
-            devices: Every function the bus must enumerate, and no others.
-        """
+    Args:
+        name: Node name used by logs, artifacts, and failures.
+        devices: Every function the bus must enumerate, and no others.
+    """
+
+    def __init__(self, *, name: str, devices: Sequence[PciDevice]) -> None:
         super().__init__(name=name)
-        self._addresses = tuple(sorted(spec.address for spec in devices))
-        self._devices = tuple(PciDevice(name=spec.name, spec=spec) for spec in devices)
+        self._devices = tuple(devices)
+        self._identity: PciBusIdentity = {
+            "addresses": sorted(device.address for device in self._devices)
+        }
 
-    async def configure(self, utils: TestUtils[PciEnumeration]) -> PciEnumeration:
+    async def configure(self, utils: TestUtils[PciBusIdentity]) -> PciBusIdentity:
         """Provide the population the enumeration claim judges against."""
-        return {"addresses": list(self._addresses)}
+        return self._identity
 
     def build_suite(self) -> TestComponent:
         """Independent claims: the population and each function are judged on their own."""
@@ -182,22 +193,22 @@ class PciBus(TestComponent[PciEnumeration]):
         )
 
     @evidence("enumerated")
-    async def _enumeration(self, utils: TestUtils[PciEnumeration]) -> Verdict:
-        recorded = set(utils.ctx["addresses"])
+    async def _enumeration(self, utils: TestUtils[PciBusIdentity]) -> Verdict:
+        expected = set(utils.ctx["addresses"])
         listing = await list_dir(utils, _DEVICES)
         if listing is None:
             raise TestFailure(
-                f"{_DEVICES} could not be listed", f"{len(recorded)} functions", _NOT_READ
+                f"{_DEVICES} could not be listed", f"{len(expected)} functions", _NOT_READ
             )
         enumerated = set(listing)
-        missing = sorted(recorded - enumerated)
-        unexpected = sorted(enumerated - recorded)
+        missing = sorted(expected - enumerated)
+        unexpected = sorted(enumerated - expected)
         reading = {"enumerated": list(listing), "missing": missing, "unexpected": unexpected}
-        if enumerated == recorded:
+        if enumerated == expected:
             return PASS(reading)
         raise TestFailure(
-            "PCI functions enumerated differ from the record",
-            f"{len(recorded)} functions, none missing, none unexpected",
+            "PCI functions enumerated differ from the expected population",
+            f"{len(expected)} functions, none missing, none unexpected",
             f"{len(enumerated)} functions, missing {missing or 'none'}, "
             f"unexpected {unexpected or 'none'}",
             evidence=reading,
@@ -208,7 +219,7 @@ def _class_code(text: str | None) -> str | None:
     """Reduce sysfs ``class`` (``0x030000``) to base class and subclass (``0300``).
 
     The last two digits are the programming interface, which ``lspci -nn`` leaves
-    out of its brackets and the record does not carry.
+    out of its brackets and the identity does not carry.
     """
     if text is None:
         return None

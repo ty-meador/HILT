@@ -4,19 +4,22 @@
     ├─ vendor
     ├─ version
     ├─ release-date
-    └─ uefi-boot       only where the record says the machine boots through UEFI
+    └─ uefi-boot       only for firmware that must boot the machine through UEFI
 
 The identity comes from the DMI fields the kernel publishes to every user. The boot
 path is read from the kernel too: it exposes ``/sys/firmware/efi`` only when the
 firmware handed over through UEFI.
+
+A firmware release is a part like any other: the shopfloor names it on the bill of
+materials, and one class, in a module of its own beside this one, says what that
+release reports. The package's ``mpns`` lists them.
 """
 
 from __future__ import annotations
 
-from typing import Literal, TypedDict
+from typing import Literal, TypedDict, Unpack
 
-from nuc13.probe import read_text
-from nuc13.spec import FirmwareSpec
+from nuc13.kernel import read_text
 
 from hilt import PASS, TestComponent, TestFailure, TestUtils, Verdict, evidence
 
@@ -24,7 +27,13 @@ type BiosField = Literal["bios_vendor", "bios_version", "bios_date"]
 
 
 class FirmwareIdentity(TypedDict):
-    """What the firmware must report, keyed by the DMI field that reports it."""
+    """What the firmware must report, keyed by the DMI field that reports it.
+
+    Attributes:
+        bios_vendor: Who released the BIOS.
+        bios_version: The release.
+        bios_date: Its release date, ``MM/DD/YYYY``.
+    """
 
     bios_vendor: str
     bios_version: str
@@ -32,28 +41,23 @@ class FirmwareIdentity(TypedDict):
 
 
 class Firmware(TestComponent[FirmwareIdentity]):
-    """Judge the flashed BIOS against the record, and the way it booted."""
+    """Judge which BIOS is flashed, and the way it booted the machine.
 
-    def __init__(self, *, name: str, spec: FirmwareSpec) -> None:
-        """Hold the firmware's identity.
+    Args:
+        name: Node name used by logs, artifacts, and failures.
+        uefi: Whether the machine must have booted through UEFI. Firmware that need
+            not has no boot-path claim, instead of one that could not fail.
+        **identity: What the firmware must report.
+    """
 
-        Args:
-            name: Node name used by logs, artifacts, and failures.
-            spec: The BIOS the machine must be running.
-        """
+    def __init__(self, *, name: str, uefi: bool, **identity: Unpack[FirmwareIdentity]) -> None:
         super().__init__(name=name)
-        self._spec = spec
-        # None or one: a machine that need not boot through UEFI has no boot-path
-        # claim, instead of one that could not fail.
-        self._boot_path = (self.test("uefi-boot", self._uefi_boot),) if spec.uefi else ()
+        self._identity = identity
+        self._boot_path = (self.test("uefi-boot", self._uefi_boot),) if uefi else ()
 
     async def configure(self, utils: TestUtils[FirmwareIdentity]) -> FirmwareIdentity:
         """Provide the identity the firmware's claims judge against."""
-        return {
-            "bios_vendor": self._spec.vendor,
-            "bios_version": self._spec.version,
-            "bios_date": self._spec.release_date,
-        }
+        return self._identity
 
     def build_suite(self) -> TestComponent:
         """Independent claims: a stale version and a legacy boot are both reported."""

@@ -6,7 +6,7 @@
     ├─ populated-banks            how many modules the kernel lists
     ├─ correctable-errors         every controller's count since boot
     ├─ uncorrectable-errors
-    └─ bank-N                     one per bank of the spec
+    └─ bank-N                     one per module on the bill of materials
        ├─ position                a module is listed at the bank's channel and slot
        └─ module
           ├─ size
@@ -26,15 +26,19 @@ world-readable. SMBIOS, where lshw found the part numbers, is root's alone, so a
 module's part number, vendor, and speed are judged only where its EEPROM can be read.
 A bank without one has no such claims, instead of claims that could never take their
 reading.
+
+A module part number is one class, in a module of its own beside this one; it says
+what that module is. Where the module is fitted is not the module's to know: its
+slot label, EDAC position, and EEPROM path are handed to it, and it is the board
+that knows them. The package's ``mpns`` lists the part numbers.
 """
 
 from __future__ import annotations
 
-import shlex
-from typing import TypedDict
+from collections.abc import Sequence
+from typing import TypedDict, Unpack
 
-from nuc13.probe import parse_int, read_files, read_int, read_text
-from nuc13.spec import MemoryBankSpec, MemorySpec
+from nuc13.kernel import parse_int, read_files, read_int, read_text
 
 from hilt import PASS, TestComponent, TestFailure, TestUtils, Verdict, evidence
 
@@ -54,6 +58,10 @@ _PART_NUMBER = (329, 20)
 # The one generation whose layout is decoded here, and its device-type code.
 _DECODED_TECHNOLOGY = "DDR4"
 _DECODED_DEVICE_TYPE = 0x0C
+
+# What an intact system may hold back from ``MemTotal``: firmware and the integrated
+# graphics reserve some of what is installed.
+_RESERVED_ALLOWANCE_MIB = 1024
 
 
 def _counts(files: dict[str, str]) -> dict[str, int] | None:
@@ -114,7 +122,17 @@ def _rated_speed_mhz(cycle_time: bytes) -> int | None:
 
 
 class EepromIdentity(TypedDict):
-    """What a module's EEPROM must say, and where the EEPROM is."""
+    """What a module's EEPROM must say, and where the EEPROM is.
+
+    Attributes:
+        eeprom: Shell pattern that resolves to the EEPROM's sysfs file.
+        technology: Memory generation, such as ``DDR4``.
+        part_number: Module part number.
+        vendor: Module manufacturer, by name.
+        manufacturer_id: That manufacturer's JEDEC JEP106 code as the EEPROM stores
+            it: two bytes in hex, continuation count (with its parity bit) then code.
+        speed_mhz: Rated clock.
+    """
 
     eeprom: str
     technology: str
@@ -128,40 +146,21 @@ class IdentityEeprom(TestComponent[EepromIdentity]):
     """The small EEPROM on a memory module that states the module's own identity.
 
     JEDEC calls it Serial Presence Detect (SPD). It holds the module's generation,
-    part number, maker, and rated speed, and each is judged against the bank's
-    record. Only the DDR4 layout is decoded.
+    part number, maker, and rated speed, and each is judged against the module's
+    identity. Only the DDR4 layout is decoded.
+
+    Args:
+        name: Node name used by logs, artifacts, and failures.
+        **identity: Where the EEPROM is, and what it must say.
     """
 
-    def __init__(self, *, name: str, spec: MemoryBankSpec) -> None:
-        """Hold the bank whose module this EEPROM describes.
-
-        Args:
-            name: Node name used by logs, artifacts, and failures.
-            spec: The bank's identity. Its ``identity_eeprom`` says where the EEPROM
-                answers.
-
-        Raises:
-            ValueError: The bank declares no EEPROM, so there is nothing to read.
-        """
+    def __init__(self, *, name: str, **identity: Unpack[EepromIdentity]) -> None:
         super().__init__(name=name)
-        if spec.identity_eeprom is None:
-            raise ValueError(f"{spec.slot} declares no identity EEPROM")
-        self._spec = spec
-        self._location = spec.identity_eeprom
+        self._identity = identity
 
     async def configure(self, utils: TestUtils[EepromIdentity]) -> EepromIdentity:
         """Provide the module identity the EEPROM is judged against."""
-        # The I2C bus number is handed out at boot, so the EEPROM is found from the
-        # PCI function of its SMBus controller, which does not move.
-        controller = shlex.quote(f"/sys/bus/pci/devices/{self._location.smbus}")
-        return {
-            "eeprom": f"{controller}/i2c-*/*-{self._location.address:04x}/eeprom",
-            "technology": self._spec.technology,
-            "part_number": self._spec.part_number,
-            "vendor": self._spec.vendor,
-            "manufacturer_id": self._location.manufacturer_id,
-            "speed_mhz": self._spec.speed_mhz,
-        }
+        return self._identity
 
     def build_suite(self) -> TestComponent:
         """Technology first: on another generation the other fields are at other offsets.
@@ -199,7 +198,7 @@ class IdentityEeprom(TestComponent[EepromIdentity]):
         if technology == expected:
             return PASS(reading)
         raise TestFailure(
-            "module EEPROM does not state the recorded generation",
+            "module EEPROM does not state the expected generation",
             expected,
             technology,
             evidence=reading,
@@ -217,7 +216,7 @@ class IdentityEeprom(TestComponent[EepromIdentity]):
         if part_number is None:
             raise TestFailure("module EEPROM could not be read", expected, "(not read)")
         raise TestFailure(
-            "module is not the recorded part", expected, part_number, evidence=reading
+            "module is not the expected part", expected, part_number, evidence=reading
         )
 
     @evidence("eeprom_manufacturer_id")
@@ -254,45 +253,81 @@ class IdentityEeprom(TestComponent[EepromIdentity]):
 
 
 class BankIdentity(TypedDict):
-    """What one bank must hold, and the kernel's directory for it."""
+    """What one bank must hold, and where the kernel must show it.
+
+    A module's part number, vendor, and speed can only be read from its identity
+    EEPROM. They are judged in a slot that has one and carried without a claim in a
+    slot whose ``eeprom`` is ``None``.
+
+    Attributes:
+        slot: The slot's label, such as ``Controller0-ChannelA-DIMM0``.
+        edac_directory: The kernel's directory for the position, such as
+            ``/sys/devices/system/edac/mc/mc0/dimm0``.
+        location: The position as that directory words it, such as
+            ``channel 0 slot 0``.
+        eeprom: Shell pattern that resolves to the sysfs file of the module's
+            identity EEPROM, or ``None`` where the kernel exposes none to an
+            ordinary user.
+        size_mib: Module capacity.
+        technology: Memory generation, such as ``DDR4``.
+        speed_mhz: Rated clock.
+        vendor: Module manufacturer, by name.
+        manufacturer_id: That manufacturer's JEDEC JEP106 code as the EEPROM stores
+            it: two bytes in hex, continuation count (with its parity bit) then code.
+        part_number: Module part number.
+    """
 
     slot: str
     edac_directory: str
     location: str
+    eeprom: str | None
     size_mib: int
     technology: str
+    speed_mhz: int
+    vendor: str
+    manufacturer_id: str
+    part_number: str
 
 
 class MemoryBank(TestComponent[BankIdentity]):
-    """Judge one populated slot: the module is there, and it is the module recorded."""
+    """Judge one populated slot: the module is there, and it is the module expected.
 
-    def __init__(self, *, name: str, spec: MemoryBankSpec) -> None:
-        """Build the bank, and its EEPROM where the spec says one can be read.
+    Args:
+        name: Node name used by logs, artifacts, and failures.
+        **identity: Where the kernel must show the module, and the module that must
+            be there.
+    """
 
-        Args:
-            name: Node name used by logs, artifacts, and failures.
-            spec: The bank's identity.
-        """
+    def __init__(self, *, name: str, **identity: Unpack[BankIdentity]) -> None:
         super().__init__(name=name)
-        self._spec = spec
+        self._identity = identity
         # None or one: the population is identity, so it is settled here and
         # build_suite only lists it.
+        eeprom = identity["eeprom"]
         self._identity_eeprom = (
             ()
-            if spec.identity_eeprom is None
-            else (IdentityEeprom(name="identity-eeprom", spec=spec),)
+            if eeprom is None
+            else (
+                IdentityEeprom(
+                    name="identity-eeprom",
+                    eeprom=eeprom,
+                    technology=identity["technology"],
+                    part_number=identity["part_number"],
+                    vendor=identity["vendor"],
+                    manufacturer_id=identity["manufacturer_id"],
+                    speed_mhz=identity["speed_mhz"],
+                ),
+            )
         )
 
+    @property
+    def size_mib(self) -> int:
+        """The module's capacity, which system memory adds up over its banks."""
+        return self._identity["size_mib"]
+
     async def configure(self, utils: TestUtils[BankIdentity]) -> BankIdentity:
-        """Provide the module identity the bank's claims judge against."""
-        directory = f"{_EDAC}/mc{self._spec.controller}/dimm{self._spec.edac_dimm}"
-        return {
-            "slot": self._spec.slot,
-            "edac_directory": directory,
-            "location": f"channel {self._spec.channel} slot {self._spec.dimm}",
-            "size_mib": self._spec.size_mib,
-            "technology": self._spec.technology,
-        }
+        """Provide the identity the bank's claims judge against."""
+        return self._identity
 
     def build_suite(self) -> TestComponent:
         """Position first: with no module there, the rest would be readings of nothing.
@@ -395,37 +430,43 @@ class MemoryBank(TestComponent[BankIdentity]):
         )
 
 
-class MemoryTotals(TypedDict):
-    """What the system's memory must add up to."""
+class MemoryIdentity(TypedDict):
+    """What the system's memory must add up to.
+
+    Attributes:
+        installed_mib: Every module's capacity, summed.
+        usable_floor_mib: Least ``MemTotal`` an intact system shows.
+        bank_count: Populated slots.
+    """
 
     installed_mib: int
     usable_floor_mib: int
     bank_count: int
 
 
-class Memory(TestComponent[MemoryTotals]):
-    """Judge system memory as a whole, then every bank that makes it up."""
+class Memory(TestComponent[MemoryIdentity]):
+    """Judge system memory as a whole, then every bank that makes it up.
 
-    def __init__(self, *, name: str, spec: MemorySpec) -> None:
-        """Build system memory and one bank per populated slot of the spec.
+    The totals are read off the banks it is composed with.
 
-        Args:
-            name: Node name used by logs, artifacts, and failures.
-            spec: The totals and, nested in them, each bank's identity.
-        """
+    Args:
+        name: Node name used by logs, artifacts, and failures.
+        banks: Every populated slot.
+    """
+
+    def __init__(self, *, name: str, banks: Sequence[MemoryBank]) -> None:
         super().__init__(name=name)
-        self._spec = spec
-        self._banks = tuple(
-            MemoryBank(name=f"bank-{index}", spec=bank) for index, bank in enumerate(spec.banks)
-        )
-
-    async def configure(self, utils: TestUtils[MemoryTotals]) -> MemoryTotals:
-        """Provide the totals the system-wide claims judge against."""
-        return {
-            "installed_mib": self._spec.installed_mib,
-            "usable_floor_mib": self._spec.usable_floor_mib,
-            "bank_count": len(self._spec.banks),
+        self._banks = tuple(banks)
+        installed_mib = sum(bank.size_mib for bank in self._banks)
+        self._identity: MemoryIdentity = {
+            "installed_mib": installed_mib,
+            "usable_floor_mib": installed_mib - _RESERVED_ALLOWANCE_MIB,
+            "bank_count": len(self._banks),
         }
+
+    async def configure(self, utils: TestUtils[MemoryIdentity]) -> MemoryIdentity:
+        """Provide the totals the system-wide claims judge against."""
+        return self._identity
 
     def build_suite(self) -> TestComponent:
         """Independent totals and independent banks: one bad module never hides another."""
@@ -451,11 +492,11 @@ class Memory(TestComponent[MemoryTotals]):
             ],
         )
 
-    # The kernel, not the spec, decides how many controllers and modules there are,
+    # The kernel, not the suite, decides how many controllers and modules there are,
     # so the system-wide claims below ask for every one it lists.
 
     @evidence("dimm_sizes_mib")
-    async def _installed_size(self, utils: TestUtils[MemoryTotals]) -> Verdict:
+    async def _installed_size(self, utils: TestUtils[MemoryIdentity]) -> Verdict:
         expected = utils.ctx["installed_mib"]
         sizes = _counts(await read_files(utils, f"{_EDAC}/mc*/dimm*/size"))
         total = None if sizes is None else sum(sizes.values())
@@ -473,7 +514,7 @@ class Memory(TestComponent[MemoryTotals]):
         )
 
     @evidence("memory_total_kib")
-    async def _usable_size(self, utils: TestUtils[MemoryTotals]) -> Verdict:
+    async def _usable_size(self, utils: TestUtils[MemoryIdentity]) -> Verdict:
         floor, installed = utils.ctx["usable_floor_mib"], utils.ctx["installed_mib"]
         window = f"{floor} to {installed} MiB"
         total_kib = await _memory_total_kib(utils)
@@ -492,7 +533,7 @@ class Memory(TestComponent[MemoryTotals]):
         )
 
     @evidence("dimm_locations")
-    async def _populated_banks(self, utils: TestUtils[MemoryTotals]) -> Verdict:
+    async def _populated_banks(self, utils: TestUtils[MemoryIdentity]) -> Verdict:
         expected = utils.ctx["bank_count"]
         # EDAC creates a module directory only for a populated position, so the
         # directories it lists are the modules it found.
@@ -510,7 +551,7 @@ class Memory(TestComponent[MemoryTotals]):
 
     @evidence("controller_errors")
     async def _error_count(
-        self, utils: TestUtils[MemoryTotals], *, counter: str, kind: str
+        self, utils: TestUtils[MemoryIdentity], *, counter: str, kind: str
     ) -> Verdict:
         # The controller's own count includes errors it could not attribute to a
         # module, which no bank's counter would show.

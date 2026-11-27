@@ -143,6 +143,9 @@ convention = "google"
 # the legacy framework — they are the vocabulary the FT and the artifacts already use.
 # An `Error` suffix would rename a published contract to satisfy a naming convention.
 "src/hilt/errors.py" = ["N818"]
+# The nuc13 example keeps one class per part number in a module named for that class,
+# so a part number is found by its file name.
+"examples/nuc13/**" = ["N999"]
 
 [tool.pyright]
 include = ["src", "tests", "examples", "tools", "bench"]

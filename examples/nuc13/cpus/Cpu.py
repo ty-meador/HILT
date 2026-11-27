@@ -19,14 +19,17 @@ is judged from each of them.
 
 Every reading is a file read or, for ``compute``, a hash of a fixed megabyte: nothing
 here changes the device or loads it for longer than a few milliseconds per thread.
+
+A processor part number is one class, in a module of its own beside this one; it says
+what that processor is, down to each core and the caches it uses. The package's ``mpns`` lists them.
 """
 
 from __future__ import annotations
 
 from collections.abc import Collection, Mapping, Sequence
-from typing import Any, TypedDict
+from typing import Any, Literal, TypedDict, Unpack
 
-from nuc13.probe import (
+from nuc13.kernel import (
     parse_cpu_list,
     parse_int,
     parse_size_kib,
@@ -34,9 +37,11 @@ from nuc13.probe import (
     read_int,
     read_text,
 )
-from nuc13.spec import CacheKind, CoreKind, CoreSpec, CpuSpec
 
 from hilt import PASS, TestComponent, TestFailure, TestUtils, Verdict, evidence
+
+type CoreKind = Literal["performance", "efficient"]
+type CacheKind = Literal["Data", "Instruction", "Unified"]
 
 _CPU = "/sys/devices/system/cpu"
 _CPUINFO = "/proc/cpuinfo"
@@ -108,8 +113,20 @@ def _per_cpu(readings: Mapping[str, object]) -> str:
 # ------------------------------------------------------------------------- core
 
 
-class CacheExpectation(TypedDict):
-    """What one of a core's caches must look like from each of the core's threads."""
+class CacheIdentity(TypedDict):
+    """What one of a core's caches must look like from each of the core's threads.
+
+    A cache belongs to the cores it serves, so it is part of each of those cores'
+    identity. A cache that several cores share (an efficient cluster's L2, the
+    package's L3) appears in each of them with the same ``shared_cpus``.
+
+    Attributes:
+        level: Cache level, 1 to 3.
+        kind: The kernel's ``cache/indexN/type``.
+        size_kib: Size of this one cache.
+        shared_cpus: Every logical CPU that uses this cache, the kernel's
+            ``shared_cpu_list``. It includes the core's own threads.
+    """
 
     level: int
     kind: CacheKind
@@ -117,50 +134,40 @@ class CacheExpectation(TypedDict):
     shared_cpus: list[int]
 
 
-class CoreExpectation(TypedDict):
-    """What one physical core must report, and the work its threads must get right."""
+class CoreIdentity(TypedDict):
+    """What one physical core must report.
+
+    Attributes:
+        core_id: The kernel's ``topology/core_id`` for this core.
+        kind: Performance (hyper-threaded) or efficient core.
+        cpus: Logical CPUs that are this core's hardware threads.
+        maximum_khz: ``cpufreq/cpuinfo_max_freq`` every thread of the core reports.
+        caches: Every cache this core uses, its own and the ones it shares, keyed by
+            the prefix of its claims, such as ``l1d`` or ``l3``.
+    """
 
     core_id: int
     kind: CoreKind
     cpus: list[int]
     maximum_khz: int
-    caches: dict[str, CacheExpectation]
-    work_bytes: int
-    work_sha256: str
+    caches: dict[str, CacheIdentity]
 
 
-class CpuCore(TestComponent[CoreExpectation]):
-    """Judge one physical core: its threads, its topology, its arithmetic, its caches."""
+class CpuCore(TestComponent[CoreIdentity]):
+    """Judge one physical core: its threads, its topology, its arithmetic, its caches.
 
-    def __init__(self, *, name: str, spec: CoreSpec) -> None:
-        """Hold the core's identity.
+    Args:
+        name: Node name used by logs, artifacts, and failures.
+        **identity: What the core must report.
+    """
 
-        Args:
-            name: Node name used by logs, artifacts, and failures.
-            spec: The core's id, type, hardware threads, top frequency, and caches.
-        """
+    def __init__(self, *, name: str, **identity: Unpack[CoreIdentity]) -> None:
         super().__init__(name=name)
-        self._spec = spec
+        self._identity = identity
 
-    async def configure(self, utils: TestUtils[CoreExpectation]) -> CoreExpectation:
+    async def configure(self, utils: TestUtils[CoreIdentity]) -> CoreIdentity:
         """Provide the identity the core's claims judge against."""
-        return {
-            "core_id": self._spec.core_id,
-            "kind": self._spec.kind,
-            "cpus": list(self._spec.cpus),
-            "maximum_khz": self._spec.maximum_khz,
-            "caches": {
-                cache.name: {
-                    "level": cache.level,
-                    "kind": cache.kind,
-                    "size_kib": cache.size_kib,
-                    "shared_cpus": list(cache.shared_cpus),
-                }
-                for cache in self._spec.caches
-            },
-            "work_bytes": _WORK_BYTES,
-            "work_sha256": _WORK_SHA256,
-        }
+        return self._identity
 
     def build_suite(self) -> TestComponent:
         """Online first: an offline thread has no topology, no cpufreq, no caches, no work.
@@ -182,28 +189,22 @@ class CpuCore(TestComponent[CoreExpectation]):
                             self.test(
                                 f"cpu-{cpu}-maximum-frequency", self._maximum_frequency, cpu=cpu
                             )
-                            for cpu in self._spec.cpus
+                            for cpu in self._identity["cpus"]
                         ],
                         *[
                             self.test(f"cpu-{cpu}-compute", self._compute, cpu=cpu)
-                            for cpu in self._spec.cpus
+                            for cpu in self._identity["cpus"]
                         ],
                         self.parallel(
                             "caches",
                             [
                                 *[
-                                    self.test(
-                                        f"{cache.name}-size", self._cache_size, cache=cache.name
-                                    )
-                                    for cache in self._spec.caches
+                                    self.test(f"{cache}-size", self._cache_size, cache=cache)
+                                    for cache in self._identity["caches"]
                                 ],
                                 *[
-                                    self.test(
-                                        f"{cache.name}-sharing",
-                                        self._cache_sharing,
-                                        cache=cache.name,
-                                    )
-                                    for cache in self._spec.caches
+                                    self.test(f"{cache}-sharing", self._cache_sharing, cache=cache)
+                                    for cache in self._identity["caches"]
                                 ],
                             ],
                             discrete_log_file=False,
@@ -215,7 +216,7 @@ class CpuCore(TestComponent[CoreExpectation]):
         )
 
     @evidence("cpus_online")
-    async def _online(self, utils: TestUtils[CoreExpectation]) -> Verdict:
+    async def _online(self, utils: TestUtils[CoreIdentity]) -> Verdict:
         threads = utils.ctx["cpus"]
         online = parse_cpu_list(await read_text(utils, f"{_CPU}/online"))
         if online is None:
@@ -227,7 +228,7 @@ class CpuCore(TestComponent[CoreExpectation]):
         raise TestFailure(f"threads {offline} are offline", threads, list(online), evidence=reading)
 
     @evidence("siblings")
-    async def _siblings(self, utils: TestUtils[CoreExpectation]) -> Verdict:
+    async def _siblings(self, utils: TestUtils[CoreIdentity]) -> Verdict:
         threads = utils.ctx["cpus"]
         lists = await _read_each(utils, threads, "topology/core_cpus_list")
         siblings = {
@@ -244,7 +245,7 @@ class CpuCore(TestComponent[CoreExpectation]):
         raise TestFailure("thread siblings do not match", threads, found, evidence=reading)
 
     @evidence("core_ids")
-    async def _core_id(self, utils: TestUtils[CoreExpectation]) -> Verdict:
+    async def _core_id(self, utils: TestUtils[CoreIdentity]) -> Verdict:
         expected = utils.ctx["core_id"]
         texts = await _read_each(utils, utils.ctx["cpus"], "topology/core_id")
         core_ids = {cpu: parse_int(text) for cpu, text in texts.items()}
@@ -257,7 +258,7 @@ class CpuCore(TestComponent[CoreExpectation]):
         raise TestFailure("core id does not match", expected, found, evidence=reading)
 
     @evidence("kinds")
-    async def _kind(self, utils: TestUtils[CoreExpectation]) -> Verdict:
+    async def _kind(self, utils: TestUtils[CoreIdentity]) -> Verdict:
         expected = utils.ctx["kind"]
         files = await read_files(utils, *_KIND_CPUS.values())
         members: dict[CoreKind, tuple[int, ...] | None] = {
@@ -273,7 +274,7 @@ class CpuCore(TestComponent[CoreExpectation]):
         raise TestFailure("core type does not match", expected, found, evidence=reading)
 
     @evidence("maximum_frequency_khz")
-    async def _maximum_frequency(self, utils: TestUtils[CoreExpectation], *, cpu: int) -> Verdict:
+    async def _maximum_frequency(self, utils: TestUtils[CoreIdentity], *, cpu: int) -> Verdict:
         expected = utils.ctx["maximum_khz"]
         khz = await read_int(utils, f"{_CPU}/cpu{cpu}/cpufreq/cpuinfo_max_freq")
         ceiling = utils.measure(
@@ -294,27 +295,29 @@ class CpuCore(TestComponent[CoreExpectation]):
         )
 
     @evidence("sha256")
-    async def _compute(self, utils: TestUtils[CoreExpectation], *, cpu: int) -> Verdict:
-        expected = utils.ctx["work_sha256"]
-        size = utils.ctx["work_bytes"]
+    async def _compute(self, utils: TestUtils[CoreIdentity], *, cpu: int) -> Verdict:
         # taskset wraps the whole pipeline, so the thread that hashes the input is
         # also the one that produced it and no other CPU can lend a hand.
-        result = await utils.exec(f"taskset -c {cpu} sh -c 'head -c {size} /dev/zero | sha256sum'")
+        result = await utils.exec(
+            f"taskset -c {cpu} sh -c 'head -c {_WORK_BYTES} /dev/zero | sha256sum'"
+        )
         words = result.stdout.split()
         digest = words[0] if result.exit_code == 0 and words else None
         reading = {"sha256": digest}
-        if digest == expected:
+        if digest == _WORK_SHA256:
             return PASS(reading)
         if digest is None:
             raise TestFailure(
                 f"work pinned to cpu{cpu} did not run",
-                expected,
+                _WORK_SHA256,
                 result.stderr.strip() or f"exit {result.exit_code}",
             )
-        raise TestFailure(f"cpu{cpu} computed a wrong digest", expected, digest, evidence=reading)
+        raise TestFailure(
+            f"cpu{cpu} computed a wrong digest", _WORK_SHA256, digest, evidence=reading
+        )
 
     async def _read_cache(
-        self, utils: TestUtils[CoreExpectation], cache: str, attribute: str
+        self, utils: TestUtils[CoreIdentity], cache: str, attribute: str
     ) -> dict[str, str | None]:
         """Read one attribute of the named cache as each of the core's threads reports it.
 
@@ -351,7 +354,7 @@ class CpuCore(TestComponent[CoreExpectation]):
         return found
 
     @evidence("sizes_kib")
-    async def _cache_size(self, utils: TestUtils[CoreExpectation], *, cache: str) -> Verdict:
+    async def _cache_size(self, utils: TestUtils[CoreIdentity], *, cache: str) -> Verdict:
         expected = utils.ctx["caches"][cache]["size_kib"]
         texts = await self._read_cache(utils, cache, "size")
         sizes = {cpu: parse_size_kib(text) for cpu, text in texts.items()}
@@ -369,7 +372,7 @@ class CpuCore(TestComponent[CoreExpectation]):
         )
 
     @evidence("shared_cpus")
-    async def _cache_sharing(self, utils: TestUtils[CoreExpectation], *, cache: str) -> Verdict:
+    async def _cache_sharing(self, utils: TestUtils[CoreIdentity], *, cache: str) -> Verdict:
         expected = utils.ctx["caches"][cache]["shared_cpus"]
         texts = await self._read_cache(utils, cache, "shared_cpu_list")
         shared = {
@@ -394,59 +397,63 @@ class CpuCore(TestComponent[CoreExpectation]):
 # ---------------------------------------------------------------------- package
 
 
-class CpuExpectation(TypedDict):
-    """What the processor package must report as a whole."""
+class CpuIdentity(TypedDict):
+    """What the processor package must report as a whole.
+
+    Attributes:
+        model: ``model name`` as the kernel reports it.
+        vendor_id: CPUID vendor string.
+        signature: CPUID family, model, and stepping, joined as ``6.186.2``.
+        sockets: Populated sockets.
+        core_count: Physical cores.
+        thread_count: Logical CPUs.
+        flags: Capabilities every core must advertise in ``/proc/cpuinfo``.
+        minimum_khz: Lowest frequency the package scales to.
+        maximum_khz: Highest frequency of any core.
+    """
 
     model: str
     vendor_id: str
-    family: int
-    model_number: int
-    stepping: int
+    signature: str
     sockets: int
     core_count: int
     thread_count: int
-    cpus: list[int]
     flags: list[str]
     minimum_khz: int
     maximum_khz: int
 
 
-class Cpu(TestComponent[CpuExpectation]):
-    """Judge the processor package, then every core in it."""
+def _logical_cpus(utils: TestUtils[CpuIdentity]) -> list[int]:
+    """Every logical CPU of the package: the kernel numbers them from 0, no gaps."""
+    return list(range(utils.ctx["thread_count"]))
 
-    def __init__(self, *, name: str, spec: CpuSpec) -> None:
-        """Build the processor and its cores from one spec.
 
-        Args:
-            name: Node name used by logs, artifacts, and failures.
-            spec: The package's identity and, nested in it, each core's with its caches.
-        """
+class Cpu(TestComponent[CpuIdentity]):
+    """Judge the processor package, then every core in it.
+
+    Args:
+        name: Node name used by logs, artifacts, and failures.
+        p_cores: Every performance core, each with its caches.
+        e_cores: Every efficient core, each with its caches.
+        **identity: What the package must report as a whole.
+    """
+
+    def __init__(
+        self,
+        *,
+        name: str,
+        p_cores: Sequence[CpuCore],
+        e_cores: Sequence[CpuCore],
+        **identity: Unpack[CpuIdentity],
+    ) -> None:
         super().__init__(name=name)
-        self._spec = spec
-        self._p_cores = [CpuCore(name=f"core-{core.core_id}", spec=core) for core in spec.p_cores]
-        self._e_cores = [CpuCore(name=f"core-{core.core_id}", spec=core) for core in spec.e_cores]
+        self._identity = identity
+        self._p_cores = tuple(p_cores)
+        self._e_cores = tuple(e_cores)
 
-    @property
-    def cores(self) -> tuple[CpuSpec, ...]:
-        """Tuple of all cores."""
-        return (*self._p_cores, *self._e_cores)
-
-    async def configure(self, utils: TestUtils[CpuExpectation]) -> CpuExpectation:
+    async def configure(self, utils: TestUtils[CpuIdentity]) -> CpuIdentity:
         """Provide the identity the package's own claims judge against."""
-        return {
-            "model": self._spec.model,
-            "vendor_id": self._spec.vendor_id,
-            "family": self._spec.family,
-            "model_number": self._spec.model_number,
-            "stepping": self._spec.stepping,
-            "sockets": self._spec.sockets,
-            "core_count": self._spec.core_count,
-            "thread_count": self._spec.thread_count,
-            "cpus": sorted(cpu for core in self._spec.cores for cpu in core.cpus),
-            "flags": list(self._spec.flags),
-            "minimum_khz": self._spec.minimum_khz,
-            "maximum_khz": self._spec.maximum_khz,
-        }
+        return self._identity
 
     def build_suite(self) -> TestComponent:
         """All independent: the package and each core are read separately.
@@ -477,7 +484,7 @@ class Cpu(TestComponent[CpuExpectation]):
         )
 
     @evidence("model_names")
-    async def _model(self, utils: TestUtils[CpuExpectation]) -> Verdict:
+    async def _model(self, utils: TestUtils[CpuIdentity]) -> Verdict:
         expected = utils.ctx["model"]
         names = _cpuinfo_values(await read_text(utils, _CPUINFO), "model name")
         if names is None:
@@ -494,7 +501,7 @@ class Cpu(TestComponent[CpuExpectation]):
         )
 
     @evidence("vendor_ids")
-    async def _vendor(self, utils: TestUtils[CpuExpectation]) -> Verdict:
+    async def _vendor(self, utils: TestUtils[CpuIdentity]) -> Verdict:
         expected = utils.ctx["vendor_id"]
         vendors = _cpuinfo_values(await read_text(utils, _CPUINFO), "vendor_id")
         if vendors is None:
@@ -510,16 +517,15 @@ class Cpu(TestComponent[CpuExpectation]):
         )
 
     @evidence("signatures")
-    async def _signature(self, utils: TestUtils[CpuExpectation]) -> Verdict:
-        ctx = utils.ctx
-        expected = f"{ctx['family']}.{ctx['model_number']}.{ctx['stepping']}"
+    async def _signature(self, utils: TestUtils[CpuIdentity]) -> Verdict:
+        expected = utils.ctx["signature"]
         cpuinfo = await read_text(utils, _CPUINFO)
         families = _cpuinfo_values(cpuinfo, "cpu family")
         models = _cpuinfo_values(cpuinfo, "model")
         steppings = _cpuinfo_values(cpuinfo, "stepping")
         if families is None or models is None or steppings is None:
             raise TestFailure("CPU signature could not be read", expected, "(not read)")
-        # Judged as one value, the way the log prints it: family.model.stepping.
+        # Judged as one value, the way lshw prints it: family.model.stepping.
         triples = zip(families, models, steppings, strict=True)
         reading = {"signatures": sorted({".".join(triple) for triple in triples})}
         if reading["signatures"] == [expected]:
@@ -532,7 +538,7 @@ class Cpu(TestComponent[CpuExpectation]):
         )
 
     @evidence("socket_ids")
-    async def _socket_count(self, utils: TestUtils[CpuExpectation]) -> Verdict:
+    async def _socket_count(self, utils: TestUtils[CpuIdentity]) -> Verdict:
         expected = utils.ctx["sockets"]
         packages = _cpuinfo_values(await read_text(utils, _CPUINFO), "physical id")
         if packages is None:
@@ -545,7 +551,7 @@ class Cpu(TestComponent[CpuExpectation]):
         )
 
     @evidence("cores_found")
-    async def _core_count(self, utils: TestUtils[CpuExpectation]) -> Verdict:
+    async def _core_count(self, utils: TestUtils[CpuIdentity]) -> Verdict:
         expected = utils.ctx["core_count"]
         cpuinfo = await read_text(utils, _CPUINFO)
         packages = _cpuinfo_values(cpuinfo, "physical id")
@@ -560,7 +566,7 @@ class Cpu(TestComponent[CpuExpectation]):
         raise TestFailure("physical core count does not match", expected, cores, evidence=reading)
 
     @evidence("cpus_present")
-    async def _thread_count(self, utils: TestUtils[CpuExpectation]) -> Verdict:
+    async def _thread_count(self, utils: TestUtils[CpuIdentity]) -> Verdict:
         expected = utils.ctx["thread_count"]
         present = parse_cpu_list(await read_text(utils, f"{_CPU}/present"))
         if present is None:
@@ -573,8 +579,8 @@ class Cpu(TestComponent[CpuExpectation]):
         )
 
     @evidence("cpus_online")
-    async def _online(self, utils: TestUtils[CpuExpectation]) -> Verdict:
-        expected = utils.ctx["cpus"]
+    async def _online(self, utils: TestUtils[CpuIdentity]) -> Verdict:
+        expected = _logical_cpus(utils)
         online = parse_cpu_list(await read_text(utils, f"{_CPU}/online"))
         if online is None:
             raise TestFailure("online CPU list could not be read", expected, "(not read)")
@@ -585,7 +591,7 @@ class Cpu(TestComponent[CpuExpectation]):
         raise TestFailure(f"CPUs {offline} are offline", expected, list(online), evidence=reading)
 
     @evidence("flags_advertised")
-    async def _flags(self, utils: TestUtils[CpuExpectation]) -> Verdict:
+    async def _flags(self, utils: TestUtils[CpuIdentity]) -> Verdict:
         required = utils.ctx["flags"]
         per_cpu = _cpuinfo_values(await read_text(utils, _CPUINFO), "flags")
         if per_cpu is None:
@@ -605,8 +611,8 @@ class Cpu(TestComponent[CpuExpectation]):
         )
 
     @evidence("minimum_frequency_khz", "maximum_frequency_khz")
-    async def _frequency_range(self, utils: TestUtils[CpuExpectation]) -> Verdict:
-        low, high, cpus = utils.ctx["minimum_khz"], utils.ctx["maximum_khz"], utils.ctx["cpus"]
+    async def _frequency_range(self, utils: TestUtils[CpuIdentity]) -> Verdict:
+        low, high, cpus = utils.ctx["minimum_khz"], utils.ctx["maximum_khz"], _logical_cpus(utils)
         floors = await _read_each(utils, cpus, "cpufreq/cpuinfo_min_freq")
         ceilings = await _read_each(utils, cpus, "cpufreq/cpuinfo_max_freq")
         # The package's range runs from its slowest core's floor to its fastest's top.

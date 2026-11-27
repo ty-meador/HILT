@@ -1,20 +1,29 @@
-"""The NVMe drive: one controller, its namespace, and the volumes on it.
+"""The NVMe drive: one controller, its namespace, and how the namespace is partitioned.
 
-The drive answers for its controller and namespace and hands each partition to a
-``Volume``, which answers for its own size, filesystem, and mount:
+The drive answers for its controller and namespace. How the disk is laid out is the
+system part number's to say, not the drive's, so it is composed in as a
+``PartitionTable``, which answers for the table and hands each partition to a
+``Volume``:
 
     drive
     ├─ state               the controller is present and live
     └─ details
        ├─ model, firmware, pci-address
-       ├─ capacity, sector-size, partition-table, partition-count
-       └─ one node per volume
-          ├─ partition     the kernel knows the partition
-          └─ details
-             ├─ size, filesystem
-             └─ mount      only for a volume the spec mounts
-                ├─ mountpoint
-                └─ read-write
+       ├─ capacity, sector-size
+       └─ partitions
+          ├─ partition-table, partition-count
+          └─ one node per volume
+             ├─ partition     the kernel knows the partition
+             └─ details
+                ├─ size, filesystem
+                └─ mount      only for a volume that must be mounted
+                   ├─ mountpoint
+                   └─ read-write
+
+A drive part number is one class, in a module of its own beside this one; it says
+what that drive is. Where the drive is fitted is not the drive's to know: its
+controller, namespace, and PCI address are handed to it, and it is the board that
+knows them. The package's ``mpns`` lists the part numbers.
 
 Every reading is one an ordinary user can take: sysfs, the kernel's mount table, and
 ``lsblk``, which answers from the udev database. SMART health and the drive's serial
@@ -27,10 +36,10 @@ from __future__ import annotations
 
 import re
 import shlex
-from typing import TypedDict
+from collections.abc import Sequence
+from typing import TypedDict, Unpack
 
-from nuc13.probe import read_int, read_link_name, read_text
-from nuc13.spec import NvmeSpec, VolumeSpec
+from nuc13.kernel import read_int, read_link_name, read_text
 
 from hilt import PASS, TestComponent, TestFailure, TestUtils, Verdict, evidence
 
@@ -43,6 +52,9 @@ _GB = 10**9
 _LSHW_UNIT_CEILING = 10240
 
 _NOT_READ = "(not read)"
+
+# The one state in which the kernel is doing I/O through an NVMe controller.
+_LIVE = "live"
 
 _OCTAL_ESCAPE = re.compile(r"\\([0-7]{3})")
 
@@ -109,7 +121,7 @@ async def _mounts_of(utils: TestUtils, device: str) -> dict[str, str] | None:
     for line in table.splitlines():
         fields = line.split()
         if len(fields) >= 4 and fields[0] == f"/dev/{device}":
-            # The table writes a space in a path as \040; a spec writes the space.
+            # The table writes a space in a path as \040; a mountpoint writes the space.
             target = _OCTAL_ESCAPE.sub(lambda match: chr(int(match.group(1), 8)), fields[1])
             mounts[target] = fields[3]
     return mounts
@@ -118,39 +130,45 @@ async def _mounts_of(utils: TestUtils, device: str) -> dict[str, str] | None:
 # ------------------------------------------------------------------------ volume
 
 
-class VolumeExpectation(TypedDict):
-    """What one partition must be."""
+class VolumeIdentity(TypedDict):
+    """What one partition must be.
+
+    Attributes:
+        device: Kernel name, such as ``nvme0n1p1``.
+        filesystem: Filesystem type as ``lsblk`` names it (``vfat``, ``ext4``, ``swap``).
+        mountpoint: Where it must be mounted, or ``None`` when it is not mounted
+            directly.
+        capacity_mib: Partition size as lshw prints it. lshw rounds down to a whole
+            unit and moves up a unit only above 10240 of the smaller one, so a size
+            is whole MiB up to 10240MiB and whole GiB beyond; the size claim allows
+            for exactly that rounding.
+    """
 
     device: str
     filesystem: str
+    mountpoint: str | None
     capacity_mib: int
-    rounding_mib: int
 
 
-class Volume(TestComponent[VolumeExpectation]):
-    """Judge one partition: that it exists, its size, its filesystem, and its mount."""
+class Volume(TestComponent[VolumeIdentity]):
+    """Judge one partition: that it exists, its size, its filesystem, and its mount.
 
-    def __init__(self, *, name: str, spec: VolumeSpec) -> None:
-        """Hold the partition's identity.
+    Args:
+        name: Node name used by logs, artifacts, and failures.
+        **identity: What the partition must be.
+    """
 
-        Args:
-            name: Node name used by logs, artifacts, and failures.
-            spec: What the partition must be.
-        """
+    def __init__(self, *, name: str, **identity: Unpack[VolumeIdentity]) -> None:
         super().__init__(name=name)
-        self._spec = spec
+        self._identity = identity
         # The places the volume must be mounted: none or one. The mount claims are
         # enumerated over this, so an unmounted volume simply has none.
-        self._mountpoints = () if spec.mountpoint is None else (spec.mountpoint,)
+        mountpoint = identity["mountpoint"]
+        self._mountpoints = () if mountpoint is None else (mountpoint,)
 
-    async def configure(self, utils: TestUtils[VolumeExpectation]) -> VolumeExpectation:
-        """Provide what the claims judge against, with the rounding lshw applied."""
-        return {
-            "device": self._spec.device,
-            "filesystem": self._spec.filesystem,
-            "capacity_mib": self._spec.capacity_mib,
-            "rounding_mib": _lshw_rounding_mib(self._spec.capacity_mib),
-        }
+    async def configure(self, utils: TestUtils[VolumeIdentity]) -> VolumeIdentity:
+        """Provide the identity the claims judge against."""
+        return self._identity
 
     def build_suite(self) -> TestComponent:
         """Existence first: a partition that is not there has no size, type, or mount.
@@ -187,7 +205,7 @@ class Volume(TestComponent[VolumeExpectation]):
         )
 
     @evidence("partition_number")
-    async def _partition(self, utils: TestUtils[VolumeExpectation]) -> Verdict:
+    async def _partition(self, utils: TestUtils[VolumeIdentity]) -> Verdict:
         device = utils.ctx["device"]
         # Only a partition has this attribute; a whole disk or a missing device does not.
         number = await read_int(utils, f"/sys/class/block/{device}/partition")
@@ -196,12 +214,12 @@ class Volume(TestComponent[VolumeExpectation]):
         raise TestFailure(f"{device} is not a partition on this machine", "present", "absent")
 
     @evidence("partition_bytes")
-    async def _size(self, utils: TestUtils[VolumeExpectation]) -> Verdict:
+    async def _size(self, utils: TestUtils[VolumeIdentity]) -> Verdict:
         device = utils.ctx["device"]
         capacity_mib = utils.ctx["capacity_mib"]
-        rounding_mib = utils.ctx["rounding_mib"]
+        rounding_mib = _lshw_rounding_mib(capacity_mib)
         size_bytes = await _size_bytes(utils, device)
-        # The spec is lshw's figure, which lshw rounded down. The partition may be
+        # The capacity is lshw's figure, which lshw rounded down. The partition may be
         # larger by what that rounding dropped (under 1MiB, or under 1GiB for a size
         # lshw printed in GiB) and by nothing more; it may not be smaller at all.
         lowest = capacity_mib * _MIB
@@ -216,14 +234,14 @@ class Volume(TestComponent[VolumeExpectation]):
         raise TestFailure(
             f"size of {device} does not match",
             expected,
-            # Whole MiB rounded down, as the spec's figure is: a size a few bytes short
+            # Whole MiB rounded down, as the expected figure is: a size a few bytes short
             # of the next MiB must not read as that MiB.
             f"{size_bytes // _MIB} MiB ({size_bytes} B)",
             evidence=reading,
         )
 
     @evidence("filesystem_found")
-    async def _filesystem(self, utils: TestUtils[VolumeExpectation]) -> Verdict:
+    async def _filesystem(self, utils: TestUtils[VolumeIdentity]) -> Verdict:
         device = utils.ctx["device"]
         expected = utils.ctx["filesystem"]
         found = await _lsblk_column(utils, device, "FSTYPE")
@@ -240,7 +258,7 @@ class Volume(TestComponent[VolumeExpectation]):
         )
 
     @evidence("mounted_at")
-    async def _mounted(self, utils: TestUtils[VolumeExpectation], *, mountpoint: str) -> Verdict:
+    async def _mounted(self, utils: TestUtils[VolumeIdentity], *, mountpoint: str) -> Verdict:
         device = utils.ctx["device"]
         mounts = await _mounts_of(utils, device)
         if mounts is None:
@@ -256,7 +274,7 @@ class Volume(TestComponent[VolumeExpectation]):
         )
 
     @evidence("mount_options")
-    async def _read_write(self, utils: TestUtils[VolumeExpectation], *, mountpoint: str) -> Verdict:
+    async def _read_write(self, utils: TestUtils[VolumeIdentity], *, mountpoint: str) -> Verdict:
         device = utils.ctx["device"]
         mounts = await _mounts_of(utils, device)
         if mounts is None:
@@ -277,58 +295,148 @@ class Volume(TestComponent[VolumeExpectation]):
         )
 
 
-# ------------------------------------------------------------------------- drive
+# --------------------------------------------------------------- partition table
 
 
-class DriveExpectation(TypedDict):
-    """What the drive must be."""
+class PartitionTableIdentity(TypedDict):
+    """How a disk must be partitioned.
 
-    controller: str
+    Attributes:
+        namespace: Kernel block device of the disk, such as ``nvme0n1``.
+        partition_table: Partition table type (``gpt``).
+        partition_count: Partitions in the table.
+    """
+
     namespace: str
-    state: str
-    model: str
-    firmware_revision: str
-    pci_address: str
-    capacity_gb: int
-    logical_sector_bytes: int
     partition_table: str
     partition_count: int
 
 
-class NvmeDrive(TestComponent[DriveExpectation]):
-    """Judge the controller and its namespace, then every volume on it."""
+class PartitionTable(TestComponent[PartitionTableIdentity]):
+    """Judge how a disk is partitioned, then every volume on it.
 
-    def __init__(self, *, name: str, spec: NvmeSpec) -> None:
-        """Build the drive and one ``Volume`` per partition from one spec.
+    The partition count is read off the volumes it is composed with.
 
-        Args:
-            name: Node name used by logs, artifacts, and failures.
-            spec: The drive's identity and, nested in it, each volume's.
-        """
+    Args:
+        name: Node name used by logs, artifacts, and failures.
+        namespace: Kernel block device of the disk, such as ``nvme0n1``.
+        partition_table: Partition table type (``gpt``).
+        volumes: Every partition, in table order.
+    """
+
+    def __init__(
+        self, *, name: str, namespace: str, partition_table: str, volumes: Sequence[Volume]
+    ) -> None:
         super().__init__(name=name)
-        self._spec = spec
-        self._volumes = tuple(Volume(name=volume.name, spec=volume) for volume in spec.volumes)
-
-    async def configure(self, utils: TestUtils[DriveExpectation]) -> DriveExpectation:
-        """Provide what the drive's own claims judge against."""
-        return {
-            "controller": self._spec.controller,
-            "namespace": self._spec.namespace,
-            # The one state in which the kernel is doing I/O through the controller.
-            "state": "live",
-            "model": self._spec.model,
-            "firmware_revision": self._spec.firmware,
-            "pci_address": self._spec.pci_address,
-            "capacity_gb": self._spec.capacity_gb,
-            "logical_sector_bytes": self._spec.logical_sector_bytes,
-            "partition_table": self._spec.partition_table,
-            "partition_count": len(self._spec.volumes),
+        self._volumes = tuple(volumes)
+        self._identity: PartitionTableIdentity = {
+            "namespace": namespace,
+            "partition_table": partition_table,
+            "partition_count": len(self._volumes),
         }
+
+    async def configure(self, utils: TestUtils[PartitionTableIdentity]) -> PartitionTableIdentity:
+        """Provide the layout the table's own claims judge against."""
+        return self._identity
+
+    def build_suite(self) -> TestComponent:
+        """Independent claims: a wrong table type never hides a missing partition."""
+        return self.parallel(
+            self.name,
+            [
+                self.test("partition-table", self._partition_table),
+                self.test("partition-count", self._partition_count),
+                *self._volumes,
+            ],
+        )
+
+    @evidence("table_type")
+    async def _partition_table(self, utils: TestUtils[PartitionTableIdentity]) -> Verdict:
+        namespace = utils.ctx["namespace"]
+        expected = utils.ctx["partition_table"]
+        table = await _lsblk_column(utils, namespace, "PTTYPE")
+        reading = {"table_type": table}
+        if table == expected:
+            return PASS(reading)
+        if table is None:
+            raise TestFailure(
+                f"partition table of {namespace} could not be read", expected, _NOT_READ
+            )
+        raise TestFailure(
+            f"partition table of {namespace} does not match",
+            expected,
+            table or "(none)",
+            evidence=reading,
+        )
+
+    @evidence("partitions")
+    async def _partition_count(self, utils: TestUtils[PartitionTableIdentity]) -> Verdict:
+        namespace = utils.ctx["namespace"]
+        expected = utils.ctx["partition_count"]
+        partitions = await _partitions_of(utils, namespace)
+        if partitions is None:
+            raise TestFailure(f"partitions of {namespace} could not be listed", expected, _NOT_READ)
+        reading = {"partitions": partitions}
+        if len(partitions) == expected:
+            return PASS(reading)
+        raise TestFailure(
+            f"{namespace} does not hold the expected number of partitions",
+            expected,
+            len(partitions),
+            evidence=reading,
+        )
+
+
+# ------------------------------------------------------------------------- drive
+
+
+class DriveIdentity(TypedDict):
+    """What the drive must be, and where the kernel must show it.
+
+    Attributes:
+        controller: Kernel name of the drive's controller, such as ``nvme0``.
+        namespace: Kernel block device of its namespace, such as ``nvme0n1``.
+        pci_address: The PCI function the controller sits on.
+        model: Model string.
+        firmware_revision: Firmware revision.
+        capacity_gb: Namespace size in decimal gigabytes, as the label states it.
+        logical_sector_bytes: Logical sector size.
+    """
+
+    controller: str
+    namespace: str
+    pci_address: str
+    model: str
+    firmware_revision: str
+    capacity_gb: int
+    logical_sector_bytes: int
+
+
+class NvmeDrive(TestComponent[DriveIdentity]):
+    """Judge the controller and its namespace, then how the namespace is partitioned.
+
+    Args:
+        name: Node name used by logs, artifacts, and failures.
+        partitions: How the drive's namespace must be laid out.
+        **identity: Where the kernel must show the drive, and the drive that must be
+            there.
+    """
+
+    def __init__(
+        self, *, name: str, partitions: PartitionTable, **identity: Unpack[DriveIdentity]
+    ) -> None:
+        super().__init__(name=name)
+        self._identity = identity
+        self._partitions = partitions
+
+    async def configure(self, utils: TestUtils[DriveIdentity]) -> DriveIdentity:
+        """Provide the identity the drive's own claims judge against."""
+        return self._identity
 
     def build_suite(self) -> TestComponent:
         """State first: nothing read through a controller that is not live can be trusted.
 
-        Everything after it is independent, so the details and the volumes run in
+        Everything after it is independent, so the details and the partitions run in
         parallel and a wrong firmware revision never hides a missing partition.
         """
         return self.sequence(
@@ -342,30 +450,27 @@ class NvmeDrive(TestComponent[DriveExpectation]):
                         self.test("pci-address", self._pci_address),
                         self.test("capacity", self._capacity),
                         self.test("sector-size", self._sector_size),
-                        self.test("partition-table", self._partition_table),
-                        self.test("partition-count", self._partition_count),
-                        *self._volumes,
+                        self._partitions,
                     ],
                 ),
             ]
         )
 
     @evidence("controller_state")
-    async def _state(self, utils: TestUtils[DriveExpectation]) -> Verdict:
+    async def _state(self, utils: TestUtils[DriveIdentity]) -> Verdict:
         controller = utils.ctx["controller"]
-        expected = utils.ctx["state"]
         state = await read_text(utils, f"/sys/class/nvme/{controller}/state")
         reading = {"controller_state": state}
-        if state == expected:
+        if state == _LIVE:
             return PASS(reading)
         if state is None:
-            raise TestFailure(f"NVMe controller {controller} is not present", expected, _NOT_READ)
+            raise TestFailure(f"NVMe controller {controller} is not present", _LIVE, _NOT_READ)
         raise TestFailure(
-            f"NVMe controller {controller} is not {expected}", expected, state, evidence=reading
+            f"NVMe controller {controller} is not {_LIVE}", _LIVE, state, evidence=reading
         )
 
     @evidence("model_reported")
-    async def _model(self, utils: TestUtils[DriveExpectation]) -> Verdict:
+    async def _model(self, utils: TestUtils[DriveIdentity]) -> Verdict:
         controller = utils.ctx["controller"]
         expected = utils.ctx["model"]
         # read_text strips the padding the controller puts after a short model string.
@@ -380,7 +485,7 @@ class NvmeDrive(TestComponent[DriveExpectation]):
         )
 
     @evidence("firmware_reported")
-    async def _firmware(self, utils: TestUtils[DriveExpectation]) -> Verdict:
+    async def _firmware(self, utils: TestUtils[DriveIdentity]) -> Verdict:
         controller = utils.ctx["controller"]
         expected = utils.ctx["firmware_revision"]
         revision = await read_text(utils, f"/sys/class/nvme/{controller}/firmware_rev")
@@ -399,7 +504,7 @@ class NvmeDrive(TestComponent[DriveExpectation]):
         )
 
     @evidence("pci_function")
-    async def _pci_address(self, utils: TestUtils[DriveExpectation]) -> Verdict:
+    async def _pci_address(self, utils: TestUtils[DriveIdentity]) -> Verdict:
         controller = utils.ctx["controller"]
         expected = utils.ctx["pci_address"]
         # The controller's `device` link points at the PCI function it sits on.
@@ -419,7 +524,7 @@ class NvmeDrive(TestComponent[DriveExpectation]):
         )
 
     @evidence("namespace_bytes")
-    async def _capacity(self, utils: TestUtils[DriveExpectation]) -> Verdict:
+    async def _capacity(self, utils: TestUtils[DriveIdentity]) -> Verdict:
         namespace = utils.ctx["namespace"]
         labelled_gb = utils.ctx["capacity_gb"]
         size_bytes = await _size_bytes(utils, namespace)
@@ -442,7 +547,7 @@ class NvmeDrive(TestComponent[DriveExpectation]):
         )
 
     @evidence("logical_block_bytes")
-    async def _sector_size(self, utils: TestUtils[DriveExpectation]) -> Verdict:
+    async def _sector_size(self, utils: TestUtils[DriveIdentity]) -> Verdict:
         namespace = utils.ctx["namespace"]
         expected = utils.ctx["logical_sector_bytes"]
         block_bytes = await read_int(utils, f"/sys/block/{namespace}/queue/logical_block_size")
@@ -462,41 +567,5 @@ class NvmeDrive(TestComponent[DriveExpectation]):
             f"logical sector size of {namespace} does not match",
             f"{expected} B",
             f"{block_bytes} B",
-            evidence=reading,
-        )
-
-    @evidence("table_type")
-    async def _partition_table(self, utils: TestUtils[DriveExpectation]) -> Verdict:
-        namespace = utils.ctx["namespace"]
-        expected = utils.ctx["partition_table"]
-        table = await _lsblk_column(utils, namespace, "PTTYPE")
-        reading = {"table_type": table}
-        if table == expected:
-            return PASS(reading)
-        if table is None:
-            raise TestFailure(
-                f"partition table of {namespace} could not be read", expected, _NOT_READ
-            )
-        raise TestFailure(
-            f"partition table of {namespace} does not match",
-            expected,
-            table or "(none)",
-            evidence=reading,
-        )
-
-    @evidence("partitions")
-    async def _partition_count(self, utils: TestUtils[DriveExpectation]) -> Verdict:
-        namespace = utils.ctx["namespace"]
-        expected = utils.ctx["partition_count"]
-        partitions = await _partitions_of(utils, namespace)
-        if partitions is None:
-            raise TestFailure(f"partitions of {namespace} could not be listed", expected, _NOT_READ)
-        reading = {"partitions": partitions}
-        if len(partitions) == expected:
-            return PASS(reading)
-        raise TestFailure(
-            f"{namespace} does not hold the expected number of partitions",
-            expected,
-            len(partitions),
             evidence=reading,
         )
