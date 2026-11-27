@@ -21,7 +21,7 @@ from __future__ import annotations
 from collections.abc import Sequence
 from typing import Literal, TypedDict, Unpack
 
-from nuc13.kernel import read_text
+from nuc13.kernel import NOT_READ, read_text
 from nuc13.network.Network import Network
 from nuc13.pci.PciBus import PciBus
 from nuc13.usb.Usb import Usb
@@ -149,5 +149,5 @@ class Motherboard(TestComponent[BoardIdentity]):
         if value == expected:
             return PASS(reading)
         if value is None:
-            raise TestFailure(f"DMI {field} could not be read", expected, "(not read)")
+            raise TestFailure(f"DMI {field} could not be read", expected, NOT_READ)
         raise TestFailure(f"DMI {field} does not match", expected, value, evidence=reading)

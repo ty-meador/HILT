@@ -27,14 +27,17 @@ what that processor is, down to each core and the caches it uses. The package's 
 from __future__ import annotations
 
 from collections.abc import Collection, Mapping, Sequence
-from typing import Any, Literal, TypedDict, Unpack
+from typing import ClassVar, Literal, TypedDict, Unpack
 
 from nuc13.kernel import (
+    CPU_SYSFS,
+    NOT_READ,
     parse_cpu_list,
     parse_int,
     parse_size_kib,
     read_files,
     read_int,
+    read_per_cpu,
     read_text,
 )
 
@@ -42,72 +45,6 @@ from hilt import PASS, TestComponent, TestFailure, TestUtils, Verdict, evidence
 
 type CoreKind = Literal["performance", "efficient"]
 type CacheKind = Literal["Data", "Instruction", "Unified"]
-
-_CPU = "/sys/devices/system/cpu"
-_CPUINFO = "/proc/cpuinfo"
-
-# A hybrid processor registers one PMU per core type, and each lists its CPUs.
-_KIND_CPUS: dict[CoreKind, str] = {
-    "performance": "/sys/devices/cpu_core/cpus",
-    "efficient": "/sys/devices/cpu_atom/cpus",
-}
-
-# The work each hardware thread must get right: SHA-256 over this many zero bytes.
-_WORK_BYTES = 1024 * 1024
-_WORK_SHA256 = "30e14955ebf1352266dc2ff8067e68104607e750abb9d3b36582b8af909fcb58"
-
-
-def _cpuinfo_values(text: str | None, field: str) -> list[str] | None:
-    """Return ``field`` as each logical CPU reports it in ``/proc/cpuinfo``.
-
-    ``None`` when the file was not read or any CPU's record lacks the field: a
-    partial answer would let a claim pass on the CPUs that happened to report.
-    """
-    if text is None:
-        return None
-    values: list[str] = []
-    for record in text.split("\n\n"):
-        lines = (line.partition(":") for line in record.splitlines())
-        found = [value.strip() for key, _, value in lines if key.strip() == field]
-        if len(found) != 1:
-            return None
-        values.append(found[0])
-    return values
-
-
-async def _read_each(
-    utils: TestUtils[Any], cpus: Sequence[int], attribute: str
-) -> dict[str, str | None]:
-    """Read one per-CPU sysfs attribute for each of ``cpus`` in a single command.
-
-    Keyed by CPU number as text, so the mapping can travel as evidence. A CPU whose
-    attribute could not be read maps to ``None``.
-    """
-    paths = {str(cpu): f"{_CPU}/cpu{cpu}/{attribute}" for cpu in cpus}
-    files = await read_files(utils, *paths.values())
-    return {cpu: files.get(path) for cpu, path in paths.items()}
-
-
-def _complete(values: Collection[int | None]) -> list[int] | None:
-    """Return the readings when every one was taken, else ``None``.
-
-    An extreme or a sum over a partial set would be a guess presented as a reading.
-    """
-    taken = [value for value in values if value is not None]
-    return taken if taken and len(taken) == len(values) else None
-
-
-def _kind_of(cpu: int, members: Mapping[CoreKind, tuple[int, ...] | None]) -> CoreKind | None:
-    """Name the core type whose PMU lists ``cpu``; ``None`` when neither does."""
-    for kind, cpus in members.items():
-        if cpus is not None and cpu in cpus:
-            return kind
-    return None
-
-
-def _per_cpu(readings: Mapping[str, object]) -> str:
-    """Spell per-CPU readings for a failure line: ``cpu0=performance, cpu1=None``."""
-    return ", ".join(f"cpu{cpu}={value}" for cpu, value in readings.items())
 
 
 # ------------------------------------------------------------------------- core
@@ -160,6 +97,16 @@ class CpuCore(TestComponent[CoreIdentity]):
         name: Node name used by logs, artifacts, and failures.
         **identity: What the core must report.
     """
+
+    # A hybrid processor registers one PMU per core type, and each lists its CPUs.
+    _KIND_CPUS: ClassVar[dict[CoreKind, str]] = {
+        "performance": "/sys/devices/cpu_core/cpus",
+        "efficient": "/sys/devices/cpu_atom/cpus",
+    }
+
+    # The work each hardware thread must get right: SHA-256 over this many zero bytes.
+    _WORK_BYTES = 1024 * 1024
+    _WORK_SHA256 = "30e14955ebf1352266dc2ff8067e68104607e750abb9d3b36582b8af909fcb58"
 
     def __init__(self, *, name: str, **identity: Unpack[CoreIdentity]) -> None:
         super().__init__(name=name)
@@ -218,9 +165,9 @@ class CpuCore(TestComponent[CoreIdentity]):
     @evidence("cpus_online")
     async def _online(self, utils: TestUtils[CoreIdentity]) -> Verdict:
         threads = utils.ctx["cpus"]
-        online = parse_cpu_list(await read_text(utils, f"{_CPU}/online"))
+        online = parse_cpu_list(await read_text(utils, f"{CPU_SYSFS}/online"))
         if online is None:
-            raise TestFailure("online CPU list could not be read", threads, "(not read)")
+            raise TestFailure("online CPU list could not be read", threads, NOT_READ)
         reading = {"cpus_online": list(online)}
         if set(threads) <= set(online):
             return PASS(reading)
@@ -230,7 +177,7 @@ class CpuCore(TestComponent[CoreIdentity]):
     @evidence("siblings")
     async def _siblings(self, utils: TestUtils[CoreIdentity]) -> Verdict:
         threads = utils.ctx["cpus"]
-        lists = await _read_each(utils, threads, "topology/core_cpus_list")
+        lists = await read_per_cpu(utils, threads, "topology/core_cpus_list")
         siblings = {
             cpu: None if (listed := parse_cpu_list(text)) is None else list(listed)
             for cpu, text in lists.items()
@@ -239,7 +186,7 @@ class CpuCore(TestComponent[CoreIdentity]):
         # Each thread must name exactly this core's threads: no stranger, none missing.
         if all(listed == threads for listed in siblings.values()):
             return PASS(reading)
-        found = _per_cpu(siblings)
+        found = self._per_cpu(siblings)
         if None in siblings.values():
             raise TestFailure("thread siblings could not be read", threads, found, evidence=reading)
         raise TestFailure("thread siblings do not match", threads, found, evidence=reading)
@@ -247,12 +194,12 @@ class CpuCore(TestComponent[CoreIdentity]):
     @evidence("core_ids")
     async def _core_id(self, utils: TestUtils[CoreIdentity]) -> Verdict:
         expected = utils.ctx["core_id"]
-        texts = await _read_each(utils, utils.ctx["cpus"], "topology/core_id")
+        texts = await read_per_cpu(utils, utils.ctx["cpus"], "topology/core_id")
         core_ids = {cpu: parse_int(text) for cpu, text in texts.items()}
         reading = {"core_ids": core_ids}
         if all(core_id == expected for core_id in core_ids.values()):
             return PASS(reading)
-        found = _per_cpu(core_ids)
+        found = self._per_cpu(core_ids)
         if None in core_ids.values():
             raise TestFailure("core id could not be read", expected, found, evidence=reading)
         raise TestFailure("core id does not match", expected, found, evidence=reading)
@@ -260,15 +207,15 @@ class CpuCore(TestComponent[CoreIdentity]):
     @evidence("kinds")
     async def _kind(self, utils: TestUtils[CoreIdentity]) -> Verdict:
         expected = utils.ctx["kind"]
-        files = await read_files(utils, *_KIND_CPUS.values())
+        files = await read_files(utils, *self._KIND_CPUS.values())
         members: dict[CoreKind, tuple[int, ...] | None] = {
-            kind: parse_cpu_list(files.get(path)) for kind, path in _KIND_CPUS.items()
+            kind: parse_cpu_list(files.get(path)) for kind, path in self._KIND_CPUS.items()
         }
-        kinds = {str(cpu): _kind_of(cpu, members) for cpu in utils.ctx["cpus"]}
+        kinds = {str(cpu): self._kind_of(cpu, members) for cpu in utils.ctx["cpus"]}
         reading = {"kinds": kinds}
         if all(kind == expected for kind in kinds.values()):
             return PASS(reading)
-        found = _per_cpu(kinds)
+        found = self._per_cpu(kinds)
         if None in kinds.values():
             raise TestFailure("core type could not be read", expected, found, evidence=reading)
         raise TestFailure("core type does not match", expected, found, evidence=reading)
@@ -276,7 +223,7 @@ class CpuCore(TestComponent[CoreIdentity]):
     @evidence("maximum_frequency_khz")
     async def _maximum_frequency(self, utils: TestUtils[CoreIdentity], *, cpu: int) -> Verdict:
         expected = utils.ctx["maximum_khz"]
-        khz = await read_int(utils, f"{_CPU}/cpu{cpu}/cpufreq/cpuinfo_max_freq")
+        khz = await read_int(utils, f"{CPU_SYSFS}/cpu{cpu}/cpufreq/cpuinfo_max_freq")
         ceiling = utils.measure(
             "maximum_frequency_khz", khz, unit="kHz", limits=(expected, expected)
         )
@@ -285,7 +232,7 @@ class CpuCore(TestComponent[CoreIdentity]):
             return PASS(reading)
         if khz is None:
             raise TestFailure(
-                f"cpu{cpu} maximum frequency could not be read", f"{expected} kHz", "(not read)"
+                f"cpu{cpu} maximum frequency could not be read", f"{expected} kHz", NOT_READ
             )
         raise TestFailure(
             f"cpu{cpu} maximum frequency does not match",
@@ -299,21 +246,21 @@ class CpuCore(TestComponent[CoreIdentity]):
         # taskset wraps the whole pipeline, so the thread that hashes the input is
         # also the one that produced it and no other CPU can lend a hand.
         result = await utils.exec(
-            f"taskset -c {cpu} sh -c 'head -c {_WORK_BYTES} /dev/zero | sha256sum'"
+            f"taskset -c {cpu} sh -c 'head -c {self._WORK_BYTES} /dev/zero | sha256sum'"
         )
         words = result.stdout.split()
         digest = words[0] if result.exit_code == 0 and words else None
         reading = {"sha256": digest}
-        if digest == _WORK_SHA256:
+        if digest == self._WORK_SHA256:
             return PASS(reading)
         if digest is None:
             raise TestFailure(
                 f"work pinned to cpu{cpu} did not run",
-                _WORK_SHA256,
+                self._WORK_SHA256,
                 result.stderr.strip() or f"exit {result.exit_code}",
             )
         raise TestFailure(
-            f"cpu{cpu} computed a wrong digest", _WORK_SHA256, digest, evidence=reading
+            f"cpu{cpu} computed a wrong digest", self._WORK_SHA256, digest, evidence=reading
         )
 
     async def _read_cache(
@@ -330,7 +277,7 @@ class CpuCore(TestComponent[CoreIdentity]):
         files = await read_files(
             utils,
             *(
-                f"{_CPU}/cpu{cpu}/cache/index[0-9]*/{name}"
+                f"{CPU_SYSFS}/cpu{cpu}/cache/index[0-9]*/{name}"
                 for cpu in cpus
                 for name in ("level", "type", attribute)
             ),
@@ -342,7 +289,7 @@ class CpuCore(TestComponent[CoreIdentity]):
             indexes = {
                 path.rsplit("/", 1)[0]
                 for path in files
-                if path.startswith(f"{_CPU}/cpu{cpu}/cache/")
+                if path.startswith(f"{CPU_SYSFS}/cpu{cpu}/cache/")
             }
             matches = [
                 index
@@ -362,7 +309,7 @@ class CpuCore(TestComponent[CoreIdentity]):
         # Every thread of the core must see the cache, and see it at this size.
         if all(size == expected for size in sizes.values()):
             return PASS(reading)
-        found = _per_cpu(sizes)
+        found = self._per_cpu(sizes)
         if None in sizes.values():
             raise TestFailure(
                 f"{cache} cache size could not be read", f"{expected} KiB", found, evidence=reading
@@ -384,7 +331,7 @@ class CpuCore(TestComponent[CoreIdentity]):
         # that names a stranger, or misses a neighbour, is on a different cache.
         if all(listed == expected for listed in shared.values()):
             return PASS(reading)
-        found = _per_cpu(shared)
+        found = self._per_cpu(shared)
         if None in shared.values():
             raise TestFailure(
                 f"{cache} cache sharing could not be read", expected, found, evidence=reading
@@ -392,6 +339,19 @@ class CpuCore(TestComponent[CoreIdentity]):
         raise TestFailure(
             f"{cache} cache is shared with the wrong CPUs", expected, found, evidence=reading
         )
+
+    @staticmethod
+    def _kind_of(cpu: int, members: Mapping[CoreKind, tuple[int, ...] | None]) -> CoreKind | None:
+        """Name the core type whose PMU lists ``cpu``; ``None`` when neither does."""
+        for kind, cpus in members.items():
+            if cpus is not None and cpu in cpus:
+                return kind
+        return None
+
+    @staticmethod
+    def _per_cpu(readings: Mapping[str, object]) -> str:
+        """Spell per-CPU readings for a failure line: ``cpu0=performance, cpu1=None``."""
+        return ", ".join(f"cpu{cpu}={value}" for cpu, value in readings.items())
 
 
 # ---------------------------------------------------------------------- package
@@ -423,11 +383,6 @@ class CpuIdentity(TypedDict):
     maximum_khz: int
 
 
-def _logical_cpus(utils: TestUtils[CpuIdentity]) -> list[int]:
-    """Every logical CPU of the package: the kernel numbers them from 0, no gaps."""
-    return list(range(utils.ctx["thread_count"]))
-
-
 class Cpu(TestComponent[CpuIdentity]):
     """Judge the processor package, then every core in it.
 
@@ -437,6 +392,8 @@ class Cpu(TestComponent[CpuIdentity]):
         e_cores: Every efficient core, each with its caches.
         **identity: What the package must report as a whole.
     """
+
+    _CPUINFO = "/proc/cpuinfo"
 
     def __init__(
         self,
@@ -486,9 +443,9 @@ class Cpu(TestComponent[CpuIdentity]):
     @evidence("model_names")
     async def _model(self, utils: TestUtils[CpuIdentity]) -> Verdict:
         expected = utils.ctx["model"]
-        names = _cpuinfo_values(await read_text(utils, _CPUINFO), "model name")
+        names = self._cpuinfo_values(await read_text(utils, self._CPUINFO), "model name")
         if names is None:
-            raise TestFailure("model name could not be read", expected, "(not read)")
+            raise TestFailure("model name could not be read", expected, NOT_READ)
         reading = {"model_names": sorted(set(names))}
         # One distinct name, the right one: every logical CPU is this processor.
         if reading["model_names"] == [expected]:
@@ -503,9 +460,9 @@ class Cpu(TestComponent[CpuIdentity]):
     @evidence("vendor_ids")
     async def _vendor(self, utils: TestUtils[CpuIdentity]) -> Verdict:
         expected = utils.ctx["vendor_id"]
-        vendors = _cpuinfo_values(await read_text(utils, _CPUINFO), "vendor_id")
+        vendors = self._cpuinfo_values(await read_text(utils, self._CPUINFO), "vendor_id")
         if vendors is None:
-            raise TestFailure("vendor id could not be read", expected, "(not read)")
+            raise TestFailure("vendor id could not be read", expected, NOT_READ)
         reading = {"vendor_ids": sorted(set(vendors))}
         if reading["vendor_ids"] == [expected]:
             return PASS(reading)
@@ -519,12 +476,12 @@ class Cpu(TestComponent[CpuIdentity]):
     @evidence("signatures")
     async def _signature(self, utils: TestUtils[CpuIdentity]) -> Verdict:
         expected = utils.ctx["signature"]
-        cpuinfo = await read_text(utils, _CPUINFO)
-        families = _cpuinfo_values(cpuinfo, "cpu family")
-        models = _cpuinfo_values(cpuinfo, "model")
-        steppings = _cpuinfo_values(cpuinfo, "stepping")
+        cpuinfo = await read_text(utils, self._CPUINFO)
+        families = self._cpuinfo_values(cpuinfo, "cpu family")
+        models = self._cpuinfo_values(cpuinfo, "model")
+        steppings = self._cpuinfo_values(cpuinfo, "stepping")
         if families is None or models is None or steppings is None:
-            raise TestFailure("CPU signature could not be read", expected, "(not read)")
+            raise TestFailure("CPU signature could not be read", expected, NOT_READ)
         # Judged as one value, the way lshw prints it: family.model.stepping.
         triples = zip(families, models, steppings, strict=True)
         reading = {"signatures": sorted({".".join(triple) for triple in triples})}
@@ -540,9 +497,9 @@ class Cpu(TestComponent[CpuIdentity]):
     @evidence("socket_ids")
     async def _socket_count(self, utils: TestUtils[CpuIdentity]) -> Verdict:
         expected = utils.ctx["sockets"]
-        packages = _cpuinfo_values(await read_text(utils, _CPUINFO), "physical id")
+        packages = self._cpuinfo_values(await read_text(utils, self._CPUINFO), "physical id")
         if packages is None:
-            raise TestFailure("socket ids could not be read", expected, "(not read)")
+            raise TestFailure("socket ids could not be read", expected, NOT_READ)
         reading = {"socket_ids": sorted(set(packages))}
         if len(reading["socket_ids"]) == expected:
             return PASS(reading)
@@ -553,11 +510,11 @@ class Cpu(TestComponent[CpuIdentity]):
     @evidence("cores_found")
     async def _core_count(self, utils: TestUtils[CpuIdentity]) -> Verdict:
         expected = utils.ctx["core_count"]
-        cpuinfo = await read_text(utils, _CPUINFO)
-        packages = _cpuinfo_values(cpuinfo, "physical id")
-        core_ids = _cpuinfo_values(cpuinfo, "core id")
+        cpuinfo = await read_text(utils, self._CPUINFO)
+        packages = self._cpuinfo_values(cpuinfo, "physical id")
+        core_ids = self._cpuinfo_values(cpuinfo, "core id")
         if packages is None or core_ids is None:
-            raise TestFailure("core ids could not be read", expected, "(not read)")
+            raise TestFailure("core ids could not be read", expected, NOT_READ)
         # Core ids repeat across sockets, so a physical core is the pair.
         cores = len(set(zip(packages, core_ids, strict=True)))
         reading = {"cores_found": cores}
@@ -568,9 +525,9 @@ class Cpu(TestComponent[CpuIdentity]):
     @evidence("cpus_present")
     async def _thread_count(self, utils: TestUtils[CpuIdentity]) -> Verdict:
         expected = utils.ctx["thread_count"]
-        present = parse_cpu_list(await read_text(utils, f"{_CPU}/present"))
+        present = parse_cpu_list(await read_text(utils, f"{CPU_SYSFS}/present"))
         if present is None:
-            raise TestFailure("present CPU list could not be read", expected, "(not read)")
+            raise TestFailure("present CPU list could not be read", expected, NOT_READ)
         reading = {"cpus_present": list(present)}
         if len(present) == expected:
             return PASS(reading)
@@ -580,10 +537,10 @@ class Cpu(TestComponent[CpuIdentity]):
 
     @evidence("cpus_online")
     async def _online(self, utils: TestUtils[CpuIdentity]) -> Verdict:
-        expected = _logical_cpus(utils)
-        online = parse_cpu_list(await read_text(utils, f"{_CPU}/online"))
+        expected = self._logical_cpus(utils)
+        online = parse_cpu_list(await read_text(utils, f"{CPU_SYSFS}/online"))
         if online is None:
-            raise TestFailure("online CPU list could not be read", expected, "(not read)")
+            raise TestFailure("online CPU list could not be read", expected, NOT_READ)
         reading = {"cpus_online": list(online)}
         if set(expected) <= set(online):
             return PASS(reading)
@@ -593,9 +550,9 @@ class Cpu(TestComponent[CpuIdentity]):
     @evidence("flags_advertised")
     async def _flags(self, utils: TestUtils[CpuIdentity]) -> Verdict:
         required = utils.ctx["flags"]
-        per_cpu = _cpuinfo_values(await read_text(utils, _CPUINFO), "flags")
+        per_cpu = self._cpuinfo_values(await read_text(utils, self._CPUINFO), "flags")
         if per_cpu is None:
-            raise TestFailure("CPU flags could not be read", " ".join(required), "(not read)")
+            raise TestFailure("CPU flags could not be read", " ".join(required), NOT_READ)
         # Software can rely on a capability only if every core offers it, and on a
         # hybrid package the two core types need not agree.
         advertised = set[str].intersection(*(set(flags.split()) for flags in per_cpu))
@@ -612,12 +569,16 @@ class Cpu(TestComponent[CpuIdentity]):
 
     @evidence("minimum_frequency_khz", "maximum_frequency_khz")
     async def _frequency_range(self, utils: TestUtils[CpuIdentity]) -> Verdict:
-        low, high, cpus = utils.ctx["minimum_khz"], utils.ctx["maximum_khz"], _logical_cpus(utils)
-        floors = await _read_each(utils, cpus, "cpufreq/cpuinfo_min_freq")
-        ceilings = await _read_each(utils, cpus, "cpufreq/cpuinfo_max_freq")
+        low, high, cpus = (
+            utils.ctx["minimum_khz"],
+            utils.ctx["maximum_khz"],
+            self._logical_cpus(utils),
+        )
+        floors = await read_per_cpu(utils, cpus, "cpufreq/cpuinfo_min_freq")
+        ceilings = await read_per_cpu(utils, cpus, "cpufreq/cpuinfo_max_freq")
         # The package's range runs from its slowest core's floor to its fastest's top.
-        floor = _complete([parse_int(text) for text in floors.values()])
-        ceiling = _complete([parse_int(text) for text in ceilings.values()])
+        floor = self._complete([parse_int(text) for text in floors.values()])
+        ceiling = self._complete([parse_int(text) for text in ceilings.values()])
         lowest = utils.measure(
             "minimum_frequency_khz",
             None if floor is None else min(floor),
@@ -634,12 +595,42 @@ class Cpu(TestComponent[CpuIdentity]):
         if lowest.in_limits and highest.in_limits:
             return PASS(reading)
         if lowest.value is None or highest.value is None:
-            raise TestFailure(
-                "frequency range could not be read", f"{low}-{high} kHz", "(not read)"
-            )
+            raise TestFailure("frequency range could not be read", f"{low}-{high} kHz", NOT_READ)
         raise TestFailure(
             "frequency range does not match",
             f"{low}-{high} kHz",
             f"{lowest.value}-{highest.value} kHz",
             evidence=reading,
         )
+
+    @staticmethod
+    def _cpuinfo_values(text: str | None, field: str) -> list[str] | None:
+        """Return ``field`` as each logical CPU reports it in ``/proc/cpuinfo``.
+
+        ``None`` when the file was not read or any CPU's record lacks the field: a
+        partial answer would let a claim pass on the CPUs that happened to report.
+        """
+        if text is None:
+            return None
+        values: list[str] = []
+        for record in text.split("\n\n"):
+            lines = (line.partition(":") for line in record.splitlines())
+            found = [value.strip() for key, _, value in lines if key.strip() == field]
+            if len(found) != 1:
+                return None
+            values.append(found[0])
+        return values
+
+    @staticmethod
+    def _complete(values: Collection[int | None]) -> list[int] | None:
+        """Return the readings when every one was taken, else ``None``.
+
+        An extreme or a sum over a partial set would be a guess presented as a reading.
+        """
+        taken = [value for value in values if value is not None]
+        return taken if taken and len(taken) == len(values) else None
+
+    @staticmethod
+    def _logical_cpus(utils: TestUtils[CpuIdentity]) -> list[int]:
+        """Every logical CPU of the package: the kernel numbers them from 0, no gaps."""
+        return list(range(utils.ctx["thread_count"]))

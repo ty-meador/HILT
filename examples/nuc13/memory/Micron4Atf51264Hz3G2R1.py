@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
-from nuc13.memory.Memory import MemoryBank
+from nuc13.memory.Memory import Sodimm
 
 
-class Micron4Atf51264Hz3G2R1(MemoryBank):
+class Micron4Atf51264Hz3G2R1(Sodimm):
     """Module part number ``4ATF51264HZ-3G2R1``: a 4GiB DDR4-3200 SODIMM from Micron.
 
     Args:

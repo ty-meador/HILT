@@ -29,12 +29,18 @@ from __future__ import annotations
 from collections.abc import Sequence
 from typing import TypedDict, Unpack
 
-from nuc13.kernel import list_dir, read_files, read_int, read_link, read_link_name, read_text
+from nuc13.kernel import (
+    NOT_READ,
+    USB_SYSFS,
+    list_dir,
+    read_files,
+    read_int,
+    read_link,
+    read_link_name,
+    read_text,
+)
 
 from hilt import PASS, TestComponent, TestFailure, TestUtils, Verdict, evidence
-
-_DEVICES = "/sys/bus/usb/devices"
-_NOT_READ = "(not read)"
 
 
 class RootHubIdentity(TypedDict):
@@ -96,7 +102,7 @@ class UsbRootHub(TestComponent[RootHubIdentity]):
     @evidence("enumerated_as")
     async def _present(self, utils: TestUtils[RootHubIdentity]) -> Verdict:
         bus = utils.ctx["bus"]
-        entry = await read_link_name(utils, f"{_DEVICES}/{bus}")
+        entry = await read_link_name(utils, f"{USB_SYSFS}/{bus}")
         reading = {"enumerated_as": entry}
         if entry == bus:
             return PASS(reading)
@@ -108,12 +114,12 @@ class UsbRootHub(TestComponent[RootHubIdentity]):
         expected = utils.ctx["controller"]
         # A root hub hangs directly off its controller, so the bus links to
         # .../<controller's PCI address>/usbN.
-        owner = _parent_name(await read_link(utils, f"{_DEVICES}/{bus}"))
+        owner = self._parent_name(await read_link(utils, f"{USB_SYSFS}/{bus}"))
         reading = {"owning_controller": owner}
         if owner == expected:
             return PASS(reading)
         if owner is None:
-            raise TestFailure(f"owner of {bus} could not be read", expected, _NOT_READ)
+            raise TestFailure(f"owner of {bus} could not be read", expected, NOT_READ)
         raise TestFailure(
             f"{bus} belongs to a different controller", expected, owner, evidence=reading
         )
@@ -122,12 +128,12 @@ class UsbRootHub(TestComponent[RootHubIdentity]):
     async def _version(self, utils: TestUtils[RootHubIdentity]) -> Verdict:
         bus = utils.ctx["bus"]
         expected = utils.ctx["usb_version"]
-        version = await read_text(utils, f"{_DEVICES}/{bus}/version")
+        version = await read_text(utils, f"{USB_SYSFS}/{bus}/version")
         reading = {"advertised_version": version}
         if version == expected:
             return PASS(reading)
         if version is None:
-            raise TestFailure(f"USB version of {bus} could not be read", expected, _NOT_READ)
+            raise TestFailure(f"USB version of {bus} could not be read", expected, NOT_READ)
         raise TestFailure(
             f"{bus} advertises a different USB version", expected, version, evidence=reading
         )
@@ -136,12 +142,12 @@ class UsbRootHub(TestComponent[RootHubIdentity]):
     async def _ports(self, utils: TestUtils[RootHubIdentity]) -> Verdict:
         bus = utils.ctx["bus"]
         expected = utils.ctx["ports"]
-        ports = await read_int(utils, f"{_DEVICES}/{bus}/maxchild")
+        ports = await read_int(utils, f"{USB_SYSFS}/{bus}/maxchild")
         reading = {"downstream_ports": ports}
         if ports == expected:
             return PASS(reading)
         if ports is None:
-            raise TestFailure(f"port count of {bus} could not be read", expected, _NOT_READ)
+            raise TestFailure(f"port count of {bus} could not be read", expected, NOT_READ)
         raise TestFailure(
             f"{bus} has a different number of ports", expected, ports, evidence=reading
         )
@@ -153,19 +159,27 @@ class UsbRootHub(TestComponent[RootHubIdentity]):
         # Measured without a window: a bus speed is one of a few fixed rates, and
         # the claim is that it is this one.
         speed = utils.measure(
-            "bus_speed_mbps", await read_int(utils, f"{_DEVICES}/{bus}/speed"), unit="Mbit/s"
+            "bus_speed_mbps", await read_int(utils, f"{USB_SYSFS}/{bus}/speed"), unit="Mbit/s"
         ).value
         reading = {"bus_speed_mbps": speed}
         if speed == expected:
             return PASS(reading)
         if speed is None:
-            raise TestFailure(f"speed of {bus} could not be read", f"{expected} Mbit/s", _NOT_READ)
+            raise TestFailure(f"speed of {bus} could not be read", f"{expected} Mbit/s", NOT_READ)
         raise TestFailure(
             f"{bus} runs at a different speed",
             f"{expected} Mbit/s",
             f"{speed:g} Mbit/s",
             evidence=reading,
         )
+
+    @staticmethod
+    def _parent_name(target: str | None) -> str | None:
+        """Name the directory a link target sits in: ``.../0000:00:14.0/usb3`` gives the address."""
+        if target is None:
+            return None
+        parts = target.rsplit("/", 2)
+        return parts[-2] if len(parts) >= 2 else None
 
 
 class UsbDeviceIdentity(TypedDict):
@@ -225,7 +239,7 @@ class UsbDevice(TestComponent[UsbDeviceIdentity]):
     @evidence("enumerated_as")
     async def _present(self, utils: TestUtils[UsbDeviceIdentity]) -> Verdict:
         device = utils.ctx["device"]
-        entry = await read_link_name(utils, f"{_DEVICES}/{device}")
+        entry = await read_link_name(utils, f"{USB_SYSFS}/{device}")
         reading = {"enumerated_as": entry}
         if entry == device:
             return PASS(reading)
@@ -240,7 +254,7 @@ class UsbDevice(TestComponent[UsbDeviceIdentity]):
     async def _kind(self, utils: TestUtils[UsbDeviceIdentity]) -> Verdict:
         device = utils.ctx["device"]
         expected = utils.ctx["vendor_product"]
-        node = f"{_DEVICES}/{device}"
+        node = f"{USB_SYSFS}/{device}"
         files = await read_files(utils, f"{node}/idVendor", f"{node}/idProduct")
         vendor, product = files.get(f"{node}/idVendor"), files.get(f"{node}/idProduct")
         reported = None if vendor is None or product is None else f"{vendor}:{product}"
@@ -248,7 +262,7 @@ class UsbDevice(TestComponent[UsbDeviceIdentity]):
         if reported == expected:
             return PASS(reading)
         if reported is None:
-            raise TestFailure(f"IDs of USB device {device} could not be read", expected, _NOT_READ)
+            raise TestFailure(f"IDs of USB device {device} could not be read", expected, NOT_READ)
         raise TestFailure(
             f"USB device {device} is not the expected one ({utils.ctx['label']})",
             expected,
@@ -263,7 +277,7 @@ class UsbDevice(TestComponent[UsbDeviceIdentity]):
         # configuration 1.
         interface = f"{utils.ctx['device']}:1.0"
         expected = utils.ctx["driver"]
-        bound = await read_link_name(utils, f"{_DEVICES}/{interface}/driver")
+        bound = await read_link_name(utils, f"{USB_SYSFS}/{interface}/driver")
         reading = {"bound_driver": bound}
         if bound == expected:
             return PASS(reading)
@@ -315,9 +329,9 @@ class Usb(TestComponent[UsbIdentity]):
     @evidence("root_hubs")
     async def _bus_count_matches(self, utils: TestUtils[UsbIdentity]) -> Verdict:
         expected = utils.ctx["bus_count"]
-        listing = await list_dir(utils, _DEVICES)
+        listing = await list_dir(utils, USB_SYSFS)
         if listing is None:
-            raise TestFailure(f"{_DEVICES} could not be listed", f"{expected} buses", _NOT_READ)
+            raise TestFailure(f"{USB_SYSFS} could not be listed", f"{expected} buses", NOT_READ)
         # The directory also holds devices (3-10) and interfaces (3-10:1.0); a bus
         # is the entry for its root hub, usbN.
         root_hubs = [entry for entry in listing if entry.startswith("usb")]
@@ -330,11 +344,3 @@ class Usb(TestComponent[UsbIdentity]):
             f"{len(root_hubs)} buses: {', '.join(root_hubs) or 'none'}",
             evidence=reading,
         )
-
-
-def _parent_name(target: str | None) -> str | None:
-    """Name the directory a link target sits in: ``.../0000:00:14.0/usb3`` gives the address."""
-    if target is None:
-        return None
-    parts = target.rsplit("/", 2)
-    return parts[-2] if len(parts) >= 2 else None

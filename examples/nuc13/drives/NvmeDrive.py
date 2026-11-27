@@ -39,93 +39,16 @@ import shlex
 from collections.abc import Sequence
 from typing import TypedDict, Unpack
 
-from nuc13.kernel import read_int, read_link_name, read_text
+from nuc13.kernel import (
+    NOT_READ,
+    read_block_size_bytes,
+    read_int,
+    read_link_name,
+    read_lsblk_column,
+    read_text,
+)
 
 from hilt import PASS, TestComponent, TestFailure, TestUtils, Verdict, evidence
-
-# sysfs counts a block device's `size` in 512-byte units whatever its sector size.
-_SYSFS_SECTOR_BYTES = 512
-_MIB = 1024 * 1024
-_GB = 10**9
-
-# The largest number lshw prints before it moves up to the next binary unit.
-_LSHW_UNIT_CEILING = 10240
-
-_NOT_READ = "(not read)"
-
-# The one state in which the kernel is doing I/O through an NVMe controller.
-_LIVE = "live"
-
-_OCTAL_ESCAPE = re.compile(r"\\([0-7]{3})")
-
-
-def _lshw_rounding_mib(capacity_mib: int) -> int:
-    """Return how much of a partition's size lshw dropped when it printed ``capacity_mib``.
-
-    lshw rounds a size down to a whole unit, and moves up a unit only once the number
-    passes 10240. A volume is therefore printed in whole MiB up to 10240MiB (``4095MiB``
-    is exact to the MiB) and in whole GiB beyond (``467GiB`` may hide up to 1023MiB).
-
-    Args:
-        capacity_mib: A size transcribed from lshw, in MiB.
-
-    Returns:
-        The width in MiB of the range of real sizes lshw prints as ``capacity_mib``.
-    """
-    return 1024 if capacity_mib >= _LSHW_UNIT_CEILING else 1
-
-
-async def _size_bytes(utils: TestUtils, device: str) -> int | None:
-    """Read a block device's size; ``None`` when the kernel does not report one."""
-    sectors = await read_int(utils, f"/sys/class/block/{device}/size")
-    if sectors is None:
-        return None
-    return sectors * _SYSFS_SECTOR_BYTES
-
-
-async def _lsblk_column(utils: TestUtils, device: str, column: str) -> str | None:
-    """Read one ``lsblk`` column for one device; ``None`` when lsblk cannot answer.
-
-    An empty string is a reading: the device is there and has no such property.
-    """
-    path = shlex.quote(f"/dev/{device}")
-    result = await utils.exec(f"lsblk --nodeps --noheadings --output {column} {path}")
-    if result.exit_code != 0:
-        return None
-    return result.stdout.strip()
-
-
-async def _partitions_of(utils: TestUtils, namespace: str) -> list[str] | None:
-    """List the partitions the kernel found on a disk; ``None`` when lsblk cannot answer."""
-    path = shlex.quote(f"/dev/{namespace}")
-    result = await utils.exec(f"lsblk --noheadings --raw --output NAME,TYPE {path}")
-    if result.exit_code != 0:
-        return None
-    rows = [line.split() for line in result.stdout.splitlines()]
-    # The listing also holds the disk itself and whatever is stacked on a partition
-    # (a dm-crypt mapping, for one); only rows typed `part` are partitions.
-    return [row[0] for row in rows if len(row) == 2 and row[1] == "part"]
-
-
-async def _mounts_of(utils: TestUtils, device: str) -> dict[str, str] | None:
-    """Map each place a device is mounted to its mount options.
-
-    The kernel's own mount table is the source, so the options are the ones in force
-    now, not the ones ``fstab`` asked for. ``None`` when the table cannot be read; an
-    empty mapping when the device is mounted nowhere.
-    """
-    table = await read_text(utils, "/proc/self/mounts")
-    if table is None:
-        return None
-    mounts: dict[str, str] = {}
-    for line in table.splitlines():
-        fields = line.split()
-        if len(fields) >= 4 and fields[0] == f"/dev/{device}":
-            # The table writes a space in a path as \040; a mountpoint writes the space.
-            target = _OCTAL_ESCAPE.sub(lambda match: chr(int(match.group(1), 8)), fields[1])
-            mounts[target] = fields[3]
-    return mounts
-
 
 # ------------------------------------------------------------------------ volume
 
@@ -157,6 +80,13 @@ class Volume(TestComponent[VolumeIdentity]):
         name: Node name used by logs, artifacts, and failures.
         **identity: What the partition must be.
     """
+
+    _MIB = 1024 * 1024
+
+    # The largest number lshw prints before it moves up to the next binary unit.
+    _LSHW_UNIT_CEILING = 10240
+
+    _OCTAL_ESCAPE = re.compile(r"\\([0-7]{3})")
 
     def __init__(self, *, name: str, **identity: Unpack[VolumeIdentity]) -> None:
         super().__init__(name=name)
@@ -217,17 +147,17 @@ class Volume(TestComponent[VolumeIdentity]):
     async def _size(self, utils: TestUtils[VolumeIdentity]) -> Verdict:
         device = utils.ctx["device"]
         capacity_mib = utils.ctx["capacity_mib"]
-        rounding_mib = _lshw_rounding_mib(capacity_mib)
-        size_bytes = await _size_bytes(utils, device)
+        rounding_mib = self._lshw_rounding_mib(capacity_mib)
+        size_bytes = await read_block_size_bytes(utils, device)
         # The capacity is lshw's figure, which lshw rounded down. The partition may be
         # larger by what that rounding dropped (under 1MiB, or under 1GiB for a size
         # lshw printed in GiB) and by nothing more; it may not be smaller at all.
-        lowest = capacity_mib * _MIB
-        highest = (capacity_mib + rounding_mib) * _MIB - 1
+        lowest = capacity_mib * self._MIB
+        highest = (capacity_mib + rounding_mib) * self._MIB - 1
         size = utils.measure("partition_bytes", size_bytes, unit="B", limits=(lowest, highest))
         expected = f"{capacity_mib} MiB, plus under {rounding_mib} MiB lshw rounded off"
         if size_bytes is None:
-            raise TestFailure(f"size of {device} could not be read", expected, _NOT_READ)
+            raise TestFailure(f"size of {device} could not be read", expected, NOT_READ)
         reading = {"partition_bytes": size_bytes}
         if size.in_limits:
             return PASS(reading)
@@ -236,7 +166,7 @@ class Volume(TestComponent[VolumeIdentity]):
             expected,
             # Whole MiB rounded down, as the expected figure is: a size a few bytes short
             # of the next MiB must not read as that MiB.
-            f"{size_bytes // _MIB} MiB ({size_bytes} B)",
+            f"{size_bytes // self._MIB} MiB ({size_bytes} B)",
             evidence=reading,
         )
 
@@ -244,12 +174,12 @@ class Volume(TestComponent[VolumeIdentity]):
     async def _filesystem(self, utils: TestUtils[VolumeIdentity]) -> Verdict:
         device = utils.ctx["device"]
         expected = utils.ctx["filesystem"]
-        found = await _lsblk_column(utils, device, "FSTYPE")
+        found = await read_lsblk_column(utils, device, "FSTYPE")
         reading = {"filesystem_found": found}
         if found == expected:
             return PASS(reading)
         if found is None:
-            raise TestFailure(f"filesystem of {device} could not be read", expected, _NOT_READ)
+            raise TestFailure(f"filesystem of {device} could not be read", expected, NOT_READ)
         raise TestFailure(
             f"filesystem of {device} does not match",
             expected,
@@ -260,9 +190,9 @@ class Volume(TestComponent[VolumeIdentity]):
     @evidence("mounted_at")
     async def _mounted(self, utils: TestUtils[VolumeIdentity], *, mountpoint: str) -> Verdict:
         device = utils.ctx["device"]
-        mounts = await _mounts_of(utils, device)
+        mounts = await self._mounts_of(utils, device)
         if mounts is None:
-            raise TestFailure("the mount table could not be read", mountpoint, _NOT_READ)
+            raise TestFailure("the mount table could not be read", mountpoint, NOT_READ)
         reading = {"mounted_at": sorted(mounts)}
         if mountpoint in mounts:
             return PASS(reading)
@@ -276,9 +206,9 @@ class Volume(TestComponent[VolumeIdentity]):
     @evidence("mount_options")
     async def _read_write(self, utils: TestUtils[VolumeIdentity], *, mountpoint: str) -> Verdict:
         device = utils.ctx["device"]
-        mounts = await _mounts_of(utils, device)
+        mounts = await self._mounts_of(utils, device)
         if mounts is None:
-            raise TestFailure("the mount table could not be read", "rw", _NOT_READ)
+            raise TestFailure("the mount table could not be read", "rw", NOT_READ)
         options = mounts.get(mountpoint)
         if options is None:
             raise TestFailure(f"{device} is not mounted at {mountpoint}", "rw", "(not mounted)")
@@ -293,6 +223,44 @@ class Volume(TestComponent[VolumeIdentity]):
             options,
             evidence=reading,
         )
+
+    @staticmethod
+    def _lshw_rounding_mib(capacity_mib: int) -> int:
+        """Return how much of a partition's size lshw dropped when it printed ``capacity_mib``.
+
+        lshw rounds a size down to a whole unit, and moves up a unit only once the number
+        passes 10240. A volume is therefore printed in whole MiB up to 10240MiB (``4095MiB``
+        is exact to the MiB) and in whole GiB beyond (``467GiB`` may hide up to 1023MiB).
+
+        Args:
+            capacity_mib: A size transcribed from lshw, in MiB.
+
+        Returns:
+            The width in MiB of the range of real sizes lshw prints as ``capacity_mib``.
+        """
+        return 1024 if capacity_mib >= Volume._LSHW_UNIT_CEILING else 1
+
+    @staticmethod
+    async def _mounts_of(utils: TestUtils, device: str) -> dict[str, str] | None:
+        """Map each place a device is mounted to its mount options.
+
+        The kernel's own mount table is the source, so the options are the ones in force
+        now, not the ones ``fstab`` asked for. ``None`` when the table cannot be read; an
+        empty mapping when the device is mounted nowhere.
+        """
+        table = await read_text(utils, "/proc/self/mounts")
+        if table is None:
+            return None
+        mounts: dict[str, str] = {}
+        for line in table.splitlines():
+            fields = line.split()
+            if len(fields) >= 4 and fields[0] == f"/dev/{device}":
+                # The table writes a space in a path as \040; a mountpoint writes the space.
+                target = Volume._OCTAL_ESCAPE.sub(
+                    lambda match: chr(int(match.group(1), 8)), fields[1]
+                )
+                mounts[target] = fields[3]
+        return mounts
 
 
 # --------------------------------------------------------------- partition table
@@ -354,13 +322,13 @@ class PartitionTable(TestComponent[PartitionTableIdentity]):
     async def _partition_table(self, utils: TestUtils[PartitionTableIdentity]) -> Verdict:
         namespace = utils.ctx["namespace"]
         expected = utils.ctx["partition_table"]
-        table = await _lsblk_column(utils, namespace, "PTTYPE")
+        table = await read_lsblk_column(utils, namespace, "PTTYPE")
         reading = {"table_type": table}
         if table == expected:
             return PASS(reading)
         if table is None:
             raise TestFailure(
-                f"partition table of {namespace} could not be read", expected, _NOT_READ
+                f"partition table of {namespace} could not be read", expected, NOT_READ
             )
         raise TestFailure(
             f"partition table of {namespace} does not match",
@@ -373,9 +341,9 @@ class PartitionTable(TestComponent[PartitionTableIdentity]):
     async def _partition_count(self, utils: TestUtils[PartitionTableIdentity]) -> Verdict:
         namespace = utils.ctx["namespace"]
         expected = utils.ctx["partition_count"]
-        partitions = await _partitions_of(utils, namespace)
+        partitions = await self._partitions_of(utils, namespace)
         if partitions is None:
-            raise TestFailure(f"partitions of {namespace} could not be listed", expected, _NOT_READ)
+            raise TestFailure(f"partitions of {namespace} could not be listed", expected, NOT_READ)
         reading = {"partitions": partitions}
         if len(partitions) == expected:
             return PASS(reading)
@@ -385,6 +353,18 @@ class PartitionTable(TestComponent[PartitionTableIdentity]):
             len(partitions),
             evidence=reading,
         )
+
+    @staticmethod
+    async def _partitions_of(utils: TestUtils, namespace: str) -> list[str] | None:
+        """List the partitions the kernel found on a disk; ``None`` when lsblk cannot answer."""
+        path = shlex.quote(f"/dev/{namespace}")
+        result = await utils.exec(f"lsblk --noheadings --raw --output NAME,TYPE {path}")
+        if result.exit_code != 0:
+            return None
+        rows = [line.split() for line in result.stdout.splitlines()]
+        # The listing also holds the disk itself and whatever is stacked on a partition
+        # (a dm-crypt mapping, for one); only rows typed `part` are partitions.
+        return [row[0] for row in rows if len(row) == 2 and row[1] == "part"]
 
 
 # ------------------------------------------------------------------------- drive
@@ -421,6 +401,11 @@ class NvmeDrive(TestComponent[DriveIdentity]):
         **identity: Where the kernel must show the drive, and the drive that must be
             there.
     """
+
+    _GB = 10**9
+
+    # The one state in which the kernel is doing I/O through an NVMe controller.
+    _LIVE = "live"
 
     def __init__(
         self, *, name: str, partitions: PartitionTable, **identity: Unpack[DriveIdentity]
@@ -461,12 +446,12 @@ class NvmeDrive(TestComponent[DriveIdentity]):
         controller = utils.ctx["controller"]
         state = await read_text(utils, f"/sys/class/nvme/{controller}/state")
         reading = {"controller_state": state}
-        if state == _LIVE:
+        if state == self._LIVE:
             return PASS(reading)
         if state is None:
-            raise TestFailure(f"NVMe controller {controller} is not present", _LIVE, _NOT_READ)
+            raise TestFailure(f"NVMe controller {controller} is not present", self._LIVE, NOT_READ)
         raise TestFailure(
-            f"NVMe controller {controller} is not {_LIVE}", _LIVE, state, evidence=reading
+            f"NVMe controller {controller} is not {self._LIVE}", self._LIVE, state, evidence=reading
         )
 
     @evidence("model_reported")
@@ -479,7 +464,7 @@ class NvmeDrive(TestComponent[DriveIdentity]):
         if model == expected:
             return PASS(reading)
         if model is None:
-            raise TestFailure(f"model of {controller} could not be read", expected, _NOT_READ)
+            raise TestFailure(f"model of {controller} could not be read", expected, NOT_READ)
         raise TestFailure(
             f"model of {controller} does not match", expected, model, evidence=reading
         )
@@ -494,7 +479,7 @@ class NvmeDrive(TestComponent[DriveIdentity]):
             return PASS(reading)
         if revision is None:
             raise TestFailure(
-                f"firmware revision of {controller} could not be read", expected, _NOT_READ
+                f"firmware revision of {controller} could not be read", expected, NOT_READ
             )
         raise TestFailure(
             f"firmware revision of {controller} does not match",
@@ -513,9 +498,7 @@ class NvmeDrive(TestComponent[DriveIdentity]):
         if function == expected:
             return PASS(reading)
         if function is None:
-            raise TestFailure(
-                f"PCI function of {controller} could not be read", expected, _NOT_READ
-            )
+            raise TestFailure(f"PCI function of {controller} could not be read", expected, NOT_READ)
         raise TestFailure(
             f"{controller} is not at the expected PCI address",
             expected,
@@ -527,22 +510,22 @@ class NvmeDrive(TestComponent[DriveIdentity]):
     async def _capacity(self, utils: TestUtils[DriveIdentity]) -> Verdict:
         namespace = utils.ctx["namespace"]
         labelled_gb = utils.ctx["capacity_gb"]
-        size_bytes = await _size_bytes(utils, namespace)
+        size_bytes = await read_block_size_bytes(utils, namespace)
         # A label states decimal gigabytes rounded down: a drive sold as N GB holds at
         # least N GB and less than N + 1.
-        lowest = labelled_gb * _GB
-        highest = (labelled_gb + 1) * _GB - 1
+        lowest = labelled_gb * self._GB
+        highest = (labelled_gb + 1) * self._GB - 1
         size = utils.measure("namespace_bytes", size_bytes, unit="B", limits=(lowest, highest))
         expected = f"{labelled_gb} GB, and under {labelled_gb + 1} GB"
         if size_bytes is None:
-            raise TestFailure(f"size of {namespace} could not be read", expected, _NOT_READ)
+            raise TestFailure(f"size of {namespace} could not be read", expected, NOT_READ)
         reading = {"namespace_bytes": size_bytes}
         if size.in_limits:
             return PASS(reading)
         raise TestFailure(
             f"capacity of {namespace} does not match the label",
             expected,
-            f"{size_bytes / _GB:.2f} GB",
+            f"{size_bytes / self._GB:.2f} GB",
             evidence=reading,
         )
 
@@ -558,7 +541,7 @@ class NvmeDrive(TestComponent[DriveIdentity]):
             raise TestFailure(
                 f"logical sector size of {namespace} could not be read",
                 f"{expected} B",
-                _NOT_READ,
+                NOT_READ,
             )
         reading = {"logical_block_bytes": block_bytes}
         if size.in_limits:

@@ -19,7 +19,7 @@ from __future__ import annotations
 
 from typing import Literal, TypedDict, Unpack
 
-from nuc13.kernel import read_text
+from nuc13.kernel import NOT_READ, read_text
 
 from hilt import PASS, TestComponent, TestFailure, TestUtils, Verdict, evidence
 
@@ -79,7 +79,7 @@ class Firmware(TestComponent[FirmwareIdentity]):
         if value == expected:
             return PASS(reading)
         if value is None:
-            raise TestFailure(f"DMI {field} could not be read", expected, "(not read)")
+            raise TestFailure(f"DMI {field} could not be read", expected, NOT_READ)
         raise TestFailure(f"DMI {field} does not match", expected, value, evidence=reading)
 
     @evidence("efi_booted")
@@ -89,7 +89,7 @@ class Firmware(TestComponent[FirmwareIdentity]):
         booted = {0: True, 1: False}.get(result.exit_code)
         reading = {"efi_booted": booted}
         if booted is None:
-            raise TestFailure("boot path could not be read", "UEFI", "(not read)")
+            raise TestFailure("boot path could not be read", "UEFI", NOT_READ)
         if booted:
             return PASS(reading)
         raise TestFailure(

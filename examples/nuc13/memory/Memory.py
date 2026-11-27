@@ -24,7 +24,7 @@ Every reading is one the run's user can take: the EDAC driver's sysfs tree,
 ``/proc/meminfo``, and a module's identity EEPROM where the kernel leaves it
 world-readable. SMBIOS, where lshw found the part numbers, is root's alone, so a
 module's part number, vendor, and speed are judged only where its EEPROM can be read.
-A bank without one has no such claims, instead of claims that could never take their
+A module without one has no such claims, instead of claims that could never take their
 reading.
 
 A module part number is one class, in a module of its own beside this one; it says
@@ -38,87 +38,9 @@ from __future__ import annotations
 from collections.abc import Sequence
 from typing import TypedDict, Unpack
 
-from nuc13.kernel import parse_int, read_files, read_int, read_text
+from nuc13.kernel import NOT_READ, parse_int, read_files, read_int, read_text
 
 from hilt import PASS, TestComponent, TestFailure, TestUtils, Verdict, evidence
-
-_EDAC = "/sys/devices/system/edac/mc"
-
-# The DDR4 layout of the EEPROM (JEDEC Standard 21-C, Annex L), as (offset, length).
-# The module's serial number is in there too; no range below reaches it, so it is
-# never read, logged, or recorded.
-_DEVICE_TYPE = (2, 1)
-# The minimum cycle time is two bytes far apart: whole units of 125 ps at offset 18
-# and a signed correction in picoseconds at offset 125. One read spans both, and
-# everything between them is timing data.
-_CYCLE_TIME = (18, 108)
-_MANUFACTURER = (320, 2)
-_PART_NUMBER = (329, 20)
-
-# The one generation whose layout is decoded here, and its device-type code.
-_DECODED_TECHNOLOGY = "DDR4"
-_DECODED_DEVICE_TYPE = 0x0C
-
-# What an intact system may hold back from ``MemTotal``: firmware and the integrated
-# graphics reserve some of what is installed.
-_RESERVED_ALLOWANCE_MIB = 1024
-
-
-def _counts(files: dict[str, str]) -> dict[str, int] | None:
-    """Parse each file's text as an integer.
-
-    Returns:
-        The integers under the same paths, or ``None`` when there are no files or
-        any one of them does not hold an integer.
-    """
-    counts: dict[str, int] = {}
-    for path, text in files.items():
-        count = parse_int(text)
-        if count is None:
-            return None
-        counts[path] = count
-    return counts or None
-
-
-async def _memory_total_kib(utils: TestUtils) -> int | None:
-    """Read ``MemTotal`` from ``/proc/meminfo`` in KiB (the file's ``kB``)."""
-    result = await utils.exec("grep -m 1 '^MemTotal:' /proc/meminfo")
-    if result.exit_code != 0:
-        return None
-    return parse_int(result.stdout.strip().removeprefix("MemTotal:").removesuffix("kB"))
-
-
-async def _read_eeprom(utils: TestUtils, eeprom: str, field: tuple[int, int]) -> bytes | None:
-    """Read one field of a module's identity EEPROM.
-
-    Args:
-        utils: The claim's utilities.
-        eeprom: Shell pattern that resolves to the EEPROM's sysfs file.
-        field: The field's offset and length in bytes.
-
-    Returns:
-        The field's bytes, or ``None`` unless exactly that many came back.
-    """
-    offset, length = field
-    result = await utils.exec(f"od -An -v -tx1 -j {offset} -N {length} {eeprom}")
-    if result.exit_code != 0:
-        return None
-    try:
-        content = bytes.fromhex(result.stdout)
-    except ValueError:
-        return None
-    return content if len(content) == length else None
-
-
-def _rated_speed_mhz(cycle_time: bytes) -> int | None:
-    """The speed a module is rated for, from its cycle-time field; ``None`` if blank."""
-    correction_ps = int.from_bytes(cycle_time[-1:], signed=True)
-    cycle_ps = cycle_time[0] * 125 + correction_ps
-    if cycle_ps <= 0:
-        return None
-    # Two transfers per clock cycle, which is the figure a module is sold by and the
-    # one SMBIOS and lshw print: a 625 ps cycle is "3200 MHz".
-    return round(2_000_000 / cycle_ps)
 
 
 class EepromIdentity(TypedDict):
@@ -154,6 +76,21 @@ class IdentityEeprom(TestComponent[EepromIdentity]):
         **identity: Where the EEPROM is, and what it must say.
     """
 
+    # The DDR4 layout of the EEPROM (JEDEC Standard 21-C, Annex L), as (offset, length).
+    # The module's serial number is in there too; no range below reaches it, so it is
+    # never read, logged, or recorded.
+    _DEVICE_TYPE = (2, 1)
+    # The minimum cycle time is two bytes far apart: whole units of 125 ps at offset 18
+    # and a signed correction in picoseconds at offset 125. One read spans both, and
+    # everything between them is timing data.
+    _CYCLE_TIME = (18, 108)
+    _MANUFACTURER = (320, 2)
+    _PART_NUMBER = (329, 20)
+
+    # The one generation whose layout is decoded here, and its device-type code.
+    _DECODED_TECHNOLOGY = "DDR4"
+    _DECODED_DEVICE_TYPE = 0x0C
+
     def __init__(self, *, name: str, **identity: Unpack[EepromIdentity]) -> None:
         super().__init__(name=name)
         self._identity = identity
@@ -188,12 +125,12 @@ class IdentityEeprom(TestComponent[EepromIdentity]):
     @evidence("eeprom_technology")
     async def _technology(self, utils: TestUtils[EepromIdentity]) -> Verdict:
         expected = utils.ctx["technology"]
-        device_type = await _read_eeprom(utils, utils.ctx["eeprom"], _DEVICE_TYPE)
+        device_type = await self._read_eeprom(utils, utils.ctx["eeprom"], self._DEVICE_TYPE)
         if device_type is None:
-            raise TestFailure("module EEPROM could not be read", expected, "(not read)")
+            raise TestFailure("module EEPROM could not be read", expected, NOT_READ)
         code = device_type[0]
-        decoded = code == _DECODED_DEVICE_TYPE
-        technology = _DECODED_TECHNOLOGY if decoded else f"device type {code:#04x}"
+        decoded = code == self._DECODED_DEVICE_TYPE
+        technology = self._DECODED_TECHNOLOGY if decoded else f"device type {code:#04x}"
         reading = {"eeprom_technology": technology}
         if technology == expected:
             return PASS(reading)
@@ -207,14 +144,14 @@ class IdentityEeprom(TestComponent[EepromIdentity]):
     @evidence("eeprom_part_number")
     async def _part_number(self, utils: TestUtils[EepromIdentity]) -> Verdict:
         expected = utils.ctx["part_number"]
-        field = await _read_eeprom(utils, utils.ctx["eeprom"], _PART_NUMBER)
+        field = await self._read_eeprom(utils, utils.ctx["eeprom"], self._PART_NUMBER)
         # The field is ASCII, padded with spaces to its full width.
         part_number = None if field is None else field.decode("ascii", "replace").strip()
         reading = {"eeprom_part_number": part_number}
         if part_number == expected:
             return PASS(reading)
         if part_number is None:
-            raise TestFailure("module EEPROM could not be read", expected, "(not read)")
+            raise TestFailure("module EEPROM could not be read", expected, NOT_READ)
         raise TestFailure(
             "module is not the expected part", expected, part_number, evidence=reading
         )
@@ -222,13 +159,13 @@ class IdentityEeprom(TestComponent[EepromIdentity]):
     @evidence("eeprom_manufacturer_id")
     async def _vendor(self, utils: TestUtils[EepromIdentity]) -> Verdict:
         expected = f"{utils.ctx['vendor']} (JEDEC {utils.ctx['manufacturer_id']})"
-        field = await _read_eeprom(utils, utils.ctx["eeprom"], _MANUFACTURER)
+        field = await self._read_eeprom(utils, utils.ctx["eeprom"], self._MANUFACTURER)
         manufacturer = None if field is None else field.hex()
         reading = {"eeprom_manufacturer_id": manufacturer}
         if manufacturer == utils.ctx["manufacturer_id"]:
             return PASS(reading)
         if manufacturer is None:
-            raise TestFailure("module EEPROM could not be read", expected, "(not read)")
+            raise TestFailure("module EEPROM could not be read", expected, NOT_READ)
         raise TestFailure(
             "module is from another maker", expected, f"JEDEC {manufacturer}", evidence=reading
         )
@@ -236,14 +173,14 @@ class IdentityEeprom(TestComponent[EepromIdentity]):
     @evidence("eeprom_speed_mhz")
     async def _speed(self, utils: TestUtils[EepromIdentity]) -> Verdict:
         expected = utils.ctx["speed_mhz"]
-        cycle_time = await _read_eeprom(utils, utils.ctx["eeprom"], _CYCLE_TIME)
-        speed = None if cycle_time is None else _rated_speed_mhz(cycle_time)
+        cycle_time = await self._read_eeprom(utils, utils.ctx["eeprom"], self._CYCLE_TIME)
+        speed = None if cycle_time is None else self._rated_speed_mhz(cycle_time)
         utils.measure("eeprom_speed_mhz", speed, unit="MHz", limits=(expected, expected))
         reading = {"eeprom_speed_mhz": speed}
         if speed == expected:
             return PASS(reading)
         if speed is None:
-            raise TestFailure("module EEPROM gave no rated speed", f"{expected} MHz", "(not read)")
+            raise TestFailure("module EEPROM gave no rated speed", f"{expected} MHz", NOT_READ)
         raise TestFailure(
             "module is rated for another speed",
             f"{expected} MHz",
@@ -251,9 +188,42 @@ class IdentityEeprom(TestComponent[EepromIdentity]):
             evidence=reading,
         )
 
+    @staticmethod
+    async def _read_eeprom(utils: TestUtils, eeprom: str, field: tuple[int, int]) -> bytes | None:
+        """Read one field of a module's identity EEPROM.
 
-class BankIdentity(TypedDict):
-    """What one bank must hold, and where the kernel must show it.
+        Args:
+            utils: The claim's utilities.
+            eeprom: Shell pattern that resolves to the EEPROM's sysfs file.
+            field: The field's offset and length in bytes.
+
+        Returns:
+            The field's bytes, or ``None`` unless exactly that many came back.
+        """
+        offset, length = field
+        result = await utils.exec(f"od -An -v -tx1 -j {offset} -N {length} {eeprom}")
+        if result.exit_code != 0:
+            return None
+        try:
+            content = bytes.fromhex(result.stdout)
+        except ValueError:
+            return None
+        return content if len(content) == length else None
+
+    @staticmethod
+    def _rated_speed_mhz(cycle_time: bytes) -> int | None:
+        """The speed a module is rated for, from its cycle-time field; ``None`` if blank."""
+        correction_ps = int.from_bytes(cycle_time[-1:], signed=True)
+        cycle_ps = cycle_time[0] * 125 + correction_ps
+        if cycle_ps <= 0:
+            return None
+        # Two transfers per clock cycle, which is the figure a module is sold by and the
+        # one SMBIOS and lshw print: a 625 ps cycle is "3200 MHz".
+        return round(2_000_000 / cycle_ps)
+
+
+class SodimmIdentity(TypedDict):
+    """What one module must be, and where the kernel must show it.
 
     A module's part number, vendor, and speed can only be read from its identity
     EEPROM. They are judged in a slot that has one and carried without a claim in a
@@ -289,7 +259,7 @@ class BankIdentity(TypedDict):
     part_number: str
 
 
-class MemoryBank(TestComponent[BankIdentity]):
+class Sodimm(TestComponent[SodimmIdentity]):
     """Judge one populated slot: the module is there, and it is the module expected.
 
     Args:
@@ -298,7 +268,7 @@ class MemoryBank(TestComponent[BankIdentity]):
             be there.
     """
 
-    def __init__(self, *, name: str, **identity: Unpack[BankIdentity]) -> None:
+    def __init__(self, *, name: str, **identity: Unpack[SodimmIdentity]) -> None:
         super().__init__(name=name)
         self._identity = identity
         # None or one: the population is identity, so it is settled here and
@@ -322,11 +292,11 @@ class MemoryBank(TestComponent[BankIdentity]):
 
     @property
     def size_mib(self) -> int:
-        """The module's capacity, which system memory adds up over its banks."""
+        """The module's capacity, which system memory adds up over its modules."""
         return self._identity["size_mib"]
 
-    async def configure(self, utils: TestUtils[BankIdentity]) -> BankIdentity:
-        """Provide the identity the bank's claims judge against."""
+    async def configure(self, utils: TestUtils[SodimmIdentity]) -> SodimmIdentity:
+        """Provide the identity the module's claims judge against."""
         return self._identity
 
     def build_suite(self) -> TestComponent:
@@ -364,7 +334,7 @@ class MemoryBank(TestComponent[BankIdentity]):
         )
 
     @evidence("dimm_location")
-    async def _position(self, utils: TestUtils[BankIdentity]) -> Verdict:
+    async def _position(self, utils: TestUtils[SodimmIdentity]) -> Verdict:
         expected = utils.ctx["location"]
         location = await read_text(utils, f"{utils.ctx['edac_directory']}/dimm_location")
         reading = {"dimm_location": location}
@@ -373,7 +343,7 @@ class MemoryBank(TestComponent[BankIdentity]):
         if location is None:
             # EDAC creates a directory only for a populated position.
             raise TestFailure(
-                f"the kernel lists no module for {utils.ctx['slot']}", expected, "(not read)"
+                f"the kernel lists no module for {utils.ctx['slot']}", expected, NOT_READ
             )
         raise TestFailure(
             f"the module for {utils.ctx['slot']} is somewhere else",
@@ -383,7 +353,7 @@ class MemoryBank(TestComponent[BankIdentity]):
         )
 
     @evidence("dimm_size_mib")
-    async def _size(self, utils: TestUtils[BankIdentity]) -> Verdict:
+    async def _size(self, utils: TestUtils[SodimmIdentity]) -> Verdict:
         expected = utils.ctx["size_mib"]
         size = await read_int(utils, f"{utils.ctx['edac_directory']}/size")
         utils.measure("dimm_size_mib", size, unit="MiB", limits=(expected, expected))
@@ -391,13 +361,13 @@ class MemoryBank(TestComponent[BankIdentity]):
         if size == expected:
             return PASS(reading)
         if size is None:
-            raise TestFailure("module size could not be read", f"{expected} MiB", "(not read)")
+            raise TestFailure("module size could not be read", f"{expected} MiB", NOT_READ)
         raise TestFailure(
             "module is the wrong size", f"{expected} MiB", f"{size} MiB", evidence=reading
         )
 
     @evidence("dimm_memory_type")
-    async def _technology(self, utils: TestUtils[BankIdentity]) -> Verdict:
+    async def _technology(self, utils: TestUtils[SodimmIdentity]) -> Verdict:
         expected = utils.ctx["technology"]
         memory_type = await read_text(utils, f"{utils.ctx['edac_directory']}/dimm_mem_type")
         reading = {"dimm_memory_type": memory_type}
@@ -406,14 +376,14 @@ class MemoryBank(TestComponent[BankIdentity]):
         if memory_type is not None and expected in memory_type.split("-"):
             return PASS(reading)
         if memory_type is None:
-            raise TestFailure("module type could not be read", expected, "(not read)")
+            raise TestFailure("module type could not be read", expected, NOT_READ)
         raise TestFailure(
             "module is the wrong memory generation", expected, memory_type, evidence=reading
         )
 
     @evidence("dimm_errors")
     async def _error_count(
-        self, utils: TestUtils[BankIdentity], *, counter: str, kind: str
+        self, utils: TestUtils[SodimmIdentity], *, counter: str, kind: str
     ) -> Verdict:
         errors = await read_int(utils, f"{utils.ctx['edac_directory']}/{counter}")
         utils.measure(f"{kind}_errors", errors, limits=(0, 0))
@@ -421,7 +391,7 @@ class MemoryBank(TestComponent[BankIdentity]):
         if errors == 0:
             return PASS(reading)
         if errors is None:
-            raise TestFailure(f"{kind} error count could not be read", 0, "(not read)")
+            raise TestFailure(f"{kind} error count could not be read", 0, NOT_READ)
         raise TestFailure(
             f"{utils.ctx['slot']} has logged {kind} errors since boot",
             0,
@@ -445,23 +415,29 @@ class MemoryIdentity(TypedDict):
 
 
 class Memory(TestComponent[MemoryIdentity]):
-    """Judge system memory as a whole, then every bank that makes it up.
+    """Judge system memory as a whole, then every module that makes it up.
 
-    The totals are read off the banks it is composed with.
+    The totals are read off the modules it is composed with.
 
     Args:
         name: Node name used by logs, artifacts, and failures.
-        banks: Every populated slot.
+        sodimms: Every module fitted.
     """
 
-    def __init__(self, *, name: str, banks: Sequence[MemoryBank]) -> None:
+    _EDAC = "/sys/devices/system/edac/mc"
+
+    # What an intact system may hold back from ``MemTotal``: firmware and the integrated
+    # graphics reserve some of what is installed.
+    _RESERVED_ALLOWANCE_MIB = 1024
+
+    def __init__(self, *, name: str, sodimms: Sequence[Sodimm]) -> None:
         super().__init__(name=name)
-        self._banks = tuple(banks)
-        installed_mib = sum(bank.size_mib for bank in self._banks)
+        self._sodimms = tuple(sodimms)
+        installed_mib = sum(sodimm.size_mib for sodimm in self._sodimms)
         self._identity: MemoryIdentity = {
             "installed_mib": installed_mib,
-            "usable_floor_mib": installed_mib - _RESERVED_ALLOWANCE_MIB,
-            "bank_count": len(self._banks),
+            "usable_floor_mib": installed_mib - self._RESERVED_ALLOWANCE_MIB,
+            "bank_count": len(self._sodimms),
         }
 
     async def configure(self, utils: TestUtils[MemoryIdentity]) -> MemoryIdentity:
@@ -469,7 +445,7 @@ class Memory(TestComponent[MemoryIdentity]):
         return self._identity
 
     def build_suite(self) -> TestComponent:
-        """Independent totals and independent banks: one bad module never hides another."""
+        """Independent totals and independent modules: one bad module never hides another."""
         return self.parallel(
             self.name,
             [
@@ -488,7 +464,7 @@ class Memory(TestComponent[MemoryIdentity]):
                     counter="ue_count",
                     kind="uncorrectable",
                 ),
-                *self._banks,
+                *self._sodimms,
             ],
         )
 
@@ -498,14 +474,14 @@ class Memory(TestComponent[MemoryIdentity]):
     @evidence("dimm_sizes_mib")
     async def _installed_size(self, utils: TestUtils[MemoryIdentity]) -> Verdict:
         expected = utils.ctx["installed_mib"]
-        sizes = _counts(await read_files(utils, f"{_EDAC}/mc*/dimm*/size"))
+        sizes = self._counts(await read_files(utils, f"{self._EDAC}/mc*/dimm*/size"))
         total = None if sizes is None else sum(sizes.values())
         utils.measure("installed_size_mib", total, unit="MiB", limits=(expected, expected))
         reading = {"dimm_sizes_mib": sizes}
         if total == expected:
             return PASS(reading)
         if total is None:
-            raise TestFailure("module sizes could not be read", f"{expected} MiB", "(not read)")
+            raise TestFailure("module sizes could not be read", f"{expected} MiB", NOT_READ)
         raise TestFailure(
             "the modules do not add up to the installed memory",
             f"{expected} MiB",
@@ -517,12 +493,12 @@ class Memory(TestComponent[MemoryIdentity]):
     async def _usable_size(self, utils: TestUtils[MemoryIdentity]) -> Verdict:
         floor, installed = utils.ctx["usable_floor_mib"], utils.ctx["installed_mib"]
         window = f"{floor} to {installed} MiB"
-        total_kib = await _memory_total_kib(utils)
+        total_kib = await self._memory_total_kib(utils)
         usable_mib = None if total_kib is None else total_kib / 1024
         usable = utils.measure("usable_size_mib", usable_mib, unit="MiB", limits=(floor, installed))
         reading = {"memory_total_kib": total_kib}
         if usable.value is None:
-            raise TestFailure("MemTotal could not be read from /proc/meminfo", window, "(not read)")
+            raise TestFailure("MemTotal could not be read from /proc/meminfo", window, NOT_READ)
         if usable.in_limits:
             return PASS(reading)
         raise TestFailure(
@@ -537,14 +513,14 @@ class Memory(TestComponent[MemoryIdentity]):
         expected = utils.ctx["bank_count"]
         # EDAC creates a module directory only for a populated position, so the
         # directories it lists are the modules it found.
-        locations = await read_files(utils, f"{_EDAC}/mc*/dimm*/dimm_location")
+        locations = await read_files(utils, f"{self._EDAC}/mc*/dimm*/dimm_location")
         populated = len(locations) if locations else None
         utils.measure("populated_banks", populated, limits=(expected, expected))
         reading = {"dimm_locations": locations}
         if populated == expected:
             return PASS(reading)
         if populated is None:
-            raise TestFailure("the kernel lists no memory modules", expected, "(not read)")
+            raise TestFailure("the kernel lists no memory modules", expected, NOT_READ)
         raise TestFailure(
             "the kernel sees a different number of modules", expected, populated, evidence=reading
         )
@@ -554,15 +530,39 @@ class Memory(TestComponent[MemoryIdentity]):
         self, utils: TestUtils[MemoryIdentity], *, counter: str, kind: str
     ) -> Verdict:
         # The controller's own count includes errors it could not attribute to a
-        # module, which no bank's counter would show.
-        counts = _counts(await read_files(utils, f"{_EDAC}/mc*/{counter}"))
+        # module, which no module's counter would show.
+        counts = self._counts(await read_files(utils, f"{self._EDAC}/mc*/{counter}"))
         errors = None if counts is None else sum(counts.values())
         utils.measure(f"{kind}_errors", errors, limits=(0, 0))
         reading = {"controller_errors": counts}
         if errors == 0:
             return PASS(reading)
         if errors is None:
-            raise TestFailure(f"{kind} error counts could not be read", 0, "(not read)")
+            raise TestFailure(f"{kind} error counts could not be read", 0, NOT_READ)
         raise TestFailure(
             f"memory has logged {kind} errors since boot", 0, errors, evidence=reading
         )
+
+    @staticmethod
+    def _counts(files: dict[str, str]) -> dict[str, int] | None:
+        """Parse each file's text as an integer.
+
+        Returns:
+            The integers under the same paths, or ``None`` when there are no files or
+            any one of them does not hold an integer.
+        """
+        counts: dict[str, int] = {}
+        for path, text in files.items():
+            count = parse_int(text)
+            if count is None:
+                return None
+            counts[path] = count
+        return counts or None
+
+    @staticmethod
+    async def _memory_total_kib(utils: TestUtils) -> int | None:
+        """Read ``MemTotal`` from ``/proc/meminfo`` in KiB (the file's ``kB``)."""
+        result = await utils.exec("grep -m 1 '^MemTotal:' /proc/meminfo")
+        if result.exit_code != 0:
+            return None
+        return parse_int(result.stdout.strip().removeprefix("MemTotal:").removesuffix("kB"))

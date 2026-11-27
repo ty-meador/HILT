@@ -41,22 +41,13 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any, Literal, TypedDict, Unpack
 
-from nuc13 import Bom, cpus, drives, firmwares, memory, motherboards, read_bom
+from nuc13 import Bom, cpus, drives, firmwares, memory, motherboards
 from nuc13.drives.NvmeDrive import PartitionTable
-from nuc13.kernel import read_text
+from nuc13.kernel import NOT_READ, read_text
 from nuc13.memory.Memory import Memory
 from nuc13.utils import mpn_to_class
 
 from hilt import PASS, TestComponent, TestFailure, TestUtils, Verdict, evidence
-
-_SHOPFLOOR_BOM = Path(__file__).with_name("shopfloor_bom.json")
-
-# The suite fans out wide under the one hop to the unit: a claim per core, per cache,
-# per PCI function. The unit's sshd grants 10 sessions per connection (its default)
-# and refuses the rest, so the hop runs at most this many commands at once and the
-# others take turns. Two sessions are left free for whatever else rides the
-# connection.
-_MAX_SESSIONS = 8
 
 # The DMI fields the product judges; each is also the ctx key holding its expectation.
 type SystemField = Literal[
@@ -137,6 +128,15 @@ class Nuc13(TestComponent[Nuc13Identity]):
             memory modules than the board has slots.
     """
 
+    _SHOPFLOOR_BOM = Path(__file__).with_name("shopfloor_bom.json")
+
+    # The suite fans out wide under the one hop to the unit: a claim per core, per cache,
+    # per PCI function. The unit's sshd grants 10 sessions per connection (its default)
+    # and refuses the rest, so the hop runs at most this many commands at once and the
+    # others take turns. Two sessions are left free for whatever else rides the
+    # connection.
+    _MAX_SESSIONS = 8
+
     def __init__(
         self,
         *,
@@ -148,7 +148,7 @@ class Nuc13(TestComponent[Nuc13Identity]):
         super().__init__(name=name)
         self._identity = identity
 
-        bom = read_bom(_SHOPFLOOR_BOM)
+        bom = Bom.read(self._SHOPFLOOR_BOM)
         if bom.system != identity["product_sku"]:
             raise ValueError(
                 f"the bill of materials is for system {bom.system!r}; "
@@ -169,7 +169,7 @@ class Nuc13(TestComponent[Nuc13Identity]):
                 f"system {bom.system!r} is built with {len(memory_mpns)} memory modules; "
                 f"board {board_mpn!r} has {len(slots)} slots"
             )
-        banks = [
+        sodimms = [
             mpn_to_class(memory.mpns, mpn)(name=f"bank-{index}", **slot)
             for index, (mpn, slot) in enumerate(zip(memory_mpns, slots, strict=False))
         ]
@@ -177,7 +177,7 @@ class Nuc13(TestComponent[Nuc13Identity]):
             board,
             mpn_to_class(firmwares.mpns, firmware_mpn)(name="firmware"),
             mpn_to_class(cpus.mpns, cpu_mpn)(name="cpu"),
-            Memory(name="memory", banks=banks),
+            Memory(name="memory", sodimms=sodimms),
             mpn_to_class(drives.mpns, drive_mpn)(
                 name="drive", partitions=partitions, **board.nvme_slot
             ),
@@ -215,7 +215,7 @@ class Nuc13(TestComponent[Nuc13Identity]):
         port = utils.env.port("DUT_PORT")
         try:
             await utils.use_shell(
-                host=host, username=username, port=port, max_sessions=_MAX_SESSIONS
+                host=host, username=username, port=port, max_sessions=self._MAX_SESSIONS
             )
         except Exception as error:
             raise TestFailure(f"SSH connect to {username}@{host}:{port} failed: {error}") from error
@@ -253,5 +253,5 @@ class Nuc13(TestComponent[Nuc13Identity]):
         if value == expected:
             return PASS(reading)
         if value is None:
-            raise TestFailure(f"DMI {field} could not be read", expected, "(not read)")
+            raise TestFailure(f"DMI {field} could not be read", expected, NOT_READ)
         raise TestFailure(f"DMI {field} does not match", expected, value, evidence=reading)

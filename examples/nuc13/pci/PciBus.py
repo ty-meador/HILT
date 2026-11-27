@@ -22,13 +22,9 @@ from __future__ import annotations
 from collections.abc import Sequence
 from typing import TypedDict, Unpack
 
-from nuc13.kernel import list_dir, read_files, read_link_name
+from nuc13.kernel import NOT_READ, PCI_SYSFS, list_dir, read_files, read_link_name
 
 from hilt import PASS, TestComponent, TestFailure, TestUtils, Verdict, evidence
-
-_DEVICES = "/sys/bus/pci/devices"
-_NOT_READ = "(not read)"
-_NO_DRIVER = "(no driver bound)"
 
 
 class PciDeviceIdentity(TypedDict):
@@ -57,6 +53,8 @@ class PciDevice(TestComponent[PciDeviceIdentity]):
         name: Node name used by logs, artifacts, and failures.
         **identity: What the function must show.
     """
+
+    _NO_DRIVER = "(no driver bound)"
 
     def __init__(self, *, name: str, **identity: Unpack[PciDeviceIdentity]) -> None:
         super().__init__(name=name)
@@ -96,7 +94,7 @@ class PciDevice(TestComponent[PciDeviceIdentity]):
     async def _present(self, utils: TestUtils[PciDeviceIdentity]) -> Verdict:
         address = utils.ctx["address"]
         # The bus directory holds one link per enumerated function, named for it.
-        entry = await read_link_name(utils, f"{_DEVICES}/{address}")
+        entry = await read_link_name(utils, f"{PCI_SYSFS}/{address}")
         reading = {"enumerated_as": entry}
         if entry == address:
             return PASS(reading)
@@ -110,11 +108,11 @@ class PciDevice(TestComponent[PciDeviceIdentity]):
     @evidence("reported_class", "reported_vendor_device")
     async def _kind(self, utils: TestUtils[PciDeviceIdentity]) -> Verdict:
         address = utils.ctx["address"]
-        node = f"{_DEVICES}/{address}"
+        node = f"{PCI_SYSFS}/{address}"
         files = await read_files(utils, f"{node}/class", f"{node}/vendor", f"{node}/device")
         reading = {
-            "reported_class": _class_code(files.get(f"{node}/class")),
-            "reported_vendor_device": _vendor_device(
+            "reported_class": self._class_code(files.get(f"{node}/class")),
+            "reported_vendor_device": self._vendor_device(
                 files.get(f"{node}/vendor"), files.get(f"{node}/device")
             ),
         }
@@ -128,7 +126,7 @@ class PciDevice(TestComponent[PciDeviceIdentity]):
             raise TestFailure(
                 f"class and IDs of {address} could not be read",
                 expected,
-                _NOT_READ,
+                NOT_READ,
                 evidence=reading,
             )
         raise TestFailure(
@@ -145,16 +143,34 @@ class PciDevice(TestComponent[PciDeviceIdentity]):
         # No link is the kernel's way of saying nothing is bound, which is what some
         # functions expect. It can be read as that, and not as a missing function,
         # only because this claim runs after `present` passed.
-        bound = await read_link_name(utils, f"{_DEVICES}/{address}/driver")
+        bound = await read_link_name(utils, f"{PCI_SYSFS}/{address}/driver")
         reading = {"bound_driver": bound}
         if bound == expected:
             return PASS(reading)
         raise TestFailure(
             f"driver bound to {address} ({utils.ctx['label']}) is not the expected one",
-            expected or _NO_DRIVER,
-            bound or _NO_DRIVER,
+            expected or self._NO_DRIVER,
+            bound or self._NO_DRIVER,
             evidence=reading,
         )
+
+    @staticmethod
+    def _class_code(text: str | None) -> str | None:
+        """Reduce sysfs ``class`` (``0x030000``) to base class and subclass (``0300``).
+
+        The last two digits are the programming interface, which ``lspci -nn`` leaves
+        out of its brackets and the identity does not carry.
+        """
+        if text is None:
+            return None
+        return text.removeprefix("0x")[:4]
+
+    @staticmethod
+    def _vendor_device(vendor: str | None, device: str | None) -> str | None:
+        """Join sysfs ``vendor`` and ``device`` (``0x8086``, ``0xa7a0``) as ``8086:a7a0``."""
+        if vendor is None or device is None:
+            return None
+        return f"{vendor.removeprefix('0x')}:{device.removeprefix('0x')}"
 
 
 class PciBusIdentity(TypedDict):
@@ -195,10 +211,10 @@ class PciBus(TestComponent[PciBusIdentity]):
     @evidence("enumerated")
     async def _enumeration(self, utils: TestUtils[PciBusIdentity]) -> Verdict:
         expected = set(utils.ctx["addresses"])
-        listing = await list_dir(utils, _DEVICES)
+        listing = await list_dir(utils, PCI_SYSFS)
         if listing is None:
             raise TestFailure(
-                f"{_DEVICES} could not be listed", f"{len(expected)} functions", _NOT_READ
+                f"{PCI_SYSFS} could not be listed", f"{len(expected)} functions", NOT_READ
             )
         enumerated = set(listing)
         missing = sorted(expected - enumerated)
@@ -213,21 +229,3 @@ class PciBus(TestComponent[PciBusIdentity]):
             f"unexpected {unexpected or 'none'}",
             evidence=reading,
         )
-
-
-def _class_code(text: str | None) -> str | None:
-    """Reduce sysfs ``class`` (``0x030000``) to base class and subclass (``0300``).
-
-    The last two digits are the programming interface, which ``lspci -nn`` leaves
-    out of its brackets and the identity does not carry.
-    """
-    if text is None:
-        return None
-    return text.removeprefix("0x")[:4]
-
-
-def _vendor_device(vendor: str | None, device: str | None) -> str | None:
-    """Join sysfs ``vendor`` and ``device`` (``0x8086``, ``0xa7a0``) as ``8086:a7a0``."""
-    if vendor is None or device is None:
-        return None
-    return f"{vendor.removeprefix('0x')}:{device.removeprefix('0x')}"

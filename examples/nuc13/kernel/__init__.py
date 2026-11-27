@@ -11,8 +11,22 @@ Nothing here writes to the device.
 from __future__ import annotations
 
 import shlex
+from collections.abc import Sequence
 
 from hilt import TestUtils
+
+# What a claim reports in place of a reading that was not taken.
+NOT_READ = "(not read)"
+
+# Where the kernel keeps one directory per logical CPU, PCI function, USB device,
+# and network interface.
+CPU_SYSFS = "/sys/devices/system/cpu"
+PCI_SYSFS = "/sys/bus/pci/devices"
+USB_SYSFS = "/sys/bus/usb/devices"
+NET_SYSFS = "/sys/class/net"
+
+# sysfs counts a block device's `size` in 512-byte units whatever its sector size.
+_SYSFS_SECTOR_BYTES = 512
 
 
 async def read_text(utils: TestUtils, path: str) -> str | None:
@@ -49,9 +63,42 @@ async def read_files(utils: TestUtils, *patterns: str) -> dict[str, str]:
     return {name: text.strip() for name, text in files.items()}
 
 
+async def read_per_cpu(
+    utils: TestUtils, cpus: Sequence[int], attribute: str
+) -> dict[str, str | None]:
+    """Read one per-CPU sysfs attribute for each of ``cpus`` in a single command.
+
+    Keyed by CPU number as text, so the mapping can travel as evidence. A CPU whose
+    attribute could not be read maps to ``None``.
+    """
+    paths = {str(cpu): f"{CPU_SYSFS}/cpu{cpu}/{attribute}" for cpu in cpus}
+    files = await read_files(utils, *paths.values())
+    return {cpu: files.get(path) for cpu, path in paths.items()}
+
+
 async def read_int(utils: TestUtils, path: str) -> int | None:
     """Read one file holding a decimal integer; ``None`` when it does not."""
     return parse_int(await read_text(utils, path))
+
+
+async def read_block_size_bytes(utils: TestUtils, device: str) -> int | None:
+    """Read a block device's size; ``None`` when the kernel does not report one."""
+    sectors = await read_int(utils, f"/sys/class/block/{device}/size")
+    if sectors is None:
+        return None
+    return sectors * _SYSFS_SECTOR_BYTES
+
+
+async def read_lsblk_column(utils: TestUtils, device: str, column: str) -> str | None:
+    """Read one ``lsblk`` column for one device; ``None`` when lsblk cannot answer.
+
+    An empty string is a reading: the device is there and has no such property.
+    """
+    path = shlex.quote(f"/dev/{device}")
+    result = await utils.exec(f"lsblk --nodeps --noheadings --output {column} {path}")
+    if result.exit_code != 0:
+        return None
+    return result.stdout.strip()
 
 
 async def read_link_name(utils: TestUtils, path: str) -> str | None:

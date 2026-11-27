@@ -27,14 +27,11 @@ from __future__ import annotations
 from collections.abc import Sequence
 from typing import Literal, TypedDict, Unpack
 
-from nuc13.kernel import read_int, read_link_name, read_text
+from nuc13.kernel import NET_SYSFS, NOT_READ, read_int, read_link_name, read_text
 
 from hilt import PASS, TestComponent, TestFailure, TestUtils, Verdict, evidence
 
 type LinkKind = Literal["ethernet", "wireless"]
-
-_INTERFACES = "/sys/class/net"
-_NOT_READ = "(not read)"
 
 
 class LinkIdentity(TypedDict):
@@ -89,13 +86,13 @@ class NetworkLink(TestComponent[LinkIdentity]):
     @evidence("carrier")
     async def _carrier(self, utils: TestUtils[LinkIdentity]) -> Verdict:
         interface = utils.ctx["interface"]
-        carrier = await read_int(utils, f"{_INTERFACES}/{interface}/carrier")
+        carrier = await read_int(utils, f"{NET_SYSFS}/{interface}/carrier")
         reading = {"carrier": carrier}
         if carrier == 1:
             return PASS(reading)
         if carrier is None:
             # The kernel refuses this read while the interface is administratively down.
-            raise TestFailure(f"carrier of {interface} could not be read", "1 (up)", _NOT_READ)
+            raise TestFailure(f"carrier of {interface} could not be read", "1 (up)", NOT_READ)
         raise TestFailure(
             f"{interface} has no carrier", "1 (up)", f"{carrier} (down)", evidence=reading
         )
@@ -108,7 +105,7 @@ class NetworkLink(TestComponent[LinkIdentity]):
         # the claim is that it is this one.
         speed = utils.measure(
             "negotiated_speed_mbps",
-            await read_int(utils, f"{_INTERFACES}/{interface}/speed"),
+            await read_int(utils, f"{NET_SYSFS}/{interface}/speed"),
             unit="Mbit/s",
         ).value
         reading = {"negotiated_speed_mbps": speed}
@@ -116,7 +113,7 @@ class NetworkLink(TestComponent[LinkIdentity]):
             return PASS(reading)
         if speed is None:
             raise TestFailure(
-                f"speed of {interface} could not be read", f"{expected} Mbit/s", _NOT_READ
+                f"speed of {interface} could not be read", f"{expected} Mbit/s", NOT_READ
             )
         raise TestFailure(
             f"{interface} negotiated a different speed",
@@ -129,12 +126,12 @@ class NetworkLink(TestComponent[LinkIdentity]):
     async def _duplex(self, utils: TestUtils[LinkIdentity]) -> Verdict:
         interface = utils.ctx["interface"]
         expected = utils.ctx["duplex"]
-        duplex = await read_text(utils, f"{_INTERFACES}/{interface}/duplex")
+        duplex = await read_text(utils, f"{NET_SYSFS}/{interface}/duplex")
         reading = {"negotiated_duplex": duplex}
         if duplex == expected:
             return PASS(reading)
         if duplex is None:
-            raise TestFailure(f"duplex of {interface} could not be read", expected, _NOT_READ)
+            raise TestFailure(f"duplex of {interface} could not be read", expected, NOT_READ)
         raise TestFailure(
             f"{interface} negotiated a different duplex", expected, duplex, evidence=reading
         )
@@ -203,7 +200,7 @@ class NetworkInterface(TestComponent[InterfaceIdentity]):
     @evidence("enumerated_as")
     async def _present(self, utils: TestUtils[InterfaceIdentity]) -> Verdict:
         interface = utils.ctx["interface"]
-        entry = await read_link_name(utils, f"{_INTERFACES}/{interface}")
+        entry = await read_link_name(utils, f"{NET_SYSFS}/{interface}")
         reading = {"enumerated_as": entry}
         if entry == interface:
             return PASS(reading)
@@ -218,7 +215,7 @@ class NetworkInterface(TestComponent[InterfaceIdentity]):
     async def _pci_address(self, utils: TestUtils[InterfaceIdentity]) -> Verdict:
         interface = utils.ctx["interface"]
         expected = utils.ctx["pci_address"]
-        device = await read_link_name(utils, f"{_INTERFACES}/{interface}/device")
+        device = await read_link_name(utils, f"{NET_SYSFS}/{interface}/device")
         reading = {"backing_device": device}
         if device == expected:
             return PASS(reading)
@@ -233,7 +230,7 @@ class NetworkInterface(TestComponent[InterfaceIdentity]):
     async def _driver(self, utils: TestUtils[InterfaceIdentity]) -> Verdict:
         interface = utils.ctx["interface"]
         expected = utils.ctx["driver"]
-        bound = await read_link_name(utils, f"{_INTERFACES}/{interface}/device/driver")
+        bound = await read_link_name(utils, f"{NET_SYSFS}/{interface}/device/driver")
         reading = {"bound_driver": bound}
         if bound == expected:
             return PASS(reading)
@@ -251,7 +248,7 @@ class NetworkInterface(TestComponent[InterfaceIdentity]):
         # A wireless interface links to its 802.11 radio; a wired one has no such
         # link. Its absence can be read as "wired" only because this claim runs
         # after `present` passed.
-        radio = await read_link_name(utils, f"{_INTERFACES}/{interface}/phy80211")
+        radio = await read_link_name(utils, f"{NET_SYSFS}/{interface}/phy80211")
         observed: LinkKind = "ethernet" if radio is None else "wireless"
         reading = {"wireless_radio": radio, "observed_kind": observed}
         if observed == expected:
