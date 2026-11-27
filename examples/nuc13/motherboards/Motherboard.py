@@ -113,10 +113,18 @@ class Motherboard(TestComponent[BoardIdentity]):
         self._sodimm_slots = tuple(sodimm_slots)
         self._nvme_slot = nvme_slot
 
-    @property
-    def sodimm_slots(self) -> tuple[SodimmSlot, ...]:
-        """Where memory modules go, in the order they are fitted."""
-        return self._sodimm_slots
+    def sodimm_slots_for(self, module_count: int) -> tuple[SodimmSlot, ...]:
+        """Return the slots that many memory modules go in, in the order they are fitted.
+
+        Raises:
+            ValueError: The board has fewer slots than that.
+        """
+        if module_count > len(self._sodimm_slots):
+            raise ValueError(
+                f"{module_count} memory modules do not fit board {self._identity['board_name']!r}: "
+                f"it has {len(self._sodimm_slots)} slots"
+            )
+        return self._sodimm_slots[:module_count]
 
     @property
     def nvme_slot(self) -> NvmeSlot:

@@ -7,12 +7,27 @@ to violate, which is exactly why a rule exists for it. Logic in ``build_suite`` 
 which claims a run will make until the run happens; the Floor Technician reading the
 summary tree, and the reviewer reading the source, both deserve to see the same list.
 
+A value the outline uses more than once may be given a name first. A suite built
+from a bill of materials reads it once and builds the board whose slots several parts
+are fitted to, and one ``return`` cannot bind either:
+
+    bom = self._read_bom()
+    board = Board(name="board", part=bom.board)
+    return self.parallel([board, Memory(name="memory", slots=board.slots)])
+
+Naming a value is not deciding anything, so a plain assignment to a local name is
+allowed before the ``return``, and the expression it names is held to the same limits
+as the returned one.
+
 Flagged:
 
-- any statement other than the docstring and a single ``return``;
-- inside the returned expression: conditionals (``x if c else y``, ``and``/``or``,
-  comparisons), comprehensions that carry an ``if`` filter, lambdas, ``await``,
-  ``yield``, and walrus assignments.
+- any statement other than the docstring, plain assignments to local names, and a
+  single ``return`` after them. An assignment to anything else (``self.x``, a
+  subscript), an augmented assignment, and an assignment after the ``return`` are
+  flagged like any other statement;
+- inside the returned expression or an assigned one: conditionals (``x if c else y``,
+  ``and``/``or``, comparisons), comprehensions that carry an ``if`` filter, lambdas,
+  ``await``, ``yield``, and walrus assignments.
 
 Not flagged: calls (composition factories, child-suite constructors, name helpers),
 f-strings, literals, attribute and subscript reads, unary/binary operators on them,
@@ -57,10 +72,10 @@ _COMPREHENSIONS = (
 
 
 class PureBuildSuiteRule(Rule):
-    """Flag statements and control-flow expressions inside ``build_suite``."""
+    """Flag control flow inside ``build_suite``, as statements or as expressions."""
 
     code = "hilt/pure-build-suite"
-    summary = "build_suite returns one composition expression and holds no logic"
+    summary = "build_suite names values, returns one composition expression, and holds no logic"
 
     def check(self, module: SuiteModule) -> Iterable[Violation]:
         """Report statements and control flow inside ``build_suite``.
@@ -80,14 +95,21 @@ class PureBuildSuiteRule(Rule):
         if statements and _is_docstring(statements[0]):
             statements = statements[1:]
         returns = [s for s in statements if isinstance(s, ast.Return)]
-        for statement in statements:
+        first_return = statements.index(returns[0]) if returns else len(statements)
+        for position, statement in enumerate(statements):
             if isinstance(statement, ast.Return):
+                continue
+            named = _local_assignment_value(statement) if position < first_return else None
+            if named is not None:
+                yield from self._check_expression(module, named)
                 continue
             yield module.violation(
                 statement,
                 self.code,
                 f"logic in build_suite: {type(statement).__name__} statement; "
-                "build_suite is a table of contents — declare the composition in one return",
+                "build_suite is a table of contents — name a value with a plain local "
+                "assignment if the outline needs one, and declare the composition in "
+                "one return",
             )
         for statement in returns[1:]:
             yield module.violation(
@@ -114,6 +136,28 @@ class PureBuildSuiteRule(Rule):
                     f"logic in build_suite: {type(node).__name__} decides the composition "
                     "at build time; the suite must declare its claims, not compute them",
                 )
+
+
+def _local_assignment_value(statement: ast.stmt) -> ast.expr | None:
+    """Return the expression a plain local assignment names; ``None`` for anything else.
+
+    ``x = ...``, ``x: T = ...``, and ``a, b = ...`` name locals. An assignment to an
+    attribute or a subscript changes something that already exists, and a bare
+    annotation names nothing.
+    """
+    if isinstance(statement, ast.Assign) and all(
+        _is_local_target(target) for target in statement.targets
+    ):
+        return statement.value
+    if isinstance(statement, ast.AnnAssign) and isinstance(statement.target, ast.Name):
+        return statement.value
+    return None
+
+
+def _is_local_target(target: ast.expr) -> bool:
+    if isinstance(target, ast.Tuple | ast.List):
+        return all(_is_local_target(element) for element in target.elts)
+    return isinstance(target, ast.Name)
 
 
 def _is_docstring(statement: ast.stmt) -> bool:

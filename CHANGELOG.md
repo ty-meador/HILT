@@ -49,6 +49,13 @@ leave a fresh Unreleased section above it. Use the
 
 ### Changed
 
+- `hilt/pure-build-suite` allows plain assignments to local names before the `return`.
+  One `return` cannot name a value, so a suite whose outline uses the same value in
+  several places (a bill of materials read once, a board whose slots several parts
+  take) had to build its children in `__init__` and hide the outline from
+  `build_suite`. Control flow is still flagged: an `if`, a loop, a `raise`, an
+  assignment to `self` or into a subscript, an augmented assignment, and any logic
+  inside an assigned expression. `docs/idioms.md` shows the idiom.
 - `hilt inspect` draws a component and its same-named root as one row (issue #165).
   The record holds two nodes per component, the component and the composition its
   `build_suite()` returned, and the tree printed nearly every name twice. A `suite`

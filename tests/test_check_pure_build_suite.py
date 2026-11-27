@@ -21,17 +21,63 @@ def _lines(source: str) -> list[int]:
 
 
 class TestPureBuildSuiteFires:
-    def test_assignment_before_the_return(self) -> None:
+    def test_assignment_to_self_before_the_return(self) -> None:
         source = """
             class Suite(TestComponent):
                 def build_suite(self) -> TestComponent:
-                    children = [self.test("a", self._a)]
-                    return self.sequence(self.name, children)
+                    self._children = [self.test("a", self._a)]
+                    return self.sequence(self.name, self._children)
         """
         violations = _check(source)
 
         assert [(v.line, v.column, v.code) for v in violations] == [(4, 9, CODE)]
         assert "Assign statement" in violations[0].message
+
+    def test_assignment_into_a_subscript_or_an_unpacked_attribute(self) -> None:
+        source = """
+            class Suite(TestComponent):
+                def build_suite(self) -> TestComponent:
+                    self._children[0] = self.test("a", self._a)
+                    first, self._second = self._pair
+                    return self.sequence(self.name, self._children)
+        """
+        assert _lines(source) == [4, 5]
+
+    def test_augmented_assignment_and_bare_annotation(self) -> None:
+        source = """
+            class Suite(TestComponent):
+                def build_suite(self) -> TestComponent:
+                    children: list[TestComponent]
+                    count = 1
+                    count += 1
+                    return self.test("a", self._a)
+        """
+        violations = _check(source)
+
+        assert [v.line for v in violations] == [4, 6]
+        assert "AnnAssign statement" in violations[0].message
+        assert "AugAssign statement" in violations[1].message
+
+    def test_logic_inside_an_assigned_expression(self) -> None:
+        source = """
+            class Suite(TestComponent):
+                def build_suite(self) -> TestComponent:
+                    probe = self._fast if self._quick else self._slow
+                    children = [self.test(n, probe) for n in self._names if n]
+                    return self.sequence(self.name, children)
+        """
+        kinds = [v.message.split(":")[1].split()[0] for v in _check(source)]
+
+        assert kinds == ["IfExp", "ListComp"]
+
+    def test_assignment_after_the_return(self) -> None:
+        source = """
+            class Suite(TestComponent):
+                def build_suite(self) -> TestComponent:
+                    return self.test("a", self._a)
+                    leftover = self.test("b", self._b)
+        """
+        assert _lines(source) == [5]
 
     def test_branching_between_compositions(self) -> None:
         source = """
@@ -147,13 +193,32 @@ class TestPureBuildSuiteFires:
             class Base(TestComponent): ...
             class Suite(Base):
                 def build_suite(self) -> TestComponent:
-                    x = 1
+                    print("building")
                     return self.test("a", self._a)
         """
         assert _lines(source) == [5]
 
 
 class TestPureBuildSuiteStaysQuiet:
+    def test_values_named_before_the_return(self) -> None:
+        source = """
+            class Suite(TestComponent):
+                def build_suite(self) -> TestComponent:
+                    \"\"\"Declare the composition.\"\"\"
+                    bom = self._read_bom()
+                    board: Board = Board(name="board", part=bom.board)
+                    (drive_part,) = bom.drives
+                    first, second = bom.modules
+                    return self.parallel(
+                        [
+                            board,
+                            Drive(name="drive", part=drive_part, **board.drive_slot),
+                            Memory(name="memory", parts=[first, second], slots=board.slots),
+                        ]
+                    )
+        """
+        assert _lines(source) == []
+
     def test_nested_factories_fstrings_and_child_constructors(self) -> None:
         source = """
             class Suite(TestComponent):
@@ -209,5 +274,6 @@ class TestPureBuildSuiteAtTheCommandLine:
 
         assert status == EXIT_VIOLATIONS
         lines = out.getvalue().splitlines()
-        assert lines[0].startswith(f"{fixtures / 'seeded_suite.py'}:26:9: {CODE} ")
+        # The seed names a value, which is allowed; the lambda it names is the logic.
+        assert lines[0].startswith(f"{fixtures / 'seeded_suite.py'}:26:44: {CODE} ")
         assert lines[-1] == "Found 1 violation."

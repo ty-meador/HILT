@@ -357,6 +357,32 @@ leaves; it does not choose among them. A comprehension with an `if` filter decid
 build time which claims exist, and `hilt/pure-build-suite` flags it. The population
 is identity, like a hook: it comes in through `__init__`, never out of `configure()`.
 
+### Name a Value the Outline Uses Twice
+
+`build_suite` is one `return`, and one `return` cannot give anything a name. When the
+outline needs the same value in more than one place, name it first with a plain local
+assignment. A product built from a bill of materials reads it once, and builds the
+board once because several parts are fitted to its slots:
+
+```python
+def build_suite(self) -> TestComponent:
+    bom = self._read_bom()
+    board = Board(name="board", part=bom.board)
+    return self.parallel(
+        [
+            board,
+            Memory(name="memory", parts=bom.memory, slots=board.memory_slots),
+            Drive(name="drive", part=bom.drive, **board.drive_slot),
+        ]
+    )
+```
+
+Naming is all an assignment may do here. `hilt/pure-build-suite` still flags an `if`, a
+loop, a `raise`, and an assignment to `self`, and it holds an assigned expression to
+the same limits as the returned one. A check that can refuse the input belongs in the
+method the assignment calls (`_read_bom` above), which raises before any hardware is
+touched.
+
 ### `self.test()` or `configure()`?
 
 A long operation such as a firmware flash or a provisioning step is a `self.test(...)`
