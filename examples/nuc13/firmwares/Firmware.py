@@ -1,10 +1,11 @@
 """The system firmware: which BIOS is flashed, and how it started the machine.
 
     firmware
+    ├─ bom-check           the unit's bill of materials lists this release
     ├─ vendor
     ├─ version
     ├─ release-date
-    └─ uefi-boot       only for firmware that must boot the machine through UEFI
+    └─ uefi-boot           only for firmware that must boot the machine through UEFI
 
 The identity comes from the DMI fields the kernel publishes to every user. The boot
 path is read from the kernel too: it exposes ``/sys/firmware/efi`` only when the
@@ -12,7 +13,7 @@ firmware handed over through UEFI.
 
 A firmware release is a part like any other: the shopfloor names it on the bill of
 materials, and one class, in a module of its own beside this one, says what that
-release reports. The package's ``mpns`` lists them.
+release reports.
 """
 
 from __future__ import annotations
@@ -27,14 +28,18 @@ type BiosField = Literal["bios_vendor", "bios_version", "bios_date"]
 
 
 class FirmwareIdentity(TypedDict):
-    """What the firmware must report, keyed by the DMI field that reports it.
+    """What the firmware is, and what it must report, keyed by the DMI field that reports it.
 
     Attributes:
+        part_number: The release as the bill of materials names it.
+        bom_mpns: The part numbers the unit's bill of materials lists for this component.
         bios_vendor: Who released the BIOS.
         bios_version: The release.
         bios_date: Its release date, ``MM/DD/YYYY``.
     """
 
+    part_number: str
+    bom_mpns: list[str]
     bios_vendor: str
     bios_version: str
     bios_date: str
@@ -47,7 +52,7 @@ class Firmware(TestComponent[FirmwareIdentity]):
         name: Node name used by logs, artifacts, and failures.
         uefi: Whether the machine must have booted through UEFI. Firmware that need
             not has no boot-path claim, instead of one that could not fail.
-        **identity: What the firmware must report.
+        **identity: What the firmware is, and what it must report.
     """
 
     def __init__(self, *, name: str, uefi: bool, **identity: Unpack[FirmwareIdentity]) -> None:
@@ -64,11 +69,21 @@ class Firmware(TestComponent[FirmwareIdentity]):
         return self.parallel(
             self.name,
             [
+                self.test("bom-check", self._bom_check),
                 self.test("vendor", self._dmi_field, field="bios_vendor"),
                 self.test("version", self._dmi_field, field="bios_version"),
                 self.test("release-date", self._dmi_field, field="bios_date"),
                 *self._boot_path,
             ],
+        )
+
+    async def _bom_check(self, utils: TestUtils[FirmwareIdentity]) -> Verdict:
+        expected = [utils.ctx["part_number"]]
+        listed = utils.ctx["bom_mpns"]
+        if listed == expected:
+            return PASS
+        raise TestFailure(
+            "the bill of materials does not list this firmware release", expected, listed
         )
 
     @evidence("dmi_value")

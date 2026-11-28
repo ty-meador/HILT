@@ -1,13 +1,14 @@
 """The NVMe drive: one controller, its namespace, and how the namespace is partitioned.
 
 The drive answers for its controller and namespace. How the disk is laid out is the
-system part number's to say, not the drive's, so it is composed in as a
-``PartitionTable``, which answers for the table and hands each partition to a
-``Volume``:
+system part number's to say, not the drive's, so the layout is handed in. The drive
+builds a ``PartitionTable`` from it on its own namespace, and the table builds a
+``Volume`` for each partition:
 
     drive
     ├─ state               the controller is present and live
     └─ details
+       ├─ bom-check           the unit's bill of materials lists this drive
        ├─ model, firmware, pci-address
        ├─ capacity, sector-size
        └─ partitions
@@ -22,8 +23,8 @@ system part number's to say, not the drive's, so it is composed in as a
 
 A drive part number is one class, in a module of its own beside this one; it says
 what that drive is. Where the drive is fitted is not the drive's to know: its
-controller, namespace, and PCI address are handed to it, and it is the board that
-knows them. The package's ``mpns`` lists the part numbers.
+controller, namespace, and PCI address are handed to it by the product, which builds
+it in the board's slot.
 
 Every reading is one an ordinary user can take: sysfs, the kernel's mount table, and
 ``lsblk``, which answers from the udev database. SMART health and the drive's serial
@@ -36,8 +37,8 @@ from __future__ import annotations
 
 import re
 import shlex
-from collections.abc import Sequence
-from typing import TypedDict, Unpack
+from collections.abc import Mapping
+from typing import Protocol, TypedDict, Unpack
 
 from nuc13.kernel import (
     NOT_READ,
@@ -53,11 +54,10 @@ from hilt import PASS, TestComponent, TestFailure, TestUtils, Verdict, evidence
 # ------------------------------------------------------------------------ volume
 
 
-class VolumeIdentity(TypedDict):
-    """What one partition must be.
+class VolumeLayout(TypedDict):
+    """What one partition must hold, whichever disk it is laid out on.
 
     Attributes:
-        device: Kernel name, such as ``nvme0n1p1``.
         filesystem: Filesystem type as ``lsblk`` names it (``vfat``, ``ext4``, ``swap``).
         mountpoint: Where it must be mounted, or ``None`` when it is not mounted
             directly.
@@ -67,10 +67,19 @@ class VolumeIdentity(TypedDict):
             for exactly that rounding.
     """
 
-    device: str
     filesystem: str
     mountpoint: str | None
     capacity_mib: int
+
+
+class VolumeIdentity(VolumeLayout):
+    """What one partition must be: its layout, on the device the kernel must show it as.
+
+    Attributes:
+        device: Kernel name, such as ``nvme0n1p1``.
+    """
+
+    device: str
 
 
 class Volume(TestComponent[VolumeIdentity]):
@@ -283,20 +292,25 @@ class PartitionTableIdentity(TypedDict):
 class PartitionTable(TestComponent[PartitionTableIdentity]):
     """Judge how a disk is partitioned, then every volume on it.
 
-    The partition count is read off the volumes it is composed with.
+    The partition count is read off the layout it is handed.
 
     Args:
         name: Node name used by logs, artifacts, and failures.
         namespace: Kernel block device of the disk, such as ``nvme0n1``.
         partition_table: Partition table type (``gpt``).
-        volumes: Every partition, in table order.
+        volumes: Every partition's layout by node name, in table order.
     """
 
     def __init__(
-        self, *, name: str, namespace: str, partition_table: str, volumes: Sequence[Volume]
+        self,
+        *,
+        name: str,
+        namespace: str,
+        partition_table: str,
+        volumes: Mapping[str, VolumeLayout],
     ) -> None:
         super().__init__(name=name)
-        self._volumes = tuple(volumes)
+        self._volumes = dict(volumes)
         self._identity: PartitionTableIdentity = {
             "namespace": namespace,
             "partition_table": partition_table,
@@ -308,13 +322,20 @@ class PartitionTable(TestComponent[PartitionTableIdentity]):
         return self._identity
 
     def build_suite(self) -> TestComponent:
-        """Independent claims: a wrong table type never hides a missing partition."""
+        """Independent claims: a wrong table type never hides a missing partition.
+
+        The kernel names an NVMe namespace's partitions by their number in the table,
+        after a ``p``, so each volume's device follows from where its layout is listed.
+        """
         return self.parallel(
             self.name,
             [
                 self.test("partition-table", self._partition_table),
                 self.test("partition-count", self._partition_count),
-                *self._volumes,
+                *[
+                    Volume(name=name, device=f"{self._identity['namespace']}p{number}", **layout)
+                    for number, (name, layout) in enumerate(self._volumes.items(), start=1)
+                ],
             ],
         )
 
@@ -374,6 +395,8 @@ class DriveIdentity(TypedDict):
     """What the drive must be, and where the kernel must show it.
 
     Attributes:
+        part_number: The drive as the bill of materials names it.
+        bom_mpns: The part numbers the unit's bill of materials lists for this component.
         controller: Kernel name of the drive's controller, such as ``nvme0``.
         namespace: Kernel block device of its namespace, such as ``nvme0n1``.
         pci_address: The PCI function the controller sits on.
@@ -383,6 +406,8 @@ class DriveIdentity(TypedDict):
         logical_sector_bytes: Logical sector size.
     """
 
+    part_number: str
+    bom_mpns: list[str]
     controller: str
     namespace: str
     pci_address: str
@@ -397,7 +422,8 @@ class NvmeDrive(TestComponent[DriveIdentity]):
 
     Args:
         name: Node name used by logs, artifacts, and failures.
-        partitions: How the drive's namespace must be laid out.
+        partition_table: Partition table type the namespace must carry (``gpt``).
+        volumes: Every partition's layout by node name, in table order.
         **identity: Where the kernel must show the drive, and the drive that must be
             there.
     """
@@ -408,11 +434,17 @@ class NvmeDrive(TestComponent[DriveIdentity]):
     _LIVE = "live"
 
     def __init__(
-        self, *, name: str, partitions: PartitionTable, **identity: Unpack[DriveIdentity]
+        self,
+        *,
+        name: str,
+        partition_table: str,
+        volumes: Mapping[str, VolumeLayout],
+        **identity: Unpack[DriveIdentity],
     ) -> None:
         super().__init__(name=name)
         self._identity = identity
-        self._partitions = partitions
+        self._partition_table = partition_table
+        self._volumes = dict(volumes)
 
     async def configure(self, utils: TestUtils[DriveIdentity]) -> DriveIdentity:
         """Provide the identity the drive's own claims judge against."""
@@ -430,12 +462,18 @@ class NvmeDrive(TestComponent[DriveIdentity]):
                 self.parallel(
                     "details",
                     [
+                        self.test("bom-check", self._bom_check),
                         self.test("model", self._model),
                         self.test("firmware", self._firmware),
                         self.test("pci-address", self._pci_address),
                         self.test("capacity", self._capacity),
                         self.test("sector-size", self._sector_size),
-                        self._partitions,
+                        PartitionTable(
+                            name="partitions",
+                            namespace=self._identity["namespace"],
+                            partition_table=self._partition_table,
+                            volumes=self._volumes,
+                        ),
                     ],
                 ),
             ]
@@ -453,6 +491,13 @@ class NvmeDrive(TestComponent[DriveIdentity]):
         raise TestFailure(
             f"NVMe controller {controller} is not {self._LIVE}", self._LIVE, state, evidence=reading
         )
+
+    async def _bom_check(self, utils: TestUtils[DriveIdentity]) -> Verdict:
+        expected = [utils.ctx["part_number"]]
+        listed = utils.ctx["bom_mpns"]
+        if listed == expected:
+            return PASS
+        raise TestFailure("the bill of materials does not list this drive", expected, listed)
 
     @evidence("model_reported")
     async def _model(self, utils: TestUtils[DriveIdentity]) -> Verdict:
@@ -552,3 +597,39 @@ class NvmeDrive(TestComponent[DriveIdentity]):
             f"{block_bytes} B",
             evidence=reading,
         )
+
+
+# ------------------------------------------------------------- drive part number
+
+
+class DrivePartNumber(Protocol):
+    """A drive part number's class: what the product hands it to build the drive.
+
+    The class says what the drive is. Everything else comes from whoever owns it: the
+    bill of materials its line, the board the slot, the system part number the layout.
+    """
+
+    def __call__(
+        self,
+        *,
+        name: str,
+        bom_mpns: list[str],
+        controller: str,
+        namespace: str,
+        pci_address: str,
+        partition_table: str,
+        volumes: Mapping[str, VolumeLayout],
+    ) -> NvmeDrive:
+        """Build the drive.
+
+        Args:
+            name: Node name used by logs, artifacts, and failures.
+            bom_mpns: The part numbers the unit's bill of materials lists for this
+                component.
+            controller: Kernel name of the controller the drive is fitted as.
+            namespace: Kernel block device of its namespace.
+            pci_address: The PCI function the controller sits on.
+            partition_table: Partition table type the namespace must carry.
+            volumes: Every partition's layout by node name, in table order.
+        """
+        ...

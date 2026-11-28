@@ -11,9 +11,13 @@ class CoreI51340P(Cpu):
     lshw prints each cache as a total over the core class it serves. The figures here
     are one cache each: that total divided over 4 performance cores, or over 8
     efficient cores in clusters of 4.
+
+    Args:
+        name: Node name used by logs, artifacts, and failures.
+        bom_mpns: The part numbers the unit's bill of materials lists for this component.
     """
 
-    def __init__(self, *, name: str) -> None:
+    def __init__(self, *, name: str, bom_mpns: list[str]) -> None:
         # The one 12MiB L3 of the package, which every core uses.
         l3: CacheIdentity = {
             "level": 3,
@@ -23,6 +27,8 @@ class CoreI51340P(Cpu):
         }
         super().__init__(
             name=name,
+            bom_mpns=bom_mpns,
+            part_number="i5-1340P",
             model="13th Gen Intel(R) Core(TM) i5-1340P",
             vendor_id="GenuineIntel",
             signature="6.186.2",

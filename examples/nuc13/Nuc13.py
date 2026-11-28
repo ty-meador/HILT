@@ -1,14 +1,16 @@
-"""The nuc13 product: one unit at the station, judged against its bill of materials.
+"""The nuc13 product: one unit at the station, judged part by part.
 
 It reads the way the line works, top down:
 
-- The shopfloor says what the unit was built from: the part number of every part.
-  ``shopfloor_bom.json`` stands in for that answer.
+- A system part number is a subclass of ``Nuc13``, in a module of its own beside
+  this one, and that module is the suite to run. It says what the part number
+  reports about itself and names the part number of every part it is built from. It
+  builds none of them. The ``nuc13`` package lists the system part numbers in its
+  ``mpns``, where a harness looks a unit's system line up.
 - A part number the suite knows is a class, in a module of its own inside the
-  package of the component it is a part number of. Each package lists its part
-  numbers in ``mpns``, and that is where the product looks a line up.
-- ``Nuc13`` is the product. It reaches the unit, turns each line of the bill of
-  materials into its part, and judges them all:
+  package of the component it is a part number of.
+- ``Nuc13`` is the product. It reaches the unit, builds every part where it lists it,
+  and judges the unit and each of them:
 
       nuc13
       ├─ identity      the system part number the unit reports
@@ -18,11 +20,15 @@ It reads the way the line works, top down:
       ├─ memory        → one node per module
       └─ drive         → partitions, one node per volume
 
-- A system part number is a subclass of ``Nuc13``, in a module of its own beside
-  this one, and that module is the suite to run. It says what the part number
-  reports about itself, how many of each component it is built from, and how its
-  drive leaves the line partitioned. The ``nuc13`` package lists the system part
-  numbers in its own ``mpns``, where a harness looks a unit's system line up.
+- The shopfloor says what the unit was really built from: the part number of every
+  part. ``shopfloor_bom.json`` stands in for that answer. It does not choose the
+  parts; the system part number does. The product reads it once and hands each part
+  its own line as it builds the part, and each holds that line to what it is in a
+  ``bom-check`` claim of its own.
+- A value goes to a part from whoever owns it, when the part is built: its line from
+  the bill of materials, its slot from the board's class, the drive's layout from the
+  system part number. A part number that already knows all of something builds it
+  itself, as a board does its PCI functions.
 
 Nothing below the root knows the unit is remote, and nothing in the tree names one
 unit. Which unit is the station's to say, never the suite's: the target comes from
@@ -39,15 +45,17 @@ The suite only reads: it runs as an ordinary user and changes nothing on the uni
 
 from __future__ import annotations
 
-from pathlib import Path
+from collections.abc import Mapping, Sequence
 from typing import Literal, TypedDict, Unpack
 
-from nuc13 import cpus, drives, firmwares, memory, motherboards
 from nuc13.Bom import Bom
-from nuc13.drives.NvmeDrive import PartitionTable
+from nuc13.cpus.Cpu import Cpu
+from nuc13.drives.NvmeDrive import DrivePartNumber, VolumeLayout
+from nuc13.firmwares.Firmware import Firmware
 from nuc13.kernel import NOT_READ, read_text
-from nuc13.memory.Memory import Memory
-from nuc13.utils import mpn_to_class
+from nuc13.memory.Memory import Memory, SodimmPartNumber
+from nuc13.motherboards.Motherboard import MotherboardPartNumber
+from nuc13.PartNumber import PartNumber
 
 from hilt import PASS, TestComponent, TestFailure, TestUtils, Verdict, evidence
 
@@ -85,49 +93,28 @@ class Nuc13Identity(TypedDict):
     chassis_type: str
 
 
-class PartCounts(TypedDict):
-    """How many of each component a system part number is built from.
-
-    Keyed by component type, as the bill of materials names them. This is what a
-    unit's bill of materials must list. Whether the unit itself has that many is not
-    judged from here: that is each component's own claim, such as memory's
-    ``populated-banks``.
-
-    The product has one board, and the board one firmware, one processor socket, and
-    one M.2 slot, so those counts can only be 1. Memory is the count that varies
-    between part numbers.
-
-    Attributes:
-        motherboard: Boards.
-        firmware: BIOS releases flashed.
-        cpu: Processors.
-        memory: Memory modules.
-        drive: Drives.
-    """
-
-    motherboard: Literal[1]
-    firmware: Literal[1]
-    cpu: Literal[1]
-    memory: int
-    drive: Literal[1]
-
-
 class Nuc13(TestComponent[Nuc13Identity]):
     """The product: reach the unit, then judge what it says it is and every part in it.
 
-    The parts come from the unit's bill of materials, which ``build_suite`` reads.
-    What the unit must report about itself, how many of each component it is built
-    from, and how its drive is partitioned come from the system part number, which is
-    a subclass.
+    What the unit must report about itself and the part numbers it is built from come
+    from the system part number, which is a subclass. A subclass whose parts do not
+    fit this tree overrides ``build_suite``.
 
     Args:
         name: Root node name used by logs, artifacts, and failures.
-        part_counts: How many of each component the part number is built from.
-        partitions: How the unit's drive leaves the line partitioned.
+        motherboard: The part number of the board it is built on.
+        firmware: The part number of the BIOS release flashed on it.
+        cpu: The part number of the processor.
+        sodimms: The part number of the module in each of the board's memory slots,
+            in slot order.
+        drive: The part number of the drive.
+        partition_table: Partition table type the drive leaves the line with.
+        volumes: Every partition's layout by node name, in table order.
         **identity: What the unit must report about itself.
-    """
 
-    _SHOPFLOOR_BOM = Path(__file__).with_name("shopfloor_bom.json")
+    Raises:
+        ValueError: The unit's bill of materials cannot be read, or is not one.
+    """
 
     # The suite fans out wide under the one hop to the unit: a claim per core, per cache,
     # per PCI function. The unit's sshd grants 10 sessions per connection (its default)
@@ -140,14 +127,25 @@ class Nuc13(TestComponent[Nuc13Identity]):
         self,
         *,
         name: str,
-        part_counts: PartCounts,
-        partitions: PartitionTable,
+        motherboard: MotherboardPartNumber,
+        firmware: PartNumber[Firmware],
+        cpu: PartNumber[Cpu],
+        sodimms: Sequence[SodimmPartNumber],
+        drive: DrivePartNumber,
+        partition_table: str,
+        volumes: Mapping[str, VolumeLayout],
         **identity: Unpack[Nuc13Identity],
     ) -> None:
         super().__init__(name=name)
         self._identity = identity
-        self._part_counts = part_counts
-        self._partitions = partitions
+        self._bom = Bom.read()
+        self._motherboard = motherboard
+        self._firmware = firmware
+        self._cpu = cpu
+        self._sodimms = tuple(sodimms)
+        self._drive = drive
+        self._partition_table = partition_table
+        self._volumes = dict(volumes)
 
     async def configure(self, utils: TestUtils[Nuc13Identity]) -> Nuc13Identity:
         """Open the hop to the unit, then provide the identity its own claims judge against.
@@ -166,25 +164,21 @@ class Nuc13(TestComponent[Nuc13Identity]):
         return self._identity
 
     def build_suite(self) -> TestComponent:
-        """Read the unit's bill of materials and turn each line of it into its part.
+        """The unit's own identity, then every part the system part number is built from.
 
-        The board says where its slots are; the bill of materials says what is in
-        them. Nothing here gates anything else, so everything runs in parallel: a
-        wrong system part number never hides a missing module.
+        Each part is built here, from the class the system part number named and what
+        the part is owed: its line of the bill of materials, and the board's slot for a
+        part that is fitted in one.
 
-        Raises:
-            ValueError: The bill of materials is malformed, is for another system
-                part number, does not list the number of each component the part
-                number is built from, names a part this suite has no class for, or
-                calls for more memory modules than the board has slots.
+        Nothing here gates anything else, so everything runs in parallel: a wrong
+        system part number never hides a missing module.
         """
-        bom = self._read_bom()
-        board = mpn_to_class(motherboards.mpns, bom.parts["motherboard"][0])(name="motherboard")
         return self.parallel(
             [
                 self.parallel(
                     "identity",
                     [
+                        self.test("bom-check", self._bom_check, listed=self._bom.system),
                         self.test("vendor", self._dmi_field, field="sys_vendor"),
                         self.test("product-name", self._dmi_field, field="product_name"),
                         self.test("version", self._dmi_field, field="product_version"),
@@ -194,56 +188,32 @@ class Nuc13(TestComponent[Nuc13Identity]):
                     ],
                     discrete_log_file=False,
                 ),
-                board,
-                mpn_to_class(firmwares.mpns, bom.parts["firmware"][0])(name="firmware"),
-                mpn_to_class(cpus.mpns, bom.parts["cpu"][0])(name="cpu"),
+                self._motherboard(name="motherboard", bom_mpns=self._bom.line("motherboard")),
+                self._firmware(name="firmware", bom_mpns=self._bom.line("firmware")),
+                self._cpu(name="cpu", bom_mpns=self._bom.line("cpu")),
                 Memory(
                     name="memory",
-                    sodimms=[
-                        mpn_to_class(memory.mpns, mpn)(name=f"bank-{index}", **slot)
-                        for index, (mpn, slot) in enumerate(
-                            zip(
-                                bom.parts["memory"],
-                                board.sodimm_slots_for(len(bom.parts["memory"])),
-                                strict=True,
-                            )
-                        )
-                    ],
+                    bom_mpns=self._bom.line("memory"),
+                    sodimms=self._sodimms,
+                    slots=self._motherboard.SODIMM_SLOTS,
                 ),
-                mpn_to_class(drives.mpns, bom.parts["drive"][0])(
-                    name="drive", partitions=self._partitions, **board.nvme_slot
+                self._drive(
+                    name="drive",
+                    bom_mpns=self._bom.line("drive"),
+                    **self._motherboard.M2_SLOT,
+                    partition_table=self._partition_table,
+                    volumes=self._volumes,
                 ),
             ]
         )
 
-    def _read_bom(self) -> Bom:
-        """Read the unit's bill of materials and hold it to the system part number.
-
-        Raises:
-            ValueError: The bill of materials is malformed, is for another system
-                part number, or lists a component type a different number of times
-                than the part number is built with, which includes a type it does
-                not have at all. The message names every such type.
-        """
-        bom = Bom.read(self._SHOPFLOOR_BOM)
-        if bom.system != self._identity["product_sku"]:
-            raise ValueError(
-                f"the bill of materials is for system {bom.system!r}; "
-                f"this suite judges {self._identity['product_sku']!r}"
-            )
-        expected = dict(self._part_counts.items())
-        listed = {component: len(part_numbers) for component, part_numbers in bom.parts.items()}
-        mismatches = [
-            f"{component}: {listed.get(component, 0)} listed, {expected.get(component, 0)} expected"
-            for component in sorted(expected.keys() | listed.keys())
-            if listed.get(component, 0) != expected.get(component, 0)
-        ]
-        if mismatches:
-            raise ValueError(
-                f"the bill of materials does not fit system {bom.system!r}: "
-                + "; ".join(mismatches)
-            )
-        return bom
+    async def _bom_check(self, utils: TestUtils[Nuc13Identity], *, listed: str) -> Verdict:
+        expected = utils.ctx["product_sku"]
+        if listed == expected:
+            return PASS
+        raise TestFailure(
+            "the bill of materials is for another system part number", expected, listed
+        )
 
     @evidence("dmi_value")
     async def _dmi_field(self, utils: TestUtils[Nuc13Identity], *, field: SystemField) -> Verdict:

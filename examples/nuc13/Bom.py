@@ -12,10 +12,14 @@ type, a list where the unit has several:
       ...
     }
 
-Two things are not the shopfloor's to say, and so are not read here. What a part
-number means is the suite's: one class per part number, beside the component it is a
-part number of. How many of each component a unit is built from is the system part
-number's, so its class says it and the product holds the bill of materials to it.
+What a part number means is not the shopfloor's to say, and so is not read here. That
+is the suite's: one class per part number, beside the component it is a part number
+of.
+
+The bill of materials does not decide what the suite judges. The system part number's
+class says which parts a unit is built from, and each component then holds its own
+line here to the part it is: a unit built with another part fails that component's
+``bom-check`` claim.
 """
 
 from __future__ import annotations
@@ -37,31 +41,37 @@ class Bom:
             fitted, in the order the shopfloor lists them.
     """
 
+    # The file that stands in for the shopfloor's answer about the unit under test.
+    _SHOPFLOOR_ANSWER = Path(__file__).with_name("shopfloor_bom.json")
     _SYSTEM_LINE = "system"
 
     system: str
     parts: Mapping[str, tuple[str, ...]]
 
-    @classmethod
-    def read(cls, path: Path) -> Bom:
-        """Read one unit's bill of materials from the shopfloor's JSON.
+    def line(self, component: str) -> list[str]:
+        """Return the part numbers listed for one component type, as the shopfloor orders them.
 
-        The file comes from outside the suite, so its shape is checked here and
+        A component type the bill of materials does not list has none.
+        """
+        return list(self.parts.get(component, ()))
+
+    @classmethod
+    def read(cls) -> Bom:
+        """Ask the shopfloor what the unit under test was built from.
+
+        The answer comes from outside the suite, so its shape is checked here and
         nothing past this method has to doubt it: a system part number, and part
         numbers on every other line. Which component types a unit has, and how many
-        of each, is not checked: the system part number says that, not the file's
-        reader.
-
-        Args:
-            path: The JSON file.
+        of each, is not checked: each component holds its own line to what it is.
 
         Returns:
             The bill of materials.
 
         Raises:
-            ValueError: The file cannot be read, or is not a bill of materials. The
+            ValueError: The answer cannot be read, or is not a bill of materials. The
                 message says what is wrong with it.
         """
+        path = cls._SHOPFLOOR_ANSWER
         try:
             document: object = json.loads(path.read_text(encoding="utf-8"))
         except (OSError, json.JSONDecodeError) as error:

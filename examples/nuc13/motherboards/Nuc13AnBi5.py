@@ -2,18 +2,59 @@
 
 from __future__ import annotations
 
-from nuc13.motherboards.Motherboard import Motherboard
+from collections.abc import Sequence
+from typing import ClassVar
+
+from nuc13.motherboards.Motherboard import Motherboard, NvmeSlot, SodimmSlot
 from nuc13.network.Network import Network, NetworkInterface, NetworkLink
 from nuc13.pci.PciBus import PciBus, PciDevice
 from nuc13.usb.Usb import Usb, UsbDevice, UsbRootHub
 
 
 class Nuc13AnBi5(Motherboard):
-    """Board part number ``NUC13ANBi5``: two SODIMM slots, one M.2 slot, two xHCI controllers."""
+    """Board part number ``NUC13ANBi5``: its PCI functions, USB buses, and network interfaces.
 
-    def __init__(self, *, name: str) -> None:
+    Its slots are the class's own, so the product can fit a module or a drive into one
+    before any board is built.
+
+    Args:
+        name: Node name used by logs, artifacts, and failures.
+        bom_mpns: The part numbers the unit's bill of materials lists for this component.
+    """
+
+    # The board has one slot per memory controller. EDAC numbers a controller's
+    # positions channel by channel, so the only slot of each is its dimm0.
+    SODIMM_SLOTS: ClassVar[Sequence[SodimmSlot]] = (
+        {
+            "slot": "Controller0-ChannelA-DIMM0",
+            "edac_directory": "/sys/devices/system/edac/mc/mc0/dimm0",
+            "location": "channel 0 slot 0",
+            # The kernel binds this slot's EEPROM at 0x50 behind the PCH SMBus function.
+            # The I2C bus number is handed out at boot, so the EEPROM is found from that
+            # function's PCI address, which does not move.
+            "eeprom": "/sys/bus/pci/devices/0000:00:1f.4/i2c-*/*-0050/eeprom",
+        },
+        {
+            "slot": "Controller1-ChannelA-DIMM0",
+            "edac_directory": "/sys/devices/system/edac/mc/mc1/dimm0",
+            "location": "channel 0 slot 0",
+            # This slot's EEPROM is not exposed to an ordinary user.
+            "eeprom": None,
+        },
+    )
+
+    # The board's one M.2 slot.
+    M2_SLOT: ClassVar[NvmeSlot] = {
+        "controller": "nvme0",
+        "namespace": "nvme0n1",
+        "pci_address": "0000:01:00.0",
+    }
+
+    def __init__(self, *, name: str, bom_mpns: list[str]) -> None:
         super().__init__(
             name=name,
+            bom_mpns=bom_mpns,
+            part_number="NUC13ANBi5",
             board_vendor="Intel Corporation",
             board_name="NUC13ANBi5",
             board_version="N13061-202",
@@ -44,11 +85,6 @@ class Nuc13AnBi5(Motherboard):
                     ),
                 ],
             ),
-            nvme_slot={
-                "controller": "nvme0",
-                "namespace": "nvme0n1",
-                "pci_address": "0000:01:00.0",
-            },
             pci=PciBus(
                 name="pci",
                 devices=[
@@ -297,24 +333,4 @@ class Nuc13AnBi5(Motherboard):
                     ),
                 ],
             ),
-            # One slot per memory controller. EDAC numbers a controller's positions
-            # channel by channel, so the only slot of each is its dimm0.
-            sodimm_slots=[
-                {
-                    "slot": "Controller0-ChannelA-DIMM0",
-                    "edac_directory": "/sys/devices/system/edac/mc/mc0/dimm0",
-                    "location": "channel 0 slot 0",
-                    # The kernel binds this slot's EEPROM at 0x50 behind the PCH SMBus
-                    # function. The I2C bus number is handed out at boot, so the EEPROM
-                    # is found from that function's PCI address, which does not move.
-                    "eeprom": "/sys/bus/pci/devices/0000:00:1f.4/i2c-*/*-0050/eeprom",
-                },
-                {
-                    "slot": "Controller1-ChannelA-DIMM0",
-                    "edac_directory": "/sys/devices/system/edac/mc/mc1/dimm0",
-                    "location": "channel 0 slot 0",
-                    # This slot's EEPROM is not exposed to an ordinary user.
-                    "eeprom": None,
-                },
-            ],
         )

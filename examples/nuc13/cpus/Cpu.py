@@ -1,8 +1,8 @@
 """The processor: the package's own claims, then one node per core.
 
     cpu
-    ├─ package            model, vendor, signature, socket-count, core-count,
-    │                     thread-count, online, flags, frequency-range
+    ├─ package            bom-check, model, vendor, signature, socket-count,
+    │                     core-count, thread-count, online, flags, frequency-range
     │                                                         (this class's claims)
     ├─ p_cores
     │  └─ core-<id>       online, then siblings, core-id, kind, per thread
@@ -21,7 +21,7 @@ Every reading is a file read or, for ``compute``, a hash of a fixed megabyte: no
 here changes the device or loads it for longer than a few milliseconds per thread.
 
 A processor part number is one class, in a module of its own beside this one; it says
-what that processor is, down to each core and the caches it uses. The package's ``mpns`` lists them.
+what that processor is, down to each core and the caches it uses.
 """
 
 from __future__ import annotations
@@ -358,9 +358,11 @@ class CpuCore(TestComponent[CoreIdentity]):
 
 
 class CpuIdentity(TypedDict):
-    """What the processor package must report as a whole.
+    """What the processor is, and what the package must report as a whole.
 
     Attributes:
+        part_number: The processor as the bill of materials names it.
+        bom_mpns: The part numbers the unit's bill of materials lists for this component.
         model: ``model name`` as the kernel reports it.
         vendor_id: CPUID vendor string.
         signature: CPUID family, model, and stepping, joined as ``6.186.2``.
@@ -372,6 +374,8 @@ class CpuIdentity(TypedDict):
         maximum_khz: Highest frequency of any core.
     """
 
+    part_number: str
+    bom_mpns: list[str]
     model: str
     vendor_id: str
     signature: str
@@ -390,7 +394,7 @@ class Cpu(TestComponent[CpuIdentity]):
         name: Node name used by logs, artifacts, and failures.
         p_cores: Every performance core, each with its caches.
         e_cores: Every efficient core, each with its caches.
-        **identity: What the package must report as a whole.
+        **identity: What the processor is, and what the package must report as a whole.
     """
 
     _CPUINFO = "/proc/cpuinfo"
@@ -423,6 +427,7 @@ class Cpu(TestComponent[CpuIdentity]):
                 self.parallel(
                     "package",
                     [
+                        self.test("bom-check", self._bom_check),
                         self.test("model", self._model),
                         self.test("vendor", self._vendor),
                         self.test("signature", self._signature),
@@ -439,6 +444,13 @@ class Cpu(TestComponent[CpuIdentity]):
                 self.parallel("e_cores", self._e_cores),
             ]
         )
+
+    async def _bom_check(self, utils: TestUtils[CpuIdentity]) -> Verdict:
+        expected = [utils.ctx["part_number"]]
+        listed = utils.ctx["bom_mpns"]
+        if listed == expected:
+            return PASS
+        raise TestFailure("the bill of materials does not list this processor", expected, listed)
 
     @evidence("model_names")
     async def _model(self, utils: TestUtils[CpuIdentity]) -> Verdict:

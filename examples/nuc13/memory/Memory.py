@@ -1,6 +1,7 @@
 """System memory: the totals the kernel accounts for, then each module in its slot.
 
     memory
+    ├─ bom-check                  the unit's bill of materials lists these modules
     ├─ installed-size             every module the kernel lists, summed
     ├─ usable-size                MemTotal, between the floor and what is installed
     ├─ populated-banks            how many modules the kernel lists
@@ -29,14 +30,14 @@ reading.
 
 A module part number is one class, in a module of its own beside this one; it says
 what that module is. Where the module is fitted is not the module's to know: its
-slot label, EDAC position, and EEPROM path are handed to it, and it is the board
-that knows them. The package's ``mpns`` lists the part numbers.
+slot label, EDAC position, and EEPROM path are handed to it by ``Memory``, which fits
+each module the system part number names into one of the board's slots.
 """
 
 from __future__ import annotations
 
 from collections.abc import Sequence
-from typing import TypedDict, Unpack
+from typing import Protocol, TypedDict, Unpack
 
 from nuc13.kernel import NOT_READ, parse_int, read_files, read_int, read_text
 
@@ -222,12 +223,8 @@ class IdentityEeprom(TestComponent[EepromIdentity]):
         return round(2_000_000 / cycle_ps)
 
 
-class SodimmIdentity(TypedDict):
-    """What one module must be, and where the kernel must show it.
-
-    A module's part number, vendor, and speed can only be read from its identity
-    EEPROM. They are judged in a slot that has one and carried without a claim in a
-    slot whose ``eeprom`` is ``None``.
+class SodimmLocation(TypedDict):
+    """Where one module is fitted, and so where the kernel must show it.
 
     Attributes:
         slot: The slot's label, such as ``Controller0-ChannelA-DIMM0``.
@@ -238,6 +235,22 @@ class SodimmIdentity(TypedDict):
         eeprom: Shell pattern that resolves to the sysfs file of the module's
             identity EEPROM, or ``None`` where the kernel exposes none to an
             ordinary user.
+    """
+
+    slot: str
+    edac_directory: str
+    location: str
+    eeprom: str | None
+
+
+class SodimmIdentity(SodimmLocation):
+    """What one module must be, in the slot the kernel must show it in.
+
+    A module's part number, vendor, and speed can only be read from its identity
+    EEPROM. They are judged in a slot that has one and carried without a claim in a
+    slot whose ``eeprom`` is ``None``.
+
+    Attributes:
         size_mib: Module capacity.
         technology: Memory generation, such as ``DDR4``.
         speed_mhz: Rated clock.
@@ -247,10 +260,6 @@ class SodimmIdentity(TypedDict):
         part_number: Module part number.
     """
 
-    slot: str
-    edac_directory: str
-    location: str
-    eeprom: str | None
     size_mib: int
     technology: str
     speed_mhz: int
@@ -271,29 +280,19 @@ class Sodimm(TestComponent[SodimmIdentity]):
     def __init__(self, *, name: str, **identity: Unpack[SodimmIdentity]) -> None:
         super().__init__(name=name)
         self._identity = identity
-        # None or one: the population is identity, so it is settled here and
-        # build_suite only lists it.
-        eeprom = identity["eeprom"]
-        self._identity_eeprom = (
-            ()
-            if eeprom is None
-            else (
-                IdentityEeprom(
-                    name="identity-eeprom",
-                    eeprom=eeprom,
-                    technology=identity["technology"],
-                    part_number=identity["part_number"],
-                    vendor=identity["vendor"],
-                    manufacturer_id=identity["manufacturer_id"],
-                    speed_mhz=identity["speed_mhz"],
-                ),
-            )
-        )
+        # The identity EEPROMs the module's claims can read: none or one. The EEPROM
+        # node is enumerated over this, so a module in a slot without one simply has none.
+        self._identity_eeproms = () if identity["eeprom"] is None else (identity["eeprom"],)
 
     @property
     def size_mib(self) -> int:
         """The module's capacity, which system memory adds up over its modules."""
         return self._identity["size_mib"]
+
+    @property
+    def part_number(self) -> str:
+        """The module's part number, which system memory holds the bill of materials to."""
+        return self._identity["part_number"]
 
     async def configure(self, utils: TestUtils[SodimmIdentity]) -> SodimmIdentity:
         """Provide the identity the module's claims judge against."""
@@ -326,7 +325,18 @@ class Sodimm(TestComponent[SodimmIdentity]):
                             counter="dimm_ue_count",
                             kind="uncorrectable",
                         ),
-                        *self._identity_eeprom,
+                        *[
+                            IdentityEeprom(
+                                name="identity-eeprom",
+                                eeprom=eeprom,
+                                technology=self._identity["technology"],
+                                part_number=self._identity["part_number"],
+                                vendor=self._identity["vendor"],
+                                manufacturer_id=self._identity["manufacturer_id"],
+                                speed_mhz=self._identity["speed_mhz"],
+                            )
+                            for eeprom in self._identity_eeproms
+                        ],
                     ],
                     discrete_log_file=False,
                 ),
@@ -400,15 +410,38 @@ class Sodimm(TestComponent[SodimmIdentity]):
         )
 
 
+class SodimmPartNumber(Protocol):
+    """A module part number's class: built from a node name and the slot it is fitted in."""
+
+    def __call__(
+        self, *, name: str, slot: str, edac_directory: str, location: str, eeprom: str | None
+    ) -> Sodimm:
+        """Build the module in one slot.
+
+        Args:
+            name: Node name used by logs, artifacts, and failures.
+            slot: Label of the slot the module is fitted in.
+            edac_directory: The kernel's directory for that position.
+            location: The position as that directory words it.
+            eeprom: Shell pattern for the module's identity EEPROM, or ``None`` where
+                the kernel exposes none to an ordinary user.
+        """
+        ...
+
+
 class MemoryIdentity(TypedDict):
-    """What the system's memory must add up to.
+    """What the system's memory is made of, and what it must add up to.
 
     Attributes:
+        part_numbers: Every module's part number, sorted.
+        bom_mpns: The part numbers the unit's bill of materials lists for memory, sorted.
         installed_mib: Every module's capacity, summed.
         usable_floor_mib: Least ``MemTotal`` an intact system shows.
         bank_count: Populated slots.
     """
 
+    part_numbers: list[str]
+    bom_mpns: list[str]
     installed_mib: int
     usable_floor_mib: int
     bank_count: int
@@ -417,11 +450,17 @@ class MemoryIdentity(TypedDict):
 class Memory(TestComponent[MemoryIdentity]):
     """Judge system memory as a whole, then every module that makes it up.
 
-    The totals are read off the modules it is composed with.
+    The totals are read off the modules it fits.
 
     Args:
         name: Node name used by logs, artifacts, and failures.
-        sodimms: Every module fitted.
+        bom_mpns: The part numbers the unit's bill of materials lists for memory, one
+            per module, in any order.
+        sodimms: The part number of the module in each slot, in slot order.
+        slots: The slots the modules are fitted in, one per module.
+
+    Raises:
+        ValueError: There is not exactly one module for each slot.
     """
 
     _EDAC = "/sys/devices/system/edac/mc"
@@ -430,11 +469,30 @@ class Memory(TestComponent[MemoryIdentity]):
     # graphics reserve some of what is installed.
     _RESERVED_ALLOWANCE_MIB = 1024
 
-    def __init__(self, *, name: str, sodimms: Sequence[Sodimm]) -> None:
+    def __init__(
+        self,
+        *,
+        name: str,
+        bom_mpns: Sequence[str],
+        sodimms: Sequence[SodimmPartNumber],
+        slots: Sequence[SodimmLocation],
+    ) -> None:
         super().__init__(name=name)
-        self._sodimms = tuple(sodimms)
+        if len(sodimms) != len(slots):
+            raise ValueError(
+                f"{name}: {len(sodimms)} modules for {len(slots)} slots; "
+                "name one module part number for each slot"
+            )
+        # The totals below are read off the modules, so the modules are fitted here and
+        # build_suite only lists them.
+        self._sodimms = tuple(
+            sodimm(name=f"bank-{index}", **slot)
+            for index, (sodimm, slot) in enumerate(zip(sodimms, slots, strict=True))
+        )
         installed_mib = sum(sodimm.size_mib for sodimm in self._sodimms)
         self._identity: MemoryIdentity = {
+            "part_numbers": sorted(sodimm.part_number for sodimm in self._sodimms),
+            "bom_mpns": sorted(bom_mpns),
             "installed_mib": installed_mib,
             "usable_floor_mib": installed_mib - self._RESERVED_ALLOWANCE_MIB,
             "bank_count": len(self._sodimms),
@@ -449,6 +507,7 @@ class Memory(TestComponent[MemoryIdentity]):
         return self.parallel(
             self.name,
             [
+                self.test("bom-check", self._bom_check),
                 self.test("installed-size", self._installed_size),
                 self.test("usable-size", self._usable_size),
                 self.test("populated-banks", self._populated_banks),
@@ -466,6 +525,17 @@ class Memory(TestComponent[MemoryIdentity]):
                 ),
                 *self._sodimms,
             ],
+        )
+
+    async def _bom_check(self, utils: TestUtils[MemoryIdentity]) -> Verdict:
+        # A module per entry, in no order the suite relies on: the same part numbers,
+        # each as many times, is the same set of modules. Both lists are sorted.
+        expected = utils.ctx["part_numbers"]
+        listed = utils.ctx["bom_mpns"]
+        if listed == expected:
+            return PASS
+        raise TestFailure(
+            "the bill of materials does not list these memory modules", expected, listed
         )
 
     # The kernel, not the suite, decides how many controllers and modules there are,
