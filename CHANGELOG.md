@@ -10,6 +10,19 @@ leave a fresh Unreleased section above it. Use the
 
 ## Unreleased
 
+Nothing yet.
+
+## [1.1.0] - 2026-11-22
+
+A MINOR release: the surface grows, and every suite written for 1.0 runs unchanged. For
+the suite author there are two additions, the nameless root of `build_suite()` and
+`max_sessions` on an SSH hop, and an exception that escapes suite code is now logged
+with its traceback. For the Floor Technician the Inspector draws each component as one
+row, keeps the ancestors of a scrolled row pinned, gives the log a quarter of the screen
+with `l` to show it full screen, and steps between siblings on Shift with an arrow.
+`result.json` and the timelines stay at `format_version` 1, and no `hilt-check` rule
+changes. There is no upgrade action beyond `pip install --upgrade open-hilt`.
+
 ### Added
 
 - `self.sequence([...])` and `self.parallel([...])`: the composition `build_suite()`
@@ -70,7 +83,7 @@ leave a fresh Unreleased section above it. Use the
   different part of the chronology.
 - `README.md`, `docs/lifecycle.md`, and `docs/hilt-new.md` follow the changes above. The
   README's Inspector section shows the new screen and its keys, and it is the PyPI
-  project page, so the change reaches that page with the next release. The lifecycle
+  project page, so the change reaches that page with this release. The lifecycle
   page's examples and block table use the nameless root, and the `hilt new` page
   describes the root sequence the scaffold now writes.
 
@@ -91,6 +104,15 @@ leave a fresh Unreleased section above it. Use the
   ancestor when the highlighted row was at the foot of the tree, against the rule in
   `docs/inspector.md` that a pane under four rows pins nothing. The rule is now the
   code.
+- The PyPI project page: the hero image and the links into `docs/` work. PyPI does not
+  resolve a relative link, so on the 1.0.0 and 1.0.1 pages the image was broken and
+  eleven links led nowhere. `README.md` keeps its relative links, which are right in the
+  tree and on a release branch; the build rewrites them for the package metadata to the
+  release's own tag on GitLab (`hatch-fancy-pypi-readme`, a build requirement only, not
+  a dependency of the installed package).
+- `docs/inspector-json.md` no longer says the Inspector is outside this port's scope; it
+  names `hilt inspect` as a reader of the record. The README's Status section no longer
+  states a version number that the next release makes wrong.
 
 ## [1.0.1] - 2026-11-21
 

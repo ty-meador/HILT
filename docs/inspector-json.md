@@ -3,9 +3,9 @@
 Floor Technicians reading a run should start at `docs/floor-technician.md`. This
 page is the consumer contract those fields live in.
 
-The Inspector TUI is outside the Python port's current scope. Its input contract is
-not. Every completed node produces a `RunResult`, and `RunResult.to_json()` returns a
-plain Python object that `json.dumps()` accepts without an encoder. The root result is
+The Inspector (`hilt inspect`, `docs/inspector.md`) reads the record this page
+specifies, and any other consumer may read it the same way. Every completed node
+produces a `RunResult`, and `RunResult.to_json()` returns a plain Python object that `json.dumps()` accepts without an encoder. The root result is
 self-contained: consumers do not need the live `TestComponent` objects to reconstruct the
 run tree. CI that already speaks JUnit XML consumes a projection of the same tree
 (`docs/junit-xml.md`); that reporter is not a second evidence record.
